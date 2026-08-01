@@ -14,11 +14,18 @@ export default function LoginPage() {
   const supabase = createClient()
 
   const handleLogin = async () => {
+    if (!email || !password) { setError('Please enter your email and password'); return }
     setLoading(true)
     setError('')
     const { error } = await supabase.auth.signInWithPassword({ email, password })
-    if (error) { setError(error.message); setLoading(false) }
-    else router.push('/feed')
+    if (error) {
+      setError(error.message)
+      setLoading(false)
+    } else {
+      // router.refresh() syncs the server-side session before navigating
+      router.refresh()
+      router.push('/feed')
+    }
   }
 
   const inputStyle = {
@@ -49,23 +56,39 @@ export default function LoginPage() {
           <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
             <div>
               <label style={{ fontSize: 13, fontWeight: 500, color: 'var(--text-secondary)', display: 'block', marginBottom: 6 }}>Email</label>
-              <input type="email" value={email} onChange={e => setEmail(e.target.value)}
-                placeholder="you@example.com" style={inputStyle} />
+              <input
+                type="email"
+                value={email}
+                onChange={e => setEmail(e.target.value)}
+                placeholder="you@example.com"
+                style={inputStyle}
+                autoComplete="email"
+              />
             </div>
             <div>
               <label style={{ fontSize: 13, fontWeight: 500, color: 'var(--text-secondary)', display: 'block', marginBottom: 6 }}>Password</label>
-              <input type="password" value={password} onChange={e => setPassword(e.target.value)}
-                placeholder="••••••••" onKeyDown={e => e.key === 'Enter' && handleLogin()} style={inputStyle} />
+              <input
+                type="password"
+                value={password}
+                onChange={e => setPassword(e.target.value)}
+                placeholder="••••••••"
+                onKeyDown={e => e.key === 'Enter' && handleLogin()}
+                style={inputStyle}
+                autoComplete="current-password"
+              />
             </div>
           </div>
 
-          <button onClick={handleLogin} disabled={loading}
-            style={{ width: '100%', background: loading ? '#93c5fd' : 'var(--accent)', color: 'white', border: 'none', borderRadius: 10, padding: '12px', fontSize: 15, fontWeight: 700, cursor: 'pointer', marginTop: 20, fontFamily: 'inherit' }}>
-            {loading ? 'Signing in...' : 'Sign In'}
+          <button
+            onClick={handleLogin}
+            disabled={loading}
+            style={{ width: '100%', background: loading ? '#93c5fd' : 'var(--accent)', color: 'white', border: 'none', borderRadius: 10, padding: '12px', fontSize: 15, fontWeight: 700, cursor: loading ? 'not-allowed' : 'pointer', marginTop: 20, fontFamily: 'inherit' }}
+          >
+            {loading ? 'Signing in…' : 'Sign In'}
           </button>
 
           <p style={{ textAlign: 'center', fontSize: 13, color: 'var(--text-muted)', marginTop: 16, marginBottom: 0 }}>
-            Don't have an account?{' '}
+            Don&apos;t have an account?{' '}
             <Link href="/auth/signup" style={{ color: 'var(--accent)', fontWeight: 600, textDecoration: 'none' }}>Sign up</Link>
           </p>
         </div>

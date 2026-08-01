@@ -1,7 +1,7 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  allowedDevOrigins: ['10.81.238.89'],
+  // No custom config needed – Vercel auto-detects Next.js
 };
 
 export default nextConfig;

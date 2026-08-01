@@ -11,6 +11,7 @@ export default function AdminPage() {
   const [activeTab, setActiveTab] = useState('Overview')
   const [users, setUsers] = useState<any[]>([])
   const [posts, setPosts] = useState<any[]>([])
+  const [colleges, setColleges] = useState<any[]>([])
   const [stats, setStats] = useState({ users: 0, posts: 0, colleges: 0 })
   const [loading, setLoading] = useState(true)
   const router = useRouter()
@@ -30,7 +31,6 @@ export default function AdminPage() {
       }
       setProfile(prof)
 
-      // Load stats
       const [{ count: userCount }, { count: postCount }, { count: collegeCount }] = await Promise.all([
         supabase.from('profiles').select('*', { count: 'exact', head: true }),
         supabase.from('posts').select('*', { count: 'exact', head: true }),
@@ -60,6 +60,11 @@ export default function AdminPage() {
     setPosts(data || [])
   }
 
+  const loadColleges = async () => {
+    const { data } = await supabase.from('colleges').select('*').order('name')
+    setColleges(data || [])
+  }
+
   const updateRole = async (userId: string, role: string) => {
     await supabase.from('profiles').update({ role }).eq('id', userId)
     loadUsers()
@@ -79,191 +84,155 @@ export default function AdminPage() {
   useEffect(() => {
     if (activeTab === 'Users') loadUsers()
     if (activeTab === 'Posts') loadPosts()
+    if (activeTab === 'Colleges') loadColleges()
   }, [activeTab])
 
   if (loading) return (
-    <div className="min-h-screen bg-gray-950 flex items-center justify-center">
-      <p className="text-gray-500">Loading admin panel...</p>
+    <div style={{ minHeight: '100vh', background: 'var(--bg-secondary)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+      <p style={{ color: 'var(--text-muted)', fontSize: 14 }}>Loading admin panel…</p>
     </div>
   )
 
+  const ROLE_OPTIONS = ['student', 'faculty', 'ambassador', 'club_lead', 'campus_admin', 'platform_admin']
+
   return (
-    <div className="min-h-screen bg-gray-950">
+    <div style={{ minHeight: '100vh', background: 'var(--bg-secondary)' }}>
       {/* Header */}
-      <div className="bg-gray-900 border-b border-gray-800 px-6 py-4">
-        <div className="max-w-6xl mx-auto flex items-center justify-between">
+      <div style={{ background: 'white', borderBottom: '1px solid var(--border)', padding: '14px 24px', position: 'sticky', top: 0, zIndex: 20 }}>
+        <div style={{ maxWidth: 1100, margin: '0 auto', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
           <div>
-            <h1 className="text-xl font-bold text-white">Admin Panel</h1>
-            <p className="text-gray-500 text-xs mt-0.5">CampusConnect · {profile?.role}</p>
+            <h1 style={{ fontSize: 18, fontWeight: 800, color: 'var(--text-primary)', margin: '0 0 2px' }}>
+              Campus<span style={{ color: 'var(--accent)' }}>Connect</span> Admin
+            </h1>
+            <p style={{ fontSize: 12, color: 'var(--text-muted)', margin: 0 }}>{profile?.role}</p>
           </div>
           <button onClick={() => router.push('/feed')}
-            className="text-gray-400 text-sm hover:text-white transition">
+            style={{ background: 'none', border: '1px solid var(--border)', padding: '7px 14px', borderRadius: 8, fontSize: 13, color: 'var(--text-secondary)', cursor: 'pointer', fontFamily: 'inherit' }}>
             ← Back to Feed
           </button>
         </div>
       </div>
 
-      <div className="max-w-6xl mx-auto px-6 py-8">
+      <div style={{ maxWidth: 1100, margin: '0 auto', padding: '24px' }}>
 
         {/* Tabs */}
-        <div className="flex gap-2 mb-8 border-b border-gray-800 pb-0">
+        <div style={{ display: 'flex', gap: 4, marginBottom: 24, borderBottom: '1px solid var(--border)' }}>
           {TABS.map(tab => (
             <button key={tab} onClick={() => setActiveTab(tab)}
-              className={`px-4 py-2 text-sm font-medium border-b-2 transition -mb-px ${
-                activeTab === tab
-                  ? 'border-blue-500 text-blue-400'
-                  : 'border-transparent text-gray-500 hover:text-white'
-              }`}>
+              style={{
+                padding: '10px 18px', fontSize: 14, fontWeight: 500,
+                border: 'none', background: 'none', cursor: 'pointer',
+                color: activeTab === tab ? 'var(--accent)' : 'var(--text-secondary)',
+                borderBottom: activeTab === tab ? '2px solid var(--accent)' : '2px solid transparent',
+                marginBottom: -1, fontFamily: 'inherit',
+              }}>
               {tab}
             </button>
           ))}
         </div>
 
-        {/* Overview Tab */}
+        {/* Overview */}
         {activeTab === 'Overview' && (
           <div>
-            <div className="grid grid-cols-3 gap-4 mb-8">
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 16, marginBottom: 24 }}>
               {[
-                { label: 'Total Users', value: stats.users, icon: '👥' },
-                { label: 'Total Posts', value: stats.posts, icon: '📝' },
-                { label: 'Colleges', value: stats.colleges, icon: '🏫' },
-              ].map(stat => (
-                <div key={stat.label} className="bg-gray-900 rounded-2xl border border-gray-800 p-6">
-                  <p className="text-3xl mb-1">{stat.icon}</p>
-                  <p className="text-3xl font-bold text-white">{stat.value}</p>
-                  <p className="text-gray-400 text-sm mt-1">{stat.label}</p>
+                { label: 'Total Users', value: stats.users, emoji: '👥' },
+                { label: 'Total Posts', value: stats.posts, emoji: '📝' },
+                { label: 'Colleges', value: stats.colleges, emoji: '🏫' },
+              ].map(s => (
+                <div key={s.label} style={{ background: 'white', border: '1px solid var(--border)', borderRadius: 16, padding: '20px', textAlign: 'center', boxShadow: 'var(--shadow-sm)' }}>
+                  <p style={{ fontSize: 32, margin: '0 0 8px' }}>{s.emoji}</p>
+                  <p style={{ fontSize: 32, fontWeight: 800, color: 'var(--accent)', margin: '0 0 4px' }}>{s.value}</p>
+                  <p style={{ fontSize: 13, color: 'var(--text-muted)', margin: 0 }}>{s.label}</p>
                 </div>
               ))}
             </div>
-            <div className="bg-gray-900 rounded-2xl border border-gray-800 p-6">
-              <h3 className="text-white font-semibold mb-4">Quick Actions</h3>
-              <div className="grid grid-cols-2 gap-3">
-                <button onClick={() => setActiveTab('Users')}
-                  className="bg-blue-600/10 border border-blue-500/20 text-blue-400 rounded-xl px-4 py-3 text-sm hover:bg-blue-600/20 transition text-left">
-                  👥 Manage Users & Roles
-                </button>
-                <button onClick={() => setActiveTab('Posts')}
-                  className="bg-purple-600/10 border border-purple-500/20 text-purple-400 rounded-xl px-4 py-3 text-sm hover:bg-purple-600/20 transition text-left">
-                  📌 Pin / Manage Posts
-                </button>
-                <button onClick={() => setActiveTab('Colleges')}
-                  className="bg-green-600/10 border border-green-500/20 text-green-400 rounded-xl px-4 py-3 text-sm hover:bg-green-600/20 transition text-left">
-                  🏫 Manage Colleges
-                </button>
-                <button onClick={() => router.push('/feed')}
-                  className="bg-gray-800 border border-gray-700 text-gray-300 rounded-xl px-4 py-3 text-sm hover:bg-gray-700 transition text-left">
-                  🏠 Go to Feed
-                </button>
-              </div>
+            <div style={{ background: 'white', border: '1px solid var(--border)', borderRadius: 16, padding: '20px', boxShadow: 'var(--shadow-sm)' }}>
+              <p style={{ fontSize: 14, color: 'var(--text-secondary)', lineHeight: 1.7, margin: 0 }}>
+                Welcome to the admin panel. Use the tabs above to manage <strong>Users</strong> (assign roles),
+                <strong> Posts</strong> (pin or delete), and <strong>Colleges</strong> (view registered institutions).
+              </p>
             </div>
           </div>
         )}
 
-        {/* Users Tab */}
+        {/* Users */}
         {activeTab === 'Users' && (
-          <div className="bg-gray-900 rounded-2xl border border-gray-800 overflow-hidden">
-            <div className="px-6 py-4 border-b border-gray-800">
-              <h3 className="text-white font-semibold">All Users ({users.length})</h3>
-            </div>
-            <div className="divide-y divide-gray-800">
-              {users.map(u => (
-                <div key={u.id} className="px-6 py-4 flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <div className="w-9 h-9 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white text-sm font-bold">
-                      {u.full_name?.[0] || '?'}
-                    </div>
-                    <div>
-                      <p className="text-white text-sm font-medium">{u.full_name || 'No name'}</p>
-                      <p className="text-gray-500 text-xs">@{u.username || 'no username'}</p>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-3">
-                    <span className={`text-xs px-2 py-1 rounded-full ${
-                      u.role === 'platform_admin' ? 'bg-red-500/20 text-red-400' :
-                      u.role === 'campus_admin' ? 'bg-orange-500/20 text-orange-400' :
-                      u.role === 'ambassador' ? 'bg-blue-500/20 text-blue-400' :
-                      u.role === 'faculty' ? 'bg-green-500/20 text-green-400' :
-                      'bg-gray-700 text-gray-400'
-                    }`}>
-                      {u.role}
-                    </span>
-                    <select
-                      defaultValue={u.role}
-                      onChange={e => updateRole(u.id, e.target.value)}
-                      className="bg-gray-800 border border-gray-700 text-gray-300 rounded-lg px-2 py-1 text-xs outline-none"
-                    >
-                      <option value="student">Student</option>
-                      <option value="ambassador">Ambassador</option>
-                      <option value="faculty">Faculty</option>
-                      <option value="campus_admin">Campus Admin</option>
-                      <option value="platform_admin">Platform Admin</option>
-                    </select>
-                  </div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+            {users.length === 0 ? (
+              <p style={{ color: 'var(--text-muted)', textAlign: 'center', padding: '40px 0' }}>Loading users…</p>
+            ) : users.map(u => (
+              <div key={u.id} style={{ background: 'white', border: '1px solid var(--border)', borderRadius: 12, padding: '14px 16px', display: 'flex', alignItems: 'center', gap: 14, boxShadow: 'var(--shadow-sm)' }}>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <p style={{ fontSize: 14, fontWeight: 600, color: 'var(--text-primary)', margin: '0 0 2px' }}>{u.full_name || 'No name'}</p>
+                  <p style={{ fontSize: 12, color: 'var(--text-muted)', margin: 0 }}>
+                    @{u.username || '—'} · {u.colleges?.name || 'No college'}
+                  </p>
                 </div>
-              ))}
-            </div>
+                <select
+                  value={u.role}
+                  onChange={e => updateRole(u.id, e.target.value)}
+                  style={{ border: '1px solid var(--border)', borderRadius: 8, padding: '6px 10px', fontSize: 12, color: 'var(--text-primary)', background: 'white', cursor: 'pointer', fontFamily: 'inherit' }}
+                >
+                  {ROLE_OPTIONS.map(r => <option key={r} value={r}>{r}</option>)}
+                </select>
+              </div>
+            ))}
           </div>
         )}
 
-        {/* Posts Tab */}
+        {/* Posts */}
         {activeTab === 'Posts' && (
-          <div className="bg-gray-900 rounded-2xl border border-gray-800 overflow-hidden">
-            <div className="px-6 py-4 border-b border-gray-800">
-              <h3 className="text-white font-semibold">All Posts ({posts.length})</h3>
-            </div>
-            <div className="divide-y divide-gray-800">
-              {posts.map(p => (
-                <div key={p.id} className="px-6 py-4">
-                  <div className="flex items-start justify-between gap-4">
-                    <div className="flex-1 min-w-0">
-                      <p className="text-gray-400 text-xs mb-1">
-                        @{p.profiles?.username} · {p.post_type}
-                        {p.is_pinned && <span className="ml-2 text-blue-400">📌 Pinned</span>}
-                      </p>
-                      <p className="text-white text-sm truncate">{p.body}</p>
-                    </div>
-                    <div className="flex items-center gap-2 flex-shrink-0">
-                      <button
-                        onClick={() => togglePin(p.id, p.is_pinned)}
-                        className={`text-xs px-3 py-1.5 rounded-lg border transition ${
-                          p.is_pinned
-                            ? 'border-blue-500/30 text-blue-400 hover:bg-blue-500/10'
-                            : 'border-gray-700 text-gray-400 hover:border-blue-500/30 hover:text-blue-400'
-                        }`}
-                      >
-                        {p.is_pinned ? 'Unpin' : 'Pin'}
-                      </button>
-                      <button
-                        onClick={() => deletePost(p.id)}
-                        className="text-xs px-3 py-1.5 rounded-lg border border-red-500/20 text-red-400 hover:bg-red-500/10 transition"
-                      >
-                        Delete
-                      </button>
-                    </div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+            {posts.length === 0 ? (
+              <p style={{ color: 'var(--text-muted)', textAlign: 'center', padding: '40px 0' }}>Loading posts…</p>
+            ) : posts.map(p => (
+              <div key={p.id} style={{ background: 'white', border: '1px solid var(--border)', borderRadius: 12, padding: '14px 16px', boxShadow: 'var(--shadow-sm)' }}>
+                <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12 }}>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <p style={{ fontSize: 13, color: 'var(--text-secondary)', margin: '0 0 6px', lineHeight: 1.5 }}>
+                      {p.body?.slice(0, 160)}{p.body?.length > 160 ? '…' : ''}
+                    </p>
+                    <p style={{ fontSize: 11, color: 'var(--text-muted)', margin: 0 }}>
+                      @{p.profiles?.username} · {p.post_type} {p.is_pinned ? '· 📌 Pinned' : ''}
+                    </p>
+                  </div>
+                  <div style={{ display: 'flex', gap: 6, flexShrink: 0 }}>
+                    <button onClick={() => togglePin(p.id, p.is_pinned)}
+                      style={{ padding: '5px 10px', borderRadius: 6, border: '1px solid var(--border)', background: p.is_pinned ? '#fff7ed' : 'white', color: p.is_pinned ? '#c2410c' : 'var(--text-secondary)', fontSize: 12, cursor: 'pointer', fontFamily: 'inherit' }}>
+                      {p.is_pinned ? 'Unpin' : 'Pin'}
+                    </button>
+                    <button onClick={() => deletePost(p.id)}
+                      style={{ padding: '5px 10px', borderRadius: 6, border: '1px solid #fecaca', background: '#fef2f2', color: '#dc2626', fontSize: 12, cursor: 'pointer', fontFamily: 'inherit' }}>
+                      Delete
+                    </button>
                   </div>
                 </div>
-              ))}
-            </div>
+              </div>
+            ))}
           </div>
         )}
 
-        {/* Colleges Tab */}
+        {/* Colleges */}
         {activeTab === 'Colleges' && (
-          <div className="bg-gray-900 rounded-2xl border border-gray-800 p-6">
-            <h3 className="text-white font-semibold mb-4">College Management</h3>
-            <p className="text-gray-500 text-sm mb-6">Add new colleges and campuses to expand CampusConnect.</p>
-            <div className="bg-gray-800 rounded-xl p-4 border border-gray-700">
-              <p className="text-gray-400 text-sm">To add a new college, run in Supabase SQL Editor:</p>
-              <pre className="text-green-400 text-xs mt-3 overflow-x-auto">
-{`INSERT INTO colleges (name, slug, is_active, is_verified)
-VALUES ('College Name', 'college-slug', true, true);
-
-INSERT INTO campuses (college_id, name, slug, city, state, is_active)
-VALUES ((SELECT id FROM colleges WHERE slug = 'college-slug'),
-        'Campus City', 'city', 'City', 'State', true);`}
-              </pre>
-            </div>
-            <p className="text-gray-600 text-xs mt-4">Full college onboarding UI coming in next version.</p>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+            {colleges.length === 0 ? (
+              <p style={{ color: 'var(--text-muted)', textAlign: 'center', padding: '40px 0' }}>Loading colleges…</p>
+            ) : colleges.map(c => (
+              <div key={c.id} style={{ background: 'white', border: '1px solid var(--border)', borderRadius: 12, padding: '14px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', boxShadow: 'var(--shadow-sm)' }}>
+                <div>
+                  <p style={{ fontSize: 14, fontWeight: 600, color: 'var(--text-primary)', margin: '0 0 2px' }}>{c.name}</p>
+                  <p style={{ fontSize: 12, color: 'var(--text-muted)', margin: 0 }}>{c.slug}</p>
+                </div>
+                <span style={{
+                  padding: '3px 10px', borderRadius: 20, fontSize: 11, fontWeight: 600,
+                  background: c.is_active ? '#f0fdf4' : '#fef2f2',
+                  color: c.is_active ? '#15803d' : '#dc2626',
+                }}>
+                  {c.is_active ? 'Active' : 'Inactive'}
+                </span>
+              </div>
+            ))}
           </div>
         )}
       </div>

@@ -81,7 +81,7 @@ export default function LandingPage() {
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: 16 }}>
           {features.map(f => (
             <div key={f.title} style={{ background: 'white', border: '1px solid var(--border)', borderRadius: 14, padding: '20px 22px' }}>
-              <img src={f.icon} style={{ width: 52, height: 52, objectFit: 'cover', borderRadius: '50%', marginBottom: 10, transition: 'transform 0.2s ease' }} onMouseEnter={e => (e.currentTarget.style.transform = 'scale(2)')} onMouseLeave={e => (e.currentTarget.style.transform = 'scale(1)')} />
+              <img src={f.icon} alt={f.title} style={{ width: 52, height: 52, objectFit: 'cover', borderRadius: '50%', marginBottom: 10, transition: 'transform 0.2s ease' }} onMouseEnter={e => (e.currentTarget.style.transform = 'scale(2)')} onMouseLeave={e => (e.currentTarget.style.transform = 'scale(1)')} />
               <h3 style={{ fontSize: 15, fontWeight: 700, color: 'var(--text-primary)', margin: '0 0 6px' }}>{f.title}</h3>
               <p style={{ fontSize: 13, color: 'var(--text-secondary)', margin: 0, lineHeight: 1.5 }}>{f.desc}</p>
             </div>

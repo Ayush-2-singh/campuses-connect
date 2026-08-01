@@ -51,7 +51,7 @@ export default function NotificationsPage() {
             <div style={{ textAlign: 'center', padding: '60px 0' }}>
               <div style={{ fontSize: 48, marginBottom: 12 }}>🔔</div>
               <p style={{ fontWeight: 600, color: 'var(--text-primary)', margin: '0 0 4px' }}>No notifications yet</p>
-              <p style={{ fontSize: 13, color: 'var(--text-muted)', margin: 0 }}>We'll notify you when something happens</p>
+              <p style={{ fontSize: 13, color: 'var(--text-muted)', margin: 0 }}>We&apos;ll notify you when something happens</p>
             </div>
           ) : (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>

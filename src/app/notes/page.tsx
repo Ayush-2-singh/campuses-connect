@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
-import { useRouter } from 'next/navigation'
 import Layout from '@/components/Layout'
 
 const RESOURCE_TYPES = ['all', 'notes', 'pyq', 'assignment', 'book', 'cheatsheet', 'video_link']
@@ -18,7 +17,6 @@ export default function NotesPage() {
   const [loading, setLoading] = useState(true)
   const [posting, setPosting] = useState(false)
   const [form, setForm] = useState({ title: '', subject: '', semester: '1', resource_type: 'notes', description: '', drive_link: '', external_link: '' })
-  const router = useRouter()
   const supabase = createClient()
 
   useEffect(() => {

@@ -61,18 +61,23 @@ export default function UserProfilePage() {
     await supabase.from('connections').insert({
       requester_id: user.id,
       receiver_id: profile.id,
-      status: 'pending'
+      status: 'pending',
     })
     setConnecting(false)
     setConnected(true)
   }
 
-  const roleColor: any = {
-    platform_admin: 'bg-red-500/20 text-red-400',
-    campus_admin: 'bg-orange-500/20 text-orange-400',
-    ambassador: 'bg-blue-500/20 text-blue-400',
-    faculty: 'bg-green-500/20 text-green-400',
-    student: 'bg-gray-700 text-gray-400',
+  const avatarColor = (name: string) => {
+    const colors = ['#2563eb', '#7c3aed', '#16a34a', '#d97706', '#dc2626', '#0891b2']
+    return colors[(name?.charCodeAt(0) || 0) % colors.length]
+  }
+
+  const roleConfig: Record<string, { bg: string; text: string; label: string }> = {
+    platform_admin: { bg: '#fef2f2', text: '#dc2626', label: 'Platform Admin' },
+    campus_admin: { bg: '#fff7ed', text: '#c2410c', label: 'Campus Admin' },
+    ambassador: { bg: '#eff6ff', text: '#1d4ed8', label: 'Ambassador' },
+    faculty: { bg: '#f0fdf4', text: '#15803d', label: 'Faculty' },
+    student: { bg: '#f8f9fa', text: '#495057', label: 'Student' },
   }
 
   const timeAgo = (date: string) => {
@@ -83,176 +88,167 @@ export default function UserProfilePage() {
     return `${days}d ago`
   }
 
+  const postTypeConfig: Record<string, { bg: string; text: string; label: string }> = {
+    announcement: { bg: '#fff7ed', text: '#c2410c', label: 'Announcement' },
+    opportunity: { bg: '#f0fdf4', text: '#15803d', label: 'Opportunity' },
+    resource: { bg: '#eff6ff', text: '#1d4ed8', label: 'Resource' },
+    discussion: { bg: '#f5f3ff', text: '#6d28d9', label: 'Discussion' },
+    general: { bg: '#f8f9fa', text: '#495057', label: 'General' },
+    event: { bg: '#fff7ed', text: '#c2410c', label: 'Event' },
+  }
+
   if (loading) return (
-    <div className="min-h-screen bg-gray-950 flex items-center justify-center">
-      <p className="text-gray-500 text-sm">Loading profile...</p>
+    <div style={{ minHeight: '100vh', background: 'var(--bg-secondary)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+      <p style={{ color: 'var(--text-muted)', fontSize: 14 }}>Loading profile…</p>
     </div>
   )
 
   if (!profile) return (
-    <div className="min-h-screen bg-gray-950 flex items-center justify-center">
-      <p className="text-gray-400">User not found</p>
+    <div style={{ minHeight: '100vh', background: 'var(--bg-secondary)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+      <div style={{ textAlign: 'center' }}>
+        <p style={{ fontSize: 48, marginBottom: 12 }}>🔍</p>
+        <p style={{ fontSize: 16, fontWeight: 600, color: 'var(--text-primary)' }}>User not found</p>
+        <button onClick={() => router.push('/talent')} style={{ marginTop: 16, color: 'var(--accent)', background: 'none', border: 'none', cursor: 'pointer', fontSize: 14, fontFamily: 'inherit' }}>← Back to Talent</button>
+      </div>
     </div>
   )
 
   const isOwnProfile = user?.id === profile.id
+  const rc = roleConfig[profile.role] || roleConfig.student
 
   return (
-    <div className="min-h-screen bg-gray-950 pb-24">
-      <div className="sticky top-0 z-10 bg-gray-950/80 backdrop-blur border-b border-gray-800">
-        <div className="max-w-2xl mx-auto px-4 py-3 flex items-center gap-3">
-          <button onClick={() => router.back()} className="text-gray-400 hover:text-white">←</button>
-          <h1 className="text-lg font-bold text-white">@{profile.username}</h1>
+    <div style={{ minHeight: '100vh', background: 'var(--bg-secondary)', paddingBottom: 80 }}>
+      {/* Header */}
+      <div style={{ position: 'sticky', top: 0, background: 'white', borderBottom: '1px solid var(--border)', padding: '13px 16px', zIndex: 10 }}>
+        <div style={{ maxWidth: 640, margin: '0 auto', display: 'flex', alignItems: 'center', gap: 10 }}>
+          <button onClick={() => router.back()}
+            style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', fontSize: 18 }}>←</button>
+          <h1 style={{ fontSize: 17, fontWeight: 700, margin: 0, color: 'var(--text-primary)' }}>@{profile.username}</h1>
         </div>
       </div>
 
-      <div className="max-w-2xl mx-auto px-4 py-6">
-        <div className="bg-gray-900 rounded-2xl border border-gray-800 p-6 mb-4">
-          <div className="flex items-start justify-between mb-4">
-            <div className="flex items-center gap-4">
-              <div className="w-16 h-16 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white text-2xl font-bold">
+      <div style={{ maxWidth: 640, margin: '0 auto', padding: '24px 16px' }}>
+        {/* Profile card */}
+        <div style={{ background: 'white', border: '1px solid var(--border)', borderRadius: 16, padding: '24px', marginBottom: 16, boxShadow: 'var(--shadow-sm)' }}>
+          <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 16 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+              <div style={{ width: 56, height: 56, borderRadius: '50%', background: avatarColor(profile.full_name || ''), display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontSize: 22, fontWeight: 700, flexShrink: 0 }}>
                 {profile.full_name?.[0] || '?'}
               </div>
               <div>
-                <p className="text-white font-bold text-lg">{profile.full_name}</p>
-                <p className="text-gray-400 text-sm">@{profile.username}</p>
-                <div className="flex items-center gap-2 mt-1 flex-wrap">
-                  <span className={`text-xs px-2 py-0.5 rounded-full capitalize ${roleColor[profile.role] || roleColor.student}`}>
-                    {profile.role}
-                  </span>
-                  {profile.is_verified && (
-                    <span className="text-xs bg-blue-500/20 text-blue-400 px-2 py-0.5 rounded-full">✓ Verified</span>
-                  )}
-                </div>
+                <p style={{ fontSize: 18, fontWeight: 700, color: 'var(--text-primary)', margin: '0 0 2px' }}>{profile.full_name}</p>
+                <p style={{ fontSize: 13, color: 'var(--text-muted)', margin: '0 0 6px' }}>@{profile.username}</p>
+                <span style={{ background: rc.bg, color: rc.text, padding: '2px 8px', borderRadius: 20, fontSize: 11, fontWeight: 600 }}>
+                  {rc.label}
+                </span>
               </div>
             </div>
+
             {!isOwnProfile && user && (
               <button onClick={handleConnect} disabled={connected || connecting}
-                className={`text-sm font-semibold px-4 py-2 rounded-xl transition ${
-                  connected ? 'bg-gray-800 text-gray-400 cursor-default' : 'bg-blue-600 hover:bg-blue-500 text-white'
-                }`}>
-                {connected ? '✓ Connected' : connecting ? 'Sending...' : 'Connect'}
+                style={{ padding: '8px 18px', borderRadius: 8, border: connected ? '1px solid var(--border)' : '1px solid var(--accent)', background: connected ? 'white' : 'var(--accent)', color: connected ? 'var(--text-secondary)' : 'white', fontSize: 13, fontWeight: 600, cursor: connected ? 'default' : 'pointer', fontFamily: 'inherit' }}>
+                {connected ? 'Connected ✓' : connecting ? 'Connecting…' : 'Connect'}
               </button>
             )}
             {isOwnProfile && (
               <button onClick={() => router.push('/profile')}
-                className="text-sm border border-gray-700 text-gray-300 px-4 py-2 rounded-xl hover:border-gray-600 transition">
-                Edit
+                style={{ padding: '8px 18px', borderRadius: 8, border: '1px solid var(--accent)', background: 'white', color: 'var(--accent)', fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>
+                Edit Profile
               </button>
             )}
           </div>
 
-          {profile.bio && <p className="text-gray-300 text-sm mb-4">{profile.bio}</p>}
+          {profile.bio && (
+            <p style={{ fontSize: 14, color: 'var(--text-secondary)', lineHeight: 1.6, margin: '0 0 14px' }}>{profile.bio}</p>
+          )}
 
-          <div className="grid grid-cols-4 gap-3 mb-4">
-            {[
-              { label: 'Posts', value: posts.length },
-              { label: 'Notes', value: notes.length },
-              { label: 'Karma', value: profile.karma_points || 0 },
-              { label: 'Streak', value: `${profile.streak_days || 0}🔥` },
-            ].map(stat => (
-              <div key={stat.label} className="bg-gray-800 rounded-xl p-3 text-center">
-                <p className="text-white font-bold text-lg">{stat.value}</p>
-                <p className="text-gray-500 text-xs mt-0.5">{stat.label}</p>
-              </div>
-            ))}
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, fontSize: 13, color: 'var(--text-muted)' }}>
+            {profile.campuses?.name && <span>🏫 {profile.campuses.name}</span>}
+            {profile.departments?.short_name && <span>· {profile.departments.short_name}</span>}
+            {profile.current_year && <span>· Year {profile.current_year}</span>}
+            {profile.batch_year && <span>· Batch {profile.batch_year}</span>}
           </div>
 
-          <div className="grid grid-cols-2 gap-2 text-xs">
-            {profile.colleges?.name && (
-              <div className="bg-gray-800 rounded-lg px-3 py-2">
-                <p className="text-gray-500">College</p>
-                <p className="text-white mt-0.5">{profile.colleges.name}</p>
-              </div>
-            )}
-            {profile.campuses?.name && (
-              <div className="bg-gray-800 rounded-lg px-3 py-2">
-                <p className="text-gray-500">Campus</p>
-                <p className="text-white mt-0.5">{profile.campuses.name}</p>
-              </div>
-            )}
-            {profile.departments?.short_name && (
-              <div className="bg-gray-800 rounded-lg px-3 py-2">
-                <p className="text-gray-500">Department</p>
-                <p className="text-white mt-0.5">{profile.departments.short_name}</p>
-              </div>
-            )}
-            {profile.current_year && (
-              <div className="bg-gray-800 rounded-lg px-3 py-2">
-                <p className="text-gray-500">Year</p>
-                <p className="text-white mt-0.5">Year {profile.current_year} · {profile.batch_year}</p>
-              </div>
-            )}
-          </div>
+          {(profile.karma_points > 0 || profile.streak_days > 0) && (
+            <div style={{ display: 'flex', gap: 12, marginTop: 14 }}>
+              {profile.karma_points > 0 && (
+                <div style={{ background: '#fefce8', border: '1px solid #fef08a', borderRadius: 10, padding: '8px 14px', textAlign: 'center' }}>
+                  <p style={{ fontSize: 15, fontWeight: 700, color: '#a16207', margin: 0 }}>⭐ {profile.karma_points}</p>
+                  <p style={{ fontSize: 11, color: 'var(--text-muted)', margin: '2px 0 0' }}>Karma</p>
+                </div>
+              )}
+              {profile.streak_days > 0 && (
+                <div style={{ background: '#fff7ed', border: '1px solid #fed7aa', borderRadius: 10, padding: '8px 14px', textAlign: 'center' }}>
+                  <p style={{ fontSize: 15, fontWeight: 700, color: '#c2410c', margin: 0 }}>🔥 {profile.streak_days}</p>
+                  <p style={{ fontSize: 11, color: 'var(--text-muted)', margin: '2px 0 0' }}>Day Streak</p>
+                </div>
+              )}
+            </div>
+          )}
 
           {(profile.github_url || profile.linkedin_url || profile.portfolio_url) && (
-            <div className="flex gap-2 mt-4">
-              {profile.github_url && (
-                <a href={profile.github_url} target="_blank" rel="noopener noreferrer"
-                  className="flex-1 text-center bg-gray-800 hover:bg-gray-700 text-gray-300 text-xs py-2 rounded-lg transition">
-                  🐙 GitHub
-                </a>
-              )}
-              {profile.linkedin_url && (
-                <a href={profile.linkedin_url} target="_blank" rel="noopener noreferrer"
-                  className="flex-1 text-center bg-gray-800 hover:bg-gray-700 text-gray-300 text-xs py-2 rounded-lg transition">
-                  💼 LinkedIn
-                </a>
-              )}
-              {profile.portfolio_url && (
-                <a href={profile.portfolio_url} target="_blank" rel="noopener noreferrer"
-                  className="flex-1 text-center bg-gray-800 hover:bg-gray-700 text-gray-300 text-xs py-2 rounded-lg transition">
-                  🌐 Portfolio
-                </a>
-              )}
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginTop: 14 }}>
+              {profile.github_url && <a href={profile.github_url} target="_blank" rel="noopener noreferrer" style={{ fontSize: 12, color: 'var(--accent)', textDecoration: 'none', background: '#eff6ff', padding: '4px 10px', borderRadius: 6 }}>GitHub →</a>}
+              {profile.linkedin_url && <a href={profile.linkedin_url} target="_blank" rel="noopener noreferrer" style={{ fontSize: 12, color: 'var(--accent)', textDecoration: 'none', background: '#eff6ff', padding: '4px 10px', borderRadius: 6 }}>LinkedIn →</a>}
+              {profile.portfolio_url && <a href={profile.portfolio_url} target="_blank" rel="noopener noreferrer" style={{ fontSize: 12, color: 'var(--accent)', textDecoration: 'none', background: '#eff6ff', padding: '4px 10px', borderRadius: 6 }}>Portfolio →</a>}
             </div>
           )}
         </div>
 
-        <div className="flex gap-2 mb-4 border-b border-gray-800">
+        {/* Tabs */}
+        <div style={{ display: 'flex', gap: 4, borderBottom: '1px solid var(--border)', marginBottom: 16 }}>
           {['posts', 'notes'].map(tab => (
             <button key={tab} onClick={() => setActiveTab(tab)}
-              className={`px-4 py-2 text-sm font-medium border-b-2 transition -mb-px capitalize ${
-                activeTab === tab ? 'border-blue-500 text-blue-400' : 'border-transparent text-gray-500 hover:text-white'
-              }`}>
+              style={{ padding: '10px 18px', fontSize: 14, fontWeight: 500, border: 'none', background: 'none', cursor: 'pointer', color: activeTab === tab ? 'var(--accent)' : 'var(--text-secondary)', borderBottom: activeTab === tab ? '2px solid var(--accent)' : '2px solid transparent', marginBottom: -1, fontFamily: 'inherit', textTransform: 'capitalize' }}>
               {tab} ({tab === 'posts' ? posts.length : notes.length})
             </button>
           ))}
         </div>
 
+        {/* Posts tab */}
         {activeTab === 'posts' && (
-          <div className="space-y-3">
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
             {posts.length === 0 ? (
-              <div className="text-center py-10">
-                <p className="text-gray-600 text-sm">No posts yet</p>
+              <div style={{ textAlign: 'center', padding: '40px 0' }}>
+                <p style={{ fontSize: 36, marginBottom: 8 }}>📝</p>
+                <p style={{ fontSize: 13, color: 'var(--text-muted)' }}>No posts yet</p>
               </div>
-            ) : posts.map(post => (
-              <div key={post.id} className="bg-gray-900 rounded-2xl border border-gray-800 p-4">
-                <div className="flex items-center justify-between mb-2">
-                  <span className="text-xs text-gray-500 capitalize">{post.post_type}</span>
-                  <span className="text-xs text-gray-600">{timeAgo(post.created_at)}</span>
+            ) : posts.map(post => {
+              const pc = postTypeConfig[post.post_type] || postTypeConfig.general
+              return (
+                <div key={post.id} style={{ background: 'white', border: '1px solid var(--border)', borderRadius: 12, padding: '14px 16px', boxShadow: 'var(--shadow-sm)' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
+                    <span style={{ background: pc.bg, color: pc.text, padding: '2px 8px', borderRadius: 20, fontSize: 11, fontWeight: 600 }}>{pc.label}</span>
+                    <span style={{ fontSize: 11, color: 'var(--text-muted)' }}>{timeAgo(post.created_at)}</span>
+                  </div>
+                  <p style={{ fontSize: 14, color: 'var(--text-secondary)', margin: 0, lineHeight: 1.6 }}>
+                    {post.body?.slice(0, 200)}{post.body?.length > 200 ? '…' : ''}
+                  </p>
                 </div>
-                <p className="text-gray-200 text-sm">{post.body}</p>
-              </div>
-            ))}
+              )
+            })}
           </div>
         )}
 
+        {/* Notes tab */}
         {activeTab === 'notes' && (
-          <div className="space-y-3">
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
             {notes.length === 0 ? (
-              <div className="text-center py-10">
-                <p className="text-gray-600 text-sm">No notes uploaded yet</p>
+              <div style={{ textAlign: 'center', padding: '40px 0' }}>
+                <p style={{ fontSize: 36, marginBottom: 8 }}>📚</p>
+                <p style={{ fontSize: 13, color: 'var(--text-muted)' }}>No notes uploaded yet</p>
               </div>
             ) : notes.map(note => (
-              <div key={note.id} className="bg-gray-900 rounded-2xl border border-gray-800 p-4 flex items-center justify-between">
+              <div key={note.id} style={{ background: 'white', border: '1px solid var(--border)', borderRadius: 12, padding: '14px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', boxShadow: 'var(--shadow-sm)' }}>
                 <div>
-                  <p className="text-white text-sm font-medium">{note.title}</p>
-                  <p className="text-gray-500 text-xs mt-0.5">{note.subject} · Sem {note.semester}</p>
+                  <p style={{ fontSize: 14, fontWeight: 600, color: 'var(--text-primary)', margin: '0 0 3px' }}>{note.title}</p>
+                  <p style={{ fontSize: 12, color: 'var(--text-muted)', margin: 0 }}>{note.subject} · Sem {note.semester}</p>
                 </div>
                 {note.drive_link && (
                   <a href={note.drive_link} target="_blank" rel="noopener noreferrer"
-                    className="text-blue-400 text-xs hover:text-blue-300">Open →</a>
+                    style={{ color: 'var(--accent)', fontSize: 13, fontWeight: 600, textDecoration: 'none', background: '#eff6ff', padding: '6px 12px', borderRadius: 8 }}>
+                    Open →
+                  </a>
                 )}
               </div>
             ))}
@@ -260,23 +256,22 @@ export default function UserProfilePage() {
         )}
       </div>
 
-      <div className="fixed bottom-0 left-0 right-0 bg-gray-950/90 backdrop-blur border-t border-gray-800">
-        <div className="max-w-2xl mx-auto px-4 py-2 flex items-center justify-around">
-          <button onClick={() => router.push('/feed')} className="flex flex-col items-center gap-1 text-gray-500 hover:text-white py-1 transition">
-            <span className="text-xl">🏠</span><span className="text-xs">Feed</span>
-          </button>
-          <button onClick={() => router.push('/opportunities')} className="flex flex-col items-center gap-1 text-gray-500 hover:text-white py-1 transition">
-            <span className="text-xl">💼</span><span className="text-xs">Opportunities</span>
-          </button>
-          <button onClick={() => router.push('/notes')} className="flex flex-col items-center gap-1 text-gray-500 hover:text-white py-1 transition">
-            <span className="text-xl">📚</span><span className="text-xs">Notes</span>
-          </button>
-          <button onClick={() => router.push('/talent')} className="flex flex-col items-center gap-1 text-gray-500 hover:text-white py-1 transition">
-            <span className="text-xl">🔍</span><span className="text-xs">Talent</span>
-          </button>
-          <button onClick={() => router.push('/more')} className="flex flex-col items-center gap-1 text-gray-500 hover:text-white py-1 transition">
-            <span className="text-xl">⋯</span><span className="text-xs">More</span>
-          </button>
+      {/* Bottom nav */}
+      <div style={{ position: 'fixed', bottom: 0, left: 0, right: 0, background: 'white', borderTop: '1px solid var(--border)', zIndex: 10 }}>
+        <div style={{ maxWidth: 640, margin: '0 auto', display: 'flex' }}>
+          {[
+            { icon: '🏠', label: 'Feed', href: '/feed' },
+            { icon: '💼', label: 'Jobs', href: '/opportunities' },
+            { icon: '📚', label: 'Notes', href: '/notes' },
+            { icon: '🔍', label: 'Talent', href: '/talent' },
+            { icon: '⋯', label: 'More', href: '/more' },
+          ].map(item => (
+            <button key={item.href} onClick={() => router.push(item.href)}
+              style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2, padding: '10px 0 8px', background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'inherit' }}>
+              <span style={{ fontSize: 20 }}>{item.icon}</span>
+              <span style={{ fontSize: 10, color: 'var(--text-muted)' }}>{item.label}</span>
+            </button>
+          ))}
         </div>
       </div>
     </div>

@@ -85,7 +85,7 @@ export default function OnboardingPage() {
           <h1 style={{ fontSize: 26, fontWeight: 800, color: 'var(--text-primary)', margin: '0 0 4px' }}>
             Campus<span style={{ color: 'var(--accent)' }}>Connect</span>
           </h1>
-          <p style={{ fontSize: 13, color: 'var(--text-muted)', margin: 0 }}>Let's set up your profile</p>
+          <p style={{ fontSize: 13, color: 'var(--text-muted)', margin: 0 }}>Let&apos;s set up your profile</p>
         </div>
 
         {/* Progress */}
