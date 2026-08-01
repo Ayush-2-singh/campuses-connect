@@ -1,0 +1,221 @@
+'use client'
+
+import { useState, useEffect } from 'react'
+import { createClient } from '@/lib/supabase/client'
+import { useRouter } from 'next/navigation'
+
+const STEPS = ['College', 'Campus', 'Department', 'Profile']
+
+export default function OnboardingPage() {
+  const [step, setStep] = useState(0)
+  const [colleges, setColleges] = useState<any[]>([])
+  const [campuses, setCampuses] = useState<any[]>([])
+  const [departments, setDepartments] = useState<any[]>([])
+  const [selected, setSelected] = useState({ college_id: '', campus_id: '', department_id: '', current_year: '', batch_year: '', username: '', bio: '', college_email: '' })
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState('')
+  const router = useRouter()
+  const supabase = createClient()
+
+  useEffect(() => {
+    supabase.from('colleges').select('*').eq('is_active', true).then(({ data }) => setColleges(data || []))
+  }, [])
+
+  useEffect(() => {
+    if (selected.college_id) supabase.from('campuses').select('*').eq('college_id', selected.college_id).then(({ data }) => setCampuses(data || []))
+  }, [selected.college_id])
+
+  useEffect(() => {
+    if (selected.campus_id) supabase.from('departments').select('*').eq('campus_id', selected.campus_id).then(({ data }) => setDepartments(data || []))
+  }, [selected.campus_id])
+
+  const next = () => setStep(s => s + 1)
+  const back = () => setStep(s => s - 1)
+
+  const handleFinish = async () => {
+    if (!selected.username.trim()) { setError('Username is required'); return }
+    setLoading(true)
+    setError('')
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) { router.push('/auth/login'); return }
+    const { error } = await supabase.from('profiles').update({
+      college_id: selected.college_id || null,
+      campus_id: selected.campus_id || null,
+      department_id: selected.department_id || null,
+      username: selected.username.trim(),
+      bio: selected.bio.trim() || null,
+      college_email: selected.college_email.trim() || null,
+      current_year: selected.current_year ? parseInt(selected.current_year) : null,
+      batch_year: selected.batch_year ? parseInt(selected.batch_year) : null,
+    }).eq('id', user.id)
+    if (error) { setError(error.message); setLoading(false) }
+    else router.push('/feed')
+  }
+
+  const cardStyle = (active: boolean) => ({
+    width: '100%', textAlign: 'left' as const, padding: '12px 16px', borderRadius: 10,
+    border: active ? '2px solid var(--accent)' : '1px solid var(--border)',
+    background: active ? '#eff6ff' : 'white', cursor: 'pointer', fontSize: 14,
+    color: active ? 'var(--accent)' : 'var(--text-primary)', fontWeight: active ? 600 : 400,
+    transition: 'all 0.15s'
+  })
+
+  const inputStyle = {
+    width: '100%', border: '1px solid var(--border)', borderRadius: 10,
+    padding: '11px 14px', fontSize: 14, outline: 'none', fontFamily: 'inherit',
+    color: 'var(--text-primary)', background: 'white', boxSizing: 'border-box' as const
+  }
+
+  const btnPrimary = (disabled?: boolean) => ({
+    flex: 1, background: disabled ? '#93c5fd' : 'var(--accent)', color: 'white',
+    border: 'none', borderRadius: 10, padding: '12px', fontSize: 14, fontWeight: 600,
+    cursor: disabled ? 'not-allowed' : 'pointer', fontFamily: 'inherit'
+  })
+
+  const btnSecondary = {
+    flex: 1, background: 'white', color: 'var(--text-secondary)',
+    border: '1px solid var(--border)', borderRadius: 10, padding: '12px',
+    fontSize: 14, cursor: 'pointer', fontFamily: 'inherit'
+  }
+
+  return (
+    <div style={{ minHeight: '100vh', background: 'var(--bg-secondary)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 }}>
+      <div style={{ width: '100%', maxWidth: 440 }}>
+        <div style={{ textAlign: 'center', marginBottom: 28 }}>
+          <h1 style={{ fontSize: 26, fontWeight: 800, color: 'var(--text-primary)', margin: '0 0 4px' }}>
+            Campus<span style={{ color: 'var(--accent)' }}>Connect</span>
+          </h1>
+          <p style={{ fontSize: 13, color: 'var(--text-muted)', margin: 0 }}>Let's set up your profile</p>
+        </div>
+
+        {/* Progress */}
+        <div style={{ display: 'flex', gap: 6, marginBottom: 24 }}>
+          {STEPS.map((s, i) => (
+            <div key={i} style={{ flex: 1, height: 4, borderRadius: 4, background: i <= step ? 'var(--accent)' : 'var(--border)', transition: 'background 0.3s' }} />
+          ))}
+        </div>
+
+        <div style={{ background: 'white', borderRadius: 16, border: '1px solid var(--border)', padding: 24, boxShadow: 'var(--shadow)' }}>
+          <h2 style={{ fontSize: 18, fontWeight: 700, color: 'var(--text-primary)', margin: '0 0 4px' }}>{STEPS[step]}</h2>
+
+          {error && (
+            <div style={{ background: '#fef2f2', border: '1px solid #fecaca', borderRadius: 8, padding: '10px 14px', margin: '12px 0', fontSize: 13, color: '#dc2626' }}>
+              {error}
+            </div>
+          )}
+
+          {step === 0 && (
+            <div style={{ marginTop: 16 }}>
+              <p style={{ fontSize: 13, color: 'var(--text-muted)', marginBottom: 12 }}>Select your college</p>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                {colleges.map(c => (
+                  <button key={c.id} onClick={() => setSelected(s => ({ ...s, college_id: c.id }))} style={cardStyle(selected.college_id === c.id)}>
+                    {c.name}
+                  </button>
+                ))}
+              </div>
+              <button disabled={!selected.college_id} onClick={next} style={{ ...btnPrimary(!selected.college_id), width: '100%', marginTop: 16 }}>
+                Continue
+              </button>
+            </div>
+          )}
+
+          {step === 1 && (
+            <div style={{ marginTop: 16 }}>
+              <p style={{ fontSize: 13, color: 'var(--text-muted)', marginBottom: 12 }}>Select your campus</p>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                {campuses.map(c => (
+                  <button key={c.id} onClick={() => c.is_active && setSelected(s => ({ ...s, campus_id: c.id }))}
+                    style={{ ...cardStyle(selected.campus_id === c.id), opacity: c.is_active ? 1 : 0.5, cursor: c.is_active ? 'pointer' : 'not-allowed' }}>
+                    {c.name} {!c.is_active && <span style={{ fontSize: 11, color: 'var(--text-muted)' }}>· Coming Soon</span>}
+                  </button>
+                ))}
+              </div>
+              <div style={{ display: 'flex', gap: 8, marginTop: 16 }}>
+                <button onClick={back} style={btnSecondary}>Back</button>
+                <button disabled={!selected.campus_id} onClick={next} style={btnPrimary(!selected.campus_id)}>Continue</button>
+              </div>
+            </div>
+          )}
+
+          {step === 2 && (
+            <div style={{ marginTop: 16 }}>
+              <p style={{ fontSize: 13, color: 'var(--text-muted)', marginBottom: 12 }}>Select your department</p>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 14 }}>
+                {departments.map(d => (
+                  <button key={d.id} onClick={() => setSelected(s => ({ ...s, department_id: d.id }))} style={cardStyle(selected.department_id === d.id)}>
+                    <span style={{ fontWeight: 600 }}>{d.short_name}</span>
+                    <span style={{ fontSize: 12, color: 'var(--text-muted)', marginLeft: 8 }}>{d.name}</span>
+                  </button>
+                ))}
+              </div>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 16 }}>
+                <div>
+                  <label style={{ fontSize: 12, color: 'var(--text-muted)', display: 'block', marginBottom: 6 }}>Current Year</label>
+                  <select value={selected.current_year} onChange={e => setSelected(s => ({ ...s, current_year: e.target.value }))}
+                    style={{ ...inputStyle, padding: '10px 12px' }}>
+                    <option value="">Select</option>
+                    {[1,2,3,4].map(y => <option key={y} value={y}>{y === 1 ? '1st' : y === 2 ? '2nd' : y === 3 ? '3rd' : '4th'} Year</option>)}
+                  </select>
+                </div>
+                <div>
+                  <label style={{ fontSize: 12, color: 'var(--text-muted)', display: 'block', marginBottom: 6 }}>Batch Year</label>
+                  <select value={selected.batch_year} onChange={e => setSelected(s => ({ ...s, batch_year: e.target.value }))}
+                    style={{ ...inputStyle, padding: '10px 12px' }}>
+                    <option value="">Select</option>
+                    {[2024,2025,2026,2027].map(y => <option key={y} value={y}>{y}</option>)}
+                  </select>
+                </div>
+              </div>
+              <div style={{ display: 'flex', gap: 8 }}>
+                <button onClick={back} style={btnSecondary}>Back</button>
+                <button disabled={!selected.department_id || !selected.current_year || !selected.batch_year} onClick={next}
+                  style={btnPrimary(!selected.department_id || !selected.current_year || !selected.batch_year)}>Continue</button>
+              </div>
+            </div>
+          )}
+
+          {step === 3 && (
+            <div style={{ marginTop: 16, display: 'flex', flexDirection: 'column', gap: 14 }}>
+              <div>
+                <label style={{ fontSize: 13, fontWeight: 500, color: 'var(--text-secondary)', display: 'block', marginBottom: 6 }}>
+                  Username <span style={{ color: 'var(--danger)' }}>*</span>
+                </label>
+                <div style={{ display: 'flex', alignItems: 'center', border: '1px solid var(--border)', borderRadius: 10, overflow: 'hidden', background: 'white' }}>
+                  <span style={{ padding: '11px 0 11px 14px', fontSize: 14, color: 'var(--text-muted)' }}>@</span>
+                  <input type="text" value={selected.username}
+                    onChange={e => setSelected(s => ({ ...s, username: e.target.value.toLowerCase().replace(/[^a-z0-9_]/g, '') }))}
+                    placeholder="yourname"
+                    style={{ flex: 1, border: 'none', padding: '11px 14px 11px 4px', fontSize: 14, outline: 'none', fontFamily: 'inherit', color: 'var(--text-primary)' }} />
+                </div>
+              </div>
+              <div>
+                <label style={{ fontSize: 13, fontWeight: 500, color: 'var(--text-secondary)', display: 'block', marginBottom: 6 }}>
+                  Bio <span style={{ fontSize: 12, color: 'var(--text-muted)' }}>(optional)</span>
+                </label>
+                <textarea value={selected.bio} onChange={e => setSelected(s => ({ ...s, bio: e.target.value }))}
+                  placeholder="Tell your campus about yourself..." rows={3}
+                  style={{ ...inputStyle, resize: 'none' }} />
+              </div>
+              <div>
+                <label style={{ fontSize: 13, fontWeight: 500, color: 'var(--text-secondary)', display: 'block', marginBottom: 6 }}>
+                  College Email <span style={{ fontSize: 12, color: 'var(--text-muted)' }}>(optional — for verified badge)</span>
+                </label>
+                <input type="email" value={selected.college_email}
+                  onChange={e => setSelected(s => ({ ...s, college_email: e.target.value }))}
+                  placeholder="you@pwioi.edu.in" style={inputStyle} />
+              </div>
+              <div style={{ display: 'flex', gap: 8 }}>
+                <button onClick={back} style={btnSecondary}>Back</button>
+                <button disabled={!selected.username || loading} onClick={handleFinish}
+                  style={btnPrimary(!selected.username || loading)}>
+                  {loading ? 'Setting up...' : 'Enter Campus →'}
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  )
+}
