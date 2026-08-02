@@ -1,6 +1,7 @@
 'use client'
 import React from 'react'
 
+import { createClient } from '@/lib/supabase/client'
 import { useRouter, usePathname } from 'next/navigation'
 
 const NAV_ITEMS = [
@@ -64,6 +65,19 @@ function NavIcon({ icon, active }: { icon: string; active: boolean }) {
 export default function Layout({ children, user, profile }: { children: React.ReactNode; user?: any; profile?: any }) {
   const router = useRouter()
   const pathname = usePathname()
+  const [unreadCount, setUnreadCount] = React.useState(0)
+
+  React.useEffect(() => {
+    if (!user) return
+    const fetchUnread = async () => {
+      const sb = createClient()
+      const { count } = await sb.from('notifications').select('*', { count: 'exact', head: true }).eq('user_id', user.id).eq('is_read', false)
+      setUnreadCount(count || 0)
+    }
+    fetchUnread()
+    const interval = setInterval(fetchUnread, 30000)
+    return () => clearInterval(interval)
+  }, [user])
 
   const avatarColor = (name: string) => {
     const colors = ['#2563eb', '#7c3aed', '#16a34a', '#d97706', '#dc2626', '#0891b2']
