@@ -7,55 +7,75 @@ import Layout from '@/components/Layout'
 // ─── Types ────────────────────────────────────────────────────────────────────
 type MeetingKind = 'faculty' | 'club'
 
+interface MeetingLinks {
+  meet?:  string
+  zoom?:  string
+  drive?: string
+  teams?: string
+  other?: string
+}
+
 interface MeetingMeta {
-  _type: MeetingKind
-  _tagged: string[]   // profile UUIDs
-  _text: string       // actual description visible to users
+  _type:   MeetingKind
+  _tagged: string[]
+  _text:   string
+  _links:  MeetingLinks
 }
 
-/** Encode meeting metadata into the description column (no migration needed) */
-function encodeMeta(kind: MeetingKind, tagged: string[], text: string): string {
-  return JSON.stringify({ _type: kind, _tagged: tagged, _text: text })
+const LINK_PLATFORMS: { key: keyof MeetingLinks; label: string; icon: string; placeholder: string }[] = [
+  { key: 'meet',  label: 'Google Meet',  icon: '🎥', placeholder: 'https://meet.google.com/...' },
+  { key: 'zoom',  label: 'Zoom',         icon: '🖥️', placeholder: 'https://zoom.us/j/...' },
+  { key: 'drive', label: 'Google Drive', icon: '📂', placeholder: 'https://drive.google.com/...' },
+  { key: 'teams', label: 'MS Teams',     icon: '💼', placeholder: 'https://teams.microsoft.com/...' },
+  { key: 'other', label: 'Other Link',   icon: '🔗', placeholder: 'https://...' },
+]
+
+/** Encode meeting metadata into the description column (no DB migration needed) */
+function encodeMeta(kind: MeetingKind, tagged: string[], text: string, links: MeetingLinks): string {
+  return JSON.stringify({ _type: kind, _tagged: tagged, _text: text, _links: links })
 }
 
-/** Decode metadata stored in description; old plain-text rows degrade gracefully */
+/** Decode — plain-text legacy rows degrade gracefully */
 function decodeMeta(raw: string | null): MeetingMeta {
-  if (!raw) return { _type: 'faculty', _tagged: [], _text: '' }
+  if (!raw) return { _type: 'faculty', _tagged: [], _text: '', _links: {} }
   try {
-    const parsed = JSON.parse(raw)
-    if (typeof parsed._type === 'string') {
+    const p = JSON.parse(raw)
+    if (typeof p._type === 'string') {
       return {
-        _type: parsed._type === 'club' ? 'club' : 'faculty',
-        _tagged: Array.isArray(parsed._tagged) ? parsed._tagged : [],
-        _text: typeof parsed._text === 'string' ? parsed._text : '',
+        _type:   p._type === 'club' ? 'club' : 'faculty',
+        _tagged: Array.isArray(p._tagged) ? p._tagged : [],
+        _text:   typeof p._text === 'string' ? p._text : '',
+        _links:  (p._links && typeof p._links === 'object') ? p._links : {},
       }
     }
   } catch {}
-  // Plain-text legacy description — treat as faculty meeting
-  return { _type: 'faculty', _tagged: [], _text: raw }
+  return { _type: 'faculty', _tagged: [], _text: raw, _links: {} }
 }
 
-// ─── Constants ────────────────────────────────────────────────────────────────
+// ─── Tabs ─────────────────────────────────────────────────────────────────────
 const TABS: { key: MeetingKind; label: string; icon: string; desc: string }[] = [
-  { key: 'faculty', label: 'Faculty Meetings', icon: '🎓', desc: 'Scheduled by faculty / admin' },
+  { key: 'faculty', label: 'Faculty Meetings',        icon: '🎓', desc: 'Scheduled by faculty / admin' },
   { key: 'club',    label: 'Club President Meetings', icon: '🏛️', desc: 'Scheduled by club leads' },
 ]
 
 // ─── Component ────────────────────────────────────────────────────────────────
 export default function MeetingsPage() {
-  const [user, setUser]                   = useState<any>(null)
-  const [profile, setProfile]             = useState<any>(null)
-  const [activeTab, setActiveTab]         = useState<MeetingKind>('faculty')
-  const [allMeetings, setAllMeetings]     = useState<any[]>([])
-  const [students, setStudents]           = useState<any[]>([])
-  const [showCompose, setShowCompose]     = useState(false)
-  const [posting, setPosting]             = useState(false)
-  const [postError, setPostError]         = useState<string | null>(null)
+  const [user, setUser]               = useState<any>(null)
+  const [profile, setProfile]         = useState<any>(null)
+  const [activeTab, setActiveTab]     = useState<MeetingKind>('faculty')
+  const [allMeetings, setAllMeetings] = useState<any[]>([])
+  const [students, setStudents]       = useState<any[]>([])
+  const [showCompose, setShowCompose] = useState(false)
+  const [posting, setPosting]         = useState(false)
+  const [postError, setPostError]     = useState<string | null>(null)
+
   const [form, setForm] = useState({
-    title: '', descText: '', meeting_date: '', meeting_time: '', venue: '', meeting_link: '',
+    title: '', descText: '', meeting_date: '', meeting_time: '', venue: '',
   })
-  const [taggedStudents, setTaggedStudents] = useState<string[]>([])
-  const [studentSearch, setStudentSearch]   = useState('')
+  const [links, setLinks] = useState<MeetingLinks>({})
+
+  const [taggedStudents, setTaggedStudents]   = useState<string[]>([])
+  const [studentSearch, setStudentSearch]     = useState('')
   const [showStudentDrop, setShowStudentDrop] = useState(false)
   const dropRef = useRef<HTMLDivElement>(null)
   const supabase = createClient()
@@ -82,7 +102,6 @@ export default function MeetingsPage() {
           setStudents(campusStudents || [])
         }
       }
-      // Fetch ALL meetings — no meeting_type column needed
       const { data } = await supabase
         .from('meetings')
         .select('*, profiles(full_name, username, role)')
@@ -96,46 +115,42 @@ export default function MeetingsPage() {
   // Close student dropdown on outside click
   useEffect(() => {
     const handler = (e: MouseEvent) => {
-      if (dropRef.current && !dropRef.current.contains(e.target as Node)) {
+      if (dropRef.current && !dropRef.current.contains(e.target as Node))
         setShowStudentDrop(false)
-      }
     }
     document.addEventListener('mousedown', handler)
     return () => document.removeEventListener('mousedown', handler)
   }, [])
 
-  // Filter meetings client-side by decoded _type
   const meetings = allMeetings.filter(m => decodeMeta(m.description)._type === activeTab)
 
   // ─── Tag helpers ──────────────────────────────────────────────────────────
   const toggleStudent = (id: string) =>
     setTaggedStudents(prev => prev.includes(id) ? prev.filter(s => s !== id) : [...prev, id])
-
-  const tagAll = () =>
-    setTaggedStudents(students.map(s => s.id))
-
-  const clearTags = () =>
-    setTaggedStudents([])
-
+  const tagAll   = () => setTaggedStudents(students.map(s => s.id))
+  const clearTags = () => setTaggedStudents([])
   const allTagged = students.length > 0 && taggedStudents.length === students.length
 
   const taggedNames = taggedStudents.map(id => {
     const s = students.find(st => st.id === id)
     return { id, name: s ? (s.full_name || s.username || 'Unknown') : 'Unknown' }
   })
-
   const filteredStudents = students.filter(s => {
     const q = studentSearch.toLowerCase()
     return s.full_name?.toLowerCase().includes(q) || s.username?.toLowerCase().includes(q)
   })
 
-  // ─── Post meeting ─────────────────────────────────────────────────────────
+  // ─── Post ─────────────────────────────────────────────────────────────────
   const handlePost = async () => {
     if (!form.title.trim() || !form.meeting_date) return
     setPosting(true)
     setPostError(null)
 
-    const encodedDescription = encodeMeta(activeTab, taggedStudents, form.descText)
+    const cleanLinks: MeetingLinks = {}
+    for (const p of LINK_PLATFORMS) {
+      const v = links[p.key]?.trim()
+      if (v) cleanLinks[p.key] = v
+    }
 
     const { data: inserted, error } = await supabase
       .from('meetings')
@@ -143,41 +158,40 @@ export default function MeetingsPage() {
         created_by:   user.id,
         campus_id:    profile?.campus_id,
         title:        form.title.trim(),
-        description:  encodedDescription,
+        description:  encodeMeta(activeTab, taggedStudents, form.descText, cleanLinks),
         meeting_date: form.meeting_date,
         meeting_time: form.meeting_time || null,
         location:     form.venue || null,
-        meeting_link: form.meeting_link || null,
+        meeting_link: cleanLinks.meet || cleanLinks.zoom || cleanLinks.other || null,
       })
       .select('*, profiles(full_name, username, role)')
       .single()
 
     setPosting(false)
+    if (error) { setPostError('Could not schedule meeting. Please try again.'); return }
 
-    if (error) {
-      setPostError('Could not schedule meeting. Please try again.')
-      return
-    }
-
-    setAllMeetings(prev => [...prev, inserted].sort(
-      (a, b) => new Date(a.meeting_date).getTime() - new Date(b.meeting_date).getTime()
-    ))
+    setAllMeetings(prev =>
+      [...prev, inserted].sort((a, b) =>
+        new Date(a.meeting_date).getTime() - new Date(b.meeting_date).getTime()
+      )
+    )
     resetForm()
   }
 
   const resetForm = () => {
-    setForm({ title: '', descText: '', meeting_date: '', meeting_time: '', venue: '', meeting_link: '' })
+    setForm({ title: '', descText: '', meeting_date: '', meeting_time: '', venue: '' })
+    setLinks({})
     setTaggedStudents([])
     setStudentSearch('')
     setShowCompose(false)
     setPostError(null)
   }
 
-  // ─── Styles ───────────────────────────────────────────────────────────────
-  const inputStyle = {
+  // ─── Shared styles ────────────────────────────────────────────────────────
+  const inputStyle: React.CSSProperties = {
     width: '100%', border: '1px solid var(--border)', borderRadius: 10,
     padding: '10px 14px', fontSize: 14, outline: 'none', fontFamily: 'inherit',
-    color: 'var(--text-primary)', background: 'white', boxSizing: 'border-box' as const,
+    color: 'var(--text-primary)', background: 'white', boxSizing: 'border-box',
   }
 
   // ─── Render ───────────────────────────────────────────────────────────────
@@ -191,11 +205,10 @@ export default function MeetingsPage() {
           <p style={{ fontSize: 13, color: 'var(--text-muted)', margin: 0 }}>Faculty and Club meeting schedules</p>
         </div>
 
-        {/* Tab switcher */}
+        {/* Tabs */}
         <div style={{ display: 'flex', gap: 0, marginBottom: 20, background: 'white', border: '1px solid var(--border)', borderRadius: 12, padding: 4, boxShadow: 'var(--shadow-sm)' }}>
           {TABS.map(tab => (
-            <button
-              key={tab.key}
+            <button key={tab.key}
               onClick={() => { setActiveTab(tab.key); setShowCompose(false); setPostError(null) }}
               style={{
                 flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center',
@@ -205,22 +218,21 @@ export default function MeetingsPage() {
                 color: activeTab === tab.key ? 'white' : 'var(--text-secondary)',
               }}
             >
-              <span>{tab.icon}</span>
-              <span>{tab.label}</span>
+              <span>{tab.icon}</span><span>{tab.label}</span>
             </button>
           ))}
         </div>
 
-        {/* Tab description + Schedule button */}
+        {/* Subtitle + schedule button */}
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
           <p style={{ fontSize: 13, color: 'var(--text-muted)', margin: 0 }}>
             {TABS.find(t => t.key === activeTab)?.desc}
           </p>
           {canPost && (
-            <button
-              onClick={() => { setShowCompose(v => !v); setPostError(null) }}
-              style={{ background: 'var(--accent)', color: 'white', border: 'none', padding: '9px 18px', borderRadius: 10, fontSize: 14, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}
-            >+ Schedule</button>
+            <button onClick={() => { setShowCompose(v => !v); setPostError(null) }}
+              style={{ background: 'var(--accent)', color: 'white', border: 'none', padding: '9px 18px', borderRadius: 10, fontSize: 14, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>
+              + Schedule
+            </button>
           )}
         </div>
 
@@ -232,7 +244,7 @@ export default function MeetingsPage() {
           </div>
         )}
 
-        {/* Compose form */}
+        {/* ── Compose form ── */}
         {showCompose && canPost && (
           <div style={{ background: 'white', border: '1px solid var(--border)', borderRadius: 14, padding: 20, marginBottom: 20, boxShadow: 'var(--shadow-sm)' }}>
             <h3 style={{ fontSize: 15, fontWeight: 700, color: 'var(--text-primary)', margin: '0 0 14px' }}>
@@ -241,45 +253,53 @@ export default function MeetingsPage() {
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
               {/* Title */}
-              <input
-                type="text" value={form.title}
+              <input type="text" value={form.title}
                 onChange={e => setForm(f => ({ ...f, title: e.target.value }))}
-                placeholder="Meeting title *" style={inputStyle}
-              />
+                placeholder="Meeting title *" style={inputStyle} />
 
               {/* Description */}
-              <textarea
-                value={form.descText}
+              <textarea value={form.descText}
                 onChange={e => setForm(f => ({ ...f, descText: e.target.value }))}
                 placeholder="Description / agenda" rows={3}
-                style={{ ...inputStyle, resize: 'none' }}
-              />
+                style={{ ...inputStyle, resize: 'none' }} />
 
               {/* Date & Time */}
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
                 <input type="date" value={form.meeting_date}
                   onChange={e => setForm(f => ({ ...f, meeting_date: e.target.value }))}
-                  style={{ ...inputStyle, padding: '10px 12px' }}
-                />
+                  style={{ ...inputStyle, padding: '10px 12px' }} />
                 <input type="time" value={form.meeting_time}
                   onChange={e => setForm(f => ({ ...f, meeting_time: e.target.value }))}
-                  style={{ ...inputStyle, padding: '10px 12px' }}
-                />
+                  style={{ ...inputStyle, padding: '10px 12px' }} />
               </div>
 
               {/* Venue */}
-              <input
-                type="text" value={form.venue}
+              <input type="text" value={form.venue}
                 onChange={e => setForm(f => ({ ...f, venue: e.target.value }))}
-                placeholder="Venue (room / building / hall)" style={inputStyle}
-              />
+                placeholder="Venue (room / building / hall)" style={inputStyle} />
 
-              {/* Online link */}
-              <input
-                type="url" value={form.meeting_link}
-                onChange={e => setForm(f => ({ ...f, meeting_link: e.target.value }))}
-                placeholder="Online meeting link (optional)" style={inputStyle}
-              />
+              {/* ── Platform Links ── */}
+              <div>
+                <p style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-secondary)', margin: '0 0 8px' }}>
+                  Meeting &amp; Resource Links <span style={{ fontWeight: 400, color: 'var(--text-muted)' }}>(optional)</span>
+                </p>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                  {LINK_PLATFORMS.map(p => (
+                    <div key={p.key} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                      <span style={{ fontSize: 18, width: 26, flexShrink: 0, textAlign: 'center' }}>{p.icon}</span>
+                      <div style={{ flex: 1, position: 'relative' }}>
+                        <input
+                          type="url"
+                          value={links[p.key] || ''}
+                          onChange={e => setLinks(l => ({ ...l, [p.key]: e.target.value }))}
+                          placeholder={`${p.label} — ${p.placeholder}`}
+                          style={{ ...inputStyle, paddingLeft: 12 }}
+                        />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
 
               {/* ── Tag Students ── */}
               <div>
@@ -292,20 +312,15 @@ export default function MeetingsPage() {
                       </span>
                     )}
                   </p>
-                  <div style={{ display: 'flex', gap: 6 }}>
-                    {/* @all button */}
-                    <button
-                      onClick={allTagged ? clearTags : tagAll}
-                      style={{
-                        fontSize: 11, fontWeight: 600, padding: '4px 10px', borderRadius: 20,
-                        border: 'none', cursor: 'pointer', fontFamily: 'inherit',
-                        background: allTagged ? '#dc2626' : '#eff6ff',
-                        color: allTagged ? 'white' : '#1d4ed8',
-                      }}
-                    >
-                      {allTagged ? '✕ Clear all' : '@all'}
-                    </button>
-                  </div>
+                  <button onClick={allTagged ? clearTags : tagAll}
+                    style={{
+                      fontSize: 11, fontWeight: 600, padding: '4px 10px', borderRadius: 20,
+                      border: 'none', cursor: 'pointer', fontFamily: 'inherit',
+                      background: allTagged ? '#dc2626' : '#eff6ff',
+                      color: allTagged ? 'white' : '#1d4ed8',
+                    }}>
+                    {allTagged ? '✕ Clear all' : '@all'}
+                  </button>
                 </div>
 
                 {/* Tagged chips */}
@@ -314,34 +329,26 @@ export default function MeetingsPage() {
                     {taggedNames.map(({ id, name }) => (
                       <span key={id} style={{ display: 'inline-flex', alignItems: 'center', gap: 5, background: '#eff6ff', color: '#1d4ed8', padding: '3px 10px', borderRadius: 20, fontSize: 12, fontWeight: 500 }}>
                         {name}
-                        <button
-                          onClick={() => toggleStudent(id)}
-                          style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#1d4ed8', padding: 0, fontSize: 14, lineHeight: 1 }}
-                        >×</button>
+                        <button onClick={() => toggleStudent(id)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#1d4ed8', padding: 0, fontSize: 14, lineHeight: 1 }}>×</button>
                       </span>
                     ))}
                   </div>
                 )}
 
-                {/* Search input + dropdown */}
+                {/* Search */}
                 <div style={{ position: 'relative' }} ref={dropRef}>
-                  <input
-                    type="text" value={studentSearch}
+                  <input type="text" value={studentSearch}
                     onChange={e => { setStudentSearch(e.target.value); setShowStudentDrop(true) }}
                     onFocus={() => setShowStudentDrop(true)}
-                    placeholder="Search by name or username…"
-                    style={inputStyle}
-                  />
+                    placeholder="Search by name or username…" style={inputStyle} />
                   {showStudentDrop && filteredStudents.length > 0 && (
                     <div style={{ position: 'absolute', top: '100%', left: 0, right: 0, zIndex: 20, background: 'white', border: '1px solid var(--border)', borderRadius: 10, maxHeight: 200, overflowY: 'auto', boxShadow: 'var(--shadow-sm)', marginTop: 4 }}>
                       {filteredStudents.map(s => {
                         const tagged = taggedStudents.includes(s.id)
                         return (
-                          <div
-                            key={s.id}
+                          <div key={s.id}
                             onClick={() => { toggleStudent(s.id); setStudentSearch('') }}
-                            style={{ padding: '10px 14px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: tagged ? '#eff6ff' : 'white', borderBottom: '1px solid var(--border)' }}
-                          >
+                            style={{ padding: '10px 14px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: tagged ? '#eff6ff' : 'white', borderBottom: '1px solid var(--border)' }}>
                             <div>
                               <p style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-primary)', margin: 0 }}>{s.full_name || s.username}</p>
                               <p style={{ fontSize: 11, color: 'var(--text-muted)', margin: 0 }}>@{s.username} · {s.role}</p>
@@ -356,17 +363,15 @@ export default function MeetingsPage() {
               </div>
             </div>
 
-            {/* Form actions */}
+            {/* Actions */}
             <div style={{ display: 'flex', gap: 8, marginTop: 14 }}>
-              <button
-                onClick={resetForm}
-                style={{ flex: 1, background: 'white', color: 'var(--text-secondary)', border: '1px solid var(--border)', borderRadius: 10, padding: '10px', fontSize: 14, cursor: 'pointer', fontFamily: 'inherit' }}
-              >Cancel</button>
-              <button
-                onClick={handlePost}
+              <button onClick={resetForm}
+                style={{ flex: 1, background: 'white', color: 'var(--text-secondary)', border: '1px solid var(--border)', borderRadius: 10, padding: '10px', fontSize: 14, cursor: 'pointer', fontFamily: 'inherit' }}>
+                Cancel
+              </button>
+              <button onClick={handlePost}
                 disabled={!form.title.trim() || !form.meeting_date || posting}
-                style={{ flex: 1, background: posting ? '#93c5fd' : 'var(--accent)', color: 'white', border: 'none', borderRadius: 10, padding: '10px', fontSize: 14, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}
-              >
+                style={{ flex: 1, background: posting ? '#93c5fd' : 'var(--accent)', color: 'white', border: 'none', borderRadius: 10, padding: '10px', fontSize: 14, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>
                 {posting ? 'Scheduling…' : 'Schedule'}
               </button>
             </div>
@@ -379,24 +384,24 @@ export default function MeetingsPage() {
             <div style={{ fontSize: 48, marginBottom: 12 }}>{activeTab === 'faculty' ? '🎓' : '🏛️'}</div>
             <p style={{ fontWeight: 600, color: 'var(--text-primary)', margin: '0 0 4px' }}>No meetings scheduled</p>
             <p style={{ fontSize: 13, color: 'var(--text-muted)', margin: 0 }}>
-              {canPost
-                ? 'Use the Schedule button above to add one'
-                : `${activeTab === 'faculty' ? 'Faculty' : 'Club leads'} will post meeting invites here`}
+              {canPost ? 'Use the Schedule button above to add one' : `${activeTab === 'faculty' ? 'Faculty' : 'Club leads'} will post meeting invites here`}
             </p>
           </div>
         ) : (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
             {meetings.map(meeting => {
               const meta = decodeMeta(meeting.description)
+              const isAllTagged = meta._tagged.length > 0 && meta._tagged.length === students.length
               const taggedInCard = meta._tagged.map(id => {
                 const s = students.find(st => st.id === id)
-                return s ? (s.full_name || s.username || id) : null
+                return s ? (s.full_name || s.username) : null
               }).filter(Boolean) as string[]
-              const isAllTagged = meta._tagged.length > 0 && meta._tagged.length === students.length
+
+              const activeLinks = LINK_PLATFORMS.filter(p => meta._links[p.key]?.trim())
 
               return (
-                <div key={meeting.id} style={{ background: 'white', border: '1px solid var(--border)', borderRadius: 14, padding: '18px', boxShadow: 'var(--shadow-sm)' }}>
-                  {/* Title + date */}
+                <div key={meeting.id} style={{ background: 'white', border: '1px solid var(--border)', borderRadius: 14, padding: 18, boxShadow: 'var(--shadow-sm)' }}>
+                  {/* Title row */}
                   <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 8 }}>
                     <div>
                       <p style={{ fontSize: 15, fontWeight: 700, color: 'var(--text-primary)', margin: '0 0 3px' }}>{meeting.title}</p>
@@ -417,14 +422,25 @@ export default function MeetingsPage() {
                     <p style={{ fontSize: 13, color: 'var(--text-secondary)', margin: '0 0 10px', lineHeight: 1.5 }}>{meta._text}</p>
                   )}
 
-                  {/* Venue + link */}
-                  <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', marginBottom: meta._tagged.length ? 10 : 0 }}>
-                    {meeting.location && <span style={{ fontSize: 12, color: 'var(--text-muted)' }}>📍 {meeting.location}</span>}
-                    {meeting.meeting_link && (
-                      <a href={meeting.meeting_link} target="_blank" rel="noopener noreferrer"
-                        style={{ fontSize: 12, color: 'var(--accent)', textDecoration: 'none', fontWeight: 600 }}>🔗 Join Online</a>
-                    )}
-                  </div>
+                  {/* Venue */}
+                  {meeting.location && (
+                    <p style={{ fontSize: 12, color: 'var(--text-muted)', margin: '0 0 10px' }}>📍 {meeting.location}</p>
+                  )}
+
+                  {/* Platform links */}
+                  {activeLinks.length > 0 && (
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 10 }}>
+                      {activeLinks.map(p => (
+                        <a key={p.key}
+                          href={meta._links[p.key]}
+                          target="_blank" rel="noopener noreferrer"
+                          style={{ display: 'inline-flex', alignItems: 'center', gap: 5, fontSize: 12, fontWeight: 600, color: 'var(--accent)', background: '#eff6ff', padding: '5px 12px', borderRadius: 20, textDecoration: 'none', border: '1px solid #bfdbfe' }}>
+                          <span>{p.icon}</span>
+                          <span>{p.label}</span>
+                        </a>
+                      ))}
+                    </div>
+                  )}
 
                   {/* Tagged students */}
                   {meta._tagged.length > 0 && (
