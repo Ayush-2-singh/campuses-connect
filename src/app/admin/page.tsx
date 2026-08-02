@@ -11,6 +11,10 @@ export default function AdminPage() {
   const [activeTab, setActiveTab] = useState('Overview')
   const [users, setUsers] = useState<any[]>([])
   const [posts, setPosts] = useState<any[]>([])
+  const [showAnnouncement, setShowAnnouncement] = useState(false)
+  const [announcementText, setAnnouncementText] = useState('')
+  const [announcementScope, setAnnouncementScope] = useState<'global' | 'campus'>('global')
+  const [postingAnnouncement, setPostingAnnouncement] = useState(false)
   const [colleges, setColleges] = useState<any[]>([])
   const [stats, setStats] = useState({ users: 0, posts: 0, colleges: 0 })
   const [loading, setLoading] = useState(true)
@@ -78,6 +82,25 @@ export default function AdminPage() {
   const deletePost = async (postId: string) => {
     if (!confirm('Delete this post?')) return
     await supabase.from('posts').delete().eq('id', postId)
+    loadPosts()
+  }
+
+  const postAnnouncement = async () => {
+    if (!announcementText.trim()) return
+    setPostingAnnouncement(true)
+    await supabase.from('posts').insert({
+      author_id: user.id,
+      body: announcementText,
+      post_type: 'announcement',
+      scope: announcementScope,
+      is_official: true,
+      is_pinned: true,
+      campus_id: announcementScope === 'campus' ? profile?.campus_id : null,
+      college_id: profile?.college_id,
+    })
+    setAnnouncementText('')
+    setShowAnnouncement(false)
+    setPostingAnnouncement(false)
     loadPosts()
   }
 
@@ -178,6 +201,36 @@ export default function AdminPage() {
                 </select>
               </div>
             ))}
+          </div>
+        )}
+
+        {/* Global Announcement */}
+        {activeTab === 'Posts' && (
+          <div style={{ marginBottom: 16 }}>
+            {!showAnnouncement ? (
+              <button onClick={() => setShowAnnouncement(true)}
+                style={{ background: '#1d4ed8', color: 'white', border: 'none', padding: '10px 20px', borderRadius: 10, fontSize: 14, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>
+                🌐 Post Global Announcement
+              </button>
+            ) : (
+              <div style={{ background: 'white', border: '2px solid #1d4ed8', borderRadius: 14, padding: 20, marginBottom: 16 }}>
+                <h3 style={{ fontSize: 15, fontWeight: 700, color: 'var(--text-primary)', margin: '0 0 12px' }}>🌐 Post Official Announcement</h3>
+                <div style={{ display: 'flex', gap: 8, marginBottom: 12 }}>
+                  <button onClick={() => setAnnouncementScope('global')} style={{ padding: '6px 16px', borderRadius: 20, border: 'none', background: announcementScope === 'global' ? '#1d4ed8' : '#e5e7eb', color: announcementScope === 'global' ? 'white' : '#374151', fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit', fontSize: 13 }}>🌐 All Campuses</button>
+                  <button onClick={() => setAnnouncementScope('campus')} style={{ padding: '6px 16px', borderRadius: 20, border: 'none', background: announcementScope === 'campus' ? '#15803d' : '#e5e7eb', color: announcementScope === 'campus' ? 'white' : '#374151', fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit', fontSize: 13 }}>🏫 My Campus Only</button>
+                </div>
+                <textarea value={announcementText} onChange={e => setAnnouncementText(e.target.value)}
+                  placeholder="Write your official announcement..." rows={4}
+                  style={{ width: '100%', border: '1px solid var(--border)', borderRadius: 10, padding: '10px 14px', fontSize: 14, outline: 'none', fontFamily: 'inherit', resize: 'none', boxSizing: 'border-box' }} />
+                <div style={{ display: 'flex', gap: 8, marginTop: 10 }}>
+                  <button onClick={() => setShowAnnouncement(false)} style={{ flex: 1, background: 'white', color: 'var(--text-secondary)', border: '1px solid var(--border)', borderRadius: 10, padding: '9px', fontSize: 14, cursor: 'pointer', fontFamily: 'inherit' }}>Cancel</button>
+                  <button onClick={postAnnouncement} disabled={!announcementText.trim() || postingAnnouncement}
+                    style={{ flex: 2, background: postingAnnouncement ? '#93c5fd' : '#1d4ed8', color: 'white', border: 'none', borderRadius: 10, padding: '9px', fontSize: 14, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>
+                    {postingAnnouncement ? 'Posting...' : `Post ${announcementScope === 'global' ? '🌐 Global' : '🏫 Campus'} Announcement`}
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
         )}
 

@@ -60,6 +60,8 @@ export default function FeedPage() {
       .from('posts')
       .select('*, profiles(full_name, username, avatar_url, role)')
       .order('is_pinned', { ascending: false })
+      .order('is_official', { ascending: false })
+      .order('is_official', { ascending: false })
       .order('created_at', { ascending: false })
       .limit(30)
     setPosts(data || [])
@@ -226,6 +228,11 @@ export default function FeedPage() {
               const tc = typeConfig[post.post_type] || typeConfig.general
               return (
                 <div key={post.id} style={{ background: 'white', borderRadius: 14, border: post.is_pinned ? '1px solid #bfdbfe' : '1px solid var(--border)', padding: '18px', boxShadow: 'var(--shadow-sm)' }}>
+                  {post.is_official && (
+                    <div style={{ fontSize: 11, background: post.scope === 'global' ? '#1d4ed8' : '#15803d', color: 'white', padding: '3px 10px', borderRadius: 20, fontWeight: 600, marginBottom: 8, display: 'inline-block' }}>
+                      {post.scope === 'global' ? '🌐 PW Official' : '🏫 Campus Official'}
+                    </div>
+                  )}
                   {post.is_pinned && <div style={{ fontSize: 11, color: 'var(--accent)', fontWeight: 600, marginBottom: 10 }}>📌 Pinned</div>}
                   <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 12 }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
