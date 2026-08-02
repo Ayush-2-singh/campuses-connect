@@ -89,7 +89,7 @@ export default function AdminPage() {
     if (!announcementText.trim()) return
     setPostingAnnouncement(true)
     await supabase.from('posts').insert({
-      author_id: user.id,
+      author_id: profile?.id,
       body: announcementText,
       post_type: 'announcement',
       scope: announcementScope,

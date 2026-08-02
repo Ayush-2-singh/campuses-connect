@@ -102,6 +102,18 @@ export default function Layout({ children, user, profile }: { children: React.Re
           <p style={{ fontSize: 11, color: 'var(--text-muted)', margin: 0 }}>PW IOI · Lucknow</p>
         </div>
 
+        {user && (
+          <div onClick={() => router.push('/notifications')}
+            style={{ margin: '8px 10px 0', padding: '10px 14px', borderRadius: 10, background: 'var(--bg-secondary)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <span style={{ fontSize: 18 }}>🔔</span>
+              <span style={{ fontSize: 13, fontWeight: 500, color: 'var(--text-secondary)' }}>Notifications</span>
+            </div>
+            {unreadCount > 0 && (
+              <span style={{ background: '#dc2626', color: 'white', fontSize: 11, fontWeight: 700, padding: '2px 7px', borderRadius: 20 }}>{unreadCount}</span>
+            )}
+          </div>
+        )}
         <nav style={{ padding: '14px 10px', flex: 1, overflowY: 'auto' }}>
           {NAV_ITEMS.map(item => {
             const active = pathname === item.href || pathname.startsWith(item.href + '/')
