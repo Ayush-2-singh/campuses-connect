@@ -5,25 +5,19 @@ import { createClient } from '@/lib/supabase/client'
 import Layout from '@/components/Layout'
 
 const RESOURCE_TYPES = ['all', 'notes', 'pyq', 'assignment', 'book', 'cheatsheet', 'video_link']
-const SEMESTERS = [1, 2, 3, 4, 5, 6, 7, 8]
-// Current academic year range — adjust as campus evolves
-const BATCH_YEARS = Array.from({ length: 6 }, (_, i) => new Date().getFullYear() - i)
 
 export default function NotesPage() {
   const [user, setUser] = useState<any>(null)
   const [profile, setProfile] = useState<any>(null)
   const [notes, setNotes] = useState<any[]>([])
   const [filter, setFilter] = useState('all')
-  const [semFilter, setSemFilter] = useState<number | null>(null)
-  const [batchFilter, setBatchFilter] = useState<number | null>(null)
+  const [subjectFilter, setSubjectFilter] = useState('')
   const [showCompose, setShowCompose] = useState(false)
   const [loading, setLoading] = useState(true)
   const [posting, setPosting] = useState(false)
   const [form, setForm] = useState({
     title: '',
     subject: '',
-    semester: '1',
-    batch_year: String(new Date().getFullYear()),
     resource_type: 'notes',
     description: '',
     drive_link: '',
@@ -31,7 +25,8 @@ export default function NotesPage() {
   })
   const supabase = createClient()
 
-  const isAdmin = ['campus_admin', 'platform_admin'].includes(profile?.role)
+  // Only platform_admin can upload
+  const canUpload = profile?.role === 'platform_admin'
 
   useEffect(() => {
     const load = async () => {
@@ -45,7 +40,7 @@ export default function NotesPage() {
         .from('notes')
         .select('*, profiles(full_name, username)')
         .order('created_at', { ascending: false })
-        .limit(50)
+        .limit(100)
       setNotes(data || [])
       setLoading(false)
     }
@@ -62,31 +57,18 @@ export default function NotesPage() {
       department_id: profile?.department_id,
       title: form.title,
       subject: form.subject,
-      semester: parseInt(form.semester),
-      batch_year: parseInt(form.batch_year),
       resource_type: form.resource_type,
       description: form.description,
       drive_link: form.drive_link || null,
       external_link: form.external_link || null,
     })
-    await supabase.rpc('add_karma', { user_id: user.id, points: 10 })
-    await supabase.rpc('update_streak', { user_id: user.id })
-    setForm({
-      title: '',
-      subject: '',
-      semester: '1',
-      batch_year: String(new Date().getFullYear()),
-      resource_type: 'notes',
-      description: '',
-      drive_link: '',
-      external_link: '',
-    })
+    setForm({ title: '', subject: '', resource_type: 'notes', description: '', drive_link: '', external_link: '' })
     setShowCompose(false)
     const { data } = await supabase
       .from('notes')
       .select('*, profiles(full_name, username)')
       .order('created_at', { ascending: false })
-      .limit(50)
+      .limit(100)
     setNotes(data || [])
     setPosting(false)
   }
@@ -96,10 +78,12 @@ export default function NotesPage() {
     cheatsheet: '⚡', video_link: '🎥', other: '📎',
   }
 
+  // Unique subjects for the subject filter dropdown
+  const allSubjects = Array.from(new Set(notes.map(n => n.subject).filter(Boolean))).sort()
+
   const filtered = notes
     .filter(n => filter === 'all' || n.resource_type === filter)
-    .filter(n => !semFilter || n.semester === semFilter)
-    .filter(n => !batchFilter || n.batch_year === batchFilter)
+    .filter(n => !subjectFilter || n.subject === subjectFilter)
 
   const inputStyle = {
     width: '100%',
@@ -129,16 +113,14 @@ export default function NotesPage() {
   return (
     <Layout user={user} profile={profile}>
       <div style={{ maxWidth: 720, margin: '0 auto', padding: '24px 20px' }}>
+
         {/* Header */}
         <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 20 }}>
           <div>
             <h2 style={{ fontSize: 22, fontWeight: 700, color: 'var(--text-primary)', margin: '0 0 4px' }}>Notes Library</h2>
-            <p style={{ fontSize: 13, color: 'var(--text-muted)', margin: 0 }}>
-              Semester-wise notes, PYQs and resources
-            </p>
+            <p style={{ fontSize: 13, color: 'var(--text-muted)', margin: 0 }}>Subject-wise notes, PYQs and resources</p>
           </div>
-          {/* Only campus/platform admins can upload */}
-          {isAdmin && (
+          {canUpload && (
             <button
               onClick={() => setShowCompose(true)}
               style={{ background: 'var(--accent)', color: 'white', border: 'none', padding: '9px 18px', borderRadius: 10, fontSize: 14, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}
@@ -146,8 +128,8 @@ export default function NotesPage() {
           )}
         </div>
 
-        {/* Upload Form — admin only */}
-        {showCompose && isAdmin && (
+        {/* Upload form — platform_admin only */}
+        {showCompose && canUpload && (
           <div style={{ background: 'white', border: '1px solid var(--border)', borderRadius: 14, padding: 20, marginBottom: 20, boxShadow: 'var(--shadow-sm)' }}>
             <h3 style={{ fontSize: 16, fontWeight: 700, color: 'var(--text-primary)', margin: '0 0 16px' }}>Upload Resource</h3>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
@@ -158,36 +140,13 @@ export default function NotesPage() {
                 placeholder="Title *"
                 style={inputStyle}
               />
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
-                <input
-                  type="text"
-                  value={form.subject}
-                  onChange={e => setForm(f => ({ ...f, subject: e.target.value }))}
-                  placeholder="Subject *"
-                  style={inputStyle}
-                />
-                {/* Semester */}
-                <select
-                  value={form.semester}
-                  onChange={e => setForm(f => ({ ...f, semester: e.target.value }))}
-                  style={{ ...inputStyle, padding: '10px 12px' }}
-                >
-                  {SEMESTERS.map(s => <option key={s} value={s}>Semester {s}</option>)}
-                </select>
-              </div>
-              {/* Batch Year — crucial for syllabus accuracy */}
-              <div>
-                <label style={{ fontSize: 12, color: 'var(--text-muted)', fontWeight: 600, display: 'block', marginBottom: 4 }}>
-                  Batch Year (Syllabus applicable for)
-                </label>
-                <select
-                  value={form.batch_year}
-                  onChange={e => setForm(f => ({ ...f, batch_year: e.target.value }))}
-                  style={{ ...inputStyle, padding: '10px 12px' }}
-                >
-                  {BATCH_YEARS.map(y => <option key={y} value={y}>{y} Batch</option>)}
-                </select>
-              </div>
+              <input
+                type="text"
+                value={form.subject}
+                onChange={e => setForm(f => ({ ...f, subject: e.target.value }))}
+                placeholder="Subject name *"
+                style={inputStyle}
+              />
               <select
                 value={form.resource_type}
                 onChange={e => setForm(f => ({ ...f, resource_type: e.target.value }))}
@@ -239,53 +198,37 @@ export default function NotesPage() {
           </div>
         )}
 
-        {/* ── Filter Row 1: Semester ── */}
-        <div style={{ marginBottom: 6 }}>
-          <p style={{ fontSize: 11, fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em', margin: '0 0 6px' }}>Semester</p>
-          <div style={{ display: 'flex', gap: 6, overflowX: 'auto', paddingBottom: 4 }} className="scrollbar-hide">
-            <button onClick={() => setSemFilter(null)} style={filterBtn(!semFilter)}>All</button>
-            {SEMESTERS.map(s => (
-              <button key={s} onClick={() => setSemFilter(s)} style={filterBtn(semFilter === s)}>Sem {s}</button>
-            ))}
-          </div>
+        {/* Subject filter */}
+        <div style={{ marginBottom: 10 }}>
+          <select
+            value={subjectFilter}
+            onChange={e => setSubjectFilter(e.target.value)}
+            style={{
+              width: '100%',
+              border: '1px solid var(--border)',
+              borderRadius: 10,
+              padding: '10px 14px',
+              fontSize: 14,
+              outline: 'none',
+              fontFamily: 'inherit',
+              color: subjectFilter ? 'var(--text-primary)' : 'var(--text-muted)',
+              background: 'white',
+              cursor: 'pointer',
+            }}
+          >
+            <option value="">All Subjects</option>
+            {allSubjects.map(s => <option key={s} value={s}>{s}</option>)}
+          </select>
         </div>
 
-        {/* ── Filter Row 2: Batch Year ── */}
-        <div style={{ marginBottom: 6 }}>
-          <p style={{ fontSize: 11, fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em', margin: '0 0 6px' }}>Batch / Syllabus Year</p>
-          <div style={{ display: 'flex', gap: 6, overflowX: 'auto', paddingBottom: 4 }} className="scrollbar-hide">
-            <button onClick={() => setBatchFilter(null)} style={filterBtn(!batchFilter)}>All Batches</button>
-            {BATCH_YEARS.map(y => (
-              <button key={y} onClick={() => setBatchFilter(y)} style={filterBtn(batchFilter === y)}>{y}</button>
-            ))}
-          </div>
+        {/* Resource type filter */}
+        <div style={{ display: 'flex', gap: 6, overflowX: 'auto', paddingBottom: 4, marginBottom: 20 }} className="scrollbar-hide">
+          {RESOURCE_TYPES.map(type => (
+            <button key={type} onClick={() => setFilter(type)} style={filterBtn(filter === type)}>
+              {type === 'all' ? 'All' : type === 'pyq' ? 'PYQ' : type === 'video_link' ? 'Video' : type.charAt(0).toUpperCase() + type.slice(1)}
+            </button>
+          ))}
         </div>
-
-        {/* ── Filter Row 3: Resource Type ── */}
-        <div style={{ marginBottom: 20 }}>
-          <p style={{ fontSize: 11, fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em', margin: '0 0 6px' }}>Type</p>
-          <div style={{ display: 'flex', gap: 6, overflowX: 'auto', paddingBottom: 4 }} className="scrollbar-hide">
-            {RESOURCE_TYPES.map(type => (
-              <button key={type} onClick={() => setFilter(type)} style={filterBtn(filter === type)}>
-                {type === 'all' ? 'All' : type === 'pyq' ? 'PYQ' : type === 'video_link' ? 'Video' : type.charAt(0).toUpperCase() + type.slice(1)}
-              </button>
-            ))}
-          </div>
-        </div>
-
-        {/* Active filter summary */}
-        {(semFilter || batchFilter || filter !== 'all') && (
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12, flexWrap: 'wrap' }}>
-            <span style={{ fontSize: 12, color: 'var(--text-muted)' }}>Showing:</span>
-            {semFilter && <span style={{ fontSize: 12, background: '#eff6ff', color: '#1d4ed8', padding: '2px 10px', borderRadius: 20 }}>Sem {semFilter}</span>}
-            {batchFilter && <span style={{ fontSize: 12, background: '#f0fdf4', color: '#15803d', padding: '2px 10px', borderRadius: 20 }}>{batchFilter} Batch</span>}
-            {filter !== 'all' && <span style={{ fontSize: 12, background: '#f5f3ff', color: '#6d28d9', padding: '2px 10px', borderRadius: 20 }}>{filter === 'pyq' ? 'PYQ' : filter === 'video_link' ? 'Video' : filter}</span>}
-            <button
-              onClick={() => { setSemFilter(null); setBatchFilter(null); setFilter('all') }}
-              style={{ fontSize: 12, color: 'var(--text-muted)', background: 'none', border: 'none', cursor: 'pointer', textDecoration: 'underline', padding: 0 }}
-            >Clear all</button>
-          </div>
-        )}
 
         {loading ? (
           <p style={{ color: 'var(--text-muted)', textAlign: 'center', padding: '40px 0' }}>Loading...</p>
@@ -294,7 +237,7 @@ export default function NotesPage() {
             <div style={{ fontSize: 48, marginBottom: 12 }}>📚</div>
             <p style={{ fontWeight: 600, color: 'var(--text-primary)', margin: '0 0 4px' }}>No resources found</p>
             <p style={{ fontSize: 13, color: 'var(--text-muted)', margin: 0 }}>
-              {semFilter || batchFilter ? 'Try adjusting the filters above' : isAdmin ? 'Upload the first resource!' : 'Check back later — admins will add resources here'}
+              {subjectFilter ? 'Try a different subject' : 'Check back later'}
             </p>
           </div>
         ) : (
@@ -309,10 +252,7 @@ export default function NotesPage() {
                   <p style={{ fontSize: 14, fontWeight: 600, color: 'var(--text-primary)', margin: '0 0 3px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                     {note.title}
                   </p>
-                  <p style={{ fontSize: 12, color: 'var(--text-muted)', margin: '0 0 2px' }}>
-                    {note.subject} · Sem {note.semester}
-                    {note.batch_year ? ` · ${note.batch_year} Batch` : ''}
-                  </p>
+                  <p style={{ fontSize: 12, color: 'var(--text-muted)', margin: '0 0 2px' }}>{note.subject}</p>
                   <p style={{ fontSize: 11, color: 'var(--text-muted)', margin: 0 }}>@{note.profiles?.username}</p>
                 </div>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 6, flexShrink: 0 }}>
