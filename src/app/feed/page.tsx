@@ -38,7 +38,7 @@ export default function FeedPage() {
   }, [])
 
   const fetchAnnouncements = async (prof: any) => {
-    // Global announcements
+    // Global announcements - visible to everyone
     const { data: globalAnn } = await supabase
       .from('posts')
       .select('*, profiles(full_name, username, role)')
