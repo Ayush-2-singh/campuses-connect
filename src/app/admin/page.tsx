@@ -13,7 +13,9 @@ export default function AdminPage() {
   const [posts, setPosts] = useState<any[]>([])
   const [showAnnouncement, setShowAnnouncement] = useState(false)
   const [announcementText, setAnnouncementText] = useState('')
-  const [announcementScope, setAnnouncementScope] = useState<'global' | 'campus'>('global')
+  const [announcementScope, setAnnouncementScope] = useState('global')
+  const [campuses, setCampuses] = useState<any[]>([])
+  const [selectedCampusId, setSelectedCampusId] = useState('')
   const [postingAnnouncement, setPostingAnnouncement] = useState(false)
   const [colleges, setColleges] = useState<any[]>([])
   const [stats, setStats] = useState({ users: 0, posts: 0, colleges: 0 })
@@ -92,10 +94,10 @@ export default function AdminPage() {
       author_id: profile?.id,
       body: announcementText,
       post_type: 'announcement',
-      scope: announcementScope,
+      scope: announcementScope === 'global' ? 'global' : 'campus',
       is_official: true,
       is_pinned: true,
-      campus_id: announcementScope === 'campus' ? profile?.campus_id : null,
+      campus_id: announcementScope !== 'global' ? announcementScope : null,
       college_id: profile?.college_id,
     })
     setAnnouncementText('')
@@ -215,9 +217,11 @@ export default function AdminPage() {
             ) : (
               <div style={{ background: 'white', border: '2px solid #1d4ed8', borderRadius: 14, padding: 20, marginBottom: 16 }}>
                 <h3 style={{ fontSize: 15, fontWeight: 700, color: 'var(--text-primary)', margin: '0 0 12px' }}>🌐 Post Official Announcement</h3>
-                <div style={{ display: 'flex', gap: 8, marginBottom: 12 }}>
+                <div style={{ display: 'flex', gap: 8, marginBottom: 12, flexWrap: 'wrap' }}>
                   <button onClick={() => setAnnouncementScope('global')} style={{ padding: '6px 16px', borderRadius: 20, border: 'none', background: announcementScope === 'global' ? '#1d4ed8' : '#e5e7eb', color: announcementScope === 'global' ? 'white' : '#374151', fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit', fontSize: 13 }}>🌐 All Campuses</button>
-                  <button onClick={() => setAnnouncementScope('campus')} style={{ padding: '6px 16px', borderRadius: 20, border: 'none', background: announcementScope === 'campus' ? '#15803d' : '#e5e7eb', color: announcementScope === 'campus' ? 'white' : '#374151', fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit', fontSize: 13 }}>🏫 My Campus Only</button>
+                  {campuses.map(c => (
+                    <button key={c.id} onClick={() => setAnnouncementScope(c.id)} style={{ padding: '6px 16px', borderRadius: 20, border: 'none', background: announcementScope === c.id ? '#15803d' : '#e5e7eb', color: announcementScope === c.id ? 'white' : '#374151', fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit', fontSize: 13 }}>🏫 {c.name}</button>
+                  ))}
                 </div>
                 <textarea value={announcementText} onChange={e => setAnnouncementText(e.target.value)}
                   placeholder="Write your official announcement..." rows={4}
@@ -226,7 +230,7 @@ export default function AdminPage() {
                   <button onClick={() => setShowAnnouncement(false)} style={{ flex: 1, background: 'white', color: 'var(--text-secondary)', border: '1px solid var(--border)', borderRadius: 10, padding: '9px', fontSize: 14, cursor: 'pointer', fontFamily: 'inherit' }}>Cancel</button>
                   <button onClick={postAnnouncement} disabled={!announcementText.trim() || postingAnnouncement}
                     style={{ flex: 2, background: postingAnnouncement ? '#93c5fd' : '#1d4ed8', color: 'white', border: 'none', borderRadius: 10, padding: '9px', fontSize: 14, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>
-                    {postingAnnouncement ? 'Posting...' : `Post ${announcementScope === 'global' ? '🌐 Global' : '🏫 Campus'} Announcement`}
+                    {postingAnnouncement ? 'Posting...' : announcementScope === 'global' ? '🌐 Post Global Announcement' : '🏫 Post Campus Announcement'}
                   </button>
                 </div>
               </div>
