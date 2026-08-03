@@ -25,7 +25,7 @@ export default function FeedPage() {
       const { data: { user } } = await supabase.auth.getUser()
       if (user) {
         setUser(user)
-        const { data: prof } = await supabase.from('profiles').select('*').eq('id', user.id).single()
+        const { data: prof } = await supabase.from('profiles').select('*, campuses(name), departments(name)').eq('id', user.id).single()
         setProfile(prof)
         await fetchAnnouncements(prof)
         await fetchPosts()
