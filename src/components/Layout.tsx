@@ -6,10 +6,10 @@ import { useRouter, usePathname } from 'next/navigation'
 
 const NAV_ITEMS = [
   { label: 'Feed', href: '/feed', icon: 'feed' },
+  { label: 'Classroom', href: '/classroom', icon: 'classroom' },
   { label: 'Opportunities', href: '/opportunities', icon: 'opp' },
   { label: 'Notes', href: '/notes', icon: 'notes' },
   { label: 'Talent', href: '/talent', icon: 'talent' },
-  { label: 'Meetings', href: '/meetings', icon: 'meetings' },
   { label: 'More', href: '/more', icon: 'more' },
 ]
 
