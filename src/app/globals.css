@@ -1,6 +1,8 @@
 @import "tailwindcss";
 
 :root {
+  color-scheme: light;
+  -webkit-color-scheme: light;
   --bg: #ffffff;
   --bg-secondary: #f8f9fa;
   --bg-tertiary: #f1f3f5;

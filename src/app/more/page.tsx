@@ -6,6 +6,9 @@ import { useRouter } from 'next/navigation'
 import Layout from '@/components/Layout'
 
 const SECTIONS = [
+  { icon: '🧠', label: 'AI Brain', desc: 'Your personal academic memory — ask your notes anything', href: '/brain' },
+  { icon: '❓', label: 'Ask a Senior', desc: 'Doubt-solving with your college seniors', href: '/ask' },
+  { icon: '📊', label: 'Campus Polls', desc: 'Vote on what matters — live results', href: '/polls' },
   { icon: '🌐', label: 'Global Communities', desc: 'DSA, Web Development & Startups', href: '/communities' },
   { icon: '🏫', label: 'College Space', desc: 'Clubs, study groups, insights and more', href: '/college' },
   { icon: '🔖', label: 'Saved', desc: 'Posts you bookmarked', href: '/saved' },

@@ -3,6 +3,7 @@
 import { useEffect, useState, useRef } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import Layout from '@/components/Layout'
+import { useAdminContext } from '@/lib/permissions'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 type MeetingKind = 'faculty' | 'club'
@@ -79,9 +80,11 @@ export default function MeetingsPage() {
   const [showStudentDrop, setShowStudentDrop] = useState(false)
   const dropRef = useRef<HTMLDivElement>(null)
   const supabase = createClient()
+  const admin = useAdminContext(user?.id)
 
-  const isFaculty  = ['faculty', 'campus_admin', 'platform_admin'].includes(profile?.role)
-  const isClubLead = ['club_lead', 'campus_admin', 'platform_admin'].includes(profile?.role)
+  // V3: faculty / club-lead roles were dropped — admin grants gate scheduling
+  const isFaculty  = admin.isPlatformAdmin || admin.isCampusAdmin
+  const isClubLead = admin.isPlatformAdmin || admin.isCampusAdmin
   const canPost    = activeTab === 'faculty' ? isFaculty : isClubLead
 
   // ─── Load ─────────────────────────────────────────────────────────────────
@@ -95,7 +98,7 @@ export default function MeetingsPage() {
         if (prof?.campus_id) {
           const { data: campusStudents } = await supabase
             .from('profiles')
-            .select('id, full_name, username, role')
+            .select('id, full_name, username')
             .eq('campus_id', prof.campus_id)
             .neq('id', user.id)
             .order('full_name', { ascending: true })
@@ -104,7 +107,7 @@ export default function MeetingsPage() {
       }
       const { data } = await supabase
         .from('meetings')
-        .select('*, profiles(full_name, username, role)')
+        .select('*, profiles(full_name, username)')
         .order('meeting_date', { ascending: true })
         .limit(60)
       setAllMeetings(data || [])
@@ -164,7 +167,7 @@ export default function MeetingsPage() {
         location:     form.venue || null,
         meeting_link: cleanLinks.meet || cleanLinks.zoom || cleanLinks.other || null,
       })
-      .select('*, profiles(full_name, username, role)')
+      .select('*, profiles(full_name, username)')
       .single()
 
     setPosting(false)
@@ -351,7 +354,7 @@ export default function MeetingsPage() {
                             style={{ padding: '10px 14px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: tagged ? '#eff6ff' : 'white', borderBottom: '1px solid var(--border)' }}>
                             <div>
                               <p style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-primary)', margin: 0 }}>{s.full_name || s.username}</p>
-                              <p style={{ fontSize: 11, color: 'var(--text-muted)', margin: 0 }}>@{s.username} · {s.role}</p>
+                              <p style={{ fontSize: 11, color: 'var(--text-muted)', margin: 0 }}>@{s.username}</p>
                             </div>
                             {tagged && <span style={{ fontSize: 14, color: '#1d4ed8' }}>✓</span>}
                           </div>
@@ -406,7 +409,7 @@ export default function MeetingsPage() {
                     <div>
                       <p style={{ fontSize: 15, fontWeight: 700, color: 'var(--text-primary)', margin: '0 0 3px' }}>{meeting.title}</p>
                       <p style={{ fontSize: 12, color: 'var(--text-muted)', margin: 0 }}>
-                        by {meeting.profiles?.full_name} · {meeting.profiles?.role}
+                        by {meeting.profiles?.full_name}
                       </p>
                     </div>
                     <div style={{ textAlign: 'right', flexShrink: 0, marginLeft: 12 }}>

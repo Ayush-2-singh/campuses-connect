@@ -6,7 +6,6 @@ import { useRouter, usePathname } from 'next/navigation'
 
 const NAV_ITEMS = [
   { label: 'Feed', href: '/feed', icon: 'feed' },
-  { label: 'Classroom', href: '/classroom', icon: 'classroom' },
   { label: 'Opportunities', href: '/opportunities', icon: 'opp' },
   { label: 'Notes', href: '/notes', icon: 'notes' },
   { label: 'Talent', href: '/talent', icon: 'talent' },
@@ -71,7 +70,7 @@ export default function Layout({ children, user, profile }: { children: React.Re
     if (!user) return
     const fetchUnread = async () => {
       const sb = createClient()
-      const { count } = await sb.from('notifications').select('*', { count: 'exact', head: true }).eq('user_id', user.id).eq('is_read', false)
+      const { count } = await sb.from('notifications').select('*', { count: 'exact', head: true }).eq('recipient_id', user.id).eq('is_read', false)
       setUnreadCount(count || 0)
     }
     fetchUnread()

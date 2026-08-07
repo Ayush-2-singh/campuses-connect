@@ -8,6 +8,8 @@ const TABS = ['Overview', 'Users', 'Posts', 'Colleges']
 
 export default function AdminPage() {
   const [profile, setProfile] = useState<any>(null)
+  const [grants, setGrants] = useState<any[]>([])
+  const [allGrants, setAllGrants] = useState<any[]>([])
   const [activeTab, setActiveTab] = useState('Overview')
   const [users, setUsers] = useState<any[]>([])
   const [posts, setPosts] = useState<any[]>([])
@@ -19,6 +21,7 @@ export default function AdminPage() {
   const [postingAnnouncement, setPostingAnnouncement] = useState(false)
   const [colleges, setColleges] = useState<any[]>([])
   const [stats, setStats] = useState({ users: 0, posts: 0, colleges: 0 })
+  const [adminError, setAdminError] = useState('')
   const [loading, setLoading] = useState(true)
   const router = useRouter()
   const supabase = createClient()
@@ -30,12 +33,20 @@ export default function AdminPage() {
 
       const { data: prof } = await supabase
         .from('profiles').select('*').eq('id', user.id).single()
+      setProfile(prof)
 
-      if (!prof || !['platform_admin', 'campus_admin'].includes(prof.role)) {
+      // V3: admin identity comes from admin_grants (my_admin_grants RPC),
+      // not the dropped profiles.role column.
+      const { data: grantData } = await supabase.rpc('my_admin_grants')
+      const grantsArr = (grantData as any[]) || []
+      const isAdmin = grantsArr.some(
+        (g: any) => g.admin_type === 'platform_admin' || g.admin_type === 'campus_admin'
+      )
+      if (!isAdmin) {
         router.push('/feed')
         return
       }
-      setProfile(prof)
+      setGrants(grantsArr)
 
       const [{ count: userCount }, { count: postCount }, { count: collegeCount }] = await Promise.all([
         supabase.from('profiles').select('*', { count: 'exact', head: true }),
@@ -55,6 +66,8 @@ export default function AdminPage() {
       .order('created_at', { ascending: false })
       .limit(50)
     setUsers(data || [])
+    const { data: allGrants } = await supabase.from('admin_grants').select('user_id, admin_type')
+    setAllGrants(allGrants || [])
   }
 
   const loadPosts = async () => {
@@ -71,8 +84,45 @@ export default function AdminPage() {
     setColleges(data || [])
   }
 
-  const updateRole = async (userId: string, role: string) => {
-    await supabase.from('profiles').update({ role }).eq('id', userId)
+  /** V3: grant/revoke admin access through the admin_grants table */
+  const setAdminAccess = async (userId: string, access: string) => {
+    setAdminError('')
+
+    // Self-lockout guards
+    if (userId === profile?.id && access !== 'platform_admin') {
+      setAdminError('You cannot remove your own platform admin access.')
+      return
+    }
+    const target = users.find(u => u.id === userId)
+    const isLastPlatformAdmin =
+      allGrants.filter(g => g.admin_type === 'platform_admin').length <= 1 &&
+      allGrants.some(g => g.user_id === userId && g.admin_type === 'platform_admin')
+    if (isLastPlatformAdmin && access !== 'platform_admin') {
+      setAdminError('Cannot revoke the last platform admin — you would lock everyone out.')
+      return
+    }
+    let failed = false
+
+    const { error: delErr } = await supabase
+      .from('admin_grants')
+      .delete()
+      .eq('user_id', userId)
+      .in('admin_type', ['platform_admin', 'campus_admin'])
+    if (delErr) failed = true
+
+    if (access !== 'none' && !failed) {
+      const { error: insErr } = await supabase.from('admin_grants').insert({
+        user_id: userId,
+        admin_type: access,
+        // scope campus_admin to the target user's own campus/college
+        campus_id: access === 'campus_admin' ? target?.campus_id || profile?.campus_id || null : null,
+        college_id: access === 'campus_admin' ? target?.college_id || profile?.college_id || null : null,
+        granted_by: profile?.id,
+      })
+      if (insErr) failed = true
+    }
+
+    if (failed) setAdminError('Could not update admin access. This requires the users.manage permission (seed 009).')
     loadUsers()
   }
 
@@ -118,7 +168,20 @@ export default function AdminPage() {
     </div>
   )
 
-  const ROLE_OPTIONS = ['student', 'faculty', 'ambassador', 'club_lead', 'campus_admin', 'platform_admin']
+  const isPlatformAdmin = grants.some((g: any) => g.admin_type === 'platform_admin')
+
+  const ADMIN_OPTIONS = [
+    { value: 'none', label: 'No admin access' },
+    { value: 'campus_admin', label: 'Campus Admin' },
+    { value: 'platform_admin', label: 'Platform Admin' },
+  ]
+
+  const userAccess = (userId: string) => {
+    const gs = allGrants.filter((g: any) => g.user_id === userId)
+    if (gs.some((g: any) => g.admin_type === 'platform_admin')) return 'platform_admin'
+    if (gs.some((g: any) => g.admin_type === 'campus_admin')) return 'campus_admin'
+    return 'none'
+  }
 
   return (
     <div style={{ minHeight: '100vh', background: 'var(--bg-secondary)' }}>
@@ -129,7 +192,9 @@ export default function AdminPage() {
             <h1 style={{ fontSize: 18, fontWeight: 800, color: 'var(--text-primary)', margin: '0 0 2px' }}>
               Campus<span style={{ color: 'var(--accent)' }}>Connect</span> Admin
             </h1>
-            <p style={{ fontSize: 12, color: 'var(--text-muted)', margin: 0 }}>{profile?.role}</p>
+            <p style={{ fontSize: 12, color: 'var(--text-muted)', margin: 0 }}>
+              {grants.some((g: any) => g.admin_type === 'platform_admin') ? 'Platform Admin' : 'Campus Admin'}
+            </p>
           </div>
           <button onClick={() => router.push('/feed')}
             style={{ background: 'none', border: '1px solid var(--border)', padding: '7px 14px', borderRadius: 8, fontSize: 13, color: 'var(--text-secondary)', cursor: 'pointer', fontFamily: 'inherit' }}>
@@ -174,7 +239,7 @@ export default function AdminPage() {
             </div>
             <div style={{ background: 'white', border: '1px solid var(--border)', borderRadius: 16, padding: '20px', boxShadow: 'var(--shadow-sm)' }}>
               <p style={{ fontSize: 14, color: 'var(--text-secondary)', lineHeight: 1.7, margin: 0 }}>
-                Welcome to the admin panel. Use the tabs above to manage <strong>Users</strong> (assign roles),
+                Welcome to the admin panel. Use the tabs above to manage <strong>Users</strong> (grant or revoke admin access),
                 <strong> Posts</strong> (pin or delete), and <strong>Colleges</strong> (view registered institutions).
               </p>
             </div>
@@ -184,6 +249,11 @@ export default function AdminPage() {
         {/* Users */}
         {activeTab === 'Users' && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+            {adminError && (
+              <div style={{ background: '#fef2f2', border: '1px solid #fecaca', borderRadius: 10, padding: '10px 14px', fontSize: 13, color: '#dc2626', marginBottom: 4 }}>
+                {adminError}
+              </div>
+            )}
             {users.length === 0 ? (
               <p style={{ color: 'var(--text-muted)', textAlign: 'center', padding: '40px 0' }}>Loading users…</p>
             ) : users.map(u => (
@@ -194,13 +264,17 @@ export default function AdminPage() {
                     @{u.username || '—'} · {u.colleges?.name || 'No college'}
                   </p>
                 </div>
-                <select
-                  value={u.role}
-                  onChange={e => updateRole(u.id, e.target.value)}
-                  style={{ border: '1px solid var(--border)', borderRadius: 8, padding: '6px 10px', fontSize: 12, color: 'var(--text-primary)', background: 'white', cursor: 'pointer', fontFamily: 'inherit' }}
-                >
-                  {ROLE_OPTIONS.map(r => <option key={r} value={r}>{r}</option>)}
-                </select>
+                {isPlatformAdmin ? (
+                  <select
+                    value={userAccess(u.id)}
+                    onChange={e => setAdminAccess(u.id, e.target.value)}
+                    style={{ border: '1px solid var(--border)', borderRadius: 8, padding: '6px 10px', fontSize: 12, color: 'var(--text-primary)', background: 'white', cursor: 'pointer', fontFamily: 'inherit' }}
+                  >
+                    {ADMIN_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
+                  </select>
+                ) : (
+                  <span style={{ fontSize: 12, color: 'var(--text-muted)' }}>Platform admins manage access</span>
+                )}
               </div>
             ))}
           </div>

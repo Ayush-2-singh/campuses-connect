@@ -72,14 +72,6 @@ export default function UserProfilePage() {
     return colors[(name?.charCodeAt(0) || 0) % colors.length]
   }
 
-  const roleConfig: Record<string, { bg: string; text: string; label: string }> = {
-    platform_admin: { bg: '#fef2f2', text: '#dc2626', label: 'Platform Admin' },
-    campus_admin: { bg: '#fff7ed', text: '#c2410c', label: 'Campus Admin' },
-    ambassador: { bg: '#eff6ff', text: '#1d4ed8', label: 'Ambassador' },
-    faculty: { bg: '#f0fdf4', text: '#15803d', label: 'Faculty' },
-    student: { bg: '#f8f9fa', text: '#495057', label: 'Student' },
-  }
-
   const timeAgo = (date: string) => {
     const diff = Date.now() - new Date(date).getTime()
     const days = Math.floor(diff / 86400000)
@@ -114,7 +106,6 @@ export default function UserProfilePage() {
   )
 
   const isOwnProfile = user?.id === profile.id
-  const rc = roleConfig[profile.role] || roleConfig.student
 
   return (
     <div style={{ minHeight: '100vh', background: 'var(--bg-secondary)', paddingBottom: 80 }}>
@@ -137,10 +128,7 @@ export default function UserProfilePage() {
               </div>
               <div>
                 <p style={{ fontSize: 18, fontWeight: 700, color: 'var(--text-primary)', margin: '0 0 2px' }}>{profile.full_name}</p>
-                <p style={{ fontSize: 13, color: 'var(--text-muted)', margin: '0 0 6px' }}>@{profile.username}</p>
-                <span style={{ background: rc.bg, color: rc.text, padding: '2px 8px', borderRadius: 20, fontSize: 11, fontWeight: 600 }}>
-                  {rc.label}
-                </span>
+                <p style={{ fontSize: 13, color: 'var(--text-muted)', margin: 0 }}>@{profile.username}</p>
               </div>
             </div>
 

@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import Layout from '@/components/Layout'
+import { useAdminContext } from '@/lib/permissions'
 
 const OPP_TYPES = ['all', 'hackathon', 'internship', 'freelance', 'startup_role', 'collab', 'scholarship', 'competition']
 
@@ -16,9 +17,6 @@ const typeConfig: Record<string, { bg: string; text: string; label: string }> = 
   competition: { bg: '#fef2f2', text: '#dc2626', label: 'Competition' },
   other:       { bg: '#f8f9fa', text: '#495057', label: 'Other' },
 }
-
-/** Roles allowed to create / edit / delete opportunities */
-const ADMIN_ROLES = ['platform_admin', 'campus_admin']
 
 const emptyForm = {
   title: '', description: '', opp_type: 'hackathon', company_org: '',
@@ -38,9 +36,10 @@ export default function OpportunitiesPage() {
   const [form, setForm]               = useState({ ...emptyForm })
   const [error, setError]             = useState<string | null>(null)
   const supabase = createClient()
+  const admin = useAdminContext(user?.id)
 
-  /** True if the signed-in user is an admin */
-  const isAdmin = ADMIN_ROLES.includes(profile?.role)
+  /** True if the signed-in user is an admin (V3: admin grants, not the dropped role column) */
+  const isAdmin = admin.isPlatformAdmin || admin.isCampusAdmin
 
   // ─── Load user + opportunities ───────────────────────────────────────────────
   const fetchOpps = async () => {

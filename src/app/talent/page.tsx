@@ -42,12 +42,6 @@ export default function TalentPage() {
     return colors[(name?.charCodeAt(0) || 0) % colors.length]
   }
 
-  const roleConfig: any = {
-    ambassador: { bg: '#eff6ff', text: '#1d4ed8', label: 'Ambassador' },
-    faculty: { bg: '#f0fdf4', text: '#15803d', label: 'Faculty' },
-    platform_admin: { bg: '#fef2f2', text: '#dc2626', label: 'Admin' },
-  }
-
   return (
     <Layout user={user} profile={profile}>
       <div style={{ maxWidth: 720, margin: '0 auto', padding: '24px 20px' }}>
@@ -72,7 +66,6 @@ export default function TalentPage() {
         ) : (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
             {students.map(s => {
-              const rc = roleConfig[s.role]
               return (
                 <div key={s.id} onClick={() => router.push(`/profile/${s.username}`)}
                   style={{ background: 'white', border: '1px solid var(--border)', borderRadius: 12, padding: '14px 16px', display: 'flex', alignItems: 'center', gap: 12, cursor: 'pointer', boxShadow: 'var(--shadow-sm)' }}>
@@ -83,7 +76,6 @@ export default function TalentPage() {
                     <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 3 }}>
                       <p style={{ fontSize: 14, fontWeight: 600, color: 'var(--text-primary)', margin: 0 }}>{s.full_name || 'No name'}</p>
                       {s.is_verified && <span style={{ fontSize: 11, color: 'var(--accent)' }}>✓</span>}
-                      {rc && <span style={{ fontSize: 10, padding: '2px 6px', borderRadius: 10, background: rc.bg, color: rc.text, fontWeight: 600 }}>{rc.label}</span>}
                     </div>
                     <p style={{ fontSize: 12, color: 'var(--text-muted)', margin: 0 }}>
                       @{s.username || 'no username'}
