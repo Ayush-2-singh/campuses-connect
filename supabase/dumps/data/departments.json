@@ -1,0 +1,8 @@
+[{"id":"13858651-1a2f-44aa-bb4d-f947cd72aaf2","campus_id":"adf63df6-0f3f-4bbd-9cbd-bd7310808945","name":"Computer Science & Engineering","short_name":"CSE","created_at":"2026-07-31T18:59:33.504278+00:00"}, 
+ {"id":"a9029da0-a088-4389-a31c-ef2dc208f625","campus_id":"adf63df6-0f3f-4bbd-9cbd-bd7310808945","name":"Electronics & Communication","short_name":"ECE","created_at":"2026-07-31T18:59:33.504278+00:00"}, 
+ {"id":"3ee177d0-09ad-44ff-adf4-a421401bbd07","campus_id":"adf63df6-0f3f-4bbd-9cbd-bd7310808945","name":"Mechanical Engineering","short_name":"ME","created_at":"2026-07-31T18:59:33.504278+00:00"}, 
+ {"id":"2599c8d6-f26a-4ed3-8510-5d49e99d2cb3","campus_id":"adf63df6-0f3f-4bbd-9cbd-bd7310808945","name":"Civil Engineering","short_name":"CE","created_at":"2026-07-31T18:59:33.504278+00:00"}, 
+ {"id":"d978e962-d71b-446f-8262-0100dfc540b7","campus_id":"adf63df6-0f3f-4bbd-9cbd-bd7310808945","name":"Artificial Intelligence & ML","short_name":"AIML","created_at":"2026-08-07T09:32:27.205983+00:00"}, 
+ {"id":"eda92271-2d11-43de-8b3a-e7b5d069a1b1","campus_id":"adf63df6-0f3f-4bbd-9cbd-bd7310808945","name":"Information Technology","short_name":"IT","created_at":"2026-08-07T09:32:27.205983+00:00"}, 
+ {"id":"4f06675d-aee4-4a6e-a382-a53227eedccd","campus_id":"adf63df6-0f3f-4bbd-9cbd-bd7310808945","name":"Data Science","short_name":"DS","created_at":"2026-08-07T09:32:27.205983+00:00"}, 
+ {"id":"2bbcb8ee-1c0c-4bc2-816f-975872dffd6b","campus_id":"adf63df6-0f3f-4bbd-9cbd-bd7310808945","name":"Cyber Security","short_name":"CYSEC","created_at":"2026-08-07T09:32:27.205983+00:00"}]
