@@ -1,9 +1,0 @@
-[{"id":"e2ba7cb9-44d0-4308-a473-f75716cba6bb","key":"discussion","label":"Discussion","description":"Conversations, doubts, open threads","icon":"💬","sort_order":1,"is_active":true}, 
- {"id":"f2cc9fec-9c3f-4d6b-99fa-b036d0b9bf15","key":"resource","label":"Resource","description":"Curated links, blogs, tools","icon":"🔗","sort_order":2,"is_active":true}, 
- {"id":"a46de2ee-fb7d-4403-83fc-5e6be461b072","key":"notes","label":"Notes","description":"Semester notes, PYQs, study material","icon":"📚","sort_order":3,"is_active":true}, 
- {"id":"adf83c76-928c-4b60-a677-d0027b90ca76","key":"hackathon","label":"Hackathon","description":"Hackathons near you and online","icon":"⚡","sort_order":4,"is_active":true}, 
- {"id":"307cfeaa-021e-4f0b-8cd0-8e964ca92421","key":"internship","label":"Internship","description":"Internship openings and referrals","icon":"💼","sort_order":5,"is_active":true}, 
- {"id":"cc38d607-9f6e-4aef-8866-08c4c669139e","key":"event","label":"Event","description":"Campus events, talks, workshops","icon":"📅","sort_order":6,"is_active":true}, 
- {"id":"903a6610-9b3f-4e6e-a74a-84de04c9f542","key":"announcement","label":"Announcement","description":"Official campus announcements","icon":"📢","sort_order":7,"is_active":true}, 
- {"id":"15b2dfc0-c580-48cd-91a5-652d22455edd","key":"project","label":"Project","description":"Find teammates, show your builds","icon":"🚀","sort_order":8,"is_active":true}, 
- {"id":"096b9b06-2487-424c-b66a-129607e23418","key":"opportunity","label":"Opportunity","description":"Scholarships, collabs, startup roles & more","icon":"🎯","sort_order":9,"is_active":true}]

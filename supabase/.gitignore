@@ -6,3 +6,6 @@
 .env.keys
 .env.local
 .env.*.local
+
+# live data dumps contain real user PII — never commit
+/dumps/data/
