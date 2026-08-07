@@ -23,7 +23,7 @@ export default function WeeklyPage() {
         supabase.from('notes').select('id', { count: 'exact' }).gte('created_at', weekAgo),
         supabase.from('opportunities').select('id', { count: 'exact' }).gte('created_at', weekAgo),
         supabase.from('profiles').select('id', { count: 'exact' }).gte('created_at', weekAgo),
-        supabase.from('posts').select('*, profiles(full_name, username)').gte('created_at', weekAgo).order('created_at', { ascending: false }).limit(5)
+        supabase.from('posts').select('*, profiles!posts_author_id_fkey(full_name, username)').gte('created_at', weekAgo).order('created_at', { ascending: false }).limit(5)
       ])
       setStats({ posts: postsRes.count || 0, notes: notesRes.count || 0, opportunities: oppsRes.count || 0, newUsers: usersRes.count || 0 })
       setTopPosts(topRes.data || [])

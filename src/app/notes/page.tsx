@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
 import Layout from '@/components/Layout'
+import { useAdminContext } from '@/lib/permissions'
 
 const RESOURCE_TYPES = ['all', 'notes', 'pyq', 'assignment', 'book', 'cheatsheet', 'video_link']
 const SEMESTERS = [1,2,3,4,5,6,7,8]
@@ -20,6 +21,7 @@ export default function NotesPage() {
   const [form, setForm] = useState({ title: '', subject: '', semester: '1', resource_type: 'notes', description: '', drive_link: '', external_link: '' })
   const router = useRouter()
   const supabase = createClient()
+  const admin = useAdminContext(user?.id)
 
   useEffect(() => {
     const load = async () => {
@@ -45,8 +47,8 @@ export default function NotesPage() {
       semester: parseInt(form.semester), resource_type: form.resource_type,
       description: form.description, drive_link: form.drive_link || null, external_link: form.external_link || null,
     })
-    await supabase.rpc('add_karma', { user_id: user.id, points: 10 })
-    await supabase.rpc('update_streak', { user_id: user.id })
+    await supabase.rpc('add_karma', { p_points: 10 })
+    await supabase.rpc('update_streak')
     setForm({ title: '', subject: '', semester: '1', resource_type: 'notes', description: '', drive_link: '', external_link: '' })
     setShowCompose(false)
     const { data } = await supabase.from('notes').select('*, profiles(full_name, username)').order('created_at', { ascending: false }).limit(50)
@@ -67,7 +69,7 @@ export default function NotesPage() {
             <h2 style={{ fontSize: 22, fontWeight: 700, color: 'var(--text-primary)', margin: '0 0 4px' }}>Notes Library</h2>
             <p style={{ fontSize: 13, color: 'var(--text-muted)', margin: 0 }}>Semester-wise notes, PYQs and resources</p>
           </div>
-          {user && profile?.campus_id && (
+          {user && admin.isAdmin && profile?.campus_id && (
             <button onClick={() => setShowCompose(true)} style={{ background: 'var(--accent)', color: 'white', border: 'none', padding: '9px 18px', borderRadius: 10, fontSize: 14, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>+ Upload</button>
           )}
         </div>

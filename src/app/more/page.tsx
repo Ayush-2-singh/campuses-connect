@@ -6,13 +6,18 @@ import { useRouter } from 'next/navigation'
 import Layout from '@/components/Layout'
 
 const SECTIONS = [
-  { icon: '🤝', label: 'Find Teammates', desc: 'Build teams for hackathons and projects', href: '/teams' },
+  { icon: '🌐', label: 'Global Communities', desc: 'DSA, Web Development & Startups', href: '/communities' },
+  { icon: '🏫', label: 'College Space', desc: 'Clubs, study groups, insights and more', href: '/college' },
+  { icon: '🔖', label: 'Saved', desc: 'Posts you bookmarked', href: '/saved' },
   { icon: '🔍', label: 'Lost & Found', desc: 'Report lost items or return found ones', href: '/lost-found' },
-  { icon: '🚂', label: 'Travel Buddies', desc: 'Find campus mates on the same route', href: '/travel' },
-  { icon: '📅', label: 'Faculty Meetings', desc: 'Schedule and track meeting invites', href: '/meetings' },
   { icon: '🏆', label: 'Leaderboard', desc: 'Top contributors on your campus', href: '/leaderboard' },
   { icon: '📊', label: 'Weekly Wrap', desc: 'This week on your campus', href: '/weekly' },
-  { icon: '��', label: 'Notifications', desc: 'Your latest activity', href: '/notifications' },
+  { icon: '💼', label: 'Opportunities', desc: 'Legacy opportunity board', href: '/opportunities' },
+  { icon: '📚', label: 'Notes Library', desc: 'Legacy notes uploads', href: '/notes' },
+  { icon: '🔍', label: 'Talent Search', desc: 'Discover students by name', href: '/talent' },
+  { icon: '🤝', label: 'Find Teammates', desc: 'Legacy team requests', href: '/teams' },
+  { icon: '🚂', label: 'Travel Buddies', desc: 'Find campus mates on the same route', href: '/travel' },
+  { icon: '🔔', label: 'Notifications', desc: 'Your latest activity', href: '/notifications' },
 ]
 
 export default function MorePage() {

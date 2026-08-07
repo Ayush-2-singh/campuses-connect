@@ -20,7 +20,7 @@ export default function NotificationsPage() {
       setUser(user)
       const { data: prof } = await supabase.from('profiles').select('*').eq('id', user.id).single()
       setProfile(prof)
-      const { data } = await supabase.from('notifications').select('*').eq('user_id', user.id).order('created_at', { ascending: false }).limit(30)
+      const { data } = await supabase.from('notifications').select('*').eq('recipient_id', user.id).order('created_at', { ascending: false }).limit(30)
       setNotifications(data || [])
       setLoading(false)
     }
@@ -51,14 +51,14 @@ export default function NotificationsPage() {
             <div style={{ textAlign: 'center', padding: '60px 0' }}>
               <div style={{ fontSize: 48, marginBottom: 12 }}>🔔</div>
               <p style={{ fontWeight: 600, color: 'var(--text-primary)', margin: '0 0 4px' }}>No notifications yet</p>
-              <p style={{ fontSize: 13, color: 'var(--text-muted)', margin: 0 }}>We'll notify you when something happens</p>
+              <p style={{ fontSize: 13, color: 'var(--text-muted)', margin: 0 }}>We&apos;ll notify you when something happens</p>
             </div>
           ) : (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
               {notifications.map(n => (
                 <div key={n.id} style={{ background: n.is_read ? 'white' : '#eff6ff', border: '1px solid var(--border)', borderRadius: 12, padding: '14px 16px', boxShadow: 'var(--shadow-sm)' }}>
                   <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 10 }}>
-                    <p style={{ fontSize: 14, color: 'var(--text-primary)', margin: '0 0 4px', lineHeight: 1.5 }}>{n.content || n.message || 'New notification'}</p>
+                    <p style={{ fontSize: 14, color: 'var(--text-primary)', margin: '0 0 4px', lineHeight: 1.5 }}>{n.body || n.title || 'New notification'}</p>
                     {!n.is_read && <span style={{ width: 8, height: 8, borderRadius: '50%', background: 'var(--accent)', flexShrink: 0, marginTop: 4 }} />}
                   </div>
                   <p style={{ fontSize: 11, color: 'var(--text-muted)', margin: 0 }}>{timeAgo(n.created_at)}</p>

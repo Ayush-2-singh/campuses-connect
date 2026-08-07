@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
 import Layout from '@/components/Layout'
+import { useAdminContext } from '@/lib/permissions'
 
 const OPP_TYPES = ['all', 'hackathon', 'internship', 'freelance', 'startup_role', 'collab', 'scholarship', 'competition']
 const typeConfig: any = {
@@ -28,6 +29,7 @@ export default function OpportunitiesPage() {
   const [form, setForm] = useState({ title: '', description: '', opp_type: 'hackathon', company_org: '', apply_link: '', deadline: '', is_paid: false, stipend_range: '', location_type: 'remote' })
   const router = useRouter()
   const supabase = createClient()
+  const admin = useAdminContext(user?.id)
 
   useEffect(() => {
     const load = async () => {
@@ -37,7 +39,7 @@ export default function OpportunitiesPage() {
         const { data: prof } = await supabase.from('profiles').select('*').eq('id', user.id).single()
         setProfile(prof)
       }
-      const { data } = await supabase.from('opportunities').select('*, profiles(full_name, username, role)').eq('is_active', true).order('created_at', { ascending: false }).limit(50)
+      const { data } = await supabase.from('opportunities').select('*, profiles(full_name, username)').eq('is_active', true).order('created_at', { ascending: false }).limit(50)
       setOpportunities(data || [])
       setLoading(false)
     }
@@ -48,11 +50,11 @@ export default function OpportunitiesPage() {
     if (!form.title.trim()) return
     setPosting(true)
     await supabase.from('opportunities').insert({ posted_by: user.id, campus_id: profile?.campus_id, college_id: profile?.college_id, ...form, visibility: 'platform', is_active: true })
-    await supabase.rpc('add_karma', { user_id: user.id, points: 8 })
-    await supabase.rpc('update_streak', { user_id: user.id })
+    await supabase.rpc('add_karma', { p_points: 8 })
+    await supabase.rpc('update_streak')
     setForm({ title: '', description: '', opp_type: 'hackathon', company_org: '', apply_link: '', deadline: '', is_paid: false, stipend_range: '', location_type: 'remote' })
     setShowCompose(false)
-    const { data } = await supabase.from('opportunities').select('*, profiles(full_name, username, role)').eq('is_active', true).order('created_at', { ascending: false }).limit(50)
+    const { data } = await supabase.from('opportunities').select('*, profiles(full_name, username)').eq('is_active', true).order('created_at', { ascending: false }).limit(50)
     setOpportunities(data || [])
     setPosting(false)
   }
@@ -79,7 +81,9 @@ export default function OpportunitiesPage() {
             <p style={{ fontSize: 13, color: 'var(--text-muted)', margin: 0 }}>Hackathons, internships, collabs and more</p>
           </div>
           {user ? (
-            <button onClick={() => setShowCompose(true)} style={{ background: 'var(--accent)', color: 'white', border: 'none', padding: '9px 18px', borderRadius: 10, fontSize: 14, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>+ Post</button>
+            admin.isAdmin ? (
+              <button onClick={() => setShowCompose(true)} style={{ background: 'var(--accent)', color: 'white', border: 'none', padding: '9px 18px', borderRadius: 10, fontSize: 14, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>+ Post</button>
+            ) : null
           ) : (
             <button onClick={() => router.push('/auth/login')} style={{ background: 'white', color: 'var(--accent)', border: '1px solid var(--accent)', padding: '9px 18px', borderRadius: 10, fontSize: 14, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>Login to Post</button>
           )}

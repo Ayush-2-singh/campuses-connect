@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
 import Layout from '@/components/Layout'
+import { useAdminContext } from '@/lib/permissions'
 
 export default function LostFoundPage() {
   const [user, setUser] = useState<any>(null)
@@ -15,6 +16,7 @@ export default function LostFoundPage() {
   const [form, setForm] = useState({ title: '', description: '', item_type: 'lost', category: 'electronics', location: '', contact_info: '' })
   const router = useRouter()
   const supabase = createClient()
+  const admin = useAdminContext(user?.id)
 
   useEffect(() => {
     const load = async () => {
@@ -51,7 +53,7 @@ export default function LostFoundPage() {
             </div>
             <p style={{ fontSize: 13, color: 'var(--text-muted)', margin: 0, marginLeft: 34 }}>Report lost items or return found ones</p>
           </div>
-          {user && <button onClick={() => setShowCompose(true)} style={{ background: 'var(--accent)', color: 'white', border: 'none', padding: '9px 18px', borderRadius: 10, fontSize: 14, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>+ Post</button>}
+          {user && admin.isAdmin && <button onClick={() => setShowCompose(true)} style={{ background: 'var(--accent)', color: 'white', border: 'none', padding: '9px 18px', borderRadius: 10, fontSize: 14, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>+ Post</button>}
         </div>
 
         <div style={{ display: 'flex', gap: 8, marginBottom: 20 }}>

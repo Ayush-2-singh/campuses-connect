@@ -48,6 +48,7 @@ export default function UserProfilePage() {
           .eq('status', 'accepted')
           .limit(1)
         setConnected((conn || []).length > 0)
+
       }
 
       setLoading(false)
@@ -65,14 +66,6 @@ export default function UserProfilePage() {
     })
     setConnecting(false)
     setConnected(true)
-  }
-
-  const roleColor: any = {
-    platform_admin: 'bg-red-500/20 text-red-400',
-    campus_admin: 'bg-orange-500/20 text-orange-400',
-    ambassador: 'bg-blue-500/20 text-blue-400',
-    faculty: 'bg-green-500/20 text-green-400',
-    student: 'bg-gray-700 text-gray-400',
   }
 
   const timeAgo = (date: string) => {
@@ -117,10 +110,7 @@ export default function UserProfilePage() {
                 <p className="text-white font-bold text-lg">{profile.full_name}</p>
                 <p className="text-gray-400 text-sm">@{profile.username}</p>
                 <div className="flex items-center gap-2 mt-1 flex-wrap">
-                  <span className={`text-xs px-2 py-0.5 rounded-full capitalize ${roleColor[profile.role] || roleColor.student}`}>
-                    {profile.role}
-                  </span>
-                  {profile.is_verified && (
+                  {profile.college_email_verified && (
                     <span className="text-xs bg-blue-500/20 text-blue-400 px-2 py-0.5 rounded-full">✓ Verified</span>
                   )}
                 </div>

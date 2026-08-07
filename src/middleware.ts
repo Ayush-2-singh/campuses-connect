@@ -23,14 +23,15 @@ export async function middleware(request: NextRequest) {
 
   const { data: { user } } = await supabase.auth.getUser()
 
-  // Admin protection
+  // Admin panel: platform_admin or campus_admin grant only
   if (path.startsWith('/admin')) {
     if (!user) return NextResponse.redirect(new URL('/auth/login', request.url))
-    const { data: profile } = await supabase
-      .from('profiles').select('role').eq('id', user.id).single()
-    if (!profile || !['platform_admin', 'campus_admin'].includes(profile.role)) {
-      return NextResponse.redirect(new URL('/feed', request.url))
-    }
+    const { data: grants } = await supabase
+      .rpc('my_admin_grants')
+    const isAdmin = (grants as any[])?.some(
+      (g: any) => g.admin_type === 'platform_admin' || g.admin_type === 'campus_admin'
+    )
+    if (!isAdmin) return NextResponse.redirect(new URL('/feed', request.url))
   }
 
   // Auth pages redirect to feed if logged in

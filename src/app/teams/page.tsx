@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
 import Layout from '@/components/Layout'
+import { useAdminContext } from '@/lib/permissions'
 
 export default function TeamsPage() {
   const [user, setUser] = useState<any>(null)
@@ -14,6 +15,7 @@ export default function TeamsPage() {
   const [form, setForm] = useState({ event_name: '', description: '', skills_needed: '', team_size: '4', contact_info: '' })
   const router = useRouter()
   const supabase = createClient()
+  const admin = useAdminContext(user?.id)
 
   useEffect(() => {
     const load = async () => {
@@ -49,7 +51,7 @@ export default function TeamsPage() {
             </div>
             <p style={{ fontSize: 13, color: 'var(--text-muted)', margin: 0, marginLeft: 34 }}>Build your dream team for hackathons</p>
           </div>
-          {user && <button onClick={() => setShowCompose(true)} style={{ background: 'var(--accent)', color: 'white', border: 'none', padding: '9px 18px', borderRadius: 10, fontSize: 14, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>+ Post</button>}
+          {user && admin.isAdmin && <button onClick={() => setShowCompose(true)} style={{ background: 'var(--accent)', color: 'white', border: 'none', padding: '9px 18px', borderRadius: 10, fontSize: 14, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>+ Post</button>}
         </div>
 
         {showCompose && (

@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
 import Layout from '@/components/Layout'
+import { useAdminContext } from '@/lib/permissions'
 
 export default function TravelPage() {
   const [user, setUser] = useState<any>(null)
@@ -14,6 +15,7 @@ export default function TravelPage() {
   const [form, setForm] = useState({ from_location: '', to_location: '', travel_date: '', transport_mode: 'train', seats_available: '1', contact_info: '', notes: '' })
   const router = useRouter()
   const supabase = createClient()
+  const admin = useAdminContext(user?.id)
 
   useEffect(() => {
     const load = async () => {
@@ -49,7 +51,7 @@ export default function TravelPage() {
             </div>
             <p style={{ fontSize: 13, color: 'var(--text-muted)', margin: 0, marginLeft: 34 }}>Find campus mates travelling the same route</p>
           </div>
-          {user && <button onClick={() => setShowCompose(true)} style={{ background: 'var(--accent)', color: 'white', border: 'none', padding: '9px 18px', borderRadius: 10, fontSize: 14, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>+ Post</button>}
+          {user && admin.isAdmin && <button onClick={() => setShowCompose(true)} style={{ background: 'var(--accent)', color: 'white', border: 'none', padding: '9px 18px', borderRadius: 10, fontSize: 14, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>+ Post</button>}
         </div>
 
         {showCompose && (

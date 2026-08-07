@@ -4,9 +4,9 @@ import { useRouter, usePathname } from 'next/navigation'
 
 const NAV_ITEMS = [
   { label: 'Feed', href: '/feed', icon: 'feed' },
-  { label: 'Opportunities', href: '/opportunities', icon: 'opp' },
-  { label: 'Notes', href: '/notes', icon: 'notes' },
-  { label: 'Talent', href: '/talent', icon: 'talent' },
+  { label: 'Communities', href: '/communities', icon: 'opp' },
+  { label: 'College', href: '/college', icon: 'notes' },
+  { label: 'Saved', href: '/saved', icon: 'talent' },
   { label: 'More', href: '/more', icon: 'more' },
 ]
 

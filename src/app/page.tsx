@@ -14,11 +14,11 @@ export default function LandingPage() {
   }, [])
 
   const features = [
-    { icon: '/feed-icon.jpeg', title: 'Campus Feed', desc: 'Announcements, events and discussions in one place.' },
-    { icon: '/opportunity-icon.jpeg', title: 'Opportunity Board', desc: 'Hackathons, internships and startup roles.' },
-    { icon: '/notes-icon.jpeg', title: 'Notes Library', desc: 'Semester-wise notes and PYQs from your peers.' },
-    { icon: '/talent-icon.jpeg', title: 'Talent Search', desc: 'Find teammates by skill, branch or year.' },
-    { icon: '/teams-icon.jpeg', title: 'Find Teammates', desc: 'Build your dream team for hackathons.' },
+    { icon: '/feed-icon.jpeg', title: 'College Feed', desc: 'Announcements, events and discussions for your campus.' },
+    { icon: '/opportunity-icon.jpeg', title: 'Global Communities', desc: 'DSA, Web Development and Startups — nationwide.' },
+    { icon: '/notes-icon.jpeg', title: 'Notes & Resources', desc: 'Semester notes, PYQs and roadmaps from your peers.' },
+    { icon: '/talent-icon.jpeg', title: 'Hackathons & Internships', desc: 'Opportunities posted by campus & community admins.' },
+    { icon: '/teams-icon.jpeg', title: 'Clubs & Study Groups', desc: 'Find your crew and build together.' },
     { icon: '/more-icon.jpeg', title: 'Karma & Streaks', desc: 'Earn points and build daily habits.' },
   ]
 
@@ -62,7 +62,7 @@ export default function LandingPage() {
           Your campus.<br /><span style={{ color: 'var(--accent)' }}>Connected.</span>
         </h2>
         <p style={{ fontSize: 18, color: 'var(--text-secondary)', lineHeight: 1.6, margin: '0 0 36px', maxWidth: 500, marginLeft: 'auto', marginRight: 'auto' }}>
-          The one platform for campus feed, opportunities, notes and talent — built for students, by students.
+          The community platform for Computer Science students in Indian colleges — communities, campus life and opportunities.
         </p>
         <div style={{ display: 'flex', gap: 12, justifyContent: 'center', flexWrap: 'wrap' }}>
           <button onClick={() => router.push('/auth/signup')}
@@ -92,7 +92,7 @@ export default function LandingPage() {
       {/* Colleges */}
       <div style={{ background: 'var(--bg-secondary)', padding: '60px 20px', textAlign: 'center' }}>
         <h3 style={{ fontSize: 28, fontWeight: 700, color: 'var(--text-primary)', margin: '0 0 8px' }}>Growing across India</h3>
-        <p style={{ fontSize: 14, color: 'var(--text-muted)', margin: '0 0 32px' }}>Starting with PW IOI, expanding to every campus.</p>
+        <p style={{ fontSize: 14, color: 'var(--text-muted)', margin: '0 0 32px' }}>For CSE students. Starting with PW IOI, expanding to every college.</p>
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10, justifyContent: 'center', maxWidth: 600, margin: '0 auto' }}>
           {[
             { name: 'PW IOI', active: true },

@@ -11,6 +11,7 @@ export default function ProfilePage() {
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [form, setForm] = useState({ full_name: '', bio: '', github_url: '', linkedin_url: '', portfolio_url: '', twitter_url: '' })
+  const [isAdmin, setIsAdmin] = useState(false)
   const router = useRouter()
   const supabase = createClient()
 
@@ -21,6 +22,8 @@ export default function ProfilePage() {
       setUser(user)
       const { data } = await supabase.from('profiles').select('*, colleges(name), campuses(name), departments(name, short_name)').eq('id', user.id).single()
       setProfile(data)
+      const { data: grants } = await supabase.rpc('my_admin_grants')
+      setIsAdmin((grants as any[])?.some((g: any) => g.admin_type === 'platform_admin' || g.admin_type === 'campus_admin') || false)
       setForm({ full_name: data?.full_name || '', bio: data?.bio || '', github_url: data?.github_url || '', linkedin_url: data?.linkedin_url || '', portfolio_url: data?.portfolio_url || '', twitter_url: data?.twitter_url || '' })
       setLoading(false)
     }
@@ -41,13 +44,7 @@ export default function ProfilePage() {
     return colors[(name?.charCodeAt(0) || 0) % colors.length]
   }
 
-  const roleConfig: any = {
-    platform_admin: { bg: '#fef2f2', text: '#dc2626', label: 'Platform Admin' },
-    campus_admin: { bg: '#fff7ed', text: '#c2410c', label: 'Campus Admin' },
-    ambassador: { bg: '#eff6ff', text: '#1d4ed8', label: 'Ambassador' },
-    faculty: { bg: '#f0fdf4', text: '#15803d', label: 'Faculty' },
-    student: { bg: '#f8f9fa', text: '#495057', label: 'Student' },
-  }
+  const badgeStyle = (bg: string, text: string) => ({ fontSize: 11, padding: '3px 8px', borderRadius: 20, background: bg, color: text, fontWeight: 600 })
 
   const inputStyle = { width: '100%', border: '1px solid var(--border)', borderRadius: 10, padding: '10px 14px', fontSize: 14, outline: 'none', fontFamily: 'inherit', color: 'var(--text-primary)', background: 'white', boxSizing: 'border-box' as const }
 
@@ -56,8 +53,6 @@ export default function ProfilePage() {
       <p style={{ color: 'var(--text-muted)', fontSize: 14 }}>Loading...</p>
     </div>
   )
-
-  const rc = roleConfig[profile?.role] || roleConfig.student
 
   return (
     <div style={{ minHeight: '100vh', background: 'var(--bg-secondary)', paddingBottom: 80 }}>
@@ -91,8 +86,8 @@ export default function ProfilePage() {
               )}
               <p style={{ fontSize: 13, color: 'var(--text-muted)', margin: '0 0 8px' }}>@{profile?.username || 'no username'}</p>
               <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
-                <span style={{ fontSize: 11, padding: '3px 8px', borderRadius: 20, background: rc.bg, color: rc.text, fontWeight: 600 }}>{rc.label}</span>
-                {profile?.is_verified && <span style={{ fontSize: 11, padding: '3px 8px', borderRadius: 20, background: '#eff6ff', color: 'var(--accent)', fontWeight: 600 }}>✓ Verified</span>}
+                {isAdmin && <span style={badgeStyle('#fef2f2', '#dc2626')}>Admin</span>}
+                {profile?.college_email_verified && <span style={badgeStyle('#eff6ff', 'var(--accent)')}>✓ College Verified</span>}
                 {profile?.streak_days > 0 && <span style={{ fontSize: 11, padding: '3px 8px', borderRadius: 20, background: '#fff7ed', color: '#c2410c', fontWeight: 600 }}>🔥 {profile.streak_days} day streak</span>}
                 {profile?.karma_points > 0 && <span style={{ fontSize: 11, padding: '3px 8px', borderRadius: 20, background: '#fefce8', color: '#a16207', fontWeight: 600 }}>⭐ {profile.karma_points} karma</span>}
               </div>
@@ -167,7 +162,7 @@ export default function ProfilePage() {
         </div>
 
         {/* Admin */}
-        {['platform_admin', 'campus_admin'].includes(profile?.role) && (
+        {isAdmin && (
           <button onClick={() => router.push('/admin')}
             style={{ background: 'white', border: '1px solid var(--border)', borderRadius: 14, padding: '16px 20px', textAlign: 'left', cursor: 'pointer', boxShadow: 'var(--shadow-sm)' }}>
             <p style={{ fontSize: 14, fontWeight: 700, color: 'var(--text-primary)', margin: '0 0 2px' }}>⚙️ Admin Panel</p>
