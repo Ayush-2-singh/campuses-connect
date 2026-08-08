@@ -176,7 +176,7 @@ export default function ProfilePage() {
         </button>
       </div>
 
-      <div style={{ position: 'fixed', bottom: 0, left: 0, right: 0, background: 'var(--bg)', borderTop: '1px solid var(--border)', zIndex: 10 }}>
+      <div className="standalone-bottomnav" style={{ position: 'fixed', bottom: 0, left: 0, right: 0, background: 'var(--bg)', borderTop: '1px solid var(--border)', zIndex: 10 }}>
         <div style={{ maxWidth: 640, margin: '0 auto', display: 'flex' }}>
           {[
             { icon: '🏠', label: 'Home', href: '/feed' },

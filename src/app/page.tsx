@@ -26,7 +26,7 @@ export default function LandingPage() {
     <div style={{ minHeight: '100vh', background: 'var(--bg)', fontFamily: '-apple-system, BlinkMacSystemFont, Segoe UI, sans-serif' }}>
 
       {/* Nav */}
-      <nav style={{ position: 'sticky', top: 0, background: 'var(--bg)', borderBottom: '1px solid var(--border)', padding: '14px 20px', zIndex: 10 }}>
+      <nav className="landing-nav" style={{ position: 'sticky', top: 0, background: 'var(--bg)', borderBottom: '1px solid var(--border)', padding: '14px 20px', zIndex: 10 }}>
         <div style={{ maxWidth: 960, margin: '0 auto', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
           <h1 style={{ fontSize: 20, fontWeight: 800, margin: 0, color: 'var(--text-primary)' }}>
             Campus<span style={{ color: 'var(--accent)' }}>Connect</span>
@@ -58,7 +58,7 @@ export default function LandingPage() {
         <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: 'var(--accent-light)', border: '1px solid var(--accent-border)', borderRadius: 20, padding: '5px 14px', fontSize: 12, color: 'var(--accent)', fontWeight: 600, marginBottom: 24 }}>
           🚀 Now live for PW IOI · Lucknow
         </div>
-        <h2 style={{ fontSize: 52, fontWeight: 800, lineHeight: 1.15, color: 'var(--text-primary)', margin: '0 0 20px' }}>
+        <h2 className="landing-hero" style={{ fontSize: 52, fontWeight: 800, lineHeight: 1.15, color: 'var(--text-primary)', margin: '0 0 20px' }}>
           Your campus.<br /><span style={{ color: 'var(--accent)' }}>Connected.</span>
         </h2>
         <p style={{ fontSize: 18, color: 'var(--text-secondary)', lineHeight: 1.6, margin: '0 0 36px', maxWidth: 500, marginLeft: 'auto', marginRight: 'auto' }}>
@@ -81,7 +81,7 @@ export default function LandingPage() {
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: 16 }}>
           {features.map(f => (
             <div key={f.title} style={{ background: 'var(--bg)', border: '1px solid var(--border)', borderRadius: 14, padding: '20px 22px' }}>
-              <img src={f.icon} alt={f.title} style={{ width: 52, height: 52, objectFit: 'cover', borderRadius: '50%', marginBottom: 10, transition: 'transform 0.2s ease' }} onMouseEnter={e => (e.currentTarget.style.transform = 'scale(2)')} onMouseLeave={e => (e.currentTarget.style.transform = 'scale(1)')} />
+              <img src={f.icon} alt={f.title} style={{ width: 52, height: 52, objectFit: 'cover', borderRadius: '50%', marginBottom: 10, transition: 'transform 0.2s ease' }} onMouseEnter={e => (e.currentTarget.style.transform = 'scale(1.12)')} onMouseLeave={e => (e.currentTarget.style.transform = 'scale(1)')} />
               <h3 style={{ fontSize: 15, fontWeight: 700, color: 'var(--text-primary)', margin: '0 0 6px' }}>{f.title}</h3>
               <p style={{ fontSize: 13, color: 'var(--text-secondary)', margin: 0, lineHeight: 1.5 }}>{f.desc}</p>
             </div>
@@ -117,7 +117,7 @@ export default function LandingPage() {
 
       {/* CTA */}
       <div style={{ maxWidth: 600, margin: '0 auto', padding: '60px 20px' }}>
-        <div style={{ background: 'var(--accent)', borderRadius: 20, padding: '48px 40px', textAlign: 'center' }}>
+        <div className="landing-cta" style={{ background: 'var(--accent)', borderRadius: 20, padding: '48px 40px', textAlign: 'center' }}>
           <h3 style={{ fontSize: 28, fontWeight: 700, color: 'white', margin: '0 0 8px' }}>Ready to join?</h3>
           <p style={{ fontSize: 14, color: 'rgba(255,255,255,0.8)', margin: '0 0 24px' }}>Free forever for students. No credit card needed.</p>
           <button onClick={() => router.push('/auth/signup')}

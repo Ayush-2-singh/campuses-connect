@@ -170,9 +170,11 @@ export default function NotesPage() {
               onKeyDown={e => { if (e.key === 'Enter') askAI() }}
               placeholder="Ask your academic knowledge..."
               aria-label="Search academic knowledge"
+              className="ai-search-input"
               style={{ width: '100%', border: '1px solid var(--border)', borderRadius: 'var(--radius)', padding: '13px 90px 13px 42px', fontSize: 14, outline: 'none', fontFamily: 'inherit', color: 'var(--text-primary)', background: 'var(--bg)', boxSizing: 'border-box' as const, boxShadow: 'var(--shadow-sm)' }}
             />
             <button onClick={askAI} disabled={aiLoading || !query.trim()}
+              className="ai-search-btn"
               style={{ position: 'absolute', right: 6, top: '50%', transform: 'translateY(-50%)', border: 'none', borderRadius: 8, padding: '7px 14px', fontSize: 12.5, fontWeight: 600, cursor: aiLoading || !query.trim() ? 'default' : 'pointer', background: aiLoading ? 'var(--disabled)' : 'var(--accent)', color: 'white', fontFamily: 'inherit' }}>
               {aiLoading ? 'Asking…' : 'Ask AI'}
             </button>

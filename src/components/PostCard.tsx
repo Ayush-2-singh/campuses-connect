@@ -122,24 +122,24 @@ export default function PostCard({
 
   return (
     <div style={{ background: 'var(--bg)', borderRadius: 14, border: post.is_pinned ? '1px solid var(--accent-border)' : '1px solid var(--border)', padding: '18px', boxShadow: 'var(--shadow-sm)' }}>
-      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 10 }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 8, marginBottom: 10 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, minWidth: 0, flex: 1 }}>
           <div
             onClick={() => post.profiles?.username && router.push(`/profile/${post.profiles.username}`)}
             style={{ width: 38, height: 38, borderRadius: '50%', background: avatarColor(post.profiles?.full_name || ''), display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontSize: 14, fontWeight: 700, flexShrink: 0, cursor: 'pointer' }}>
             {post.profiles?.full_name?.[0] || '?'}
           </div>
-          <div>
+          <div style={{ minWidth: 0 }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-              <span onClick={() => post.profiles?.username && router.push(`/profile/${post.profiles.username}`)} style={{ fontSize: 14, fontWeight: 700, color: 'var(--text-primary)', cursor: 'pointer' }}>
+              <span onClick={() => post.profiles?.username && router.push(`/profile/${post.profiles.username}`)} style={{ fontSize: 14, fontWeight: 700, color: 'var(--text-primary)', cursor: 'pointer', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                 {post.profiles?.full_name || 'Anonymous'}
               </span>
-              {post.profiles?.is_verified && <span style={{ fontSize: 11, color: 'var(--accent)' }}>✓</span>}
+              {post.profiles?.is_verified && <span style={{ fontSize: 11, color: 'var(--accent)', flexShrink: 0 }}>✓</span>}
             </div>
-            <p style={{ fontSize: 12, color: 'var(--text-muted)', margin: 0 }}>@{post.profiles?.username} · {timeAgo(post.created_at)}</p>
+            <p style={{ fontSize: 12, color: 'var(--text-muted)', margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>@{post.profiles?.username} · {timeAgo(post.created_at)}</p>
           </div>
         </div>
-        <div style={{ display: 'flex', gap: 6, flexShrink: 0 }}>
+        <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'flex-end', gap: 6, rowGap: 4, flexShrink: 0 }}>
           <span style={{ fontSize: 11, background: sc.bg, color: sc.text, padding: '3px 8px', borderRadius: 20, fontWeight: 600 }}>{sc.label}</span>
           <span style={{ fontSize: 11, background: 'var(--bg-tertiary)', color: 'var(--text-secondary)', padding: '3px 8px', borderRadius: 20, fontWeight: 600 }}>{catIcon} {post.categories?.label || 'Post'}</span>
         </div>
@@ -161,7 +161,7 @@ export default function PostCard({
         </a>
       )}
 
-      <div style={{ display: 'flex', alignItems: 'center', gap: 18, borderTop: '1px solid var(--border)', paddingTop: 12 }}>
+      <div style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', columnGap: 18, rowGap: 8, borderTop: '1px solid var(--border)', paddingTop: 12 }}>
         <button onClick={handleLike} disabled={!canInteract}
           style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 13, color: liked ? 'var(--accent)' : 'var(--text-muted)', background: 'none', border: 'none', cursor: canInteract ? 'pointer' : 'not-allowed', padding: 0, fontFamily: 'inherit' }}>
           👍 {liked ? 'Liked' : 'Like'}

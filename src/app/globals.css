@@ -370,3 +370,120 @@ body:has(.app-topbar) .theme-toggle--floating {
 @media (max-width: 768px) {
   .fab-wrap { display: flex; }
 }
+
+/* ───────────────────────── Mobile responsiveness ───────────────────────── */
+
+/* Kill the grey tap flash on mobile taps */
+button, a, [role='button'] {
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* iOS Safari auto-zooms into any input smaller than 16px — bump them on
+   small touch screens so tapping a field never zooms the page.
+   Scoped to coarse pointers so tablets in portrait / narrow desktop
+   windows keep their designed 14px input text. */
+@media (max-width: 768px) and (pointer: coarse) {
+  input, select, textarea {
+    font-size: 16px !important;
+  }
+}
+
+/* Notes AI search keeps its “Ask AI” button clear of the text on tiny screens */
+@media (max-width: 400px) {
+  .ai-search-input { padding-right: 78px !important; }
+  .ai-search-btn { padding: 7px 10px !important; }
+}
+
+/* Safe areas — keep bars clear of the notch and home indicator */
+.mobile-topbar {
+  padding-top: max(12px, env(safe-area-inset-top)) !important;
+}
+
+.mobile-bottomnav {
+  padding-bottom: env(safe-area-inset-bottom);
+}
+.mobile-bottomnav button {
+  min-height: 50px;
+  padding-bottom: max(8px, env(safe-area-inset-bottom)) !important;
+}
+
+/* Standalone fixed bottom navs (profile pages — no app shell) */
+.standalone-bottomnav {
+  display: none;
+  padding-bottom: env(safe-area-inset-bottom);
+}
+.standalone-bottomnav button {
+  min-height: 50px;
+  padding-bottom: max(8px, env(safe-area-inset-bottom)) !important;
+}
+
+@media (max-width: 768px) {
+  .standalone-bottomnav { display: block !important; }
+
+  /* Keep content clear of the bottom bar + home indicator */
+  .main-content {
+    padding-bottom: calc(88px + env(safe-area-inset-bottom)) !important;
+  }
+  .fab-wrap {
+    bottom: calc(84px + env(safe-area-inset-bottom)) !important;
+  }
+}
+
+/* ── Landing page ── */
+.landing-nav > div {
+  flex-wrap: wrap;
+  row-gap: 10px;
+}
+
+@media (max-width: 480px) {
+  .landing-hero {
+    font-size: 38px !important;
+  }
+  .landing-cta {
+    padding: 36px 24px !important;
+  }
+}
+@media (max-width: 360px) {
+  .landing-hero {
+    font-size: 31px !important;
+  }
+}
+
+/* ── Admin panel ── */
+@media (max-width: 768px) {
+  .admin-header {
+    padding: 12px 16px !important;
+  }
+  .admin-content {
+    padding: 16px !important;
+  }
+  .admin-tabs {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+  }
+  .admin-tabs::-webkit-scrollbar { display: none; }
+  .admin-tabs button {
+    white-space: nowrap;
+    padding: 10px 14px !important;
+  }
+}
+
+/* ── Meetings tabs ── */
+@media (max-width: 480px) {
+  .meetings-tabs button {
+    padding: 9px 8px !important;
+    gap: 5px !important;
+    font-size: 12px !important;
+  }
+}
+
+/* Safety net — never force horizontal scrolling on mobile. Fixes the root
+   causes above and clips any straggler so nothing gets cut off (which is
+   what used to make you zoom out to see the full layout). `overflow: clip`
+   does NOT create a scroll container, so sticky bars keep working. */
+@media (max-width: 768px) {
+  html, body {
+    overflow-x: clip;
+  }
+}

@@ -209,7 +209,7 @@ export default function MeetingsPage() {
         </div>
 
         {/* Tabs */}
-        <div style={{ display: 'flex', gap: 0, marginBottom: 20, background: 'var(--bg)', border: '1px solid var(--border)', borderRadius: 12, padding: 4, boxShadow: 'var(--shadow-sm)' }}>
+        <div className="meetings-tabs" style={{ display: 'flex', gap: 0, marginBottom: 20, background: 'var(--bg)', border: '1px solid var(--border)', borderRadius: 12, padding: 4, boxShadow: 'var(--shadow-sm)' }}>
           {TABS.map(tab => (
             <button key={tab.key}
               onClick={() => { setActiveTab(tab.key); setShowCompose(false); setPostError(null) }}
@@ -405,9 +405,9 @@ export default function MeetingsPage() {
               return (
                 <div key={meeting.id} style={{ background: 'var(--bg)', border: '1px solid var(--border)', borderRadius: 14, padding: 18, boxShadow: 'var(--shadow-sm)' }}>
                   {/* Title row */}
-                  <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 8 }}>
-                    <div>
-                      <p style={{ fontSize: 15, fontWeight: 700, color: 'var(--text-primary)', margin: '0 0 3px' }}>{meeting.title}</p>
+                  <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 10, marginBottom: 8 }}>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <p style={{ fontSize: 15, fontWeight: 700, color: 'var(--text-primary)', margin: '0 0 3px', overflowWrap: 'anywhere' }}>{meeting.title}</p>
                       <p style={{ fontSize: 12, color: 'var(--text-muted)', margin: 0 }}>
                         by {meeting.profiles?.full_name}
                       </p>
