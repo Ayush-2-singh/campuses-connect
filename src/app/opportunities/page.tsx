@@ -8,14 +8,14 @@ import { useAdminContext } from '@/lib/permissions'
 const OPP_TYPES = ['all', 'hackathon', 'internship', 'freelance', 'startup_role', 'collab', 'scholarship', 'competition']
 
 const typeConfig: Record<string, { bg: string; text: string; label: string }> = {
-  hackathon:   { bg: '#f5f3ff', text: '#6d28d9', label: 'Hackathon' },
-  internship:  { bg: '#eff6ff', text: '#1d4ed8', label: 'Internship' },
-  freelance:   { bg: '#f0fdf4', text: '#15803d', label: 'Freelance' },
-  startup_role:{ bg: '#fff7ed', text: '#c2410c', label: 'Startup' },
-  collab:      { bg: '#fdf4ff', text: '#7e22ce', label: 'Collab' },
-  scholarship: { bg: '#fefce8', text: '#a16207', label: 'Scholarship' },
-  competition: { bg: '#fef2f2', text: '#dc2626', label: 'Competition' },
-  other:       { bg: '#f8f9fa', text: '#495057', label: 'Other' },
+  hackathon:   { bg: 'var(--purple-light)', text: 'var(--purple-text)', label: 'Hackathon' },
+  internship:  { bg: 'var(--accent-light)', text: 'var(--accent-text)', label: 'Internship' },
+  freelance:   { bg: 'var(--success-light)', text: 'var(--success-text)', label: 'Freelance' },
+  startup_role:{ bg: 'var(--orange-light)', text: 'var(--orange-text)', label: 'Startup' },
+  collab:      { bg: 'var(--purple-light)', text: 'var(--purple-text)', label: 'Collab' },
+  scholarship: { bg: 'var(--yellow-light)', text: 'var(--yellow-text)', label: 'Scholarship' },
+  competition: { bg: 'var(--danger-light)', text: 'var(--danger)', label: 'Competition' },
+  other:       { bg: 'var(--bg-secondary)', text: 'var(--text-secondary)', label: 'Other' },
 }
 
 const emptyForm = {
@@ -160,9 +160,9 @@ export default function OpportunitiesPage() {
     if (!deadline) return null
     const diff = new Date(deadline).getTime() - Date.now()
     const days = Math.ceil(diff / 86400000)
-    if (days < 0)  return { label: 'Expired',   bg: '#fef2f2', text: '#dc2626' }
-    if (days === 0) return { label: 'Last day!', bg: '#fff7ed', text: '#c2410c' }
-    return { label: `${days}d left`, bg: '#f8f9fa', text: '#495057' }
+    if (days < 0)  return { label: 'Expired',   bg: 'var(--danger-light)', text: 'var(--danger)' }
+    if (days === 0) return { label: 'Last day!', bg: 'var(--orange-light)', text: 'var(--orange-text)' }
+    return { label: `${days}d left`, bg: 'var(--bg-secondary)', text: 'var(--text-secondary)' }
   }
 
   const timeAgo = (date: string) => {
@@ -173,14 +173,14 @@ export default function OpportunitiesPage() {
   const inputStyle = {
     width: '100%', border: '1px solid var(--border)', borderRadius: 10,
     padding: '10px 14px', fontSize: 14, outline: 'none', fontFamily: 'inherit',
-    color: 'var(--text-primary)', background: 'white', boxSizing: 'border-box' as const,
+    color: 'var(--text-primary)', background: 'var(--bg)', boxSizing: 'border-box' as const,
   }
 
   const filterBtn = (active: boolean) => ({
     flexShrink: 0, padding: '6px 14px', borderRadius: 20, fontSize: 12,
     fontWeight: 500 as const,
     border: active ? 'none' : '1px solid var(--border)',
-    background: active ? 'var(--accent)' : 'white',
+    background: active ? 'var(--accent)' : 'var(--bg)',
     color: active ? 'white' : 'var(--text-secondary)',
     cursor: 'pointer' as const,
   })
@@ -208,15 +208,15 @@ export default function OpportunitiesPage() {
 
         {/* Global error banner */}
         {error && (
-          <div style={{ background: '#fef2f2', border: '1px solid #fecaca', borderRadius: 10, padding: '10px 14px', marginBottom: 16, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-            <p style={{ fontSize: 13, color: '#dc2626', margin: 0 }}>{error}</p>
-            <button onClick={() => setError(null)} style={{ background: 'none', border: 'none', color: '#dc2626', cursor: 'pointer', fontSize: 16, padding: 0 }}>×</button>
+          <div style={{ background: 'var(--danger-light)', border: '1px solid var(--danger-border)', borderRadius: 10, padding: '10px 14px', marginBottom: 16, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <p style={{ fontSize: 13, color: 'var(--danger)', margin: 0 }}>{error}</p>
+            <button onClick={() => setError(null)} style={{ background: 'none', border: 'none', color: 'var(--danger)', cursor: 'pointer', fontSize: 16, padding: 0 }}>×</button>
           </div>
         )}
 
         {/* Create / Edit form — admin only */}
         {showCompose && isAdmin && (
-          <div style={{ background: 'white', border: '1px solid var(--border)', borderRadius: 14, padding: 20, marginBottom: 20, boxShadow: 'var(--shadow-sm)' }}>
+          <div style={{ background: 'var(--bg)', border: '1px solid var(--border)', borderRadius: 14, padding: 20, marginBottom: 20, boxShadow: 'var(--shadow-sm)' }}>
             <h3 style={{ fontSize: 16, fontWeight: 700, color: 'var(--text-primary)', margin: '0 0 16px' }}>
               {editTarget ? 'Edit Opportunity' : 'Post an Opportunity'}
             </h3>
@@ -281,12 +281,12 @@ export default function OpportunitiesPage() {
             <div style={{ display: 'flex', gap: 8, marginTop: 14 }}>
               <button
                 onClick={closeCompose}
-                style={{ flex: 1, background: 'white', color: 'var(--text-secondary)', border: '1px solid var(--border)', borderRadius: 10, padding: '10px', fontSize: 14, cursor: 'pointer', fontFamily: 'inherit' }}
+                style={{ flex: 1, background: 'var(--bg)', color: 'var(--text-secondary)', border: '1px solid var(--border)', borderRadius: 10, padding: '10px', fontSize: 14, cursor: 'pointer', fontFamily: 'inherit' }}
               >Cancel</button>
               <button
                 onClick={editTarget ? handleUpdate : handlePost}
                 disabled={!form.title.trim() || posting}
-                style={{ flex: 1, background: posting ? '#93c5fd' : 'var(--accent)', color: 'white', border: 'none', borderRadius: 10, padding: '10px', fontSize: 14, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}
+                style={{ flex: 1, background: posting ? 'var(--disabled)' : 'var(--accent)', color: 'white', border: 'none', borderRadius: 10, padding: '10px', fontSize: 14, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}
               >
                 {posting ? (editTarget ? 'Saving...' : 'Posting...') : editTarget ? 'Save Changes' : 'Post +8⭐'}
               </button>
@@ -322,13 +322,13 @@ export default function OpportunitiesPage() {
               const isBeingDeleted = deleting === opp.id
 
               return (
-                <div key={opp.id} style={{ background: 'white', border: '1px solid var(--border)', borderRadius: 14, padding: '18px', boxShadow: 'var(--shadow-sm)' }}>
+                <div key={opp.id} style={{ background: 'var(--bg)', border: '1px solid var(--border)', borderRadius: 14, padding: '18px', boxShadow: 'var(--shadow-sm)' }}>
                   <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 10 }}>
                     <div style={{ flex: 1, minWidth: 0, marginRight: 12 }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
                         <span style={{ fontSize: 11, padding: '3px 8px', borderRadius: 20, background: tc.bg, color: tc.text, fontWeight: 600 }}>{tc.label}</span>
                         {opp.location_type && <span style={{ fontSize: 11, color: 'var(--text-muted)', textTransform: 'capitalize' }}>{opp.location_type}</span>}
-                        {opp.is_verified && <span style={{ fontSize: 11, color: '#15803d' }}>✓ Verified</span>}
+                        {opp.is_verified && <span style={{ fontSize: 11, color: 'var(--success-text)' }}>✓ Verified</span>}
                       </div>
                       <h3 style={{ fontSize: 15, fontWeight: 700, color: 'var(--text-primary)', margin: '0 0 3px' }}>{opp.title}</h3>
                       {opp.company_org && <p style={{ fontSize: 12, color: 'var(--text-muted)', margin: 0 }}>{opp.company_org}</p>}
@@ -340,12 +340,12 @@ export default function OpportunitiesPage() {
                         <div style={{ display: 'flex', gap: 5 }}>
                           <button
                             onClick={() => openEdit(opp)}
-                            style={{ fontSize: 11, padding: '4px 10px', borderRadius: 6, border: '1px solid var(--border)', background: 'white', color: 'var(--text-secondary)', cursor: 'pointer', fontFamily: 'inherit' }}
+                            style={{ fontSize: 11, padding: '4px 10px', borderRadius: 6, border: '1px solid var(--border)', background: 'var(--bg)', color: 'var(--text-secondary)', cursor: 'pointer', fontFamily: 'inherit' }}
                           >Edit</button>
                           <button
                             onClick={() => handleDelete(opp.id)}
                             disabled={isBeingDeleted}
-                            style={{ fontSize: 11, padding: '4px 10px', borderRadius: 6, border: '1px solid #fecaca', background: isBeingDeleted ? '#f9f9f9' : '#fef2f2', color: '#dc2626', cursor: 'pointer', fontFamily: 'inherit' }}
+                            style={{ fontSize: 11, padding: '4px 10px', borderRadius: 6, border: '1px solid var(--danger-border)', background: isBeingDeleted ? 'var(--gray-soft)' : 'var(--danger-light)', color: 'var(--danger)', cursor: 'pointer', fontFamily: 'inherit' }}
                           >{isBeingDeleted ? '…' : 'Delete'}</button>
                         </div>
                       )}
@@ -358,7 +358,7 @@ export default function OpportunitiesPage() {
                     </p>
                   )}
                   {opp.is_paid && opp.stipend_range && (
-                    <p style={{ fontSize: 12, color: '#15803d', fontWeight: 600, margin: '0 0 12px' }}>💰 {opp.stipend_range}</p>
+                    <p style={{ fontSize: 12, color: 'var(--success-text)', fontWeight: 600, margin: '0 0 12px' }}>💰 {opp.stipend_range}</p>
                   )}
 
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderTop: '1px solid var(--border)', paddingTop: 10 }}>

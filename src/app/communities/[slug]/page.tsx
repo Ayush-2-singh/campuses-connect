@@ -66,7 +66,7 @@ export default function CommunityPage() {
   return (
     <Layout user={user} profile={profile}>
       <div style={{ maxWidth: 680, margin: '0 auto', padding: '24px 20px' }}>
-        <div style={{ background: 'white', border: '1px solid var(--border)', borderRadius: 14, padding: '20px', marginBottom: 16, boxShadow: 'var(--shadow-sm)' }}>
+        <div style={{ background: 'var(--bg)', border: '1px solid var(--border)', borderRadius: 14, padding: '20px', marginBottom: 16, boxShadow: 'var(--shadow-sm)' }}>
           <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12 }}>
             <div style={{ display: 'flex', gap: 14 }}>
               <span style={{ fontSize: 44, lineHeight: 1 }}>{community.icon}</span>

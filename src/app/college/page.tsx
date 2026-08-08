@@ -63,7 +63,7 @@ export default function CollegePage() {
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: 10, marginBottom: 20 }}>
           {SECTIONS.map(s => (
             <button key={s.href} onClick={() => router.push(s.href)}
-              style={{ background: 'white', border: '1px solid var(--border)', borderRadius: 12, padding: '14px', textAlign: 'left', cursor: 'pointer', fontFamily: 'inherit', boxShadow: 'var(--shadow-sm)' }}>
+              style={{ background: 'var(--bg)', border: '1px solid var(--border)', borderRadius: 12, padding: '14px', textAlign: 'left', cursor: 'pointer', fontFamily: 'inherit', boxShadow: 'var(--shadow-sm)' }}>
               <span style={{ fontSize: 22, display: 'block', marginBottom: 6 }}>{s.icon}</span>
               <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-primary)' }}>{s.label}</span>
             </button>

@@ -23,10 +23,10 @@ export default function LandingPage() {
   ]
 
   return (
-    <div style={{ minHeight: '100vh', background: 'white', fontFamily: '-apple-system, BlinkMacSystemFont, Segoe UI, sans-serif' }}>
+    <div style={{ minHeight: '100vh', background: 'var(--bg)', fontFamily: '-apple-system, BlinkMacSystemFont, Segoe UI, sans-serif' }}>
 
       {/* Nav */}
-      <nav style={{ position: 'sticky', top: 0, background: 'white', borderBottom: '1px solid var(--border)', padding: '14px 20px', zIndex: 10 }}>
+      <nav style={{ position: 'sticky', top: 0, background: 'var(--bg)', borderBottom: '1px solid var(--border)', padding: '14px 20px', zIndex: 10 }}>
         <div style={{ maxWidth: 960, margin: '0 auto', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
           <h1 style={{ fontSize: 20, fontWeight: 800, margin: 0, color: 'var(--text-primary)' }}>
             Campus<span style={{ color: 'var(--accent)' }}>Connect</span>
@@ -55,7 +55,7 @@ export default function LandingPage() {
 
       {/* Hero */}
       <div style={{ maxWidth: 720, margin: '0 auto', padding: '80px 20px 60px', textAlign: 'center' }}>
-        <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: '#eff6ff', border: '1px solid #bfdbfe', borderRadius: 20, padding: '5px 14px', fontSize: 12, color: 'var(--accent)', fontWeight: 600, marginBottom: 24 }}>
+        <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: 'var(--accent-light)', border: '1px solid var(--accent-border)', borderRadius: 20, padding: '5px 14px', fontSize: 12, color: 'var(--accent)', fontWeight: 600, marginBottom: 24 }}>
           🚀 Now live for PW IOI · Lucknow
         </div>
         <h2 style={{ fontSize: 52, fontWeight: 800, lineHeight: 1.15, color: 'var(--text-primary)', margin: '0 0 20px' }}>
@@ -70,7 +70,7 @@ export default function LandingPage() {
             Join your campus →
           </button>
           <button onClick={() => router.push('/feed')}
-            style={{ background: 'white', color: 'var(--text-primary)', border: '1px solid var(--border)', padding: '14px 28px', borderRadius: 10, fontSize: 16, fontWeight: 600, cursor: 'pointer' }}>
+            style={{ background: 'var(--bg)', color: 'var(--text-primary)', border: '1px solid var(--border)', padding: '14px 28px', borderRadius: 10, fontSize: 16, fontWeight: 600, cursor: 'pointer' }}>
             Browse feed
           </button>
         </div>
@@ -80,7 +80,7 @@ export default function LandingPage() {
       <div style={{ maxWidth: 960, margin: '0 auto', padding: '0 20px 80px' }}>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: 16 }}>
           {features.map(f => (
-            <div key={f.title} style={{ background: 'white', border: '1px solid var(--border)', borderRadius: 14, padding: '20px 22px' }}>
+            <div key={f.title} style={{ background: 'var(--bg)', border: '1px solid var(--border)', borderRadius: 14, padding: '20px 22px' }}>
               <img src={f.icon} alt={f.title} style={{ width: 52, height: 52, objectFit: 'cover', borderRadius: '50%', marginBottom: 10, transition: 'transform 0.2s ease' }} onMouseEnter={e => (e.currentTarget.style.transform = 'scale(2)')} onMouseLeave={e => (e.currentTarget.style.transform = 'scale(1)')} />
               <h3 style={{ fontSize: 15, fontWeight: 700, color: 'var(--text-primary)', margin: '0 0 6px' }}>{f.title}</h3>
               <p style={{ fontSize: 13, color: 'var(--text-secondary)', margin: 0, lineHeight: 1.5 }}>{f.desc}</p>
@@ -104,8 +104,8 @@ export default function LandingPage() {
           ].map(c => (
             <div key={c.name} style={{
               padding: '8px 16px', borderRadius: 20, fontSize: 13, fontWeight: 500,
-              background: c.active ? '#eff6ff' : 'white',
-              border: c.active ? '1px solid #bfdbfe' : '1px solid var(--border)',
+              background: c.active ? 'var(--accent-light)' : 'var(--bg)',
+              border: c.active ? '1px solid var(--accent-border)' : '1px solid var(--border)',
               color: c.active ? 'var(--accent)' : 'var(--text-muted)'
             }}>
               {c.active ? '✅' : '��'} {c.name}
@@ -121,7 +121,7 @@ export default function LandingPage() {
           <h3 style={{ fontSize: 28, fontWeight: 700, color: 'white', margin: '0 0 8px' }}>Ready to join?</h3>
           <p style={{ fontSize: 14, color: 'rgba(255,255,255,0.8)', margin: '0 0 24px' }}>Free forever for students. No credit card needed.</p>
           <button onClick={() => router.push('/auth/signup')}
-            style={{ background: 'white', color: 'var(--accent)', border: 'none', padding: '13px 28px', borderRadius: 10, fontSize: 15, fontWeight: 700, cursor: 'pointer' }}>
+            style={{ background: 'var(--bg)', color: 'var(--accent)', border: 'none', padding: '13px 28px', borderRadius: 10, fontSize: 15, fontWeight: 700, cursor: 'pointer' }}>
             Create your account →
           </button>
         </div>

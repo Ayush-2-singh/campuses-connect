@@ -25,7 +25,7 @@ export default function LeaderboardPage() {
   }, [])
 
   const avatarColor = (name: string) => {
-    const colors = ['#2563eb','#7c3aed','#16a34a','#d97706','#dc2626','#0891b2']
+    const colors = ['#2563eb','#7c3aed','#16a34a','#d97706','var(--danger)','#0891b2']
     return colors[(name?.charCodeAt(0) || 0) % colors.length]
   }
 
@@ -44,7 +44,7 @@ export default function LeaderboardPage() {
           <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
             {leaders.map((leader, i) => (
               <div key={leader.id} onClick={() => leader.username && router.push(`/profile/${leader.username}`)}
-                style={{ background: 'white', border: i < 3 ? '1px solid #bfdbfe' : '1px solid var(--border)', borderRadius: 12, padding: '14px 16px', display: 'flex', alignItems: 'center', gap: 12, cursor: 'pointer', boxShadow: 'var(--shadow-sm)' }}>
+                style={{ background: 'var(--bg)', border: i < 3 ? '1px solid var(--accent-border)' : '1px solid var(--border)', borderRadius: 12, padding: '14px 16px', display: 'flex', alignItems: 'center', gap: 12, cursor: 'pointer', boxShadow: 'var(--shadow-sm)' }}>
                 <span style={{ fontSize: 20, width: 28, textAlign: 'center', flexShrink: 0 }}>{medal(i) || `${i + 1}`}</span>
                 <div style={{ width: 36, height: 36, borderRadius: '50%', background: avatarColor(leader.full_name || ''), display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontSize: 14, fontWeight: 700, flexShrink: 0 }}>
                   {leader.full_name?.[0] || '?'}
@@ -54,8 +54,8 @@ export default function LeaderboardPage() {
                   <p style={{ fontSize: 12, color: 'var(--text-muted)', margin: 0 }}>@{leader.username} {leader.departments?.short_name && `· ${leader.departments.short_name}`}</p>
                 </div>
                 <div style={{ textAlign: 'right', flexShrink: 0 }}>
-                  <p style={{ fontSize: 15, fontWeight: 700, color: '#a16207', margin: '0 0 2px' }}>⭐ {leader.karma_points || 0}</p>
-                  {leader.streak_days > 0 && <p style={{ fontSize: 11, color: '#c2410c', margin: 0 }}>🔥 {leader.streak_days} streak</p>}
+                  <p style={{ fontSize: 15, fontWeight: 700, color: 'var(--yellow-text)', margin: '0 0 2px' }}>⭐ {leader.karma_points || 0}</p>
+                  {leader.streak_days > 0 && <p style={{ fontSize: 11, color: 'var(--orange-text)', margin: 0 }}>🔥 {leader.streak_days} streak</p>}
                 </div>
               </div>
             ))}

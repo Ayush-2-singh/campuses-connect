@@ -98,7 +98,7 @@ export default function NotesPage() {
     outline: 'none',
     fontFamily: 'inherit',
     color: 'var(--text-primary)',
-    background: 'white',
+    background: 'var(--bg)',
     boxSizing: 'border-box' as const,
   }
 
@@ -109,7 +109,7 @@ export default function NotesPage() {
     fontSize: 12,
     fontWeight: 500 as const,
     border: active ? 'none' : '1px solid var(--border)',
-    background: active ? 'var(--accent)' : 'white',
+    background: active ? 'var(--accent)' : 'var(--bg)',
     color: active ? 'white' : 'var(--text-secondary)',
     cursor: 'pointer' as const,
   })
@@ -134,7 +134,7 @@ export default function NotesPage() {
 
         {/* Upload form — platform_admin only */}
         {showCompose && canUpload && (
-          <div style={{ background: 'white', border: '1px solid var(--border)', borderRadius: 14, padding: 20, marginBottom: 20, boxShadow: 'var(--shadow-sm)' }}>
+          <div style={{ background: 'var(--bg)', border: '1px solid var(--border)', borderRadius: 14, padding: 20, marginBottom: 20, boxShadow: 'var(--shadow-sm)' }}>
             <h3 style={{ fontSize: 16, fontWeight: 700, color: 'var(--text-primary)', margin: '0 0 16px' }}>Upload Resource</h3>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
               <input
@@ -189,12 +189,12 @@ export default function NotesPage() {
             <div style={{ display: 'flex', gap: 8, marginTop: 14 }}>
               <button
                 onClick={() => setShowCompose(false)}
-                style={{ flex: 1, background: 'white', color: 'var(--text-secondary)', border: '1px solid var(--border)', borderRadius: 10, padding: '10px', fontSize: 14, cursor: 'pointer', fontFamily: 'inherit' }}
+                style={{ flex: 1, background: 'var(--bg)', color: 'var(--text-secondary)', border: '1px solid var(--border)', borderRadius: 10, padding: '10px', fontSize: 14, cursor: 'pointer', fontFamily: 'inherit' }}
               >Cancel</button>
               <button
                 onClick={handlePost}
                 disabled={!form.title.trim() || !form.subject.trim() || posting}
-                style={{ flex: 1, background: posting ? '#93c5fd' : 'var(--accent)', color: 'white', border: 'none', borderRadius: 10, padding: '10px', fontSize: 14, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}
+                style={{ flex: 1, background: posting ? 'var(--disabled)' : 'var(--accent)', color: 'white', border: 'none', borderRadius: 10, padding: '10px', fontSize: 14, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}
               >
                 {posting ? 'Uploading...' : 'Upload'}
               </button>
@@ -216,7 +216,7 @@ export default function NotesPage() {
               outline: 'none',
               fontFamily: 'inherit',
               color: subjectFilter ? 'var(--text-primary)' : 'var(--text-muted)',
-              background: 'white',
+              background: 'var(--bg)',
               cursor: 'pointer',
             }}
           >
@@ -249,7 +249,7 @@ export default function NotesPage() {
             {filtered.map(note => (
               <div
                 key={note.id}
-                style={{ background: 'white', border: '1px solid var(--border)', borderRadius: 12, padding: '16px', display: 'flex', alignItems: 'center', gap: 14, boxShadow: 'var(--shadow-sm)' }}
+                style={{ background: 'var(--bg)', border: '1px solid var(--border)', borderRadius: 12, padding: '16px', display: 'flex', alignItems: 'center', gap: 14, boxShadow: 'var(--shadow-sm)' }}
               >
                 <span style={{ fontSize: 28, flexShrink: 0 }}>{typeIcon[note.resource_type] || '📎'}</span>
                 <div style={{ flex: 1, minWidth: 0 }}>

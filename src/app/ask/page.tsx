@@ -115,7 +115,7 @@ export default function AskPage() {
   const inputStyle = {
     width: '100%', border: '1px solid var(--border)', borderRadius: 10,
     padding: '10px 14px', fontSize: 14, outline: 'none', fontFamily: 'inherit',
-    color: 'var(--text-primary)', background: 'white', boxSizing: 'border-box' as const,
+    color: 'var(--text-primary)', background: 'var(--bg)', boxSizing: 'border-box' as const,
   }
 
   return (
@@ -137,14 +137,14 @@ export default function AskPage() {
         </div>
 
         {error && (
-          <div style={{ background: '#fef2f2', border: '1px solid #fecaca', borderRadius: 10, padding: '10px 14px', marginBottom: 14, fontSize: 13, color: '#dc2626' }}>
+          <div style={{ background: 'var(--danger-light)', border: '1px solid var(--danger-border)', borderRadius: 10, padding: '10px 14px', marginBottom: 14, fontSize: 13, color: 'var(--danger)' }}>
             {error}
           </div>
         )}
 
         {/* Compose */}
         {showAsk && (
-          <div style={{ background: 'white', border: '1px solid var(--border)', borderRadius: 14, padding: 20, marginBottom: 20, boxShadow: 'var(--shadow-sm)' }}>
+          <div style={{ background: 'var(--bg)', border: '1px solid var(--border)', borderRadius: 14, padding: 20, marginBottom: 20, boxShadow: 'var(--shadow-sm)' }}>
             <h3 style={{ fontSize: 15, fontWeight: 700, color: 'var(--text-primary)', margin: '0 0 14px' }}>Ask your question</h3>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
               <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: 10 }}>
@@ -157,9 +157,9 @@ export default function AskPage() {
                 placeholder="Add more detail (optional)" rows={3} style={{ ...inputStyle, resize: 'none' }} />
             </div>
             <div style={{ display: 'flex', gap: 8, marginTop: 14 }}>
-              <button onClick={() => setShowAsk(false)} style={{ flex: 1, background: 'white', color: 'var(--text-secondary)', border: '1px solid var(--border)', borderRadius: 10, padding: '10px', fontSize: 14, cursor: 'pointer', fontFamily: 'inherit' }}>Cancel</button>
+              <button onClick={() => setShowAsk(false)} style={{ flex: 1, background: 'var(--bg)', color: 'var(--text-secondary)', border: '1px solid var(--border)', borderRadius: 10, padding: '10px', fontSize: 14, cursor: 'pointer', fontFamily: 'inherit' }}>Cancel</button>
               <button onClick={handleAsk} disabled={!form.title.trim() || posting}
-                style={{ flex: 1, background: posting ? '#93c5fd' : 'var(--accent)', color: 'white', border: 'none', borderRadius: 10, padding: '10px', fontSize: 14, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>
+                style={{ flex: 1, background: posting ? 'var(--disabled)' : 'var(--accent)', color: 'white', border: 'none', borderRadius: 10, padding: '10px', fontSize: 14, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>
                 {posting ? 'Posting...' : 'Post Question'}
               </button>
             </div>
@@ -179,15 +179,15 @@ export default function AskPage() {
             {questions.map(q => {
               const answerCount = q.answers?.[0]?.count || 0
               return (
-                <div key={q.id} style={{ background: 'white', border: '1px solid var(--border)', borderRadius: 14, padding: '16px 18px', boxShadow: 'var(--shadow-sm)' }}>
+                <div key={q.id} style={{ background: 'var(--bg)', border: '1px solid var(--border)', borderRadius: 14, padding: '16px 18px', boxShadow: 'var(--shadow-sm)' }}>
                   <div onClick={() => toggleQuestion(q)} style={{ cursor: 'pointer' }}>
                     <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 10 }}>
                       <div style={{ flex: 1, minWidth: 0 }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
-                          <span style={{ fontSize: 11, padding: '3px 10px', borderRadius: 20, background: q.subject ? '#f5f3ff' : 'var(--bg-tertiary)', color: q.subject ? '#6d28d9' : 'var(--text-secondary)', fontWeight: 600 }}>
+                          <span style={{ fontSize: 11, padding: '3px 10px', borderRadius: 20, background: q.subject ? 'var(--purple-light)' : 'var(--bg-tertiary)', color: q.subject ? 'var(--purple-text)' : 'var(--text-secondary)', fontWeight: 600 }}>
                             {q.subject || 'General'}
                           </span>
-                          {q.is_resolved && <span style={{ fontSize: 11, background: '#f0fdf4', color: '#15803d', padding: '3px 10px', borderRadius: 20, fontWeight: 600 }}>✅ Resolved</span>}
+                          {q.is_resolved && <span style={{ fontSize: 11, background: 'var(--success-light)', color: 'var(--success-text)', padding: '3px 10px', borderRadius: 20, fontWeight: 600 }}>✅ Resolved</span>}
                         </div>
                         <p style={{ fontSize: 15, fontWeight: 700, color: 'var(--text-primary)', margin: '0 0 4px' }}>{q.title}</p>
                         {q.body && <p style={{ fontSize: 13, color: 'var(--text-secondary)', margin: '0 0 6px', lineHeight: 1.5 }}>{q.body.slice(0, 140)}{q.body.length > 140 ? '…' : ''}</p>}
@@ -207,11 +207,11 @@ export default function AskPage() {
                       )}
                       {answers.map(a => (
                         <div key={a.id} style={{ display: 'flex', gap: 10, alignItems: 'flex-start' }}>
-                          <div style={{ flex: 1, background: a.is_accepted ? '#f0fdf4' : 'var(--bg-secondary)', border: a.is_accepted ? '1px solid #86efac' : 'none', borderRadius: 10, padding: '10px 14px' }}>
+                          <div style={{ flex: 1, background: a.is_accepted ? 'var(--success-light)' : 'var(--bg-secondary)', border: a.is_accepted ? '1px solid var(--success-border)' : 'none', borderRadius: 10, padding: '10px 14px' }}>
                             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 }}>
                               <p style={{ fontSize: 12, fontWeight: 600, color: 'var(--accent)', margin: 0 }}>@{a.profiles?.username}</p>
                               <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
-                                {a.is_accepted && <span style={{ fontSize: 11, background: '#f0fdf4', color: '#15803d', padding: '2px 8px', borderRadius: 20, fontWeight: 600 }}>✓ Accepted</span>}
+                                {a.is_accepted && <span style={{ fontSize: 11, background: 'var(--success-light)', color: 'var(--success-text)', padding: '2px 8px', borderRadius: 20, fontWeight: 600 }}>✓ Accepted</span>}
                                 {user?.id === q.asked_by && !a.is_accepted && !q.is_resolved && (
                                   <button onClick={() => handleAccept(q, a)}
                                     style={{ fontSize: 11, background: 'var(--accent)', color: 'white', border: 'none', padding: '4px 10px', borderRadius: 20, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>
@@ -230,7 +230,7 @@ export default function AskPage() {
                             onKeyDown={e => e.key === 'Enter' && handleAnswer(q.id)}
                             placeholder="Write an answer... (+5 karma)" style={{ ...inputStyle, flex: 1, background: 'var(--bg-secondary)' }} />
                           <button onClick={() => handleAnswer(q.id)} disabled={!answerText.trim() || answering}
-                            style={{ padding: '8px 16px', borderRadius: 10, border: 'none', background: !answerText.trim() || answering ? '#93c5fd' : 'var(--accent)', color: 'white', fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>
+                            style={{ padding: '8px 16px', borderRadius: 10, border: 'none', background: !answerText.trim() || answering ? 'var(--disabled)' : 'var(--accent)', color: 'white', fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>
                             {answering ? '...' : 'Answer'}
                           </button>
                         </div>

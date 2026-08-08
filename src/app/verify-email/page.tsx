@@ -28,7 +28,7 @@ function VerifyInner() {
 
   return (
     <div style={{ minHeight: '100vh', background: 'var(--bg-secondary)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 }}>
-      <div style={{ width: '100%', maxWidth: 400, background: 'white', borderRadius: 16, border: '1px solid var(--border)', padding: 32, textAlign: 'center', boxShadow: 'var(--shadow)' }}>
+      <div style={{ width: '100%', maxWidth: 400, background: 'var(--bg)', borderRadius: 16, border: '1px solid var(--border)', padding: 32, textAlign: 'center', boxShadow: 'var(--shadow)' }}>
         <div style={{ fontSize: 52, marginBottom: 12 }}>
           {state === 'loading' ? '⏳' : state === 'ok' ? '✅' : '❌'}
         </div>

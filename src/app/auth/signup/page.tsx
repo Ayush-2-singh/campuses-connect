@@ -42,7 +42,7 @@ export default function SignupPage() {
   const inputStyle = {
     width: '100%', border: '1px solid var(--border)', borderRadius: 10,
     padding: '11px 14px', fontSize: 14, outline: 'none', fontFamily: 'inherit',
-    color: 'var(--text-primary)', background: 'white', boxSizing: 'border-box' as const
+    color: 'var(--text-primary)', background: 'var(--bg)', boxSizing: 'border-box' as const
   }
 
   if (success) return (
@@ -73,11 +73,11 @@ export default function SignupPage() {
           <p style={{ fontSize: 14, color: 'var(--text-muted)', margin: 0 }}>Your campus. Your community.</p>
         </div>
 
-        <div style={{ background: 'white', borderRadius: 16, border: '1px solid var(--border)', padding: 28, boxShadow: 'var(--shadow)' }}>
+        <div style={{ background: 'var(--bg)', borderRadius: 16, border: '1px solid var(--border)', padding: 28, boxShadow: 'var(--shadow)' }}>
           <h2 style={{ fontSize: 20, fontWeight: 700, color: 'var(--text-primary)', margin: '0 0 20px' }}>Create your account</h2>
 
           {error && (
-            <div style={{ background: '#fef2f2', border: '1px solid #fecaca', borderRadius: 8, padding: '10px 14px', marginBottom: 16, fontSize: 13, color: '#dc2626' }}>
+            <div style={{ background: 'var(--danger-light)', border: '1px solid var(--danger-border)', borderRadius: 8, padding: '10px 14px', marginBottom: 16, fontSize: 13, color: 'var(--danger)' }}>
               {error}
             </div>
           )}
@@ -122,7 +122,7 @@ export default function SignupPage() {
           <button
             onClick={handleSignup}
             disabled={loading}
-            style={{ width: '100%', background: loading ? '#93c5fd' : 'var(--accent)', color: 'white', border: 'none', borderRadius: 10, padding: '12px', fontSize: 15, fontWeight: 700, cursor: loading ? 'not-allowed' : 'pointer', marginTop: 20, fontFamily: 'inherit' }}
+            style={{ width: '100%', background: loading ? 'var(--disabled)' : 'var(--accent)', color: 'white', border: 'none', borderRadius: 10, padding: '12px', fontSize: 15, fontWeight: 700, cursor: loading ? 'not-allowed' : 'pointer', marginTop: 20, fontFamily: 'inherit' }}
           >
             {loading ? 'Creating account…' : 'Create Account'}
           </button>

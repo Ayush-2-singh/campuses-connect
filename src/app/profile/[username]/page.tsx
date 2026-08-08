@@ -68,7 +68,7 @@ export default function UserProfilePage() {
   }
 
   const avatarColor = (name: string) => {
-    const colors = ['#2563eb', '#7c3aed', '#16a34a', '#d97706', '#dc2626', '#0891b2']
+    const colors = ['#2563eb', '#7c3aed', '#16a34a', '#d97706', 'var(--danger)', '#0891b2']
     return colors[(name?.charCodeAt(0) || 0) % colors.length]
   }
 
@@ -81,12 +81,12 @@ export default function UserProfilePage() {
   }
 
   const postTypeConfig: Record<string, { bg: string; text: string; label: string }> = {
-    announcement: { bg: '#fff7ed', text: '#c2410c', label: 'Announcement' },
-    opportunity: { bg: '#f0fdf4', text: '#15803d', label: 'Opportunity' },
-    resource: { bg: '#eff6ff', text: '#1d4ed8', label: 'Resource' },
-    discussion: { bg: '#f5f3ff', text: '#6d28d9', label: 'Discussion' },
-    general: { bg: '#f8f9fa', text: '#495057', label: 'General' },
-    event: { bg: '#fff7ed', text: '#c2410c', label: 'Event' },
+    announcement: { bg: 'var(--orange-light)', text: 'var(--orange-text)', label: 'Announcement' },
+    opportunity: { bg: 'var(--success-light)', text: 'var(--success-text)', label: 'Opportunity' },
+    resource: { bg: 'var(--accent-light)', text: 'var(--accent-text)', label: 'Resource' },
+    discussion: { bg: 'var(--purple-light)', text: 'var(--purple-text)', label: 'Discussion' },
+    general: { bg: 'var(--bg-secondary)', text: 'var(--text-secondary)', label: 'General' },
+    event: { bg: 'var(--orange-light)', text: 'var(--orange-text)', label: 'Event' },
   }
 
   if (loading) return (
@@ -110,7 +110,7 @@ export default function UserProfilePage() {
   return (
     <div style={{ minHeight: '100vh', background: 'var(--bg-secondary)', paddingBottom: 80 }}>
       {/* Header */}
-      <div style={{ position: 'sticky', top: 0, background: 'white', borderBottom: '1px solid var(--border)', padding: '13px 16px', zIndex: 10 }}>
+      <div style={{ position: 'sticky', top: 0, background: 'var(--bg)', borderBottom: '1px solid var(--border)', padding: '13px 16px', zIndex: 10 }}>
         <div style={{ maxWidth: 640, margin: '0 auto', display: 'flex', alignItems: 'center', gap: 10 }}>
           <button onClick={() => router.back()}
             style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', fontSize: 18 }}>←</button>
@@ -120,7 +120,7 @@ export default function UserProfilePage() {
 
       <div style={{ maxWidth: 640, margin: '0 auto', padding: '24px 16px' }}>
         {/* Profile card */}
-        <div style={{ background: 'white', border: '1px solid var(--border)', borderRadius: 16, padding: '24px', marginBottom: 16, boxShadow: 'var(--shadow-sm)' }}>
+        <div style={{ background: 'var(--bg)', border: '1px solid var(--border)', borderRadius: 16, padding: '24px', marginBottom: 16, boxShadow: 'var(--shadow-sm)' }}>
           <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 16 }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
               <div style={{ width: 56, height: 56, borderRadius: '50%', background: avatarColor(profile.full_name || ''), display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontSize: 22, fontWeight: 700, flexShrink: 0 }}>
@@ -134,13 +134,13 @@ export default function UserProfilePage() {
 
             {!isOwnProfile && user && (
               <button onClick={handleConnect} disabled={connected || connecting}
-                style={{ padding: '8px 18px', borderRadius: 8, border: connected ? '1px solid var(--border)' : '1px solid var(--accent)', background: connected ? 'white' : 'var(--accent)', color: connected ? 'var(--text-secondary)' : 'white', fontSize: 13, fontWeight: 600, cursor: connected ? 'default' : 'pointer', fontFamily: 'inherit' }}>
+                style={{ padding: '8px 18px', borderRadius: 8, border: connected ? '1px solid var(--border)' : '1px solid var(--accent)', background: connected ? 'var(--bg)' : 'var(--accent)', color: connected ? 'var(--text-secondary)' : 'white', fontSize: 13, fontWeight: 600, cursor: connected ? 'default' : 'pointer', fontFamily: 'inherit' }}>
                 {connected ? 'Connected ✓' : connecting ? 'Connecting…' : 'Connect'}
               </button>
             )}
             {isOwnProfile && (
               <button onClick={() => router.push('/profile')}
-                style={{ padding: '8px 18px', borderRadius: 8, border: '1px solid var(--accent)', background: 'white', color: 'var(--accent)', fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>
+                style={{ padding: '8px 18px', borderRadius: 8, border: '1px solid var(--accent)', background: 'var(--bg)', color: 'var(--accent)', fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>
                 Edit Profile
               </button>
             )}
@@ -160,14 +160,14 @@ export default function UserProfilePage() {
           {(profile.karma_points > 0 || profile.streak_days > 0) && (
             <div style={{ display: 'flex', gap: 12, marginTop: 14 }}>
               {profile.karma_points > 0 && (
-                <div style={{ background: '#fefce8', border: '1px solid #fef08a', borderRadius: 10, padding: '8px 14px', textAlign: 'center' }}>
-                  <p style={{ fontSize: 15, fontWeight: 700, color: '#a16207', margin: 0 }}>⭐ {profile.karma_points}</p>
+                <div style={{ background: 'var(--yellow-light)', border: '1px solid var(--warning-border)', borderRadius: 10, padding: '8px 14px', textAlign: 'center' }}>
+                  <p style={{ fontSize: 15, fontWeight: 700, color: 'var(--yellow-text)', margin: 0 }}>⭐ {profile.karma_points}</p>
                   <p style={{ fontSize: 11, color: 'var(--text-muted)', margin: '2px 0 0' }}>Karma</p>
                 </div>
               )}
               {profile.streak_days > 0 && (
-                <div style={{ background: '#fff7ed', border: '1px solid #fed7aa', borderRadius: 10, padding: '8px 14px', textAlign: 'center' }}>
-                  <p style={{ fontSize: 15, fontWeight: 700, color: '#c2410c', margin: 0 }}>🔥 {profile.streak_days}</p>
+                <div style={{ background: 'var(--orange-light)', border: '1px solid var(--orange-border)', borderRadius: 10, padding: '8px 14px', textAlign: 'center' }}>
+                  <p style={{ fontSize: 15, fontWeight: 700, color: 'var(--orange-text)', margin: 0 }}>🔥 {profile.streak_days}</p>
                   <p style={{ fontSize: 11, color: 'var(--text-muted)', margin: '2px 0 0' }}>Day Streak</p>
                 </div>
               )}
@@ -176,9 +176,9 @@ export default function UserProfilePage() {
 
           {(profile.github_url || profile.linkedin_url || profile.portfolio_url) && (
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginTop: 14 }}>
-              {profile.github_url && <a href={profile.github_url} target="_blank" rel="noopener noreferrer" style={{ fontSize: 12, color: 'var(--accent)', textDecoration: 'none', background: '#eff6ff', padding: '4px 10px', borderRadius: 6 }}>GitHub →</a>}
-              {profile.linkedin_url && <a href={profile.linkedin_url} target="_blank" rel="noopener noreferrer" style={{ fontSize: 12, color: 'var(--accent)', textDecoration: 'none', background: '#eff6ff', padding: '4px 10px', borderRadius: 6 }}>LinkedIn →</a>}
-              {profile.portfolio_url && <a href={profile.portfolio_url} target="_blank" rel="noopener noreferrer" style={{ fontSize: 12, color: 'var(--accent)', textDecoration: 'none', background: '#eff6ff', padding: '4px 10px', borderRadius: 6 }}>Portfolio →</a>}
+              {profile.github_url && <a href={profile.github_url} target="_blank" rel="noopener noreferrer" style={{ fontSize: 12, color: 'var(--accent)', textDecoration: 'none', background: 'var(--accent-light)', padding: '4px 10px', borderRadius: 6 }}>GitHub →</a>}
+              {profile.linkedin_url && <a href={profile.linkedin_url} target="_blank" rel="noopener noreferrer" style={{ fontSize: 12, color: 'var(--accent)', textDecoration: 'none', background: 'var(--accent-light)', padding: '4px 10px', borderRadius: 6 }}>LinkedIn →</a>}
+              {profile.portfolio_url && <a href={profile.portfolio_url} target="_blank" rel="noopener noreferrer" style={{ fontSize: 12, color: 'var(--accent)', textDecoration: 'none', background: 'var(--accent-light)', padding: '4px 10px', borderRadius: 6 }}>Portfolio →</a>}
             </div>
           )}
         </div>
@@ -204,7 +204,7 @@ export default function UserProfilePage() {
             ) : posts.map(post => {
               const pc = postTypeConfig[post.post_type] || postTypeConfig.general
               return (
-                <div key={post.id} style={{ background: 'white', border: '1px solid var(--border)', borderRadius: 12, padding: '14px 16px', boxShadow: 'var(--shadow-sm)' }}>
+                <div key={post.id} style={{ background: 'var(--bg)', border: '1px solid var(--border)', borderRadius: 12, padding: '14px 16px', boxShadow: 'var(--shadow-sm)' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
                     <span style={{ background: pc.bg, color: pc.text, padding: '2px 8px', borderRadius: 20, fontSize: 11, fontWeight: 600 }}>{pc.label}</span>
                     <span style={{ fontSize: 11, color: 'var(--text-muted)' }}>{timeAgo(post.created_at)}</span>
@@ -227,14 +227,14 @@ export default function UserProfilePage() {
                 <p style={{ fontSize: 13, color: 'var(--text-muted)' }}>No notes uploaded yet</p>
               </div>
             ) : notes.map(note => (
-              <div key={note.id} style={{ background: 'white', border: '1px solid var(--border)', borderRadius: 12, padding: '14px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', boxShadow: 'var(--shadow-sm)' }}>
+              <div key={note.id} style={{ background: 'var(--bg)', border: '1px solid var(--border)', borderRadius: 12, padding: '14px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', boxShadow: 'var(--shadow-sm)' }}>
                 <div>
                   <p style={{ fontSize: 14, fontWeight: 600, color: 'var(--text-primary)', margin: '0 0 3px' }}>{note.title}</p>
                   <p style={{ fontSize: 12, color: 'var(--text-muted)', margin: 0 }}>{note.subject} · Sem {note.semester}</p>
                 </div>
                 {note.drive_link && (
                   <a href={note.drive_link} target="_blank" rel="noopener noreferrer"
-                    style={{ color: 'var(--accent)', fontSize: 13, fontWeight: 600, textDecoration: 'none', background: '#eff6ff', padding: '6px 12px', borderRadius: 8 }}>
+                    style={{ color: 'var(--accent)', fontSize: 13, fontWeight: 600, textDecoration: 'none', background: 'var(--accent-light)', padding: '6px 12px', borderRadius: 8 }}>
                     Open →
                   </a>
                 )}
@@ -245,7 +245,7 @@ export default function UserProfilePage() {
       </div>
 
       {/* Bottom nav */}
-      <div style={{ position: 'fixed', bottom: 0, left: 0, right: 0, background: 'white', borderTop: '1px solid var(--border)', zIndex: 10 }}>
+      <div style={{ position: 'fixed', bottom: 0, left: 0, right: 0, background: 'var(--bg)', borderTop: '1px solid var(--border)', zIndex: 10 }}>
         <div style={{ maxWidth: 640, margin: '0 auto', display: 'flex' }}>
           {[
             { icon: '🏠', label: 'Feed', href: '/feed' },

@@ -247,7 +247,7 @@ export default function AdminPage() {
   return (
     <div style={{ minHeight: '100vh', background: 'var(--bg-secondary)' }}>
       {/* Header */}
-      <div style={{ background: 'white', borderBottom: '1px solid var(--border)', padding: '14px 24px', position: 'sticky', top: 0, zIndex: 20 }}>
+      <div style={{ background: 'var(--bg)', borderBottom: '1px solid var(--border)', padding: '14px 24px', position: 'sticky', top: 0, zIndex: 20 }}>
         <div style={{ maxWidth: 1100, margin: '0 auto', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
           <div>
             <h1 style={{ fontSize: 18, fontWeight: 800, color: 'var(--text-primary)', margin: '0 0 2px' }}>
@@ -291,14 +291,14 @@ export default function AdminPage() {
                 { label: 'Total Posts', value: stats.posts, emoji: '📝' },
                 { label: 'Colleges', value: stats.colleges, emoji: '🏫' },
               ].map(s => (
-                <div key={s.label} style={{ background: 'white', border: '1px solid var(--border)', borderRadius: 16, padding: '20px', textAlign: 'center', boxShadow: 'var(--shadow-sm)' }}>
+                <div key={s.label} style={{ background: 'var(--bg)', border: '1px solid var(--border)', borderRadius: 16, padding: '20px', textAlign: 'center', boxShadow: 'var(--shadow-sm)' }}>
                   <p style={{ fontSize: 32, margin: '0 0 8px' }}>{s.emoji}</p>
                   <p style={{ fontSize: 32, fontWeight: 800, color: 'var(--accent)', margin: '0 0 4px' }}>{s.value}</p>
                   <p style={{ fontSize: 13, color: 'var(--text-muted)', margin: 0 }}>{s.label}</p>
                 </div>
               ))}
             </div>
-            <div style={{ background: 'white', border: '1px solid var(--border)', borderRadius: 16, padding: '20px', boxShadow: 'var(--shadow-sm)' }}>
+            <div style={{ background: 'var(--bg)', border: '1px solid var(--border)', borderRadius: 16, padding: '20px', boxShadow: 'var(--shadow-sm)' }}>
               <p style={{ fontSize: 14, color: 'var(--text-secondary)', lineHeight: 1.7, margin: 0 }}>
                 Welcome to the admin panel. Use the tabs above to manage <strong>Users</strong> (grant or revoke admin access),
                 <strong> Posts</strong> (pin or delete), and <strong>Colleges</strong> (view registered institutions).
@@ -311,14 +311,14 @@ export default function AdminPage() {
         {activeTab === 'Users' && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
             {adminError && (
-              <div style={{ background: '#fef2f2', border: '1px solid #fecaca', borderRadius: 10, padding: '10px 14px', fontSize: 13, color: '#dc2626', marginBottom: 4 }}>
+              <div style={{ background: 'var(--danger-light)', border: '1px solid var(--danger-border)', borderRadius: 10, padding: '10px 14px', fontSize: 13, color: 'var(--danger)', marginBottom: 4 }}>
                 {adminError}
               </div>
             )}
             {users.length === 0 ? (
               <p style={{ color: 'var(--text-muted)', textAlign: 'center', padding: '40px 0' }}>Loading users…</p>
             ) : users.map(u => (
-              <div key={u.id} style={{ background: 'white', border: '1px solid var(--border)', borderRadius: 12, padding: '14px 16px', display: 'flex', alignItems: 'center', gap: 14, boxShadow: 'var(--shadow-sm)' }}>
+              <div key={u.id} style={{ background: 'var(--bg)', border: '1px solid var(--border)', borderRadius: 12, padding: '14px 16px', display: 'flex', alignItems: 'center', gap: 14, boxShadow: 'var(--shadow-sm)' }}>
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <p style={{ fontSize: 14, fontWeight: 600, color: 'var(--text-primary)', margin: '0 0 2px' }}>{u.full_name || 'No name'}</p>
                   <p style={{ fontSize: 12, color: 'var(--text-muted)', margin: 0 }}>
@@ -329,7 +329,7 @@ export default function AdminPage() {
                   <select
                     value={userAccess(u.id)}
                     onChange={e => setAdminAccess(u.id, e.target.value)}
-                    style={{ border: '1px solid var(--border)', borderRadius: 8, padding: '6px 10px', fontSize: 12, color: 'var(--text-primary)', background: 'white', cursor: 'pointer', fontFamily: 'inherit' }}
+                    style={{ border: '1px solid var(--border)', borderRadius: 8, padding: '6px 10px', fontSize: 12, color: 'var(--text-primary)', background: 'var(--bg)', cursor: 'pointer', fontFamily: 'inherit' }}
                   >
                     {ADMIN_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
                   </select>
@@ -346,25 +346,25 @@ export default function AdminPage() {
           <div style={{ marginBottom: 16 }}>
             {!showAnnouncement ? (
               <button onClick={() => setShowAnnouncement(true)}
-                style={{ background: '#1d4ed8', color: 'white', border: 'none', padding: '10px 20px', borderRadius: 10, fontSize: 14, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>
+                style={{ background: 'var(--accent-text)', color: 'white', border: 'none', padding: '10px 20px', borderRadius: 10, fontSize: 14, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>
                 🌐 Post Global Announcement
               </button>
             ) : (
-              <div style={{ background: 'white', border: '2px solid #1d4ed8', borderRadius: 14, padding: 20, marginBottom: 16 }}>
+              <div style={{ background: 'var(--bg)', border: '2px solid var(--accent-text)', borderRadius: 14, padding: 20, marginBottom: 16 }}>
                 <h3 style={{ fontSize: 15, fontWeight: 700, color: 'var(--text-primary)', margin: '0 0 12px' }}>🌐 Post Official Announcement</h3>
                 <div style={{ display: 'flex', gap: 8, marginBottom: 12, flexWrap: 'wrap' }}>
-                  <button onClick={() => setAnnouncementScope('global')} style={{ padding: '6px 16px', borderRadius: 20, border: 'none', background: announcementScope === 'global' ? '#1d4ed8' : '#e5e7eb', color: announcementScope === 'global' ? 'white' : '#374151', fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit', fontSize: 13 }}>🌐 All Campuses</button>
+                  <button onClick={() => setAnnouncementScope('global')} style={{ padding: '6px 16px', borderRadius: 20, border: 'none', background: announcementScope === 'global' ? 'var(--accent-text)' : 'var(--border-strong)', color: announcementScope === 'global' ? 'white' : 'var(--text-secondary)', fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit', fontSize: 13 }}>🌐 All Campuses</button>
                   {campuses.map(c => (
-                    <button key={c.id} onClick={() => setAnnouncementScope(c.id)} style={{ padding: '6px 16px', borderRadius: 20, border: 'none', background: announcementScope === c.id ? '#15803d' : '#e5e7eb', color: announcementScope === c.id ? 'white' : '#374151', fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit', fontSize: 13 }}>🏫 {c.name}</button>
+                    <button key={c.id} onClick={() => setAnnouncementScope(c.id)} style={{ padding: '6px 16px', borderRadius: 20, border: 'none', background: announcementScope === c.id ? 'var(--success-text)' : 'var(--border-strong)', color: announcementScope === c.id ? 'white' : 'var(--text-secondary)', fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit', fontSize: 13 }}>🏫 {c.name}</button>
                   ))}
                 </div>
                 <textarea value={announcementText} onChange={e => setAnnouncementText(e.target.value)}
                   placeholder="Write your official announcement..." rows={4}
                   style={{ width: '100%', border: '1px solid var(--border)', borderRadius: 10, padding: '10px 14px', fontSize: 14, outline: 'none', fontFamily: 'inherit', resize: 'none', boxSizing: 'border-box' }} />
                 <div style={{ display: 'flex', gap: 8, marginTop: 10 }}>
-                  <button onClick={() => setShowAnnouncement(false)} style={{ flex: 1, background: 'white', color: 'var(--text-secondary)', border: '1px solid var(--border)', borderRadius: 10, padding: '9px', fontSize: 14, cursor: 'pointer', fontFamily: 'inherit' }}>Cancel</button>
+                  <button onClick={() => setShowAnnouncement(false)} style={{ flex: 1, background: 'var(--bg)', color: 'var(--text-secondary)', border: '1px solid var(--border)', borderRadius: 10, padding: '9px', fontSize: 14, cursor: 'pointer', fontFamily: 'inherit' }}>Cancel</button>
                   <button onClick={postAnnouncement} disabled={!announcementText.trim() || postingAnnouncement}
-                    style={{ flex: 2, background: postingAnnouncement ? '#93c5fd' : '#1d4ed8', color: 'white', border: 'none', borderRadius: 10, padding: '9px', fontSize: 14, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>
+                    style={{ flex: 2, background: postingAnnouncement ? 'var(--disabled)' : 'var(--accent-text)', color: 'white', border: 'none', borderRadius: 10, padding: '9px', fontSize: 14, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>
                     {postingAnnouncement ? 'Posting...' : announcementScope === 'global' ? '🌐 Post Global Announcement' : '🏫 Post Campus Announcement'}
                   </button>
                 </div>
@@ -379,7 +379,7 @@ export default function AdminPage() {
             {posts.length === 0 ? (
               <p style={{ color: 'var(--text-muted)', textAlign: 'center', padding: '40px 0' }}>Loading posts…</p>
             ) : posts.map(p => (
-              <div key={p.id} style={{ background: 'white', border: '1px solid var(--border)', borderRadius: 12, padding: '14px 16px', boxShadow: 'var(--shadow-sm)' }}>
+              <div key={p.id} style={{ background: 'var(--bg)', border: '1px solid var(--border)', borderRadius: 12, padding: '14px 16px', boxShadow: 'var(--shadow-sm)' }}>
                 <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12 }}>
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <p style={{ fontSize: 13, color: 'var(--text-secondary)', margin: '0 0 6px', lineHeight: 1.5 }}>
@@ -391,11 +391,11 @@ export default function AdminPage() {
                   </div>
                   <div style={{ display: 'flex', gap: 6, flexShrink: 0 }}>
                     <button onClick={() => togglePin(p.id, p.is_pinned)}
-                      style={{ padding: '5px 10px', borderRadius: 6, border: '1px solid var(--border)', background: p.is_pinned ? '#fff7ed' : 'white', color: p.is_pinned ? '#c2410c' : 'var(--text-secondary)', fontSize: 12, cursor: 'pointer', fontFamily: 'inherit' }}>
+                      style={{ padding: '5px 10px', borderRadius: 6, border: '1px solid var(--border)', background: p.is_pinned ? 'var(--orange-light)' : 'var(--bg)', color: p.is_pinned ? 'var(--orange-text)' : 'var(--text-secondary)', fontSize: 12, cursor: 'pointer', fontFamily: 'inherit' }}>
                       {p.is_pinned ? 'Unpin' : 'Pin'}
                     </button>
                     <button onClick={() => deletePost(p.id)}
-                      style={{ padding: '5px 10px', borderRadius: 6, border: '1px solid #fecaca', background: '#fef2f2', color: '#dc2626', fontSize: 12, cursor: 'pointer', fontFamily: 'inherit' }}>
+                      style={{ padding: '5px 10px', borderRadius: 6, border: '1px solid var(--danger-border)', background: 'var(--danger-light)', color: 'var(--danger)', fontSize: 12, cursor: 'pointer', fontFamily: 'inherit' }}>
                       Delete
                     </button>
                   </div>
@@ -416,13 +416,13 @@ export default function AdminPage() {
                 </p>
               </div>
               <button onClick={aiDigest} disabled={digestLoading || !modItems.length}
-                style={{ padding: '8px 16px', borderRadius: 10, border: 'none', background: digestLoading || !modItems.length ? '#ddd6fe' : '#7c3aed', color: 'white', fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>
+                style={{ padding: '8px 16px', borderRadius: 10, border: 'none', background: digestLoading || !modItems.length ? 'var(--purple-border)' : '#7c3aed', color: 'white', fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>
                 {digestLoading ? 'Thinking...' : '✨ AI Summary'}
               </button>
             </div>
 
             {modDigest && (
-              <div style={{ background: '#f5f3ff', border: '1px solid #ddd6fe', borderRadius: 14, padding: '16px 18px', marginBottom: 16, fontSize: 13, color: '#4c1d95', lineHeight: 1.7, whiteSpace: 'pre-wrap' }}>
+              <div style={{ background: 'var(--purple-light)', border: '1px solid var(--purple-border)', borderRadius: 14, padding: '16px 18px', marginBottom: 16, fontSize: 13, color: 'var(--purple-text)', lineHeight: 1.7, whiteSpace: 'pre-wrap' }}>
                 <strong>🤖 Copilot digest:</strong>
                 {'\n'}{modDigest}
               </div>
@@ -431,7 +431,7 @@ export default function AdminPage() {
             {modLoading ? (
               <p style={{ color: 'var(--text-muted)', textAlign: 'center', padding: '40px 0' }}>Loading moderation queue…</p>
             ) : modItems.length === 0 ? (
-              <div style={{ background: 'white', border: '1px solid var(--border)', borderRadius: 16, padding: '40px 20px', textAlign: 'center', boxShadow: 'var(--shadow-sm)' }}>
+              <div style={{ background: 'var(--bg)', border: '1px solid var(--border)', borderRadius: 16, padding: '40px 20px', textAlign: 'center', boxShadow: 'var(--shadow-sm)' }}>
                 <p style={{ fontSize: 32, margin: '0 0 8px' }}>🛡️</p>
                 <p style={{ fontSize: 15, fontWeight: 600, color: 'var(--text-primary)', margin: '0 0 4px' }}>Queue is clear</p>
                 <p style={{ fontSize: 13, color: 'var(--text-muted)', margin: 0 }}>
@@ -443,18 +443,18 @@ export default function AdminPage() {
                 {modItems.map(item => {
                   const aiNote = aiNotes[item.item_id]
                   const severityColor =
-                    item.ai_verdict?.severity === 'high' ? '#dc2626'
-                    : item.ai_verdict?.severity === 'medium' ? '#d97706' : '#15803d'
+                    item.ai_verdict?.severity === 'high' ? 'var(--danger)'
+                    : item.ai_verdict?.severity === 'medium' ? '#d97706' : 'var(--success-text)'
                   return (
-                    <div key={item.item_id} style={{ background: 'white', border: '1px solid var(--border)', borderRadius: 14, padding: '16px', boxShadow: 'var(--shadow-sm)' }}>
+                    <div key={item.item_id} style={{ background: 'var(--bg)', border: '1px solid var(--border)', borderRadius: 14, padding: '16px', boxShadow: 'var(--shadow-sm)' }}>
                       <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12, marginBottom: 8 }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
-                          <span style={{ fontSize: 11, background: item.source === 'ai' ? '#ede9fe' : '#fef3c7', color: item.source === 'ai' ? '#6d28d9' : '#b45309', padding: '3px 10px', borderRadius: 20, fontWeight: 700 }}>
+                          <span style={{ fontSize: 11, background: item.source === 'ai' ? 'var(--purple-light)' : 'var(--warning-light)', color: item.source === 'ai' ? 'var(--purple-text)' : 'var(--warning-text)', padding: '3px 10px', borderRadius: 20, fontWeight: 700 }}>
                             {item.source === 'ai' ? '🤖 AI Flag' : '🚩 User Report'}
                           </span>
                           <span style={{ fontSize: 11, background: 'var(--bg-tertiary)', color: 'var(--text-secondary)', padding: '3px 10px', borderRadius: 20, fontWeight: 600 }}>{item.content_type}</span>
                           {item.ai_verdict?.severity && (
-                            <span style={{ fontSize: 11, background: '#fef2f2', color: severityColor, padding: '3px 10px', borderRadius: 20, fontWeight: 600 }}>
+                            <span style={{ fontSize: 11, background: 'var(--danger-light)', color: severityColor, padding: '3px 10px', borderRadius: 20, fontWeight: 600 }}>
                               {item.ai_verdict.severity}
                             </span>
                           )}
@@ -471,13 +471,13 @@ export default function AdminPage() {
                       </p>
 
                       {(item.reason || item.ai_verdict?.reason) && (
-                        <p style={{ fontSize: 12, color: '#b45309', background: '#fffbeb', border: '1px solid #fde68a', borderRadius: 8, padding: '6px 10px', margin: '0 0 8px', lineHeight: 1.5 }}>
+                        <p style={{ fontSize: 12, color: 'var(--warning-text)', background: 'var(--warning-light)', border: '1px solid var(--warning-border)', borderRadius: 8, padding: '6px 10px', margin: '0 0 8px', lineHeight: 1.5 }}>
                           ⚠️ {item.ai_verdict?.reason || item.reason}
                         </p>
                       )}
 
                       {aiNote && (
-                        <div style={{ fontSize: 12, color: '#4c1d95', background: '#f5f3ff', border: '1px solid #ddd6fe', borderRadius: 8, padding: '8px 10px', marginBottom: 10, lineHeight: 1.5 }}>
+                        <div style={{ fontSize: 12, color: 'var(--purple-text)', background: 'var(--purple-light)', border: '1px solid var(--purple-border)', borderRadius: 8, padding: '8px 10px', marginBottom: 10, lineHeight: 1.5 }}>
                           🤖 Fresh analysis: {aiNote.flagged ? `${aiNote.reason} (action: ${aiNote.action})` : 'Looks fine to publish.'}
                         </div>
                       )}
@@ -488,16 +488,16 @@ export default function AdminPage() {
                           ✓ Approve
                         </button>
                         <button onClick={() => resolveMod(item.item_id, 'remove')} disabled={modBusy === item.item_id}
-                          style={{ padding: '6px 14px', borderRadius: 8, border: 'none', background: '#dc2626', color: 'white', fontSize: 12, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>
+                          style={{ padding: '6px 14px', borderRadius: 8, border: 'none', background: 'var(--danger)', color: 'white', fontSize: 12, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>
                           ✕ Remove
                         </button>
                         <button onClick={() => resolveMod(item.item_id, 'dismiss')} disabled={modBusy === item.item_id}
-                          style={{ padding: '6px 14px', borderRadius: 8, border: '1px solid var(--border)', background: 'white', color: 'var(--text-secondary)', fontSize: 12, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>
+                          style={{ padding: '6px 14px', borderRadius: 8, border: '1px solid var(--border)', background: 'var(--bg)', color: 'var(--text-secondary)', fontSize: 12, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>
                           Dismiss
                         </button>
                         {item.source === 'user_report' && (
                           <button onClick={() => aiAnalyze(item)} disabled={modBusy === item.item_id}
-                            style={{ padding: '6px 14px', borderRadius: 8, border: '1px solid #ddd6fe', background: '#f5f3ff', color: '#6d28d9', fontSize: 12, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>
+                            style={{ padding: '6px 14px', borderRadius: 8, border: '1px solid var(--purple-border)', background: 'var(--purple-light)', color: 'var(--purple-text)', fontSize: 12, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>
                             {modBusy === item.item_id ? 'Analyzing...' : '🤖 AI Analyze'}
                           </button>
                         )}
@@ -516,15 +516,15 @@ export default function AdminPage() {
             {colleges.length === 0 ? (
               <p style={{ color: 'var(--text-muted)', textAlign: 'center', padding: '40px 0' }}>Loading colleges…</p>
             ) : colleges.map(c => (
-              <div key={c.id} style={{ background: 'white', border: '1px solid var(--border)', borderRadius: 12, padding: '14px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', boxShadow: 'var(--shadow-sm)' }}>
+              <div key={c.id} style={{ background: 'var(--bg)', border: '1px solid var(--border)', borderRadius: 12, padding: '14px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', boxShadow: 'var(--shadow-sm)' }}>
                 <div>
                   <p style={{ fontSize: 14, fontWeight: 600, color: 'var(--text-primary)', margin: '0 0 2px' }}>{c.name}</p>
                   <p style={{ fontSize: 12, color: 'var(--text-muted)', margin: 0 }}>{c.slug}</p>
                 </div>
                 <span style={{
                   padding: '3px 10px', borderRadius: 20, fontSize: 11, fontWeight: 600,
-                  background: c.is_active ? '#f0fdf4' : '#fef2f2',
-                  color: c.is_active ? '#15803d' : '#dc2626',
+                  background: c.is_active ? 'var(--success-light)' : 'var(--danger-light)',
+                  color: c.is_active ? 'var(--success-text)' : 'var(--danger)',
                 }}>
                   {c.is_active ? 'Active' : 'Inactive'}
                 </span>

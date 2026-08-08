@@ -43,7 +43,7 @@ export default function InsightsPage() {
           {insights.length === 0 ? (
             <p style={{ textAlign: 'center', color: 'var(--text-muted)', padding: '40px 0' }}>No insights yet</p>
           ) : insights.map((i: any) => (
-            <div key={i.id} style={{ background: 'white', border: '1px solid var(--border)', borderRadius: 12, padding: '16px', boxShadow: 'var(--shadow-sm)' }}>
+            <div key={i.id} style={{ background: 'var(--bg)', border: '1px solid var(--border)', borderRadius: 12, padding: '16px', boxShadow: 'var(--shadow-sm)' }}>
               <p style={{ fontSize: 14, fontWeight: 600, color: 'var(--text-primary)', margin: '0 0 4px' }}>{i.title}</p>
               {i.body && <p style={{ fontSize: 13, color: 'var(--text-secondary)', margin: 0, lineHeight: 1.5 }}>{i.body}</p>}
             </div>

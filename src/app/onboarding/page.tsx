@@ -55,7 +55,7 @@ export default function OnboardingPage() {
   const cardStyle = (active: boolean) => ({
     width: '100%', textAlign: 'left' as const, padding: '12px 16px', borderRadius: 10,
     border: active ? '2px solid var(--accent)' : '1px solid var(--border)',
-    background: active ? '#eff6ff' : 'white', cursor: 'pointer', fontSize: 14,
+    background: active ? 'var(--accent-light)' : 'var(--bg)', cursor: 'pointer', fontSize: 14,
     color: active ? 'var(--accent)' : 'var(--text-primary)', fontWeight: active ? 600 : 400,
     transition: 'all 0.15s'
   })
@@ -63,17 +63,17 @@ export default function OnboardingPage() {
   const inputStyle = {
     width: '100%', border: '1px solid var(--border)', borderRadius: 10,
     padding: '11px 14px', fontSize: 14, outline: 'none', fontFamily: 'inherit',
-    color: 'var(--text-primary)', background: 'white', boxSizing: 'border-box' as const
+    color: 'var(--text-primary)', background: 'var(--bg)', boxSizing: 'border-box' as const
   }
 
   const btnPrimary = (disabled?: boolean) => ({
-    flex: 1, background: disabled ? '#93c5fd' : 'var(--accent)', color: 'white',
+    flex: 1, background: disabled ? 'var(--disabled)' : 'var(--accent)', color: 'white',
     border: 'none', borderRadius: 10, padding: '12px', fontSize: 14, fontWeight: 600,
     cursor: disabled ? 'not-allowed' : 'pointer', fontFamily: 'inherit'
   })
 
   const btnSecondary = {
-    flex: 1, background: 'white', color: 'var(--text-secondary)',
+    flex: 1, background: 'var(--bg)', color: 'var(--text-secondary)',
     border: '1px solid var(--border)', borderRadius: 10, padding: '12px',
     fontSize: 14, cursor: 'pointer', fontFamily: 'inherit'
   }
@@ -95,11 +95,11 @@ export default function OnboardingPage() {
           ))}
         </div>
 
-        <div style={{ background: 'white', borderRadius: 16, border: '1px solid var(--border)', padding: 24, boxShadow: 'var(--shadow)' }}>
+        <div style={{ background: 'var(--bg)', borderRadius: 16, border: '1px solid var(--border)', padding: 24, boxShadow: 'var(--shadow)' }}>
           <h2 style={{ fontSize: 18, fontWeight: 700, color: 'var(--text-primary)', margin: '0 0 4px' }}>{STEPS[step]}</h2>
 
           {error && (
-            <div style={{ background: '#fef2f2', border: '1px solid #fecaca', borderRadius: 8, padding: '10px 14px', margin: '12px 0', fontSize: 13, color: '#dc2626' }}>
+            <div style={{ background: 'var(--danger-light)', border: '1px solid var(--danger-border)', borderRadius: 8, padding: '10px 14px', margin: '12px 0', fontSize: 13, color: 'var(--danger)' }}>
               {error}
             </div>
           )}
@@ -181,7 +181,7 @@ export default function OnboardingPage() {
                 <label style={{ fontSize: 13, fontWeight: 500, color: 'var(--text-secondary)', display: 'block', marginBottom: 6 }}>
                   Username <span style={{ color: 'var(--danger)' }}>*</span>
                 </label>
-                <div style={{ display: 'flex', alignItems: 'center', border: '1px solid var(--border)', borderRadius: 10, overflow: 'hidden', background: 'white' }}>
+                <div style={{ display: 'flex', alignItems: 'center', border: '1px solid var(--border)', borderRadius: 10, overflow: 'hidden', background: 'var(--bg)' }}>
                   <span style={{ padding: '11px 0 11px 14px', fontSize: 14, color: 'var(--text-muted)' }}>@</span>
                   <input type="text" value={selected.username}
                     onChange={e => setSelected(s => ({ ...s, username: e.target.value.toLowerCase().replace(/[^a-z0-9_]/g, '') }))}

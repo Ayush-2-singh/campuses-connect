@@ -106,7 +106,7 @@ export default function PollsPage() {
   const inputStyle = {
     width: '100%', border: '1px solid var(--border)', borderRadius: 10,
     padding: '10px 14px', fontSize: 14, outline: 'none', fontFamily: 'inherit',
-    color: 'var(--text-primary)', background: 'white', boxSizing: 'border-box' as const,
+    color: 'var(--text-primary)', background: 'var(--bg)', boxSizing: 'border-box' as const,
   }
 
   return (
@@ -127,7 +127,7 @@ export default function PollsPage() {
 
         {/* Create */}
         {showCreate && (
-          <div style={{ background: 'white', border: '1px solid var(--border)', borderRadius: 14, padding: 20, marginBottom: 20, boxShadow: 'var(--shadow-sm)' }}>
+          <div style={{ background: 'var(--bg)', border: '1px solid var(--border)', borderRadius: 14, padding: 20, marginBottom: 20, boxShadow: 'var(--shadow-sm)' }}>
             <h3 style={{ fontSize: 15, fontWeight: 700, color: 'var(--text-primary)', margin: '0 0 14px' }}>Create a poll</h3>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
               <input type="text" value={form.question} onChange={e => setForm(f => ({ ...f, question: e.target.value }))}
@@ -138,21 +138,21 @@ export default function PollsPage() {
                     placeholder={`Option ${i + 1}`} style={inputStyle} />
                   {form.options.length > 2 && (
                     <button onClick={() => setForm(f => ({ ...f, options: f.options.filter((_, idx) => idx !== i) }))}
-                      style={{ background: '#fef2f2', color: '#dc2626', border: 'none', borderRadius: 8, width: 34, height: 34, cursor: 'pointer', fontSize: 16, flexShrink: 0 }}>×</button>
+                      style={{ background: 'var(--danger-light)', color: 'var(--danger)', border: 'none', borderRadius: 8, width: 34, height: 34, cursor: 'pointer', fontSize: 16, flexShrink: 0 }}>×</button>
                   )}
                 </div>
               ))}
               {form.options.length < 4 && (
                 <button onClick={() => setForm(f => ({ ...f, options: [...f.options, ''] }))}
-                  style={{ background: '#eff6ff', color: 'var(--accent)', border: '1px dashed var(--accent)', borderRadius: 10, padding: '9px', fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>
+                  style={{ background: 'var(--accent-light)', color: 'var(--accent)', border: '1px dashed var(--accent)', borderRadius: 10, padding: '9px', fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>
                   + Add option
                 </button>
               )}
             </div>
             <div style={{ display: 'flex', gap: 8, marginTop: 14 }}>
-              <button onClick={() => setShowCreate(false)} style={{ flex: 1, background: 'white', color: 'var(--text-secondary)', border: '1px solid var(--border)', borderRadius: 10, padding: '10px', fontSize: 14, cursor: 'pointer', fontFamily: 'inherit' }}>Cancel</button>
+              <button onClick={() => setShowCreate(false)} style={{ flex: 1, background: 'var(--bg)', color: 'var(--text-secondary)', border: '1px solid var(--border)', borderRadius: 10, padding: '10px', fontSize: 14, cursor: 'pointer', fontFamily: 'inherit' }}>Cancel</button>
               <button onClick={handleCreate} disabled={!form.question.trim() || form.options.filter(o => o.trim()).length < 2 || posting}
-                style={{ flex: 1, background: posting ? '#93c5fd' : 'var(--accent)', color: 'white', border: 'none', borderRadius: 10, padding: '10px', fontSize: 14, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>
+                style={{ flex: 1, background: posting ? 'var(--disabled)' : 'var(--accent)', color: 'white', border: 'none', borderRadius: 10, padding: '10px', fontSize: 14, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>
                 {posting ? 'Creating...' : 'Create Poll'}
               </button>
             </div>
@@ -175,7 +175,7 @@ export default function PollsPage() {
               const total = counts.reduce((s, c) => s + (c || 0), 0)
               const myPick = myVotes[poll.id]
               return (
-                <div key={poll.id} style={{ background: 'white', border: '1px solid var(--border)', borderRadius: 14, padding: '18px', boxShadow: 'var(--shadow-sm)' }}>
+                <div key={poll.id} style={{ background: 'var(--bg)', border: '1px solid var(--border)', borderRadius: 14, padding: '18px', boxShadow: 'var(--shadow-sm)' }}>
                   <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 12 }}>
                     <p style={{ fontSize: 15, fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>{poll.question}</p>
                     <span style={{ fontSize: 12, color: 'var(--text-muted)', flexShrink: 0, marginLeft: 10 }}>{total} vote{total === 1 ? '' : 's'}</span>
@@ -191,10 +191,10 @@ export default function PollsPage() {
                             width: '100%', textAlign: 'left', position: 'relative', overflow: 'hidden',
                             border: isMine ? '2px solid var(--accent)' : '1px solid var(--border)',
                             borderRadius: 10, padding: '11px 14px', cursor: user ? 'pointer' : 'not-allowed',
-                            background: 'white', fontFamily: 'inherit',
+                            background: 'var(--bg)', fontFamily: 'inherit',
                           }}>
                           <div style={{
-                            position: 'absolute', inset: 0, background: isMine ? '#eff6ff' : 'var(--bg-secondary)',
+                            position: 'absolute', inset: 0, background: isMine ? 'var(--accent-light)' : 'var(--bg-secondary)',
                             width: `${pct}%`, transition: 'width 0.5s ease', zIndex: 0,
                           }} />
                           <div style={{ position: 'relative', zIndex: 1, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>

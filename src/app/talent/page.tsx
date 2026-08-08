@@ -38,7 +38,7 @@ export default function TalentPage() {
   }
 
   const avatarColor = (name: string) => {
-    const colors = ['#2563eb','#7c3aed','#16a34a','#d97706','#dc2626','#0891b2']
+    const colors = ['#2563eb','#7c3aed','#16a34a','#d97706','var(--danger)','#0891b2']
     return colors[(name?.charCodeAt(0) || 0) % colors.length]
   }
 
@@ -53,7 +53,7 @@ export default function TalentPage() {
         <div style={{ position: 'relative', marginBottom: 20 }}>
           <input type="text" value={search} onChange={e => handleSearch(e.target.value)}
             placeholder="Search students..."
-            style={{ width: '100%', border: '1px solid var(--border)', borderRadius: 12, padding: '12px 16px 12px 44px', fontSize: 14, outline: 'none', fontFamily: 'inherit', color: 'var(--text-primary)', background: 'white', boxSizing: 'border-box' as const }} />
+            style={{ width: '100%', border: '1px solid var(--border)', borderRadius: 12, padding: '12px 16px 12px 44px', fontSize: 14, outline: 'none', fontFamily: 'inherit', color: 'var(--text-primary)', background: 'var(--bg)', boxSizing: 'border-box' as const }} />
           <span style={{ position: 'absolute', left: 16, top: '50%', transform: 'translateY(-50%)', fontSize: 16, color: 'var(--text-muted)' }}>🔍</span>
         </div>
 
@@ -68,7 +68,7 @@ export default function TalentPage() {
             {students.map(s => {
               return (
                 <div key={s.id} onClick={() => router.push(`/profile/${s.username}`)}
-                  style={{ background: 'white', border: '1px solid var(--border)', borderRadius: 12, padding: '14px 16px', display: 'flex', alignItems: 'center', gap: 12, cursor: 'pointer', boxShadow: 'var(--shadow-sm)' }}>
+                  style={{ background: 'var(--bg)', border: '1px solid var(--border)', borderRadius: 12, padding: '14px 16px', display: 'flex', alignItems: 'center', gap: 12, cursor: 'pointer', boxShadow: 'var(--shadow-sm)' }}>
                   <div style={{ width: 44, height: 44, borderRadius: '50%', background: avatarColor(s.full_name || ''), display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontSize: 16, fontWeight: 700, flexShrink: 0 }}>
                     {s.full_name?.[0] || '?'}
                   </div>
@@ -85,10 +85,10 @@ export default function TalentPage() {
                     {s.bio && <p style={{ fontSize: 12, color: 'var(--text-secondary)', margin: '3px 0 0', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{s.bio}</p>}
                   </div>
                   <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 4, flexShrink: 0 }}>
-                    {s.karma_points > 0 && <span style={{ fontSize: 11, color: '#a16207', background: '#fefce8', padding: '2px 8px', borderRadius: 20, fontWeight: 600 }}>⭐ {s.karma_points}</span>}
+                    {s.karma_points > 0 && <span style={{ fontSize: 11, color: 'var(--yellow-text)', background: 'var(--yellow-light)', padding: '2px 8px', borderRadius: 20, fontWeight: 600 }}>⭐ {s.karma_points}</span>}
                     {user && user.id !== s.id && (
                       <button onClick={e => { e.stopPropagation(); router.push(`/profile/${s.username}`) }}
-                        style={{ fontSize: 12, color: 'var(--accent)', border: '1px solid var(--accent)', padding: '4px 12px', borderRadius: 8, background: 'white', cursor: 'pointer', fontFamily: 'inherit' }}>
+                        style={{ fontSize: 12, color: 'var(--accent)', border: '1px solid var(--accent)', padding: '4px 12px', borderRadius: 8, background: 'var(--bg)', cursor: 'pointer', fontFamily: 'inherit' }}>
                         Connect
                       </button>
                     )}

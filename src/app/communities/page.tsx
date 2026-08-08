@@ -50,7 +50,7 @@ export default function CommunitiesPage() {
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
           {communities.map(c => (
-            <div key={c.id} style={{ background: 'white', border: '1px solid var(--border)', borderRadius: 14, padding: '18px', boxShadow: 'var(--shadow-sm)' }}>
+            <div key={c.id} style={{ background: 'var(--bg)', border: '1px solid var(--border)', borderRadius: 14, padding: '18px', boxShadow: 'var(--shadow-sm)' }}>
               <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12 }}>
                 <div style={{ display: 'flex', gap: 14, alignItems: 'flex-start', flex: 1 }}>
                   <span style={{ fontSize: 40, lineHeight: 1 }}>{c.icon}</span>
@@ -66,7 +66,7 @@ export default function CommunitiesPage() {
                     Open
                   </button>
                   <button onClick={() => toggleJoin(c.id)}
-                    style={{ background: memberships.includes(c.id) ? 'var(--bg-secondary)' : 'white', color: memberships.includes(c.id) ? 'var(--text-secondary)' : 'var(--accent)', border: memberships.includes(c.id) ? '1px solid var(--border)' : '1px solid var(--accent)', padding: '8px 18px', borderRadius: 10, fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>
+                    style={{ background: memberships.includes(c.id) ? 'var(--bg-secondary)' : 'var(--bg)', color: memberships.includes(c.id) ? 'var(--text-secondary)' : 'var(--accent)', border: memberships.includes(c.id) ? '1px solid var(--border)' : '1px solid var(--accent)', padding: '8px 18px', borderRadius: 10, fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>
                     {memberships.includes(c.id) ? '✓ Joined' : 'Join'}
                   </button>
                 </div>

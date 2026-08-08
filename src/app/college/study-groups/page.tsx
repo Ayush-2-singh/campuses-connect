@@ -72,7 +72,7 @@ export default function StudyGroupsPage() {
         </div>
 
         {showCreate && (
-          <div style={{ background: 'white', border: '1px solid var(--border)', borderRadius: 14, padding: 20, marginBottom: 20, boxShadow: 'var(--shadow-sm)' }}>
+          <div style={{ background: 'var(--bg)', border: '1px solid var(--border)', borderRadius: 14, padding: 20, marginBottom: 20, boxShadow: 'var(--shadow-sm)' }}>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
               <input type="text" value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} placeholder="Group name *" style={{ width: '100%', border: '1px solid var(--border)', borderRadius: 10, padding: '10px 14px', fontSize: 14, outline: 'none', fontFamily: 'inherit', boxSizing: 'border-box' }} />
               <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: 10 }}>
@@ -81,7 +81,7 @@ export default function StudyGroupsPage() {
               </div>
               <textarea value={form.description} onChange={e => setForm(f => ({ ...f, description: e.target.value }))} placeholder="What will you study together?" rows={2} style={{ width: '100%', border: '1px solid var(--border)', borderRadius: 10, padding: '10px 14px', fontSize: 14, outline: 'none', fontFamily: 'inherit', boxSizing: 'border-box', resize: 'none' }} />
             </div>
-            <button onClick={create} disabled={!form.name.trim()} style={{ marginTop: 10, background: form.name.trim() ? 'var(--accent)' : '#93c5fd', color: 'white', border: 'none', borderRadius: 10, padding: '10px 18px', fontSize: 14, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>Create</button>
+            <button onClick={create} disabled={!form.name.trim()} style={{ marginTop: 10, background: form.name.trim() ? 'var(--accent)' : 'var(--disabled)', color: 'white', border: 'none', borderRadius: 10, padding: '10px 18px', fontSize: 14, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>Create</button>
           </div>
         )}
 
@@ -89,7 +89,7 @@ export default function StudyGroupsPage() {
           {groups.length === 0 ? (
             <p style={{ textAlign: 'center', color: 'var(--text-muted)', padding: '40px 0' }}>No study groups yet</p>
           ) : groups.map(g => (
-            <div key={g.id} style={{ background: 'white', border: '1px solid var(--border)', borderRadius: 12, padding: '16px', display: 'flex', alignItems: 'center', gap: 14, boxShadow: 'var(--shadow-sm)' }}>
+            <div key={g.id} style={{ background: 'var(--bg)', border: '1px solid var(--border)', borderRadius: 12, padding: '16px', display: 'flex', alignItems: 'center', gap: 14, boxShadow: 'var(--shadow-sm)' }}>
               <span style={{ fontSize: 30 }}>👥</span>
               <div style={{ flex: 1, minWidth: 0 }}>
                 <p style={{ fontSize: 14, fontWeight: 600, color: 'var(--text-primary)', margin: '0 0 3px' }}>{g.name} {g.subject && <span style={{ fontWeight: 400, color: 'var(--text-muted)' }}>· {g.subject}</span>}</p>

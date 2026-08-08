@@ -47,7 +47,7 @@ export default function WeeklyPage() {
             { label: 'Opportunities', value: stats.opportunities, emoji: '💼' },
             { label: 'New members', value: stats.newUsers, emoji: '👥' },
           ].map(s => (
-            <div key={s.label} style={{ background: 'white', border: '1px solid var(--border)', borderRadius: 14, padding: '16px', textAlign: 'center', boxShadow: 'var(--shadow-sm)' }}>
+            <div key={s.label} style={{ background: 'var(--bg)', border: '1px solid var(--border)', borderRadius: 14, padding: '16px', textAlign: 'center', boxShadow: 'var(--shadow-sm)' }}>
               <p style={{ fontSize: 28, margin: '0 0 4px' }}>{s.emoji}</p>
               <p style={{ fontSize: 28, fontWeight: 800, color: 'var(--accent)', margin: '0 0 4px' }}>{s.value}</p>
               <p style={{ fontSize: 12, color: 'var(--text-muted)', margin: 0 }}>{s.label}</p>
@@ -59,7 +59,7 @@ export default function WeeklyPage() {
         <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
           {topPosts.length === 0 ? <p style={{ color: 'var(--text-muted)', fontSize: 13 }}>No posts this week yet</p> :
             topPosts.map(post => (
-              <div key={post.id} style={{ background: 'white', border: '1px solid var(--border)', borderRadius: 12, padding: '14px 16px', boxShadow: 'var(--shadow-sm)' }}>
+              <div key={post.id} style={{ background: 'var(--bg)', border: '1px solid var(--border)', borderRadius: 12, padding: '14px 16px', boxShadow: 'var(--shadow-sm)' }}>
                 <p style={{ fontSize: 13, color: 'var(--text-secondary)', margin: '0 0 6px', lineHeight: 1.5 }}>{post.body?.slice(0, 120)}{post.body?.length > 120 ? '...' : ''}</p>
                 <p style={{ fontSize: 11, color: 'var(--text-muted)', margin: 0 }}>@{post.profiles?.username}</p>
               </div>

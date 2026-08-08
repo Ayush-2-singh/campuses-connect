@@ -151,7 +151,7 @@ export default function BrainPage() {
   const inputStyle = {
     width: '100%', border: '1px solid var(--border)', borderRadius: 10,
     padding: '10px 14px', fontSize: 14, outline: 'none', fontFamily: 'inherit',
-    color: 'var(--text-primary)', background: 'white', boxSizing: 'border-box' as const,
+    color: 'var(--text-primary)', background: 'var(--bg)', boxSizing: 'border-box' as const,
   }
 
   return (
@@ -185,14 +185,14 @@ export default function BrainPage() {
         </div>
 
         {error && (
-          <div style={{ background: '#fef2f2', border: '1px solid #fecaca', borderRadius: 10, padding: '10px 14px', marginBottom: 14, fontSize: 13, color: '#dc2626' }}>
+          <div style={{ background: 'var(--danger-light)', border: '1px solid var(--danger-border)', borderRadius: 10, padding: '10px 14px', marginBottom: 14, fontSize: 13, color: 'var(--danger)' }}>
             {error}
           </div>
         )}
 
         {/* Upload */}
         {showUpload && (
-          <div style={{ background: 'white', border: '1px solid var(--border)', borderRadius: 14, padding: 20, marginBottom: 20, boxShadow: 'var(--shadow-sm)' }}>
+          <div style={{ background: 'var(--bg)', border: '1px solid var(--border)', borderRadius: 14, padding: 20, marginBottom: 20, boxShadow: 'var(--shadow-sm)' }}>
             <h3 style={{ fontSize: 15, fontWeight: 700, color: 'var(--text-primary)', margin: '0 0 12px' }}>Add to your brain</h3>
             <p style={{ fontSize: 12, color: 'var(--text-muted)', margin: '0 0 12px' }}>
               PDF, TXT, MD, or photos of notes (PNG/JPG). Text is embedded and becomes searchable.
@@ -200,10 +200,10 @@ export default function BrainPage() {
             <div style={{ display: 'flex', gap: 8 }}>
               <input ref={fileRef} type="file" accept=".pdf,.txt,.md,.png,.jpg,.jpeg"
                 onChange={e => { const f = e.target.files?.[0]; if (f) handleUpload(f) }}
-                style={{ flex: 1, border: '1px solid var(--border)', borderRadius: 10, padding: '9px 12px', fontSize: 13, background: 'white', fontFamily: 'inherit' }} />
+                style={{ flex: 1, border: '1px solid var(--border)', borderRadius: 10, padding: '9px 12px', fontSize: 13, background: 'var(--bg)', fontFamily: 'inherit' }} />
               {uploading && <span style={{ alignSelf: 'center', fontSize: 13, color: 'var(--text-muted)' }}>⏳ {uploadStatus}</span>}
             </div>
-            {uploadStatus && !uploading && <p style={{ fontSize: 13, color: '#15803d', margin: '10px 0 0', fontWeight: 600 }}>{uploadStatus}</p>}
+            {uploadStatus && !uploading && <p style={{ fontSize: 13, color: 'var(--success-text)', margin: '10px 0 0', fontWeight: 600 }}>{uploadStatus}</p>}
           </div>
         )}
 
@@ -221,7 +221,7 @@ export default function BrainPage() {
               {messages.map((m, i) => (
                 <div key={i} style={{
                   alignSelf: m.role === 'user' ? 'flex-end' : 'flex-start',
-                  maxWidth: '92%', background: m.role === 'user' ? 'var(--accent)' : 'white',
+                  maxWidth: '92%', background: m.role === 'user' ? 'var(--accent)' : 'var(--bg)',
                   color: m.role === 'user' ? 'white' : 'var(--text-primary)',
                   border: m.role === 'user' ? 'none' : '1px solid var(--border)',
                   borderRadius: 14, padding: '12px 16px', boxShadow: 'var(--shadow-sm)',
@@ -231,7 +231,7 @@ export default function BrainPage() {
                   {m.role === 'assistant' && m.sources && m.sources.length > 0 && (
                     <div style={{ marginTop: 10, display: 'flex', flexWrap: 'wrap', gap: 6 }}>
                       {m.sources.map((s, j) => (
-                        <span key={j} style={{ fontSize: 11, background: '#f5f3ff', color: '#6d28d9', padding: '3px 10px', borderRadius: 20, fontWeight: 600 }}>
+                        <span key={j} style={{ fontSize: 11, background: 'var(--purple-light)', color: 'var(--purple-text)', padding: '3px 10px', borderRadius: 20, fontWeight: 600 }}>
                           📄 {s.source}
                         </span>
                       ))}
@@ -242,12 +242,12 @@ export default function BrainPage() {
                   )}
                   {m.role === 'assistant' && !m.saved && (
                     <button onClick={() => handleSaveMemory(i)} disabled={m.saving}
-                      style={{ marginTop: 10, fontSize: 12, background: '#eff6ff', color: 'var(--accent)', border: '1px solid #bfdbfe', padding: '5px 12px', borderRadius: 20, fontWeight: 600, cursor: m.saving ? 'default' : 'pointer', fontFamily: 'inherit' }}>
+                      style={{ marginTop: 10, fontSize: 12, background: 'var(--accent-light)', color: 'var(--accent)', border: '1px solid var(--accent-border)', padding: '5px 12px', borderRadius: 20, fontWeight: 600, cursor: m.saving ? 'default' : 'pointer', fontFamily: 'inherit' }}>
                       {m.saving ? 'Saving...' : '💾 Save to memory'}
                     </button>
                   )}
                   {m.role === 'assistant' && m.saved && (
-                    <p style={{ fontSize: 11, color: '#15803d', margin: '8px 0 0', fontWeight: 600 }}>✓ Saved to your memory</p>
+                    <p style={{ fontSize: 11, color: 'var(--success-text)', margin: '8px 0 0', fontWeight: 600 }}>✓ Saved to your memory</p>
                   )}
                 </div>
               ))}
@@ -260,7 +260,7 @@ export default function BrainPage() {
                 onKeyDown={e => e.key === 'Enter' && handleAsk()}
                 placeholder="Ask your brain..." style={{ ...inputStyle, flex: 1 }} />
               <button onClick={handleAsk} disabled={!input.trim() || asking}
-                style={{ padding: '10px 20px', borderRadius: 10, border: 'none', background: !input.trim() || asking ? '#93c5fd' : 'var(--accent)', color: 'white', fontSize: 14, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>
+                style={{ padding: '10px 20px', borderRadius: 10, border: 'none', background: !input.trim() || asking ? 'var(--disabled)' : 'var(--accent)', color: 'white', fontSize: 14, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>
                 {asking ? '…' : 'Ask'}
               </button>
             </div>
@@ -278,7 +278,7 @@ export default function BrainPage() {
             ) : (
               <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 24 }}>
                 {docs.map(d => (
-                  <div key={d.id} style={{ background: 'white', border: '1px solid var(--border)', borderRadius: 12, padding: '13px 16px', display: 'flex', alignItems: 'center', gap: 12, boxShadow: 'var(--shadow-sm)' }}>
+                  <div key={d.id} style={{ background: 'var(--bg)', border: '1px solid var(--border)', borderRadius: 12, padding: '13px 16px', display: 'flex', alignItems: 'center', gap: 12, boxShadow: 'var(--shadow-sm)' }}>
                     <span style={{ fontSize: 24, flexShrink: 0 }}>{d.file_type === 'pdf' ? '📕' : d.file_type === 'png' || d.file_type === 'jpg' || d.file_type === 'jpeg' ? '📸' : '📄'}</span>
                     <div style={{ flex: 1, minWidth: 0 }}>
                       <p style={{ fontSize: 14, fontWeight: 600, color: 'var(--text-primary)', margin: '0 0 2px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{d.title}</p>
@@ -287,7 +287,7 @@ export default function BrainPage() {
                       </p>
                     </div>
                     <button onClick={() => handleDeleteDoc(d.id)}
-                      style={{ fontSize: 12, background: '#fef2f2', color: '#dc2626', border: '1px solid #fecaca', borderRadius: 8, padding: '5px 12px', cursor: 'pointer', fontFamily: 'inherit' }}>
+                      style={{ fontSize: 12, background: 'var(--danger-light)', color: 'var(--danger)', border: '1px solid var(--danger-border)', borderRadius: 8, padding: '5px 12px', cursor: 'pointer', fontFamily: 'inherit' }}>
                       Delete
                     </button>
                   </div>
@@ -304,13 +304,13 @@ export default function BrainPage() {
             ) : (
               <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                 {memories.map(m => (
-                  <div key={m.id} style={{ background: 'white', border: '1px solid var(--border)', borderRadius: 12, padding: '13px 16px', boxShadow: 'var(--shadow-sm)' }}>
+                  <div key={m.id} style={{ background: 'var(--bg)', border: '1px solid var(--border)', borderRadius: 12, padding: '13px 16px', boxShadow: 'var(--shadow-sm)' }}>
                     <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 10 }}>
                       <div style={{ flex: 1, minWidth: 0 }}>
                         {m.knowledge_gained && <p style={{ fontSize: 13, color: 'var(--text-primary)', margin: '0 0 4px' }}><strong>Learned:</strong> {m.knowledge_gained}</p>}
                         {m.struggles_faced && <p style={{ fontSize: 12, color: 'var(--text-secondary)', margin: '0 0 4px' }}><strong>Struggles:</strong> {m.struggles_faced}</p>}
                         {m.core_facts && <p style={{ fontSize: 12, color: 'var(--text-secondary)', margin: '0 0 4px' }}><strong>Facts:</strong> {m.core_facts}</p>}
-                        {m.is_core_memory && <span style={{ fontSize: 11, background: '#fefce8', color: '#a16207', padding: '2px 8px', borderRadius: 20, fontWeight: 600 }}>⭐ Core memory</span>}
+                        {m.is_core_memory && <span style={{ fontSize: 11, background: 'var(--yellow-light)', color: 'var(--yellow-text)', padding: '2px 8px', borderRadius: 20, fontWeight: 600 }}>⭐ Core memory</span>}
                       </div>
                       <button onClick={() => handleDeleteMemory(m.id)}
                         style={{ fontSize: 12, background: 'none', color: 'var(--text-muted)', border: 'none', cursor: 'pointer', fontFamily: 'inherit', flexShrink: 0 }}>

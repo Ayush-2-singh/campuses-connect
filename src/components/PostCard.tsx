@@ -5,9 +5,9 @@ import { useRouter } from 'next/navigation'
 import type { Post } from '@/types'
 
 const SCOPE_CONFIG: Record<string, { label: string; bg: string; text: string }> = {
-  campus: { label: 'Campus', bg: '#eff6ff', text: '#1d4ed8' },
-  college_network: { label: 'College', bg: '#f0fdf4', text: '#15803d' },
-  global: { label: 'Global', bg: '#f5f3ff', text: '#6d28d9' },
+  campus: { label: 'Campus', bg: 'var(--accent-light)', text: 'var(--accent-text)' },
+  college_network: { label: 'College', bg: 'var(--success-light)', text: 'var(--success-text)' },
+  global: { label: 'Global', bg: 'var(--purple-light)', text: 'var(--purple-text)' },
 }
 
 const CATEGORY_ICONS: Record<string, string> = {
@@ -16,7 +16,7 @@ const CATEGORY_ICONS: Record<string, string> = {
 }
 
 const avatarColor = (name: string) => {
-  const colors = ['#2563eb', '#7c3aed', '#16a34a', '#d97706', '#dc2626', '#0891b2']
+  const colors = ['#2563eb', '#7c3aed', '#16a34a', '#d97706', 'var(--danger)', '#0891b2']
   return colors[(name?.charCodeAt(0) || 0) % colors.length]
 }
 
@@ -121,7 +121,7 @@ export default function PostCard({
   }
 
   return (
-    <div style={{ background: 'white', borderRadius: 14, border: post.is_pinned ? '1px solid #bfdbfe' : '1px solid var(--border)', padding: '18px', boxShadow: 'var(--shadow-sm)' }}>
+    <div style={{ background: 'var(--bg)', borderRadius: 14, border: post.is_pinned ? '1px solid var(--accent-border)' : '1px solid var(--border)', padding: '18px', boxShadow: 'var(--shadow-sm)' }}>
       <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 10 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
           <div
@@ -147,7 +147,7 @@ export default function PostCard({
 
       {post.is_pinned && <div style={{ fontSize: 11, color: 'var(--accent)', fontWeight: 600, marginBottom: 8 }}>📌 Pinned</div>}
       {post.status === 'held' && (
-        <div style={{ fontSize: 11, background: '#fffbeb', border: '1px solid #fde68a', color: '#92400e', padding: '5px 10px', borderRadius: 8, fontWeight: 600, marginBottom: 8 }}>
+        <div style={{ fontSize: 11, background: 'var(--warning-light)', border: '1px solid var(--warning-border)', color: 'var(--warning-text)', padding: '5px 10px', borderRadius: 8, fontWeight: 600, marginBottom: 8 }}>
           🛡️ Pending review{post.held_reason ? ` — ${post.held_reason}` : ''}
         </div>
       )}
@@ -205,7 +205,7 @@ export default function PostCard({
                 onKeyDown={e => e.key === 'Enter' && handleComment()}
                 placeholder="Write a comment..." style={{ flex: 1, border: '1px solid var(--border)', borderRadius: 20, padding: '8px 14px', fontSize: 13, outline: 'none', fontFamily: 'inherit', color: 'var(--text-primary)', background: 'var(--bg-secondary)' }} />
               <button onClick={handleComment} disabled={!commentText.trim()}
-                style={{ padding: '8px 14px', borderRadius: 20, border: 'none', background: commentText.trim() ? 'var(--accent)' : '#93c5fd', color: 'white', fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>
+                style={{ padding: '8px 14px', borderRadius: 20, border: 'none', background: commentText.trim() ? 'var(--accent)' : 'var(--disabled)', color: 'white', fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>
                 Send
               </button>
             </div>

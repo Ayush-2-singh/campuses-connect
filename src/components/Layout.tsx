@@ -30,7 +30,7 @@ function NavIcon({ icon, active }: { icon: string; active: boolean }) {
         alt={icon}
         style={{
           width: 28, height: 28, objectFit: 'cover', borderRadius: '50%', flexShrink: 0,
-          border: active ? '2px solid var(--accent)' : '2px solid #e5e7eb',
+          border: active ? '2px solid var(--accent)' : '2px solid var(--border-strong)',
           transition: 'transform 0.2s ease',
         }}
         onMouseEnter={e => (e.currentTarget.style.transform = 'scale(1.15)')}
@@ -45,8 +45,8 @@ function NavIcon({ icon, active }: { icon: string; active: boolean }) {
       <span style={{
         width: 28, height: 28, borderRadius: '50%', display: 'inline-flex',
         alignItems: 'center', justifyContent: 'center', fontSize: 15, flexShrink: 0,
-        background: active ? 'var(--accent)' : '#f1f5f9',
-        border: active ? '2px solid var(--accent)' : '2px solid #e5e7eb',
+        background: active ? 'var(--accent)' : 'var(--gray-soft)',
+        border: active ? '2px solid var(--accent)' : '2px solid var(--border-strong)',
         transition: 'transform 0.2s ease',
       }}>
         📅
@@ -80,7 +80,7 @@ export default function Layout({ children, user, profile }: { children: React.Re
   }, [user])
 
   const avatarColor = (name: string) => {
-    const colors = ['#2563eb', '#7c3aed', '#16a34a', '#d97706', '#dc2626', '#0891b2']
+    const colors = ['#2563eb', '#7c3aed', '#16a34a', '#d97706', 'var(--danger)', '#0891b2']
     return colors[(name?.charCodeAt(0) || 0) % colors.length]
   }
 
@@ -92,7 +92,7 @@ export default function Layout({ children, user, profile }: { children: React.Re
 
       {/* ── Desktop Sidebar ── */}
       <aside
-        style={{ width: 220, position: 'fixed', top: 0, left: 0, bottom: 0, background: 'white', borderRight: '1px solid var(--border)', padding: '20px 0', display: 'flex', flexDirection: 'column', zIndex: 20 }}
+        style={{ width: 220, position: 'fixed', top: 0, left: 0, bottom: 0, background: 'var(--bg)', borderRight: '1px solid var(--border)', padding: '20px 0', display: 'flex', flexDirection: 'column', zIndex: 20 }}
         className="desktop-sidebar"
       >
         <div style={{ padding: '0 20px 20px', borderBottom: '1px solid var(--border)' }}>
@@ -110,7 +110,7 @@ export default function Layout({ children, user, profile }: { children: React.Re
               <span style={{ fontSize: 13, fontWeight: 500, color: 'var(--text-secondary)' }}>Notifications</span>
             </div>
             {unreadCount > 0 && (
-              <span style={{ background: '#dc2626', color: 'white', fontSize: 11, fontWeight: 700, padding: '2px 7px', borderRadius: 20 }}>{unreadCount}</span>
+              <span style={{ background: 'var(--danger)', color: 'white', fontSize: 11, fontWeight: 700, padding: '2px 7px', borderRadius: 20 }}>{unreadCount}</span>
             )}
           </div>
         )}
@@ -123,7 +123,7 @@ export default function Layout({ children, user, profile }: { children: React.Re
                 onClick={() => router.push(item.href)}
                 style={{
                   width: '100%', textAlign: 'left', padding: '9px 12px', borderRadius: 10,
-                  background: active ? '#eff6ff' : 'transparent',
+                  background: active ? 'var(--accent-light)' : 'transparent',
                   color: active ? 'var(--accent)' : 'var(--text-secondary)',
                   border: 'none', fontSize: 14, fontWeight: active ? 600 : 400,
                   cursor: 'pointer', marginBottom: 2, fontFamily: 'inherit',
@@ -153,8 +153,8 @@ export default function Layout({ children, user, profile }: { children: React.Re
             </div>
             {profile?.streak_days > 0 && (
               <div style={{ display: 'flex', gap: 6, marginTop: 8 }}>
-                <span style={{ fontSize: 11, background: '#fff7ed', color: '#c2410c', padding: '3px 8px', borderRadius: 20, fontWeight: 600 }}>🔥 {profile.streak_days} streak</span>
-                <span style={{ fontSize: 11, background: '#fefce8', color: '#a16207', padding: '3px 8px', borderRadius: 20, fontWeight: 600 }}>⭐ {profile.karma_points || 0}</span>
+                <span style={{ fontSize: 11, background: 'var(--orange-light)', color: 'var(--orange-text)', padding: '3px 8px', borderRadius: 20, fontWeight: 600 }}>🔥 {profile.streak_days} streak</span>
+                <span style={{ fontSize: 11, background: 'var(--yellow-light)', color: 'var(--yellow-text)', padding: '3px 8px', borderRadius: 20, fontWeight: 600 }}>⭐ {profile.karma_points || 0}</span>
               </div>
             )}
           </div>
@@ -168,7 +168,7 @@ export default function Layout({ children, user, profile }: { children: React.Re
             >Join Free</button>
             <button
               onClick={() => router.push('/auth/login')}
-              style={{ width: '100%', background: 'white', color: 'var(--text-secondary)', border: '1px solid var(--border)', borderRadius: 10, padding: '10px', fontSize: 14, cursor: 'pointer', fontFamily: 'inherit' }}
+              style={{ width: '100%', background: 'var(--bg)', color: 'var(--text-secondary)', border: '1px solid var(--border)', borderRadius: 10, padding: '10px', fontSize: 14, cursor: 'pointer', fontFamily: 'inherit' }}
             >Sign In</button>
           </div>
         )}
@@ -179,7 +179,7 @@ export default function Layout({ children, user, profile }: { children: React.Re
 
         {/* Mobile Topbar */}
         <div
-          style={{ position: 'sticky', top: 0, background: 'white', borderBottom: '1px solid var(--border)', padding: '12px 16px', zIndex: 10, display: 'none' }}
+          style={{ position: 'sticky', top: 0, background: 'var(--bg)', borderBottom: '1px solid var(--border)', padding: '12px 16px', zIndex: 10, display: 'none' }}
           className="mobile-topbar"
         >
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
@@ -189,12 +189,12 @@ export default function Layout({ children, user, profile }: { children: React.Re
             <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
               <ThemeToggle inline />
               {user && profile?.streak_days > 0 && (
-                <span style={{ fontSize: 12, background: '#fff7ed', color: '#c2410c', padding: '3px 8px', borderRadius: 20, fontWeight: 500 }}>🔥 {profile.streak_days}</span>
+                <span style={{ fontSize: 12, background: 'var(--orange-light)', color: 'var(--orange-text)', padding: '3px 8px', borderRadius: 20, fontWeight: 500 }}>🔥 {profile.streak_days}</span>
               )}
               {!user ? (
                 <button
                   onClick={() => router.push('/auth/login')}
-                  style={{ fontSize: 13, color: 'var(--accent)', border: '1px solid var(--accent)', padding: '5px 12px', borderRadius: 8, background: 'white', cursor: 'pointer' }}
+                  style={{ fontSize: 13, color: 'var(--accent)', border: '1px solid var(--accent)', padding: '5px 12px', borderRadius: 8, background: 'var(--bg)', cursor: 'pointer' }}
                 >Sign in</button>
               ) : (
                 <div
@@ -211,7 +211,7 @@ export default function Layout({ children, user, profile }: { children: React.Re
 
       {/* ── Mobile Bottom Nav (first 5 items) ── */}
       <div
-        style={{ position: 'fixed', bottom: 0, left: 0, right: 0, background: 'white', borderTop: '1px solid var(--border)', zIndex: 20, display: 'none' }}
+        style={{ position: 'fixed', bottom: 0, left: 0, right: 0, background: 'var(--bg)', borderTop: '1px solid var(--border)', zIndex: 20, display: 'none' }}
         className="mobile-bottomnav"
       >
         <div style={{ display: 'flex' }}>

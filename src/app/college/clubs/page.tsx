@@ -73,10 +73,10 @@ export default function ClubsPage() {
         </div>
 
         {showCreate && (
-          <div style={{ background: 'white', border: '1px solid var(--border)', borderRadius: 14, padding: 20, marginBottom: 20, boxShadow: 'var(--shadow-sm)' }}>
+          <div style={{ background: 'var(--bg)', border: '1px solid var(--border)', borderRadius: 14, padding: 20, marginBottom: 20, boxShadow: 'var(--shadow-sm)' }}>
             <input type="text" value={name} onChange={e => setName(e.target.value)} placeholder="Club name *" style={{ width: '100%', border: '1px solid var(--border)', borderRadius: 10, padding: '10px 14px', fontSize: 14, outline: 'none', fontFamily: 'inherit', boxSizing: 'border-box', marginBottom: 10 }} />
             <textarea value={desc} onChange={e => setDesc(e.target.value)} placeholder="What does this club do?" rows={2} style={{ width: '100%', border: '1px solid var(--border)', borderRadius: 10, padding: '10px 14px', fontSize: 14, outline: 'none', fontFamily: 'inherit', boxSizing: 'border-box', resize: 'none', marginBottom: 10 }} />
-            <button onClick={create} disabled={!name.trim()} style={{ background: name.trim() ? 'var(--accent)' : '#93c5fd', color: 'white', border: 'none', borderRadius: 10, padding: '10px 18px', fontSize: 14, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>Create</button>
+            <button onClick={create} disabled={!name.trim()} style={{ background: name.trim() ? 'var(--accent)' : 'var(--disabled)', color: 'white', border: 'none', borderRadius: 10, padding: '10px 18px', fontSize: 14, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>Create</button>
           </div>
         )}
 
@@ -84,7 +84,7 @@ export default function ClubsPage() {
           {clubs.length === 0 ? (
             <p style={{ textAlign: 'center', color: 'var(--text-muted)', padding: '40px 0' }}>No clubs yet</p>
           ) : clubs.map(c => (
-            <div key={c.id} style={{ background: 'white', border: '1px solid var(--border)', borderRadius: 12, padding: '16px', display: 'flex', alignItems: 'center', gap: 14, boxShadow: 'var(--shadow-sm)' }}>
+            <div key={c.id} style={{ background: 'var(--bg)', border: '1px solid var(--border)', borderRadius: 12, padding: '16px', display: 'flex', alignItems: 'center', gap: 14, boxShadow: 'var(--shadow-sm)' }}>
               <span style={{ fontSize: 30 }}>🎭</span>
               <div style={{ flex: 1, minWidth: 0 }}>
                 <p style={{ fontSize: 14, fontWeight: 600, color: 'var(--text-primary)', margin: '0 0 3px' }}>{c.name}</p>

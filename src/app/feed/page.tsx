@@ -65,7 +65,7 @@ export default function FeedPage() {
         )}
 
         {!user && (
-          <div style={{ background: 'white', border: '1px solid var(--border)', borderRadius: 12, padding: '14px 16px', marginBottom: 16 }}>
+          <div style={{ background: 'var(--bg)', border: '1px solid var(--border)', borderRadius: 12, padding: '14px 16px', marginBottom: 16 }}>
             <p style={{ fontWeight: 600, fontSize: 14, color: 'var(--text-primary)', margin: '0 0 4px' }}>Browse CampusConnect</p>
             <p style={{ fontSize: 13, color: 'var(--text-secondary)', margin: 0 }}>Join your campus community to like, comment and save.</p>
           </div>
@@ -74,7 +74,7 @@ export default function FeedPage() {
         <div style={{ display: 'flex', gap: 6, overflowX: 'auto', paddingBottom: 4, marginBottom: 16 }} className="scrollbar-hide">
           {FILTERS.map(type => (
             <button key={type} onClick={() => setFilter(type)}
-              style={{ flexShrink: 0, padding: '6px 14px', borderRadius: 20, fontSize: 12, fontWeight: 500, border: filter === type ? 'none' : '1px solid var(--border)', background: filter === type ? 'var(--accent)' : 'white', color: filter === type ? 'white' : 'var(--text-secondary)', cursor: 'pointer', textTransform: 'capitalize', fontFamily: 'inherit' }}>
+              style={{ flexShrink: 0, padding: '6px 14px', borderRadius: 20, fontSize: 12, fontWeight: 500, border: filter === type ? 'none' : '1px solid var(--border)', background: filter === type ? 'var(--accent)' : 'var(--bg)', color: filter === type ? 'white' : 'var(--text-secondary)', cursor: 'pointer', textTransform: 'capitalize', fontFamily: 'inherit' }}>
               {type}
             </button>
           ))}

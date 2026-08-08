@@ -147,7 +147,7 @@ export default function PostComposer({
   }
 
   return (
-    <div style={{ background: 'white', border: '1px solid var(--border)', borderRadius: 14, padding: 14, marginBottom: 16, boxShadow: 'var(--shadow-sm)' }}>
+    <div style={{ background: 'var(--bg)', border: '1px solid var(--border)', borderRadius: 14, padding: 14, marginBottom: 16, boxShadow: 'var(--shadow-sm)' }}>
       {!open ? (
         <div onClick={() => setOpen(true)} style={{ display: 'flex', alignItems: 'center', gap: 10, cursor: 'pointer' }}>
           <div style={{ width: 36, height: 36, borderRadius: '50%', background: 'var(--accent)', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 15, fontWeight: 700, flexShrink: 0 }}>
@@ -165,30 +165,30 @@ export default function PostComposer({
           <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 10 }}>
             {creatable.map(c => (
               <button key={c.category_key} onClick={() => { setCategory(c); setScope((c.max_scope as PostScope) || 'campus') }}
-                style={{ padding: '5px 12px', borderRadius: 20, fontSize: 12, fontWeight: 500, border: category?.category_key === c.category_key ? 'none' : '1px solid var(--border)', background: category?.category_key === c.category_key ? 'var(--accent)' : 'white', color: category?.category_key === c.category_key ? 'white' : 'var(--text-secondary)', cursor: 'pointer', fontFamily: 'inherit' }}>
+                style={{ padding: '5px 12px', borderRadius: 20, fontSize: 12, fontWeight: 500, border: category?.category_key === c.category_key ? 'none' : '1px solid var(--border)', background: category?.category_key === c.category_key ? 'var(--accent)' : 'var(--bg)', color: category?.category_key === c.category_key ? 'white' : 'var(--text-secondary)', cursor: 'pointer', fontFamily: 'inherit' }}>
                 {c.label}
               </button>
             ))}
           </div>
           {heldNotice && (
-            <div style={{ background: '#fffbeb', border: '1px solid #fde68a', borderRadius: 10, padding: '10px 14px', fontSize: 13, color: '#92400e', marginBottom: 10, lineHeight: 1.5 }}>
+            <div style={{ background: 'var(--warning-light)', border: '1px solid var(--warning-border)', borderRadius: 10, padding: '10px 14px', fontSize: 13, color: 'var(--warning-text)', marginBottom: 10, lineHeight: 1.5 }}>
               🛡️ {heldNotice}
             </div>
           )}
           {postError && (
-            <div style={{ background: '#fef2f2', border: '1px solid #fecaca', borderRadius: 10, padding: '10px 14px', fontSize: 13, color: '#dc2626', marginBottom: 10 }}>
+            <div style={{ background: 'var(--danger-light)', border: '1px solid var(--danger-border)', borderRadius: 10, padding: '10px 14px', fontSize: 13, color: 'var(--danger)', marginBottom: 10 }}>
               {postError}
             </div>
           )}
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10 }}>
             <select value={scope} onChange={e => setScope(e.target.value as PostScope)}
-              style={{ border: '1px solid var(--border)', borderRadius: 8, padding: '7px 10px', fontSize: 13, background: 'white', outline: 'none', fontFamily: 'inherit' }}>
+              style={{ border: '1px solid var(--border)', borderRadius: 8, padding: '7px 10px', fontSize: 13, background: 'var(--bg)', outline: 'none', fontFamily: 'inherit' }}>
               {scopeOptions.map(s => <option key={s} value={s}>🌍 {SCOPE_LABELS[s]}</option>)}
             </select>
             <div style={{ display: 'flex', gap: 8 }}>
-              <button onClick={() => setOpen(false)} style={{ padding: '7px 14px', borderRadius: 8, border: '1px solid var(--border)', background: 'white', color: 'var(--text-secondary)', fontSize: 13, cursor: 'pointer', fontFamily: 'inherit' }}>Cancel</button>
+              <button onClick={() => setOpen(false)} style={{ padding: '7px 14px', borderRadius: 8, border: '1px solid var(--border)', background: 'var(--bg)', color: 'var(--text-secondary)', fontSize: 13, cursor: 'pointer', fontFamily: 'inherit' }}>Cancel</button>
               <button onClick={handlePost} disabled={!body.trim() || posting || checking}
-                style={{ padding: '7px 14px', borderRadius: 8, border: 'none', background: !body.trim() || posting || checking ? '#93c5fd' : 'var(--accent)', color: 'white', fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>
+                style={{ padding: '7px 14px', borderRadius: 8, border: 'none', background: !body.trim() || posting || checking ? 'var(--disabled)' : 'var(--accent)', color: 'white', fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>
                 {checking ? '🛡️ Checking...' : posting ? 'Posting...' : 'Post'}
               </button>
             </div>

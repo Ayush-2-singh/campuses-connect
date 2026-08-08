@@ -40,13 +40,13 @@ export default function ProfilePage() {
   }
 
   const avatarColor = (name: string) => {
-    const colors = ['#2563eb','#7c3aed','#16a34a','#d97706','#dc2626','#0891b2']
+    const colors = ['#2563eb','#7c3aed','#16a34a','#d97706','var(--danger)','#0891b2']
     return colors[(name?.charCodeAt(0) || 0) % colors.length]
   }
 
   const badgeStyle = (bg: string, text: string) => ({ fontSize: 11, padding: '3px 8px', borderRadius: 20, background: bg, color: text, fontWeight: 600 })
 
-  const inputStyle = { width: '100%', border: '1px solid var(--border)', borderRadius: 10, padding: '10px 14px', fontSize: 14, outline: 'none', fontFamily: 'inherit', color: 'var(--text-primary)', background: 'white', boxSizing: 'border-box' as const }
+  const inputStyle = { width: '100%', border: '1px solid var(--border)', borderRadius: 10, padding: '10px 14px', fontSize: 14, outline: 'none', fontFamily: 'inherit', color: 'var(--text-primary)', background: 'var(--bg)', boxSizing: 'border-box' as const }
 
   if (loading) return (
     <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--bg-secondary)' }}>
@@ -56,14 +56,14 @@ export default function ProfilePage() {
 
   return (
     <div style={{ minHeight: '100vh', background: 'var(--bg-secondary)', paddingBottom: 80 }}>
-      <div style={{ position: 'sticky', top: 0, background: 'white', borderBottom: '1px solid var(--border)', padding: '13px 16px', zIndex: 10 }}>
+      <div style={{ position: 'sticky', top: 0, background: 'var(--bg)', borderBottom: '1px solid var(--border)', padding: '13px 16px', zIndex: 10 }}>
         <div style={{ maxWidth: 640, margin: '0 auto', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
             <button onClick={() => router.push('/feed')} style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', fontSize: 18 }}>←</button>
             <h1 style={{ fontSize: 17, fontWeight: 700, margin: 0, color: 'var(--text-primary)' }}>Profile</h1>
           </div>
           <button onClick={() => editing ? handleSave() : setEditing(true)} disabled={saving}
-            style={{ background: editing ? 'var(--accent)' : 'white', color: editing ? 'white' : 'var(--accent)', border: '1px solid var(--accent)', padding: '7px 16px', borderRadius: 8, fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>
+            style={{ background: editing ? 'var(--accent)' : 'var(--bg)', color: editing ? 'white' : 'var(--accent)', border: '1px solid var(--accent)', padding: '7px 16px', borderRadius: 8, fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>
             {saving ? 'Saving...' : editing ? 'Save' : 'Edit'}
           </button>
         </div>
@@ -72,7 +72,7 @@ export default function ProfilePage() {
       <div style={{ maxWidth: 640, margin: '0 auto', padding: 16, display: 'flex', flexDirection: 'column', gap: 14 }}>
 
         {/* Profile Card */}
-        <div style={{ background: 'white', borderRadius: 14, border: '1px solid var(--border)', padding: 20, boxShadow: 'var(--shadow-sm)' }}>
+        <div style={{ background: 'var(--bg)', borderRadius: 14, border: '1px solid var(--border)', padding: 20, boxShadow: 'var(--shadow-sm)' }}>
           <div style={{ display: 'flex', alignItems: 'flex-start', gap: 14, marginBottom: 16 }}>
             <div style={{ width: 64, height: 64, borderRadius: '50%', background: avatarColor(profile?.full_name || ''), display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontSize: 24, fontWeight: 700, flexShrink: 0 }}>
               {profile?.full_name?.[0] || user?.email?.[0] || '?'}
@@ -86,10 +86,10 @@ export default function ProfilePage() {
               )}
               <p style={{ fontSize: 13, color: 'var(--text-muted)', margin: '0 0 8px' }}>@{profile?.username || 'no username'}</p>
               <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
-                {isAdmin && <span style={badgeStyle('#fef2f2', '#dc2626')}>Admin</span>}
-                {profile?.college_email_verified && <span style={badgeStyle('#eff6ff', 'var(--accent)')}>✓ College Verified</span>}
-                {profile?.streak_days > 0 && <span style={{ fontSize: 11, padding: '3px 8px', borderRadius: 20, background: '#fff7ed', color: '#c2410c', fontWeight: 600 }}>🔥 {profile.streak_days} day streak</span>}
-                {profile?.karma_points > 0 && <span style={{ fontSize: 11, padding: '3px 8px', borderRadius: 20, background: '#fefce8', color: '#a16207', fontWeight: 600 }}>⭐ {profile.karma_points} karma</span>}
+                {isAdmin && <span style={badgeStyle('var(--danger-light)', 'var(--danger)')}>Admin</span>}
+                {profile?.college_email_verified && <span style={badgeStyle('var(--accent-light)', 'var(--accent)')}>✓ College Verified</span>}
+                {profile?.streak_days > 0 && <span style={{ fontSize: 11, padding: '3px 8px', borderRadius: 20, background: 'var(--orange-light)', color: 'var(--orange-text)', fontWeight: 600 }}>🔥 {profile.streak_days} day streak</span>}
+                {profile?.karma_points > 0 && <span style={{ fontSize: 11, padding: '3px 8px', borderRadius: 20, background: 'var(--yellow-light)', color: 'var(--yellow-text)', fontWeight: 600 }}>⭐ {profile.karma_points} karma</span>}
               </div>
             </div>
           </div>
@@ -103,7 +103,7 @@ export default function ProfilePage() {
         </div>
 
         {/* Campus Info */}
-        <div style={{ background: 'white', borderRadius: 14, border: '1px solid var(--border)', padding: 20, boxShadow: 'var(--shadow-sm)' }}>
+        <div style={{ background: 'var(--bg)', borderRadius: 14, border: '1px solid var(--border)', padding: 20, boxShadow: 'var(--shadow-sm)' }}>
           <h3 style={{ fontSize: 14, fontWeight: 700, color: 'var(--text-primary)', margin: '0 0 14px' }}>Campus Info</h3>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
             {[
@@ -123,7 +123,7 @@ export default function ProfilePage() {
         </div>
 
         {/* Links */}
-        <div style={{ background: 'white', borderRadius: 14, border: '1px solid var(--border)', padding: 20, boxShadow: 'var(--shadow-sm)' }}>
+        <div style={{ background: 'var(--bg)', borderRadius: 14, border: '1px solid var(--border)', padding: 20, boxShadow: 'var(--shadow-sm)' }}>
           <h3 style={{ fontSize: 14, fontWeight: 700, color: 'var(--text-primary)', margin: '0 0 14px' }}>Links</h3>
           {editing ? (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
@@ -164,19 +164,19 @@ export default function ProfilePage() {
         {/* Admin */}
         {isAdmin && (
           <button onClick={() => router.push('/admin')}
-            style={{ background: 'white', border: '1px solid var(--border)', borderRadius: 14, padding: '16px 20px', textAlign: 'left', cursor: 'pointer', boxShadow: 'var(--shadow-sm)' }}>
+            style={{ background: 'var(--bg)', border: '1px solid var(--border)', borderRadius: 14, padding: '16px 20px', textAlign: 'left', cursor: 'pointer', boxShadow: 'var(--shadow-sm)' }}>
             <p style={{ fontSize: 14, fontWeight: 700, color: 'var(--text-primary)', margin: '0 0 2px' }}>⚙️ Admin Panel</p>
             <p style={{ fontSize: 12, color: 'var(--text-muted)', margin: 0 }}>Manage users, posts and colleges</p>
           </button>
         )}
 
         <button onClick={async () => { await supabase.auth.signOut(); router.push('/') }}
-          style={{ background: 'white', border: '1px solid #fecaca', borderRadius: 14, padding: '14px', fontSize: 14, fontWeight: 600, color: '#dc2626', cursor: 'pointer', fontFamily: 'inherit', boxShadow: 'var(--shadow-sm)' }}>
+          style={{ background: 'var(--bg)', border: '1px solid var(--danger-border)', borderRadius: 14, padding: '14px', fontSize: 14, fontWeight: 600, color: 'var(--danger)', cursor: 'pointer', fontFamily: 'inherit', boxShadow: 'var(--shadow-sm)' }}>
           Sign Out
         </button>
       </div>
 
-      <div style={{ position: 'fixed', bottom: 0, left: 0, right: 0, background: 'white', borderTop: '1px solid var(--border)', zIndex: 10 }}>
+      <div style={{ position: 'fixed', bottom: 0, left: 0, right: 0, background: 'var(--bg)', borderTop: '1px solid var(--border)', zIndex: 10 }}>
         <div style={{ maxWidth: 640, margin: '0 auto', display: 'flex' }}>
           {[
             { icon: '🏠', label: 'Feed', href: '/feed' },

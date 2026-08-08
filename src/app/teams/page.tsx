@@ -38,7 +38,7 @@ export default function TeamsPage() {
     setPosting(false)
   }
 
-  const inputStyle = { width: '100%', border: '1px solid var(--border)', borderRadius: 10, padding: '10px 14px', fontSize: 14, outline: 'none', fontFamily: 'inherit', color: 'var(--text-primary)', background: 'white', boxSizing: 'border-box' as const }
+  const inputStyle = { width: '100%', border: '1px solid var(--border)', borderRadius: 10, padding: '10px 14px', fontSize: 14, outline: 'none', fontFamily: 'inherit', color: 'var(--text-primary)', background: 'var(--bg)', boxSizing: 'border-box' as const }
 
   return (
     <Layout user={user} profile={profile}>
@@ -55,7 +55,7 @@ export default function TeamsPage() {
         </div>
 
         {showCompose && (
-          <div style={{ background: 'white', border: '1px solid var(--border)', borderRadius: 14, padding: 20, marginBottom: 20, boxShadow: 'var(--shadow-sm)' }}>
+          <div style={{ background: 'var(--bg)', border: '1px solid var(--border)', borderRadius: 14, padding: 20, marginBottom: 20, boxShadow: 'var(--shadow-sm)' }}>
             <h3 style={{ fontSize: 16, fontWeight: 700, color: 'var(--text-primary)', margin: '0 0 16px' }}>Looking for Teammates</h3>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
               <input type="text" value={form.event_name} onChange={e => setForm(f => ({ ...f, event_name: e.target.value }))} placeholder="Event/Hackathon name *" style={inputStyle} />
@@ -67,8 +67,8 @@ export default function TeamsPage() {
               </div>
             </div>
             <div style={{ display: 'flex', gap: 8, marginTop: 14 }}>
-              <button onClick={() => setShowCompose(false)} style={{ flex: 1, background: 'white', color: 'var(--text-secondary)', border: '1px solid var(--border)', borderRadius: 10, padding: '10px', fontSize: 14, cursor: 'pointer', fontFamily: 'inherit' }}>Cancel</button>
-              <button onClick={handlePost} disabled={!form.event_name || posting} style={{ flex: 1, background: posting ? '#93c5fd' : 'var(--accent)', color: 'white', border: 'none', borderRadius: 10, padding: '10px', fontSize: 14, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>
+              <button onClick={() => setShowCompose(false)} style={{ flex: 1, background: 'var(--bg)', color: 'var(--text-secondary)', border: '1px solid var(--border)', borderRadius: 10, padding: '10px', fontSize: 14, cursor: 'pointer', fontFamily: 'inherit' }}>Cancel</button>
+              <button onClick={handlePost} disabled={!form.event_name || posting} style={{ flex: 1, background: posting ? 'var(--disabled)' : 'var(--accent)', color: 'white', border: 'none', borderRadius: 10, padding: '10px', fontSize: 14, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>
                 {posting ? 'Posting...' : 'Post'}
               </button>
             </div>
@@ -84,19 +84,19 @@ export default function TeamsPage() {
         ) : (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
             {teams.map(team => (
-              <div key={team.id} style={{ background: 'white', border: '1px solid var(--border)', borderRadius: 14, padding: '18px', boxShadow: 'var(--shadow-sm)' }}>
+              <div key={team.id} style={{ background: 'var(--bg)', border: '1px solid var(--border)', borderRadius: 14, padding: '18px', boxShadow: 'var(--shadow-sm)' }}>
                 <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 10 }}>
                   <div>
                     <p style={{ fontSize: 15, fontWeight: 700, color: 'var(--text-primary)', margin: '0 0 3px' }}>{team.event_name}</p>
                     <p style={{ fontSize: 12, color: 'var(--text-muted)', margin: 0 }}>@{team.profiles?.username}</p>
                   </div>
-                  <span style={{ fontSize: 12, background: '#eff6ff', color: 'var(--accent)', padding: '4px 10px', borderRadius: 20, fontWeight: 600 }}>👥 {team.team_size} members</span>
+                  <span style={{ fontSize: 12, background: 'var(--accent-light)', color: 'var(--accent)', padding: '4px 10px', borderRadius: 20, fontWeight: 600 }}>👥 {team.team_size} members</span>
                 </div>
                 {team.description && <p style={{ fontSize: 13, color: 'var(--text-secondary)', margin: '0 0 10px', lineHeight: 1.5 }}>{team.description}</p>}
                 {team.skills_needed && (
                   <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 10 }}>
                     {team.skills_needed.split(',').map((skill: string, i: number) => (
-                      <span key={i} style={{ fontSize: 11, background: '#f5f3ff', color: '#6d28d9', padding: '3px 8px', borderRadius: 20, fontWeight: 500 }}>{skill.trim()}</span>
+                      <span key={i} style={{ fontSize: 11, background: 'var(--purple-light)', color: 'var(--purple-text)', padding: '3px 8px', borderRadius: 20, fontWeight: 500 }}>{skill.trim()}</span>
                     ))}
                   </div>
                 )}
