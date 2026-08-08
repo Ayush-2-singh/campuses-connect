@@ -157,12 +157,18 @@ export default function UserProfilePage() {
             {profile.batch_year && <span>· Batch {profile.batch_year}</span>}
           </div>
 
-          {(profile.karma_points > 0 || profile.streak_days > 0) && (
-            <div style={{ display: 'flex', gap: 12, marginTop: 14 }}>
+          {(profile.karma_points > 0 || profile.streak_days > 0 || profile.aura_points > 0) && (
+            <div style={{ display: 'flex', gap: 12, marginTop: 14, flexWrap: 'wrap' }}>
+              {profile.aura_points > 0 && (
+                <div style={{ background: 'var(--accent-light)', border: '1px solid var(--accent-border)', borderRadius: 10, padding: '8px 14px', textAlign: 'center' }}>
+                  <p style={{ fontSize: 15, fontWeight: 700, color: 'var(--accent-text)', margin: 0 }}>⚡ {profile.aura_points}</p>
+                  <p style={{ fontSize: 11, color: 'var(--text-muted)', margin: '2px 0 0' }}>Aura · Season</p>
+                </div>
+              )}
               {profile.karma_points > 0 && (
                 <div style={{ background: 'var(--yellow-light)', border: '1px solid var(--warning-border)', borderRadius: 10, padding: '8px 14px', textAlign: 'center' }}>
                   <p style={{ fontSize: 15, fontWeight: 700, color: 'var(--yellow-text)', margin: 0 }}>⭐ {profile.karma_points}</p>
-                  <p style={{ fontSize: 11, color: 'var(--text-muted)', margin: '2px 0 0' }}>Karma</p>
+                  <p style={{ fontSize: 11, color: 'var(--text-muted)', margin: '2px 0 0' }}>Karma · Lifetime</p>
                 </div>
               )}
               {profile.streak_days > 0 && (

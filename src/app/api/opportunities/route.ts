@@ -88,11 +88,8 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Failed to create opportunity.' }, { status: 500 })
   }
 
-  // Award karma and update streak for the admin who posted
-  await Promise.all([
-    supabase.rpc('add_karma', { p_points: 8 }),
-    supabase.rpc('update_streak'),
-  ])
+  // Award karma via the validated wrapper
+  await supabase.rpc('reward_opportunity_post', { p_opportunity_id: data.id })
 
   return NextResponse.json({ data }, { status: 201 })
 }

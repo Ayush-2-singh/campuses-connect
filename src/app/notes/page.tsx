@@ -80,7 +80,7 @@ export default function NotesPage() {
   const handlePost = async () => {
     if (!form.title.trim() || !form.subject.trim()) return
     setPosting(true)
-    await supabase.from('notes').insert({
+    const { data: noteRow } = await supabase.from('notes').insert({
       uploaded_by: user.id,
       campus_id: profile?.campus_id,
       college_id: profile?.college_id,
@@ -91,9 +91,8 @@ export default function NotesPage() {
       description: form.description,
       drive_link: form.drive_link || null,
       external_link: form.external_link || null,
-    })
-    await supabase.rpc('add_karma', { p_points: 10 })
-    await supabase.rpc('update_streak')
+    }).select('id').single()
+    try { await supabase.rpc('reward_note_upload', { p_note_id: noteRow?.id }) } catch {}
     setForm({ title: '', subject: '', resource_type: 'notes', description: '', drive_link: '', external_link: '' })
     setShowCompose(false)
     const { data } = await supabase

@@ -11,6 +11,8 @@ import { AVATAR_COLORS, accentForPath } from '@/theme/colors'
 const NAV_ITEMS = [
   { label: 'Home', href: '/feed', icon: 'home' },
   { label: 'Classroom', href: '/college', icon: 'book' },
+  { label: 'Events', href: '/events', icon: 'calendar' },
+  { label: 'Compete', href: '/compete', icon: 'zap' },
   { label: 'Opportunities', href: '/opportunities', icon: 'briefcase' },
   { label: 'Notes', href: '/notes', icon: 'notebook' },
   { label: 'Talent', href: '/talent', icon: 'star' },

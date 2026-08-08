@@ -89,6 +89,7 @@ export default function ProfilePage() {
                 {isAdmin && <span style={badgeStyle('var(--danger-light)', 'var(--danger)')}>Admin</span>}
                 {profile?.college_email_verified && <span style={badgeStyle('var(--accent-light)', 'var(--accent)')}>✓ College Verified</span>}
                 {profile?.streak_days > 0 && <span style={{ fontSize: 11, padding: '3px 8px', borderRadius: 20, background: 'var(--orange-light)', color: 'var(--orange-text)', fontWeight: 600 }}>🔥 {profile.streak_days} day streak</span>}
+                {profile?.aura_points > 0 && <span style={{ fontSize: 11, padding: '3px 8px', borderRadius: 20, background: 'var(--accent-light)', color: 'var(--accent-text)', fontWeight: 600 }}>⚡ {profile.aura_points} aura</span>}
                 {profile?.karma_points > 0 && <span style={{ fontSize: 11, padding: '3px 8px', borderRadius: 20, background: 'var(--yellow-light)', color: 'var(--yellow-text)', fontWeight: 600 }}>⭐ {profile.karma_points} karma</span>}
               </div>
             </div>

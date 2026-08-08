@@ -91,7 +91,7 @@ export default function AskPage() {
     })
     if (err || !ok) setError(err?.message || 'Could not post your answer (you cannot answer your own question).')
     else {
-      await supabase.rpc('update_streak')
+      // streak is advanced inside the validated submit_answer RPC
       setAnswerText('')
       await loadAnswers(questionId)
       await loadQuestions()

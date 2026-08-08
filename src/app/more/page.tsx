@@ -6,6 +6,8 @@ import { useRouter } from 'next/navigation'
 import Layout from '@/components/Layout'
 
 const SECTIONS = [
+  { icon: '⚔️', label: 'Compete', desc: 'Daily DSA challenges, Campus Clash & Aura rankings', href: '/compete' },
+  { icon: '🎪', label: 'Events', desc: 'Campus events, hackathons & memories', href: '/events' },
   { icon: '📚', label: 'Notes Library', desc: 'Subject-wise notes, PYQs and resources', href: '/notes' },
   { icon: '⭐', label: 'Talent', desc: 'Discover students by skill', href: '/talent' },
   { icon: '🧠', label: 'AI Brain', desc: 'Your personal academic memory — ask your notes anything', href: '/brain' },
@@ -53,12 +55,22 @@ export default function MorePage() {
             <h3 style={{ fontSize: 14, fontWeight: 700, color: 'var(--text-primary)', margin: '0 0 16px' }}>Your Stats</h3>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 14 }}>
               <div style={{ background: 'var(--bg-secondary)', borderRadius: 12, padding: '14px', textAlign: 'center' }}>
-                <p style={{ fontSize: 28, fontWeight: 800, color: 'var(--yellow-text)', margin: '0 0 4px' }}>{profile.karma_points || 0}</p>
-                <p style={{ fontSize: 12, color: 'var(--text-muted)', margin: 0 }}>Karma Points ⭐</p>
+                <p style={{ fontSize: 28, fontWeight: 800, color: 'var(--accent-text)', margin: '0 0 4px' }}>{profile.aura_points || 0}</p>
+                <p style={{ fontSize: 12, color: 'var(--text-muted)', margin: 0 }}>Aura ⚡ (season)</p>
               </div>
+              <div style={{ background: 'var(--bg-secondary)', borderRadius: 12, padding: '14px', textAlign: 'center' }}>
+                <p style={{ fontSize: 28, fontWeight: 800, color: 'var(--yellow-text)', margin: '0 0 4px' }}>{profile.karma_points || 0}</p>
+                <p style={{ fontSize: 12, color: 'var(--text-muted)', margin: 0 }}>Karma ⭐ (lifetime)</p>
+              </div>
+            </div>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 14 }}>
               <div style={{ background: 'var(--bg-secondary)', borderRadius: 12, padding: '14px', textAlign: 'center' }}>
                 <p style={{ fontSize: 28, fontWeight: 800, color: 'var(--orange-text)', margin: '0 0 4px' }}>{profile.streak_days || 0}</p>
                 <p style={{ fontSize: 12, color: 'var(--text-muted)', margin: 0 }}>Day Streak 🔥</p>
+              </div>
+              <div style={{ background: 'var(--bg-secondary)', borderRadius: 12, padding: '14px', textAlign: 'center' }}>
+                <p style={{ fontSize: 28, fontWeight: 800, color: 'var(--purple-text)', margin: '0 0 4px' }}>{profile.streak_freezes || 0}</p>
+                <p style={{ fontSize: 12, color: 'var(--text-muted)', margin: 0 }}>Freezes ❄️</p>
               </div>
             </div>
             <button
