@@ -57,7 +57,7 @@ export default function EventsPage() {
       setProfile(prof)
 
       const { data: evs } = await supabase
-        .from('events')
+        .from('campus_events')
         .select('*, profiles(full_name, username)')
         .eq('status', 'published')
         .order('starts_at', { ascending: false })
@@ -87,7 +87,7 @@ export default function EventsPage() {
   const createEvent = async () => {
     if (!form.title.trim() || !form.starts_at) return
     setPosting(true)
-    const { data, error } = await supabase.from('events').insert({
+    const { data, error } = await supabase.from('campus_events').insert({
       campus_id: profile?.campus_id,
       college_id: profile?.college_id,
       created_by: user.id,
@@ -106,7 +106,7 @@ export default function EventsPage() {
     if (!error) {
       setShowCreate(false)
       setForm({ title: '', description: '', category: 'general', location: '', starts_at: '', ends_at: '', max_attendees: '' })
-      const { data: evs } = await supabase.from('events').select('*, profiles(full_name, username)').eq('status', 'published').order('starts_at', { ascending: false }).limit(30)
+      const { data: evs } = await supabase.from('campus_events').select('*, profiles(full_name, username)').eq('status', 'published').order('starts_at', { ascending: false }).limit(30)
       setEvents(evs || [])
     }
     setPosting(false)

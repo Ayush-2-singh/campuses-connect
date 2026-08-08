@@ -14,7 +14,7 @@ ALTER TABLE public.dsa_submissions     ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.contests            ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.contest_registrations ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.daily_challenges    ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.events              ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.campus_events       ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.event_attendees     ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.event_gallery       ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.reviews             ENABLE ROW LEVEL SECURITY;
@@ -67,15 +67,15 @@ DROP POLICY IF EXISTS daily_challenges_select ON public.daily_challenges;
 CREATE POLICY daily_challenges_select ON public.daily_challenges
   FOR SELECT TO authenticated USING (TRUE);
 
--- events: published visible to all; creators manage their own
-DROP POLICY IF EXISTS events_select ON public.events;
-CREATE POLICY events_select ON public.events
+-- campus_events: published visible to all; creators manage their own
+DROP POLICY IF EXISTS campus_events_select ON public.campus_events;
+CREATE POLICY campus_events_select ON public.campus_events
   FOR SELECT TO authenticated USING (status = 'published' OR created_by = auth.uid());
-DROP POLICY IF EXISTS events_insert ON public.events;
-CREATE POLICY events_insert ON public.events
+DROP POLICY IF EXISTS campus_events_insert ON public.campus_events;
+CREATE POLICY campus_events_insert ON public.campus_events
   FOR INSERT TO authenticated WITH CHECK (created_by = auth.uid());
-DROP POLICY IF EXISTS events_update_own ON public.events;
-CREATE POLICY events_update_own ON public.events
+DROP POLICY IF EXISTS campus_events_update_own ON public.campus_events;
+CREATE POLICY campus_events_update_own ON public.campus_events
   FOR UPDATE TO authenticated USING (created_by = auth.uid());
 
 -- event_attendees: own

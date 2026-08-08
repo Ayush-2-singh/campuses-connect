@@ -138,10 +138,10 @@ RETURNS BOOLEAN
 LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
 DECLARE v_host UUID;
 BEGIN
-  SELECT created_by INTO v_host FROM public.events WHERE id = p_event_id;
+  SELECT created_by INTO v_host FROM public.campus_events WHERE id = p_event_id;
   IF v_host IS NULL OR v_host <> auth.uid() THEN RETURN FALSE; END IF;
 
-  UPDATE public.events SET karma_awarded = TRUE WHERE id = p_event_id AND karma_awarded = FALSE;
+  UPDATE public.campus_events SET karma_awarded = TRUE WHERE id = p_event_id AND karma_awarded = FALSE;
   IF NOT FOUND THEN RETURN FALSE; END IF;
 
   PERFORM public.award_karma('event_hosted', 'event_host', 'event_host:' || p_event_id, auth.uid());

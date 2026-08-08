@@ -2,12 +2,16 @@
 -- CampusConnect — 016 EVENTS + GALLERY
 -- Campus events with RSVP, attendance tracking, and per-event
 -- photo/video galleries (memories = retention + sharing).
+--
+-- NOTE: named `campus_events` because a legacy `events` table (old
+-- sprint schema: start_at/venue/meet_link...) already exists and is
+-- kept untouched. New product events live in campus_events.
 -- ============================================================
 
 -- ------------------------------------------------------------
 -- 1. Events
 -- ------------------------------------------------------------
-CREATE TABLE IF NOT EXISTS public.events (
+CREATE TABLE IF NOT EXISTS public.campus_events (
   id             UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   campus_id      UUID REFERENCES public.campuses(id) ON DELETE CASCADE,
   college_id     UUID REFERENCES public.colleges(id) ON DELETE CASCADE,
@@ -27,14 +31,14 @@ CREATE TABLE IF NOT EXISTS public.events (
   CHECK (ends_at IS NULL OR ends_at > starts_at)
 );
 
-CREATE INDEX IF NOT EXISTS idx_events_start ON public.events (starts_at DESC);
-CREATE INDEX IF NOT EXISTS idx_events_campus ON public.events (campus_id, starts_at DESC);
+CREATE INDEX IF NOT EXISTS idx_campus_events_start ON public.campus_events (starts_at DESC);
+CREATE INDEX IF NOT EXISTS idx_campus_events_campus ON public.campus_events (campus_id, starts_at DESC);
 
 -- ------------------------------------------------------------
 -- 2. Attendees — RSVP then check-in (both count as participation)
 -- ------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS public.event_attendees (
-  event_id   UUID NOT NULL REFERENCES public.events(id) ON DELETE CASCADE,
+  event_id   UUID NOT NULL REFERENCES public.campus_events(id) ON DELETE CASCADE,
   user_id    UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
   status     TEXT NOT NULL DEFAULT 'going' CHECK (status IN ('going', 'maybe', 'checked_in')),
   checked_in TIMESTAMPTZ,
@@ -47,7 +51,7 @@ CREATE TABLE IF NOT EXISTS public.event_attendees (
 -- ------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS public.event_gallery (
   id          UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  event_id    UUID NOT NULL REFERENCES public.events(id) ON DELETE CASCADE,
+  event_id    UUID NOT NULL REFERENCES public.campus_events(id) ON DELETE CASCADE,
   uploaded_by UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
   media_url   TEXT NOT NULL,
   media_type  TEXT NOT NULL DEFAULT 'image' CHECK (media_type IN ('image', 'video')),
@@ -108,10 +112,10 @@ RETURNS BOOLEAN
 LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
 DECLARE v_host UUID;
 BEGIN
-  SELECT created_by INTO v_host FROM public.events WHERE id = p_event_id;
+  SELECT created_by INTO v_host FROM public.campus_events WHERE id = p_event_id;
   IF v_host IS NULL THEN RETURN FALSE; END IF;
 
-  UPDATE public.events SET karma_awarded = TRUE WHERE id = p_event_id AND karma_awarded = FALSE;
+  UPDATE public.campus_events SET karma_awarded = TRUE WHERE id = p_event_id AND karma_awarded = FALSE;
   IF NOT FOUND THEN RETURN FALSE; END IF;   -- already rewarded
 
   PERFORM public.award_karma('event_hosted', 'event_host', 'event_host:' || p_event_id, v_host);
