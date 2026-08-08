@@ -30,6 +30,9 @@ export default function PostComposer({
   const [body, setBody] = useState('')
   const [posting, setPosting] = useState(false)
   const [open, setOpen] = useState(false)
+  const [checking, setChecking] = useState(false)
+  const [heldNotice, setHeldNotice] = useState('')
+  const [postError, setPostError] = useState('')
 
   useEffect(() => {
     listCreatableCategories(userId, context).then(list => {
@@ -52,8 +55,31 @@ export default function PostComposer({
   const handlePost = async () => {
     if (!body.trim() || !category || posting) return
     setPosting(true)
+    setChecking(true)
+    setPostError('')
+    setHeldNotice('')
     const supabase = createClient()
-    const { error } = await supabase.from('posts').insert({
+
+    // 1. AI Admin Copilot pre-check — Gemini never blocks; on failure we allow.
+    let flagged = false
+    let aiVerdict: any = null
+    try {
+      const res = await fetch('/api/admin/copilot/check', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ text: body.trim(), contentType: category.category_key }),
+      })
+      if (res.ok) {
+        const data = await res.json()
+        flagged = !!data.verdict?.flagged
+        aiVerdict = data.verdict
+      }
+    } catch {
+      /* fail open — post normally */
+    }
+
+    // 2. Insert (held when flagged so only the author + moderators see it)
+    const insertPayload: any = {
       author_id: userId,
       category_id: category.category_id,
       scope,
@@ -61,14 +87,63 @@ export default function PostComposer({
       college_id: context.collegeId || null,
       campus_id: context.campusId || null,
       body: body.trim(),
-      status: 'published',
-    })
-    if (!error) {
+      status: flagged ? 'held' : 'published',
+    }
+    if (flagged) insertPayload.held_reason = aiVerdict?.reason || 'Pending AI review'
+
+    const { data: inserted, error } = await supabase.from('posts').insert(insertPayload).select('id').single()
+    if (error) {
+      setPostError('Could not post. Please try again.')
+      setChecking(false)
+      setPosting(false)
+      return
+    }
+
+    // 3. When flagged, enqueue for moderation + notify author.
+    //    Fallback: if the API route fails, call the RPC directly so the
+    //    post is never left in held-limbo (invisible + unqueued).
+    if (flagged && inserted?.id) {
+      let queued = false
+      try {
+        const res = await fetch('/api/admin/copilot/flag', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            content_type: 'post',
+            content_id: inserted.id,
+            reason: aiVerdict?.reason || 'Pending AI review',
+            ai_verdict: aiVerdict,
+          }),
+        })
+        queued = res.ok
+      } catch { /* try direct RPC below */ }
+      if (!queued) {
+        try {
+          await supabase.rpc('flag_content', {
+            p_content_type: 'post',
+            p_content_id: inserted.id,
+            p_reason: aiVerdict?.reason || 'Pending AI review',
+            p_ai_verdict: aiVerdict,
+            p_author_id: userId,
+          })
+        } catch {
+          /* last resort: leave held, moderator can still find via author */
+        }
+      }
+      setHeldNotice('Your post was sent for review by our AI moderator. It will appear once approved.')
       setBody('')
       setOpen(false)
+      setChecking(false)
+      setPosting(false)
       onPosted()
+      return
     }
+
+    setBody('')
+    setOpen(false)
+    setChecking(false)
     setPosting(false)
+    onPosted()
   }
 
   return (
@@ -95,6 +170,16 @@ export default function PostComposer({
               </button>
             ))}
           </div>
+          {heldNotice && (
+            <div style={{ background: '#fffbeb', border: '1px solid #fde68a', borderRadius: 10, padding: '10px 14px', fontSize: 13, color: '#92400e', marginBottom: 10, lineHeight: 1.5 }}>
+              🛡️ {heldNotice}
+            </div>
+          )}
+          {postError && (
+            <div style={{ background: '#fef2f2', border: '1px solid #fecaca', borderRadius: 10, padding: '10px 14px', fontSize: 13, color: '#dc2626', marginBottom: 10 }}>
+              {postError}
+            </div>
+          )}
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10 }}>
             <select value={scope} onChange={e => setScope(e.target.value as PostScope)}
               style={{ border: '1px solid var(--border)', borderRadius: 8, padding: '7px 10px', fontSize: 13, background: 'white', outline: 'none', fontFamily: 'inherit' }}>
@@ -102,9 +187,9 @@ export default function PostComposer({
             </select>
             <div style={{ display: 'flex', gap: 8 }}>
               <button onClick={() => setOpen(false)} style={{ padding: '7px 14px', borderRadius: 8, border: '1px solid var(--border)', background: 'white', color: 'var(--text-secondary)', fontSize: 13, cursor: 'pointer', fontFamily: 'inherit' }}>Cancel</button>
-              <button onClick={handlePost} disabled={!body.trim() || posting}
-                style={{ padding: '7px 14px', borderRadius: 8, border: 'none', background: !body.trim() || posting ? '#93c5fd' : 'var(--accent)', color: 'white', fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>
-                {posting ? 'Posting...' : 'Post'}
+              <button onClick={handlePost} disabled={!body.trim() || posting || checking}
+                style={{ padding: '7px 14px', borderRadius: 8, border: 'none', background: !body.trim() || posting || checking ? '#93c5fd' : 'var(--accent)', color: 'white', fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>
+                {checking ? '🛡️ Checking...' : posting ? 'Posting...' : 'Post'}
               </button>
             </div>
           </div>

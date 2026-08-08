@@ -48,3 +48,134 @@ body {
   -webkit-box-orient: vertical;
   overflow: hidden;
 }
+
+/* ───────────────────────── Dark mode ───────────────────────── */
+
+[data-theme='dark'] {
+  color-scheme: dark;
+  -webkit-color-scheme: dark;
+  --bg: #141a23;
+  --bg-secondary: #0b0e13;
+  --bg-tertiary: #1a212c;
+  --border: #232b37;
+  --border-strong: #333d4c;
+  --text-primary: #e6e9ef;
+  --text-secondary: #a2abb8;
+  --text-muted: #6f7a89;
+  --accent: #3b82f6;
+  --accent-light: #17233a;
+  --accent-text: #60a5fa;
+  --success: #34d399;
+  --success-light: #0f2418;
+  --warning: #fbbf24;
+  --warning-light: #291f0d;
+  --danger: #f87171;
+  --danger-light: #2a1518;
+  --purple: #a78bfa;
+  --purple-light: #211a33;
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.45), 0 1px 2px rgba(0, 0, 0, 0.35);
+  --shadow: 0 4px 8px rgba(0, 0, 0, 0.45), 0 2px 4px rgba(0, 0, 0, 0.35);
+}
+
+/* Smooth theme transition on the page background */
+body {
+  transition: background-color 0.25s ease, color 0.25s ease;
+}
+
+/* The app sets many surfaces with inline styles, which can't be reached via
+   CSS variables. These rules surgically remap the hardcoded light palette to
+   its dark equivalent (React serializes inline styles as `prop:value`). */
+
+/* Surfaces */
+[data-theme='dark'] [style*="background:white"],
+[data-theme='dark'] [style*="background: white"] { background: var(--bg) !important; }
+[data-theme='dark'] [style*="background:#eff6ff"] { background: var(--accent-light) !important; }
+[data-theme='dark'] [style*="background:#f1f5f9"],
+[data-theme='dark'] [style*="background:#f8f9fa"],
+[data-theme='dark'] [style*="background:#f1f3f5"],
+[data-theme='dark'] [style*="background:#f9f9f9"] { background: var(--bg-tertiary) !important; }
+[data-theme='dark'] [style*="background:#fff7ed"] { background: #2a1d10 !important; }
+[data-theme='dark'] [style*="background:#fefce8"],
+[data-theme='dark'] [style*="background:#fffbeb"] { background: #26200f !important; }
+[data-theme='dark'] [style*="background:#fef2f2"] { background: #2a1518 !important; }
+[data-theme='dark'] [style*="background:#f5f3ff"] { background: #211a33 !important; }
+[data-theme='dark'] [style*="background:#f0fdf4"] { background: #0f2418 !important; }
+
+/* Borders */
+[data-theme='dark'] [style*="#e5e7eb"],
+[data-theme='dark'] [style*="#dee2e6"] { border-color: var(--border-strong) !important; }
+[data-theme='dark'] [style*="#e9ecef"] { border-color: var(--border) !important; }
+[data-theme='dark'] [style*="#bfdbfe"] { border-color: #2b4a70 !important; }
+[data-theme='dark'] [style*="#fecaca"] { border-color: #4a2426 !important; }
+[data-theme='dark'] [style*="#fde68a"],
+[data-theme='dark'] [style*="#fef08a"] { border-color: #453a17 !important; }
+[data-theme='dark'] [style*="#ddd6fe"] { border-color: #352b4d !important; }
+[data-theme='dark'] [style*="#fed7aa"] { border-color: #45341e !important; }
+
+/* Text */
+[data-theme='dark'] [style*="color:#1d4ed8"] { color: #60a5fa !important; }
+[data-theme='dark'] [style*="color:#c2410c"] { color: #fdba74 !important; }
+[data-theme='dark'] [style*="color:#a16207"] { color: #fcd34d !important; }
+[data-theme='dark'] [style*="color:#92400e"] { color: #fbbf24 !important; }
+[data-theme='dark'] [style*="color:#b45309"] { color: #f59e0b !important; }
+[data-theme='dark'] [style*="color:#dc2626"] { color: #f87171 !important; }
+[data-theme='dark'] [style*="color:#15803d"] { color: #4ade80 !important; }
+[data-theme='dark'] [style*="color:#4c1d95"] { color: #c4b5fd !important; }
+[data-theme='dark'] [style*="color:#6d28d9"] { color: #a78bfa !important; }
+[data-theme='dark'] [style*="color:#495057"] { color: #a2abb8 !important; }
+
+/* ─────────── Theme toggle button ─────────── */
+
+.theme-toggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  border: 1px solid var(--border-strong);
+  background: var(--bg);
+  color: var(--text-primary);
+  box-shadow: var(--shadow);
+  cursor: pointer;
+  font-family: inherit;
+  transition: background 0.2s ease, border-color 0.2s ease, color 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.theme-toggle:hover {
+  transform: scale(1.08) rotate(10deg);
+  border-color: var(--accent);
+  color: var(--accent);
+  box-shadow: var(--shadow-sm);
+}
+
+.theme-toggle:active {
+  transform: scale(0.92);
+}
+
+.theme-toggle svg {
+  transition: transform 0.3s ease;
+}
+
+.theme-toggle--floating {
+  position: fixed;
+  top: 14px;
+  right: 14px;
+  z-index: 999;
+}
+
+.theme-toggle--inline {
+  width: 30px;
+  height: 30px;
+  background: var(--bg-tertiary);
+  box-shadow: none;
+}
+
+/* On mobile, pages wrapped in Layout show the inline variant inside the top
+   bar, so the floating button (which would overlap it) is hidden there.
+   Standalone pages (auth, landing) keep the floating button top-right. */
+@media (max-width: 768px) {
+  body:has(.mobile-topbar) .theme-toggle--floating {
+    display: none;
+  }
+}

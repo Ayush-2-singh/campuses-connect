@@ -81,6 +81,22 @@ export default function PostCard({
     }
   }
 
+  const handleReport = async () => {
+    if (!currentUserId) return
+    const reason = window.prompt('Report this post to moderators — why? (spam, harassment, etc.)')
+    if (!reason?.trim()) return
+    try {
+      const res = await fetch('/api/admin/copilot/report', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ content_type: 'post', content_id: post.id, reason: reason.trim() }),
+      })
+      window.alert(res.ok ? 'Thanks — our moderators will review it.' : 'Could not submit the report.')
+    } catch {
+      window.alert('Could not submit the report.')
+    }
+  }
+
   const loadComments = async () => {
     const supabase = (await import('@/lib/supabase/client')).createClient()
     const { data } = await supabase
@@ -130,6 +146,11 @@ export default function PostCard({
       </div>
 
       {post.is_pinned && <div style={{ fontSize: 11, color: 'var(--accent)', fontWeight: 600, marginBottom: 8 }}>📌 Pinned</div>}
+      {post.status === 'held' && (
+        <div style={{ fontSize: 11, background: '#fffbeb', border: '1px solid #fde68a', color: '#92400e', padding: '5px 10px', borderRadius: 8, fontWeight: 600, marginBottom: 8 }}>
+          🛡️ Pending review{post.held_reason ? ` — ${post.held_reason}` : ''}
+        </div>
+      )}
       {post.title && <h3 style={{ fontSize: 15, fontWeight: 700, color: 'var(--text-primary)', margin: '0 0 6px' }}>{post.title}</h3>}
       <p style={{ fontSize: 14, color: 'var(--text-secondary)', lineHeight: 1.6, margin: '0 0 12px', whiteSpace: 'pre-wrap' }}>{post.body}</p>
 
@@ -157,6 +178,12 @@ export default function PostCard({
           style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 13, color: 'var(--text-muted)', background: 'none', border: 'none', cursor: 'pointer', padding: 0, fontFamily: 'inherit' }}>
           ↗ Share
         </button>
+        {currentUserId && (
+          <button onClick={handleReport}
+            style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 13, color: 'var(--text-muted)', background: 'none', border: 'none', cursor: 'pointer', padding: 0, fontFamily: 'inherit' }}>
+            🚩 Report
+          </button>
+        )}
       </div>
 
       {showComments && (

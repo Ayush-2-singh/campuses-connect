@@ -3,6 +3,7 @@ import React from 'react'
 
 import { createClient } from '@/lib/supabase/client'
 import { useRouter, usePathname } from 'next/navigation'
+import ThemeToggle from '@/components/ThemeToggle'
 
 const NAV_ITEMS = [
   { label: 'Feed', href: '/feed', icon: 'feed' },
@@ -186,6 +187,7 @@ export default function Layout({ children, user, profile }: { children: React.Re
               Campus<span style={{ color: 'var(--accent)' }}>Connect</span>
             </h1>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <ThemeToggle inline />
               {user && profile?.streak_days > 0 && (
                 <span style={{ fontSize: 12, background: '#fff7ed', color: '#c2410c', padding: '3px 8px', borderRadius: 20, fontWeight: 500 }}>🔥 {profile.streak_days}</span>
               )}

@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
 
-const TABS = ['Overview', 'Users', 'Posts', 'Colleges']
+const TABS = ['Overview', 'Users', 'Posts', 'Moderation', 'Colleges']
 
 export default function AdminPage() {
   const [profile, setProfile] = useState<any>(null)
@@ -23,6 +23,12 @@ export default function AdminPage() {
   const [stats, setStats] = useState({ users: 0, posts: 0, colleges: 0 })
   const [adminError, setAdminError] = useState('')
   const [loading, setLoading] = useState(true)
+  const [modItems, setModItems] = useState<any[]>([])
+  const [modLoading, setModLoading] = useState(false)
+  const [modBusy, setModBusy] = useState<string | null>(null)
+  const [modDigest, setModDigest] = useState('')
+  const [digestLoading, setDigestLoading] = useState(false)
+  const [aiNotes, setAiNotes] = useState<Record<string, any>>({})
   const router = useRouter()
   const supabase = createClient()
 
@@ -156,10 +162,65 @@ export default function AdminPage() {
     loadPosts()
   }
 
+  const loadModeration = async () => {
+    setModLoading(true)
+    try {
+      const res = await fetch('/api/admin/copilot/queue')
+      if (res.ok) {
+        const data = await res.json()
+        setModItems(data.items || [])
+      }
+    } catch { /* ignore */ }
+    setModLoading(false)
+  }
+
+  const resolveMod = async (itemId: string, action: string) => {
+    setModBusy(itemId)
+    await fetch('/api/admin/copilot/resolve', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ item_id: itemId, action }),
+    })
+    setModBusy(null)
+    loadModeration()
+  }
+
+  const aiAnalyze = async (item: any) => {
+    setModBusy(item.item_id)
+    const res = await fetch('/api/admin/copilot/review', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ text: item.preview || '', contentType: item.content_type }),
+    })
+    if (res.ok) {
+      const data = await res.json()
+      setAiNotes(n => ({ ...n, [item.item_id]: data.verdict }))
+    }
+    setModBusy(null)
+  }
+
+  const aiDigest = async () => {
+    setDigestLoading(true)
+    setModDigest('')
+    const res = await fetch('/api/admin/copilot/summarize', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        items: modItems.map(i => ({ type: i.content_type, preview: i.preview || '', reason: i.reason || '' })),
+      }),
+    })
+    if (res.ok) {
+      const data = await res.json()
+      setModDigest(data.digest || '')
+    }
+    setDigestLoading(false)
+  }
+
   useEffect(() => {
     if (activeTab === 'Users') loadUsers()
     if (activeTab === 'Posts') loadPosts()
     if (activeTab === 'Colleges') loadColleges()
+    if (activeTab === 'Moderation') loadModeration()
   }, [activeTab])
 
   if (loading) return (
@@ -341,6 +402,111 @@ export default function AdminPage() {
                 </div>
               </div>
             ))}
+          </div>
+        )}
+
+        {/* Moderation — AI Admin Copilot */}
+        {activeTab === 'Moderation' && (
+          <div>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10, marginBottom: 16, flexWrap: 'wrap' }}>
+              <div>
+                <h3 style={{ fontSize: 16, fontWeight: 700, color: 'var(--text-primary)', margin: '0 0 4px' }}>🤖 AI Admin Copilot</h3>
+                <p style={{ fontSize: 13, color: 'var(--text-muted)', margin: 0 }}>
+                  {modItems.length} open {modItems.length === 1 ? 'item' : 'items'} (AI flags + user reports)
+                </p>
+              </div>
+              <button onClick={aiDigest} disabled={digestLoading || !modItems.length}
+                style={{ padding: '8px 16px', borderRadius: 10, border: 'none', background: digestLoading || !modItems.length ? '#ddd6fe' : '#7c3aed', color: 'white', fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>
+                {digestLoading ? 'Thinking...' : '✨ AI Summary'}
+              </button>
+            </div>
+
+            {modDigest && (
+              <div style={{ background: '#f5f3ff', border: '1px solid #ddd6fe', borderRadius: 14, padding: '16px 18px', marginBottom: 16, fontSize: 13, color: '#4c1d95', lineHeight: 1.7, whiteSpace: 'pre-wrap' }}>
+                <strong>🤖 Copilot digest:</strong>
+                {'\n'}{modDigest}
+              </div>
+            )}
+
+            {modLoading ? (
+              <p style={{ color: 'var(--text-muted)', textAlign: 'center', padding: '40px 0' }}>Loading moderation queue…</p>
+            ) : modItems.length === 0 ? (
+              <div style={{ background: 'white', border: '1px solid var(--border)', borderRadius: 16, padding: '40px 20px', textAlign: 'center', boxShadow: 'var(--shadow-sm)' }}>
+                <p style={{ fontSize: 32, margin: '0 0 8px' }}>🛡️</p>
+                <p style={{ fontSize: 15, fontWeight: 600, color: 'var(--text-primary)', margin: '0 0 4px' }}>Queue is clear</p>
+                <p style={{ fontSize: 13, color: 'var(--text-muted)', margin: 0 }}>
+                  No content waiting for review. New posts are AI-checked automatically.
+                </p>
+              </div>
+            ) : (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                {modItems.map(item => {
+                  const aiNote = aiNotes[item.item_id]
+                  const severityColor =
+                    item.ai_verdict?.severity === 'high' ? '#dc2626'
+                    : item.ai_verdict?.severity === 'medium' ? '#d97706' : '#15803d'
+                  return (
+                    <div key={item.item_id} style={{ background: 'white', border: '1px solid var(--border)', borderRadius: 14, padding: '16px', boxShadow: 'var(--shadow-sm)' }}>
+                      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12, marginBottom: 8 }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+                          <span style={{ fontSize: 11, background: item.source === 'ai' ? '#ede9fe' : '#fef3c7', color: item.source === 'ai' ? '#6d28d9' : '#b45309', padding: '3px 10px', borderRadius: 20, fontWeight: 700 }}>
+                            {item.source === 'ai' ? '🤖 AI Flag' : '🚩 User Report'}
+                          </span>
+                          <span style={{ fontSize: 11, background: 'var(--bg-tertiary)', color: 'var(--text-secondary)', padding: '3px 10px', borderRadius: 20, fontWeight: 600 }}>{item.content_type}</span>
+                          {item.ai_verdict?.severity && (
+                            <span style={{ fontSize: 11, background: '#fef2f2', color: severityColor, padding: '3px 10px', borderRadius: 20, fontWeight: 600 }}>
+                              {item.ai_verdict.severity}
+                            </span>
+                          )}
+                          <span style={{ fontSize: 11, color: 'var(--text-muted)' }}>
+                            {item.source === 'ai' ? (item.author_name || 'Anonymous') : `reported by ${item.author_name || 'Anonymous'}`} ·{' '}
+                            {new Date(item.created_at).toLocaleString()}
+                          </span>
+                        </div>
+                      </div>
+
+                      <p style={{ fontSize: 13, color: 'var(--text-secondary)', margin: '0 0 8px', lineHeight: 1.6, whiteSpace: 'pre-wrap' }}>
+                        {item.preview ? item.preview.slice(0, 300) : '(no preview)'}
+                        {item.preview?.length > 300 ? '…' : ''}
+                      </p>
+
+                      {(item.reason || item.ai_verdict?.reason) && (
+                        <p style={{ fontSize: 12, color: '#b45309', background: '#fffbeb', border: '1px solid #fde68a', borderRadius: 8, padding: '6px 10px', margin: '0 0 8px', lineHeight: 1.5 }}>
+                          ⚠️ {item.ai_verdict?.reason || item.reason}
+                        </p>
+                      )}
+
+                      {aiNote && (
+                        <div style={{ fontSize: 12, color: '#4c1d95', background: '#f5f3ff', border: '1px solid #ddd6fe', borderRadius: 8, padding: '8px 10px', marginBottom: 10, lineHeight: 1.5 }}>
+                          🤖 Fresh analysis: {aiNote.flagged ? `${aiNote.reason} (action: ${aiNote.action})` : 'Looks fine to publish.'}
+                        </div>
+                      )}
+
+                      <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                        <button onClick={() => resolveMod(item.item_id, 'approve')} disabled={modBusy === item.item_id}
+                          style={{ padding: '6px 14px', borderRadius: 8, border: 'none', background: '#16a34a', color: 'white', fontSize: 12, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>
+                          ✓ Approve
+                        </button>
+                        <button onClick={() => resolveMod(item.item_id, 'remove')} disabled={modBusy === item.item_id}
+                          style={{ padding: '6px 14px', borderRadius: 8, border: 'none', background: '#dc2626', color: 'white', fontSize: 12, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>
+                          ✕ Remove
+                        </button>
+                        <button onClick={() => resolveMod(item.item_id, 'dismiss')} disabled={modBusy === item.item_id}
+                          style={{ padding: '6px 14px', borderRadius: 8, border: '1px solid var(--border)', background: 'white', color: 'var(--text-secondary)', fontSize: 12, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>
+                          Dismiss
+                        </button>
+                        {item.source === 'user_report' && (
+                          <button onClick={() => aiAnalyze(item)} disabled={modBusy === item.item_id}
+                            style={{ padding: '6px 14px', borderRadius: 8, border: '1px solid #ddd6fe', background: '#f5f3ff', color: '#6d28d9', fontSize: 12, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>
+                            {modBusy === item.item_id ? 'Analyzing...' : '🤖 AI Analyze'}
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+            )}
           </div>
         )}
 
