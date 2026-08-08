@@ -150,7 +150,7 @@ export default function PostComposer({
     <div style={{ background: 'var(--bg)', border: '1px solid var(--border)', borderRadius: 14, padding: 14, marginBottom: 16, boxShadow: 'var(--shadow-sm)' }}>
       {!open ? (
         <div onClick={() => setOpen(true)} style={{ display: 'flex', alignItems: 'center', gap: 10, cursor: 'pointer' }}>
-          <div style={{ width: 36, height: 36, borderRadius: '50%', background: 'var(--accent)', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 15, fontWeight: 700, flexShrink: 0 }}>
+          <div style={{ width: 36, height: 36, borderRadius: '50%', background: 'var(--accent)', color: 'var(--on-accent)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 15, fontWeight: 700, flexShrink: 0 }}>
             {profile?.full_name?.[0] || 'A'}
           </div>
           <div style={{ flex: 1, background: 'var(--bg-secondary)', borderRadius: 20, padding: '10px 16px', fontSize: 14, color: 'var(--text-muted)' }}>
@@ -165,7 +165,7 @@ export default function PostComposer({
           <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 10 }}>
             {creatable.map(c => (
               <button key={c.category_key} onClick={() => { setCategory(c); setScope((c.max_scope as PostScope) || 'campus') }}
-                style={{ padding: '5px 12px', borderRadius: 20, fontSize: 12, fontWeight: 500, border: category?.category_key === c.category_key ? 'none' : '1px solid var(--border)', background: category?.category_key === c.category_key ? 'var(--accent)' : 'var(--bg)', color: category?.category_key === c.category_key ? 'white' : 'var(--text-secondary)', cursor: 'pointer', fontFamily: 'inherit' }}>
+                style={{ padding: '5px 12px', borderRadius: 20, fontSize: 12, fontWeight: 500, border: category?.category_key === c.category_key ? 'none' : '1px solid var(--border)', background: category?.category_key === c.category_key ? 'var(--accent)' : 'var(--bg)', color: category?.category_key === c.category_key ? 'var(--on-accent)' : 'var(--text-secondary)', cursor: 'pointer', fontFamily: 'inherit' }}>
                 {c.label}
               </button>
             ))}
@@ -188,7 +188,7 @@ export default function PostComposer({
             <div style={{ display: 'flex', gap: 8 }}>
               <button onClick={() => setOpen(false)} style={{ padding: '7px 14px', borderRadius: 8, border: '1px solid var(--border)', background: 'var(--bg)', color: 'var(--text-secondary)', fontSize: 13, cursor: 'pointer', fontFamily: 'inherit' }}>Cancel</button>
               <button onClick={handlePost} disabled={!body.trim() || posting || checking}
-                style={{ padding: '7px 14px', borderRadius: 8, border: 'none', background: !body.trim() || posting || checking ? 'var(--disabled)' : 'var(--accent)', color: 'white', fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>
+                style={{ padding: '7px 14px', borderRadius: 8, border: 'none', background: !body.trim() || posting || checking ? 'var(--disabled)' : 'var(--accent)', color: 'var(--on-accent)', fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>
                 {checking ? '🛡️ Checking...' : posting ? 'Posting...' : 'Post'}
               </button>
             </div>

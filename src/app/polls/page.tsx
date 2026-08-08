@@ -119,7 +119,7 @@ export default function PollsPage() {
           </div>
           {user && (
             <button onClick={() => setShowCreate(s => !s)}
-              style={{ background: 'var(--accent)', color: 'white', border: 'none', padding: '9px 18px', borderRadius: 10, fontSize: 14, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>
+              style={{ background: 'var(--accent)', color: 'var(--on-accent)', border: 'none', padding: '9px 18px', borderRadius: 10, fontSize: 14, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>
               + Create Poll
             </button>
           )}
@@ -152,7 +152,7 @@ export default function PollsPage() {
             <div style={{ display: 'flex', gap: 8, marginTop: 14 }}>
               <button onClick={() => setShowCreate(false)} style={{ flex: 1, background: 'var(--bg)', color: 'var(--text-secondary)', border: '1px solid var(--border)', borderRadius: 10, padding: '10px', fontSize: 14, cursor: 'pointer', fontFamily: 'inherit' }}>Cancel</button>
               <button onClick={handleCreate} disabled={!form.question.trim() || form.options.filter(o => o.trim()).length < 2 || posting}
-                style={{ flex: 1, background: posting ? 'var(--disabled)' : 'var(--accent)', color: 'white', border: 'none', borderRadius: 10, padding: '10px', fontSize: 14, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>
+                style={{ flex: 1, background: posting ? 'var(--disabled)' : 'var(--accent)', color: 'var(--on-accent)', border: 'none', borderRadius: 10, padding: '10px', fontSize: 14, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>
                 {posting ? 'Creating...' : 'Create Poll'}
               </button>
             </div>

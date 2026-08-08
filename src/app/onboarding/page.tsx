@@ -67,7 +67,7 @@ export default function OnboardingPage() {
   }
 
   const btnPrimary = (disabled?: boolean) => ({
-    flex: 1, background: disabled ? 'var(--disabled)' : 'var(--accent)', color: 'white',
+    flex: 1, background: disabled ? 'var(--disabled)' : 'var(--accent)', color: 'var(--on-accent)',
     border: 'none', borderRadius: 10, padding: '12px', fontSize: 14, fontWeight: 600,
     cursor: disabled ? 'not-allowed' : 'pointer', fontFamily: 'inherit'
   })
@@ -79,7 +79,7 @@ export default function OnboardingPage() {
   }
 
   return (
-    <div style={{ minHeight: '100vh', background: 'var(--bg-secondary)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 }}>
+    <div data-accent="gold" style={{ minHeight: '100vh', background: 'var(--bg-secondary)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 }}>
       <div style={{ width: '100%', maxWidth: 440 }}>
         <div style={{ textAlign: 'center', marginBottom: 28 }}>
           <h1 style={{ fontSize: 26, fontWeight: 800, color: 'var(--text-primary)', margin: '0 0 4px' }}>

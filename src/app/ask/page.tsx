@@ -123,14 +123,14 @@ export default function AskPage() {
       <div style={{ maxWidth: 720, margin: '0 auto', padding: '24px 20px' }}>
         <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 20 }}>
           <div>
-            <h2 style={{ fontSize: 22, fontWeight: 700, color: 'var(--text-primary)', margin: '0 0 4px' }}>❓ Ask a Senior</h2>
+            <h2 style={{ fontSize: 22, fontWeight: 700, color: 'var(--accent)', margin: '0 0 4px' }}>❓ Ask a Senior</h2>
             <p style={{ fontSize: 13, color: 'var(--text-muted)', margin: 0 }}>
               Doubt-solving with students of your college — answerers earn karma ⭐
             </p>
           </div>
           {user && (
             <button onClick={() => { setShowAsk(s => !s); setError('') }}
-              style={{ background: 'var(--accent)', color: 'white', border: 'none', padding: '9px 18px', borderRadius: 10, fontSize: 14, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>
+              style={{ background: 'var(--accent)', color: 'var(--on-accent)', border: 'none', padding: '9px 18px', borderRadius: 10, fontSize: 14, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>
               + Ask
             </button>
           )}
@@ -159,7 +159,7 @@ export default function AskPage() {
             <div style={{ display: 'flex', gap: 8, marginTop: 14 }}>
               <button onClick={() => setShowAsk(false)} style={{ flex: 1, background: 'var(--bg)', color: 'var(--text-secondary)', border: '1px solid var(--border)', borderRadius: 10, padding: '10px', fontSize: 14, cursor: 'pointer', fontFamily: 'inherit' }}>Cancel</button>
               <button onClick={handleAsk} disabled={!form.title.trim() || posting}
-                style={{ flex: 1, background: posting ? 'var(--disabled)' : 'var(--accent)', color: 'white', border: 'none', borderRadius: 10, padding: '10px', fontSize: 14, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>
+                style={{ flex: 1, background: posting ? 'var(--disabled)' : 'var(--accent)', color: 'var(--on-accent)', border: 'none', borderRadius: 10, padding: '10px', fontSize: 14, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>
                 {posting ? 'Posting...' : 'Post Question'}
               </button>
             </div>
@@ -214,7 +214,7 @@ export default function AskPage() {
                                 {a.is_accepted && <span style={{ fontSize: 11, background: 'var(--success-light)', color: 'var(--success-text)', padding: '2px 8px', borderRadius: 20, fontWeight: 600 }}>✓ Accepted</span>}
                                 {user?.id === q.asked_by && !a.is_accepted && !q.is_resolved && (
                                   <button onClick={() => handleAccept(q, a)}
-                                    style={{ fontSize: 11, background: 'var(--accent)', color: 'white', border: 'none', padding: '4px 10px', borderRadius: 20, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>
+                                    style={{ fontSize: 11, background: 'var(--accent)', color: 'var(--on-accent)', border: 'none', padding: '4px 10px', borderRadius: 20, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>
                                     Accept +15⭐
                                   </button>
                                 )}
@@ -230,7 +230,7 @@ export default function AskPage() {
                             onKeyDown={e => e.key === 'Enter' && handleAnswer(q.id)}
                             placeholder="Write an answer... (+5 karma)" style={{ ...inputStyle, flex: 1, background: 'var(--bg-secondary)' }} />
                           <button onClick={() => handleAnswer(q.id)} disabled={!answerText.trim() || answering}
-                            style={{ padding: '8px 16px', borderRadius: 10, border: 'none', background: !answerText.trim() || answering ? 'var(--disabled)' : 'var(--accent)', color: 'white', fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>
+                            style={{ padding: '8px 16px', borderRadius: 10, border: 'none', background: !answerText.trim() || answering ? 'var(--disabled)' : 'var(--accent)', color: 'var(--on-accent)', fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>
                             {answering ? '...' : 'Answer'}
                           </button>
                         </div>

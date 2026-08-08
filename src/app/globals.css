@@ -1,57 +1,97 @@
 @import "tailwindcss";
 
-/* ───────────────────────── Design tokens ───────────────────────── */
+/* ═══════════════════════════════════════════════════════════════════════════
+   CAMPUS CONNECT — DYNAMIC COLOR SYSTEM
+   One dark design system; every section gets its own subtle contextual
+   accent identity (gold · blue · cyan · purple · green).
+
+   Component code consumes semantic tokens (var(--accent), var(--panel)…).
+   Sections override the *accent family* via `data-accent`, so every button,
+   badge, active state and glow inside that section recolors contextually —
+   no per-component color props needed.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* ───────────────────────── 1. RAW PALETTE ───────────────────────── */
+/* Single source of truth for accent hues. Semantic tokens below alias these. */
 
 :root {
-  color-scheme: light;
-  -webkit-color-scheme: light;
+  --accent-gold:   #E0A83C;
+  --accent-cyan:   #41C8D8;
+  --accent-purple: #A97BF0;
+  --accent-green:  #4CBF7A;
+  --accent-blue:   #5B9DFF;
+  --accent-red:    #E0553E;
+
+  /* Text on accent-filled surfaces — accents are light, so dark text wins. */
+  --on-accent: #1D1503;
+}
+
+/* ───────────────────────── 2. DARK FOUNDATION (default) ───────────────────────── */
+
+:root {
+  color-scheme: dark;
+  -webkit-color-scheme: dark;
 
   /* Surfaces */
-  --bg: #ffffff;
-  --bg-secondary: #f7f8fa;
-  --bg-tertiary: #f1f2f4;
+  --bg: #0F1115;
+  --bg-secondary: #171A21;
+  --bg-tertiary: #1E222B;
 
   /* Borders */
-  --border: #e5e7eb;
-  --border-strong: #d1d5db;
+  --border: #2A2F3A;
+  --border-strong: #3A4150;
 
   /* Text */
-  --text-primary: #111827;
-  --text-secondary: #6b7280;
-  --text-muted: #9ca3af;
+  --text-primary: #E8E9ED;
+  --text-secondary: #8B93A3;
+  --text-muted: #697383;
 
-  /* Brand */
-  --accent: #4f46e5;
-  --accent-light: #eef2ff;
-  --accent-text: #4338ca;
-  --accent-border: #c7d2fe;
+  /* Brand — gold by default; sections override via [data-accent] */
+  --accent: var(--accent-gold);
+  --accent-light: color-mix(in srgb, var(--accent) 14%, transparent);
+  --accent-text: #F2C96B;
+  --accent-border: color-mix(in srgb, var(--accent) 42%, transparent);
+  --accent-glow: 0 0 22px color-mix(in srgb, var(--accent) 22%, transparent);
 
   /* Semantic */
-  --success: #16a34a;
-  --success-light: #f0fdf4;
-  --success-text: #15803d;
-  --success-border: #86efac;
-  --warning: #f59e0b;
-  --warning-light: #fffbeb;
-  --warning-text: #b45309;
-  --warning-border: #fde68a;
-  --danger: #ef4444;
-  --danger-light: #fef2f2;
-  --danger-text: #dc2626;
-  --danger-border: #fecaca;
-  --purple: #7c3aed;
-  --purple-light: #f5f3ff;
-  --purple-text: #6d28d9;
-  --purple-border: #ddd6fe;
+  --success: var(--accent-green);
+  --success-light: color-mix(in srgb, var(--accent-green) 14%, transparent);
+  --success-text: #74DD9E;
+  --success-border: color-mix(in srgb, var(--accent-green) 40%, transparent);
+
+  --warning: #EF9E2E;
+  --warning-light: color-mix(in srgb, var(--warning) 14%, transparent);
+  --warning-text: #F5BC64;
+  --warning-border: color-mix(in srgb, var(--warning) 40%, transparent);
+
+  --danger: var(--accent-red);
+  --danger-light: color-mix(in srgb, var(--accent-red) 14%, transparent);
+  --danger-text: #F07B66;
+  --danger-border: color-mix(in srgb, var(--accent-red) 40%, transparent);
+
+  --purple: var(--accent-purple);
+  --purple-light: color-mix(in srgb, var(--accent-purple) 14%, transparent);
+  --purple-text: #C6A4F8;
+  --purple-border: color-mix(in srgb, var(--accent-purple) 40%, transparent);
+
+  --cyan: var(--accent-cyan);
+  --cyan-light: color-mix(in srgb, var(--accent-cyan) 14%, transparent);
+  --cyan-text: #71DCE8;
+  --cyan-border: color-mix(in srgb, var(--accent-cyan) 40%, transparent);
+
+  --blue: var(--accent-blue);
+  --blue-light: color-mix(in srgb, var(--accent-blue) 14%, transparent);
+  --blue-text: #90BDFF;
+  --blue-border: color-mix(in srgb, var(--accent-blue) 40%, transparent);
 
   /* Extra tints used across the app */
-  --orange-light: #fff7ed;
-  --orange-text: #c2410c;
-  --orange-border: #fed7aa;
-  --yellow-light: #fefce8;
-  --yellow-text: #a16207;
-  --gray-soft: #f3f4f6;
-  --disabled: #a5b4fc;
+  --orange-light: color-mix(in srgb, var(--warning) 16%, transparent);
+  --orange-text: #FDBA74;
+  --orange-border: color-mix(in srgb, var(--warning) 40%, transparent);
+  --yellow-light: color-mix(in srgb, var(--accent-gold) 16%, transparent);
+  --yellow-text: #F5C56B;
+  --gray-soft: #1E222B;
+  --disabled: color-mix(in srgb, var(--accent) 32%, var(--bg-tertiary));
 
   /* Radii */
   --radius-sm: 10px;
@@ -60,12 +100,194 @@
   --radius-xl: 20px;
 
   /* Elevation */
-  --shadow-sm: 0 1px 2px rgba(16, 24, 40, 0.04), 0 1px 3px rgba(16, 24, 40, 0.06);
-  --shadow: 0 4px 6px -2px rgba(16, 24, 40, 0.05), 0 12px 16px -4px rgba(16, 24, 40, 0.07);
-  --shadow-lg: 0 24px 48px -12px rgba(16, 24, 40, 0.18);
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.45), 0 1px 3px rgba(0, 0, 0, 0.4);
+  --shadow: 0 4px 6px -2px rgba(0, 0, 0, 0.55), 0 12px 16px -4px rgba(0, 0, 0, 0.5);
+  --shadow-lg: 0 24px 48px -12px rgba(0, 0, 0, 0.72);
 
   --font-sans: Inter, -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, sans-serif;
 }
+
+/* ───────────────────────── 3. SEMANTIC ALIASES ───────────────────────── */
+/* The requested token names — aliases of the values above so both systems
+   stay in sync. New code should prefer these; legacy names keep working. */
+
+:root {
+  --color-bg: var(--bg);
+  --color-panel: var(--bg-secondary);
+  --color-panel-secondary: var(--bg-tertiary);
+  --color-border: var(--border);
+  --color-text: var(--text-primary);
+  --color-muted: var(--text-secondary);
+
+  --color-primary: var(--accent);
+  --color-primary-soft: var(--accent-light);
+  --color-primary-glow: var(--accent-glow);
+
+  --color-success: var(--success);
+  --color-danger: var(--danger);
+  --color-ai: var(--purple);
+  --color-ai-soft: var(--purple-light);
+  --color-info: var(--cyan);
+  --color-info-soft: var(--cyan-light);
+}
+
+/* ───────────────────────── 4. LIGHT MODE (optional toggle) ───────────────────────── */
+/* Dark is the foundation. Light stays available for toggle users. */
+
+[data-theme='light'] {
+  color-scheme: light;
+  -webkit-color-scheme: light;
+
+  --bg: #FAFAFB;
+  --bg-secondary: #F2F3F5;
+  --bg-tertiary: #EAEBEF;
+
+  --border: #E3E5EA;
+  --border-strong: #CFD3DB;
+
+  --text-primary: #171A21;
+  --text-secondary: #5C6470;
+  --text-muted: #8A919E;
+
+  --accent: var(--accent-gold);
+  --accent-light: color-mix(in srgb, var(--accent) 14%, white);
+  --accent-text: #8A6418;
+  --accent-border: color-mix(in srgb, var(--accent) 46%, white);
+  --accent-glow: 0 0 18px color-mix(in srgb, var(--accent) 18%, transparent);
+
+  --success: #2FA36A;
+  --success-light: color-mix(in srgb, #2FA36A 13%, white);
+  --success-text: #1E7A4A;
+  --success-border: color-mix(in srgb, #2FA36A 42%, white);
+
+  --warning: #B97C14;
+  --warning-light: color-mix(in srgb, #B97C14 13%, white);
+  --warning-text: #925F0A;
+  --warning-border: color-mix(in srgb, #B97C14 42%, white);
+
+  --danger: #C93C26;
+  --danger-light: color-mix(in srgb, #C93C26 13%, white);
+  --danger-text: #A62B16;
+  --danger-border: color-mix(in srgb, #C93C26 42%, white);
+
+  --purple: #7C5BE8;
+  --purple-light: color-mix(in srgb, #7C5BE8 13%, white);
+  --purple-text: #5B3FD0;
+  --purple-border: color-mix(in srgb, #7C5BE8 42%, white);
+
+  --cyan: #0FA6B8;
+  --cyan-light: color-mix(in srgb, #0FA6B8 13%, white);
+  --cyan-text: #0B7683;
+  --cyan-border: color-mix(in srgb, #0FA6B8 42%, white);
+
+  --blue: #2F6FE0;
+  --blue-light: color-mix(in srgb, #2F6FE0 13%, white);
+  --blue-text: #2456C9;
+  --blue-border: color-mix(in srgb, #2F6FE0 42%, white);
+
+  --orange-light: color-mix(in srgb, #B97C14 13%, white);
+  --orange-text: #925F0A;
+  --orange-border: color-mix(in srgb, #B97C14 42%, white);
+  --yellow-light: color-mix(in srgb, #B97C14 12%, white);
+  --yellow-text: #7A5A10;
+  --gray-soft: #EAEBEF;
+  --disabled: color-mix(in srgb, var(--accent) 38%, white);
+
+  --shadow-sm: 0 1px 2px rgba(16, 24, 40, 0.05), 0 1px 3px rgba(16, 24, 40, 0.07);
+  --shadow: 0 4px 6px -2px rgba(16, 24, 40, 0.06), 0 12px 16px -4px rgba(16, 24, 40, 0.08);
+  --shadow-lg: 0 24px 48px -12px rgba(16, 24, 40, 0.2);
+}
+
+/* ───────────────────────── 5. CONTEXTUAL SECTION ACCENTS ───────────────────────── */
+/* A section (page route) sets `data-accent` on its shell. This redefines the
+   whole accent family for every descendant — buttons, badges, active nav
+   states, icons and glows all follow the section's color automatically. */
+
+[data-accent='gold'] {
+  --accent: var(--accent-gold);
+  --accent-light: color-mix(in srgb, var(--accent-gold) 14%, transparent);
+  --accent-text: #F2C96B;
+  --accent-border: color-mix(in srgb, var(--accent-gold) 42%, transparent);
+  --accent-glow: 0 0 22px color-mix(in srgb, var(--accent-gold) 22%, transparent);
+}
+[data-accent='cyan'] {
+  --accent: var(--accent-cyan);
+  --accent-light: color-mix(in srgb, var(--accent-cyan) 14%, transparent);
+  --accent-text: var(--cyan-text);
+  --accent-border: color-mix(in srgb, var(--accent-cyan) 42%, transparent);
+  --accent-glow: 0 0 22px color-mix(in srgb, var(--accent-cyan) 22%, transparent);
+}
+[data-accent='purple'] {
+  --accent: var(--accent-purple);
+  --accent-light: color-mix(in srgb, var(--accent-purple) 14%, transparent);
+  --accent-text: var(--purple-text);
+  --accent-border: color-mix(in srgb, var(--accent-purple) 42%, transparent);
+  --accent-glow: 0 0 22px color-mix(in srgb, var(--accent-purple) 22%, transparent);
+}
+[data-accent='green'] {
+  --accent: var(--accent-green);
+  --accent-light: color-mix(in srgb, var(--accent-green) 14%, transparent);
+  --accent-text: var(--success-text);
+  --accent-border: color-mix(in srgb, var(--accent-green) 42%, transparent);
+  --accent-glow: 0 0 22px color-mix(in srgb, var(--accent-green) 22%, transparent);
+}
+[data-accent='blue'] {
+  --accent: var(--accent-blue);
+  --accent-light: color-mix(in srgb, var(--accent-blue) 14%, transparent);
+  --accent-text: var(--blue-text);
+  --accent-border: color-mix(in srgb, var(--accent-blue) 42%, transparent);
+  --accent-glow: 0 0 22px color-mix(in srgb, var(--accent-blue) 22%, transparent);
+}
+
+/* Light-mode adjustments for section accents (darker text on pale surfaces) */
+[data-theme='light'] [data-accent='gold'] {
+  --accent-light: color-mix(in srgb, var(--accent-gold) 14%, white);
+  --accent-text: #8A6418;
+  --accent-border: color-mix(in srgb, var(--accent-gold) 46%, white);
+}
+[data-theme='light'] [data-accent='cyan'] {
+  --accent-light: color-mix(in srgb, var(--accent-cyan) 13%, white);
+  --accent-text: #0B7683;
+  --accent-border: color-mix(in srgb, var(--accent-cyan) 45%, white);
+}
+[data-theme='light'] [data-accent='purple'] {
+  --accent-light: color-mix(in srgb, var(--accent-purple) 13%, white);
+  --accent-text: #5B3FD0;
+  --accent-border: color-mix(in srgb, var(--accent-purple) 45%, white);
+}
+[data-theme='light'] [data-accent='green'] {
+  --accent-light: color-mix(in srgb, var(--accent-green) 13%, white);
+  --accent-text: #1E7A4A;
+  --accent-border: color-mix(in srgb, var(--accent-green) 45%, white);
+}
+[data-theme='light'] [data-accent='blue'] {
+  --accent-light: color-mix(in srgb, var(--accent-blue) 13%, white);
+  --accent-text: #2456C9;
+  --accent-border: color-mix(in srgb, var(--accent-blue) 45%, white);
+}
+
+/* ───────────────────────── 6. CONTEXTUAL GRADIENTS & AMBIENT ───────────────────────── */
+
+/* Subtle ambient accent glow behind heroes / section headers. Use sparingly. */
+.ambient {
+  background-image: radial-gradient(620px 300px at 12% -8%,
+    color-mix(in srgb, var(--accent) 10%, transparent),
+    transparent 72%);
+}
+
+/* AI / premium gradient — purple → cyan */
+.grad-ai {
+  background: linear-gradient(135deg, var(--accent-purple) 0%, var(--accent-cyan) 100%) !important;
+  border: none !important;
+}
+
+/* Brand gradient — gold → light gold */
+.grad-gold {
+  background: linear-gradient(135deg, var(--accent-gold) 0%, #F2C96B 100%) !important;
+  border: none !important;
+}
+
+/* ───────────────────────── Base ───────────────────────── */
 
 * { box-sizing: border-box; }
 
@@ -84,51 +306,6 @@ body {
 
 h1, h2, h3, h4 { letter-spacing: -0.02em; }
 
-/* ───────────────────────── Dark mode ───────────────────────── */
-
-[data-theme='dark'] {
-  color-scheme: dark;
-  -webkit-color-scheme: dark;
-  --bg: #14161e;
-  --bg-secondary: #0e1015;
-  --bg-tertiary: #1a1d26;
-  --border: #262a35;
-  --border-strong: #363b49;
-  --text-primary: #e9eaf1;
-  --text-secondary: #a9afbc;
-  --text-muted: #767e8e;
-  --accent: #6366f1;
-  --accent-light: #1c2140;
-  --accent-text: #818cf8;
-  --accent-border: #2e3560;
-  --success: #22c55e;
-  --success-light: #0f2418;
-  --success-text: #4ade80;
-  --success-border: #1f4d38;
-  --warning: #fbbf24;
-  --warning-light: #291f0d;
-  --warning-text: #fcd34d;
-  --warning-border: #453a17;
-  --danger: #f87171;
-  --danger-light: #2a1518;
-  --danger-text: #fca5a5;
-  --danger-border: #4a2426;
-  --purple: #a78bfa;
-  --purple-light: #211a33;
-  --purple-text: #c4b5fd;
-  --purple-border: #352b4d;
-  --orange-light: #2a1d10;
-  --orange-text: #fdba74;
-  --orange-border: #45341e;
-  --yellow-light: #26200f;
-  --yellow-text: #fcd34d;
-  --gray-soft: #1a1d26;
-  --disabled: #2e3a66;
-  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.4), 0 1px 3px rgba(0, 0, 0, 0.45);
-  --shadow: 0 4px 6px -2px rgba(0, 0, 0, 0.5), 0 12px 16px -4px rgba(0, 0, 0, 0.45);
-  --shadow-lg: 0 24px 48px -12px rgba(0, 0, 0, 0.6);
-}
-
 /* ───────────────────────── Base interactions ───────────────────────── */
 
 :focus-visible {
@@ -137,21 +314,35 @@ h1, h2, h3, h4 { letter-spacing: -0.02em; }
 }
 
 button, input, select, textarea, a {
-  transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease,
-    box-shadow 0.15s ease, opacity 0.15s ease, transform 0.15s ease;
+  transition: background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease,
+    box-shadow 0.2s ease, opacity 0.15s ease, transform 0.15s ease;
 }
 
 button { font-family: inherit; }
-button:disabled { cursor: not-allowed; }
 
-/* Card hover lift — apply alongside inline card styles */
+/* Disabled buttons sit on the dark accent-tinted `--disabled` mix — muted text
+   keeps them readable (near-black on-accent would vanish there). */
+button:disabled {
+  cursor: not-allowed;
+  color: var(--text-muted) !important;
+}
+
+/* Card hover — border + shadow pick up the section accent */
 .card-hover {
   transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease;
 }
 .card-hover:hover {
   transform: translateY(-2px);
-  box-shadow: var(--shadow);
-  border-color: var(--border-strong);
+  box-shadow: var(--shadow), 0 0 0 1px var(--accent-border);
+  border-color: var(--accent-border);
+}
+
+/* Gently dim images so white-backed icons don't glare on dark surfaces */
+img {
+  filter: brightness(0.92) contrast(1.02);
+}
+[data-theme='light'] img {
+  filter: none;
 }
 
 /* ───────────────────────── Skeleton / shimmer ───────────────────────── */
@@ -167,11 +358,11 @@ button:disabled { cursor: not-allowed; }
   position: absolute;
   inset: 0;
   transform: translateX(-100%);
-  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.5), transparent);
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.07), transparent);
   animation: shimmer 1.5s infinite;
 }
-[data-theme='dark'] .skeleton::after {
-  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.07), transparent);
+[data-theme='light'] .skeleton::after {
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.55), transparent);
 }
 @keyframes shimmer {
   100% { transform: translateX(100%); }
@@ -259,11 +450,6 @@ button:disabled { cursor: not-allowed; }
   box-shadow: none;
 }
 
-/* On mobile, pages wrapped in Layout show the inline variant inside the top
-   bar, so the floating button (which would overlap it) is hidden there.
-   Standalone pages (auth, landing) keep the floating button top-right. */
-/* Pages with an in-app top bar keep the toggle inside the bar instead of
-   floating over the content; standalone pages keep the floating button. */
 body:has(.app-topbar) .theme-toggle--floating {
   display: none;
 }
@@ -274,19 +460,13 @@ body:has(.app-topbar) .theme-toggle--floating {
   }
 }
 
-/* Gently dim images (nav icons, avatars, photos) so white-backed images
-   don't glare against dark surfaces. */
-[data-theme='dark'] img {
-  filter: brightness(0.9) contrast(1.02);
-}
-
 /* ───────────────────────── Command palette ───────────────────────── */
 
 .cmd-backdrop {
   position: fixed;
   inset: 0;
   z-index: 1000;
-  background: rgba(15, 18, 26, 0.45);
+  background: rgba(15, 18, 26, 0.55);
   backdrop-filter: blur(4px);
   -webkit-backdrop-filter: blur(4px);
   display: flex;
@@ -357,15 +537,19 @@ body:has(.app-topbar) .theme-toggle--floating {
   border-radius: 50%;
   border: none;
   background: var(--accent);
-  color: white;
+  color: var(--on-accent);
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: var(--shadow-lg);
+  box-shadow: var(--shadow-lg), 0 0 24px color-mix(in srgb, var(--accent) 28%, transparent);
   cursor: pointer;
   font-family: inherit;
+  transition: transform 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease;
 }
-.fab-btn:hover { transform: scale(1.06); }
+.fab-btn:hover {
+  transform: scale(1.06);
+  box-shadow: var(--shadow-lg), 0 0 32px color-mix(in srgb, var(--accent) 40%, transparent);
+}
 
 @media (max-width: 768px) {
   .fab-wrap { display: flex; }
@@ -379,9 +563,7 @@ button, a, [role='button'] {
 }
 
 /* iOS Safari auto-zooms into any input smaller than 16px — bump them on
-   small touch screens so tapping a field never zooms the page.
-   Scoped to coarse pointers so tablets in portrait / narrow desktop
-   windows keep their designed 14px input text. */
+   small touch screens so tapping a field never zooms the page. */
 @media (max-width: 768px) and (pointer: coarse) {
   input, select, textarea {
     font-size: 16px !important;
@@ -478,9 +660,7 @@ button, a, [role='button'] {
   }
 }
 
-/* Safety net — never force horizontal scrolling on mobile. Fixes the root
-   causes above and clips any straggler so nothing gets cut off (which is
-   what used to make you zoom out to see the full layout). `overflow: clip`
+/* Safety net — never force horizontal scrolling on mobile. `overflow: clip`
    does NOT create a scroll container, so sticky bars keep working. */
 @media (max-width: 768px) {
   html, body {

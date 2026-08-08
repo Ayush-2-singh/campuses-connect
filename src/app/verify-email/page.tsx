@@ -27,7 +27,7 @@ function VerifyInner() {
   }, [token])
 
   return (
-    <div style={{ minHeight: '100vh', background: 'var(--bg-secondary)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 }}>
+    <div data-accent="gold" style={{ minHeight: '100vh', background: 'var(--bg-secondary)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 }}>
       <div style={{ width: '100%', maxWidth: 400, background: 'var(--bg)', borderRadius: 16, border: '1px solid var(--border)', padding: 32, textAlign: 'center', boxShadow: 'var(--shadow)' }}>
         <div style={{ fontSize: 52, marginBottom: 12 }}>
           {state === 'loading' ? '⏳' : state === 'ok' ? '✅' : '❌'}
@@ -38,7 +38,7 @@ function VerifyInner() {
         <p style={{ fontSize: 14, color: 'var(--text-muted)', margin: '0 0 20px' }}>{message}</p>
         {state !== 'loading' && (
           <button onClick={() => router.push('/profile')}
-            style={{ background: 'var(--accent)', color: 'white', border: 'none', borderRadius: 10, padding: '12px 24px', fontSize: 14, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>
+            style={{ background: 'var(--accent)', color: 'var(--on-accent)', border: 'none', borderRadius: 10, padding: '12px 24px', fontSize: 14, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>
             Go to Profile
           </button>
         )}

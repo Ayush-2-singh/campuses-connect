@@ -218,7 +218,7 @@ export default function MeetingsPage() {
                 gap: 7, padding: '10px 14px', borderRadius: 9, border: 'none', cursor: 'pointer',
                 fontFamily: 'inherit', fontSize: 13, fontWeight: 600, transition: 'all 0.15s ease',
                 background: activeTab === tab.key ? 'var(--accent)' : 'transparent',
-                color: activeTab === tab.key ? 'white' : 'var(--text-secondary)',
+                color: activeTab === tab.key ? 'var(--on-accent)' : 'var(--text-secondary)',
               }}
             >
               <span>{tab.icon}</span><span>{tab.label}</span>
@@ -233,7 +233,7 @@ export default function MeetingsPage() {
           </p>
           {canPost && (
             <button onClick={() => { setShowCompose(v => !v); setPostError(null) }}
-              style={{ background: 'var(--accent)', color: 'white', border: 'none', padding: '9px 18px', borderRadius: 10, fontSize: 14, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>
+              style={{ background: 'var(--accent)', color: 'var(--on-accent)', border: 'none', padding: '9px 18px', borderRadius: 10, fontSize: 14, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>
               + Schedule
             </button>
           )}
@@ -320,7 +320,7 @@ export default function MeetingsPage() {
                       fontSize: 11, fontWeight: 600, padding: '4px 10px', borderRadius: 20,
                       border: 'none', cursor: 'pointer', fontFamily: 'inherit',
                       background: allTagged ? 'var(--danger)' : 'var(--accent-light)',
-                      color: allTagged ? 'white' : 'var(--accent-text)',
+                      color: allTagged ? 'var(--on-accent)' : 'var(--accent-text)',
                     }}>
                     {allTagged ? '✕ Clear all' : '@all'}
                   </button>
@@ -374,7 +374,7 @@ export default function MeetingsPage() {
               </button>
               <button onClick={handlePost}
                 disabled={!form.title.trim() || !form.meeting_date || posting}
-                style={{ flex: 1, background: posting ? 'var(--disabled)' : 'var(--accent)', color: 'white', border: 'none', borderRadius: 10, padding: '10px', fontSize: 14, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>
+                style={{ flex: 1, background: posting ? 'var(--disabled)' : 'var(--accent)', color: 'var(--on-accent)', border: 'none', borderRadius: 10, padding: '10px', fontSize: 14, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>
                 {posting ? 'Scheduling…' : 'Schedule'}
               </button>
             </div>

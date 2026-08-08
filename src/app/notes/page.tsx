@@ -136,7 +136,7 @@ export default function NotesPage() {
   const tabBtn = (active: boolean) => ({
     padding: '8px 14px', borderRadius: 8, fontSize: 13, fontWeight: 600 as const,
     border: 'none', background: active ? 'var(--accent)' : 'none',
-    color: active ? 'white' : 'var(--text-secondary)', cursor: 'pointer' as const, fontFamily: 'inherit' as const,
+    color: active ? 'var(--on-accent)' : 'var(--text-secondary)', cursor: 'pointer' as const, fontFamily: 'inherit' as const,
   })
 
   return (
@@ -151,7 +151,7 @@ export default function NotesPage() {
           </div>
           {canUpload && (
             <button onClick={() => setShowCompose(true)}
-              style={{ background: 'var(--accent)', color: 'white', border: 'none', padding: '9px 18px', borderRadius: 'var(--radius-sm)', fontSize: 14, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>
+              style={{ background: 'var(--accent)', color: 'var(--on-accent)', border: 'none', padding: '9px 18px', borderRadius: 'var(--radius-sm)', fontSize: 14, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>
               + Upload
             </button>
           )}
@@ -174,8 +174,8 @@ export default function NotesPage() {
               style={{ width: '100%', border: '1px solid var(--border)', borderRadius: 'var(--radius)', padding: '13px 90px 13px 42px', fontSize: 14, outline: 'none', fontFamily: 'inherit', color: 'var(--text-primary)', background: 'var(--bg)', boxSizing: 'border-box' as const, boxShadow: 'var(--shadow-sm)' }}
             />
             <button onClick={askAI} disabled={aiLoading || !query.trim()}
-              className="ai-search-btn"
-              style={{ position: 'absolute', right: 6, top: '50%', transform: 'translateY(-50%)', border: 'none', borderRadius: 8, padding: '7px 14px', fontSize: 12.5, fontWeight: 600, cursor: aiLoading || !query.trim() ? 'default' : 'pointer', background: aiLoading ? 'var(--disabled)' : 'var(--accent)', color: 'white', fontFamily: 'inherit' }}>
+              className={`ai-search-btn${aiLoading || !query.trim() ? '' : ' grad-ai'}`}
+              style={{ position: 'absolute', right: 6, top: '50%', transform: 'translateY(-50%)', border: 'none', borderRadius: 8, padding: '7px 14px', fontSize: 12.5, fontWeight: 600, cursor: aiLoading || !query.trim() ? 'default' : 'pointer', background: aiLoading ? 'var(--disabled)' : 'var(--accent)', color: 'var(--on-accent)', fontFamily: 'inherit' }}>
               {aiLoading ? 'Asking…' : 'Ask AI'}
             </button>
           </div>
@@ -245,7 +245,7 @@ export default function NotesPage() {
             <div style={{ display: 'flex', gap: 8, marginTop: 14 }}>
               <button onClick={() => setShowCompose(false)} style={{ flex: 1, background: 'var(--bg)', color: 'var(--text-secondary)', border: '1px solid var(--border)', borderRadius: 10, padding: '10px', fontSize: 14, cursor: 'pointer', fontFamily: 'inherit' }}>Cancel</button>
               <button onClick={handlePost} disabled={!form.title.trim() || !form.subject.trim() || posting}
-                style={{ flex: 1, background: posting ? 'var(--disabled)' : 'var(--accent)', color: 'white', border: 'none', borderRadius: 10, padding: '10px', fontSize: 14, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>
+                style={{ flex: 1, background: posting ? 'var(--disabled)' : 'var(--accent)', color: 'var(--on-accent)', border: 'none', borderRadius: 10, padding: '10px', fontSize: 14, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>
                 {posting ? 'Uploading...' : 'Upload'}
               </button>
             </div>
@@ -316,7 +316,7 @@ function NoteRow({ note }: { note: any }) {
       <div style={{ display: 'flex', flexDirection: 'column', gap: 6, flexShrink: 0 }}>
         {note.drive_link && (
           <a href={note.drive_link} target="_blank" rel="noopener noreferrer"
-            style={{ background: 'var(--accent)', color: 'white', padding: '7px 14px', borderRadius: 8, fontSize: 13, fontWeight: 600, textDecoration: 'none', textAlign: 'center' }}>
+            style={{ background: 'var(--accent)', color: 'var(--on-accent)', padding: '7px 14px', borderRadius: 8, fontSize: 13, fontWeight: 600, textDecoration: 'none', textAlign: 'center' }}>
             Open →
           </a>
         )}

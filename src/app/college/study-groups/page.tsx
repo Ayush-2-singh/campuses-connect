@@ -68,7 +68,7 @@ export default function StudyGroupsPage() {
               <p style={{ fontSize: 13, color: 'var(--text-muted)', margin: 0 }}>Form study circles with classmates</p>
             </div>
           </div>
-          {user && <button onClick={() => setShowCreate(s => !s)} style={{ background: 'var(--accent)', color: 'white', border: 'none', padding: '9px 18px', borderRadius: 10, fontSize: 14, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>+ Create Group</button>}
+          {user && <button onClick={() => setShowCreate(s => !s)} style={{ background: 'var(--accent)', color: 'var(--on-accent)', border: 'none', padding: '9px 18px', borderRadius: 10, fontSize: 14, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>+ Create Group</button>}
         </div>
 
         {showCreate && (
@@ -81,7 +81,7 @@ export default function StudyGroupsPage() {
               </div>
               <textarea value={form.description} onChange={e => setForm(f => ({ ...f, description: e.target.value }))} placeholder="What will you study together?" rows={2} style={{ width: '100%', border: '1px solid var(--border)', borderRadius: 10, padding: '10px 14px', fontSize: 14, outline: 'none', fontFamily: 'inherit', boxSizing: 'border-box', resize: 'none' }} />
             </div>
-            <button onClick={create} disabled={!form.name.trim()} style={{ marginTop: 10, background: form.name.trim() ? 'var(--accent)' : 'var(--disabled)', color: 'white', border: 'none', borderRadius: 10, padding: '10px 18px', fontSize: 14, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>Create</button>
+            <button onClick={create} disabled={!form.name.trim()} style={{ marginTop: 10, background: form.name.trim() ? 'var(--accent)' : 'var(--disabled)', color: 'var(--on-accent)', border: 'none', borderRadius: 10, padding: '10px 18px', fontSize: 14, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>Create</button>
           </div>
         )}
 
@@ -95,7 +95,7 @@ export default function StudyGroupsPage() {
                 <p style={{ fontSize: 14, fontWeight: 600, color: 'var(--text-primary)', margin: '0 0 3px' }}>{g.name} {g.subject && <span style={{ fontWeight: 400, color: 'var(--text-muted)' }}>· {g.subject}</span>}</p>
                 {g.description && <p style={{ fontSize: 12, color: 'var(--text-muted)', margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{g.description}</p>}
               </div>
-              <button onClick={() => join(g.id)} style={{ background: memberships.includes(g.id) ? 'var(--bg-secondary)' : 'var(--accent)', color: memberships.includes(g.id) ? 'var(--text-secondary)' : 'white', border: memberships.includes(g.id) ? '1px solid var(--border)' : 'none', padding: '7px 16px', borderRadius: 8, fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>
+              <button onClick={() => join(g.id)} style={{ background: memberships.includes(g.id) ? 'var(--bg-secondary)' : 'var(--accent)', color: memberships.includes(g.id) ? 'var(--text-secondary)' : 'var(--on-accent)', border: memberships.includes(g.id) ? '1px solid var(--border)' : 'none', padding: '7px 16px', borderRadius: 8, fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>
                 {memberships.includes(g.id) ? '✓ Joined' : 'Join'}
               </button>
             </div>

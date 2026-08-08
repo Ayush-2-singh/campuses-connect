@@ -245,7 +245,7 @@ export default function AdminPage() {
   }
 
   return (
-    <div style={{ minHeight: '100vh', background: 'var(--bg-secondary)' }}>
+    <div data-accent="gold" style={{ minHeight: '100vh', background: 'var(--bg-secondary)' }}>
       {/* Header */}
       <div className="admin-header" style={{ background: 'var(--bg)', borderBottom: '1px solid var(--border)', padding: '14px 24px', position: 'sticky', top: 0, zIndex: 20 }}>
         <div style={{ maxWidth: 1100, margin: '0 auto', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
@@ -346,16 +346,16 @@ export default function AdminPage() {
           <div style={{ marginBottom: 16 }}>
             {!showAnnouncement ? (
               <button onClick={() => setShowAnnouncement(true)}
-                style={{ background: 'var(--accent-text)', color: 'white', border: 'none', padding: '10px 20px', borderRadius: 10, fontSize: 14, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>
+                style={{ background: 'var(--accent)', color: 'var(--on-accent)', border: 'none', padding: '10px 20px', borderRadius: 10, fontSize: 14, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>
                 🌐 Post Global Announcement
               </button>
             ) : (
               <div style={{ background: 'var(--bg)', border: '2px solid var(--accent-text)', borderRadius: 14, padding: 20, marginBottom: 16 }}>
                 <h3 style={{ fontSize: 15, fontWeight: 700, color: 'var(--text-primary)', margin: '0 0 12px' }}>🌐 Post Official Announcement</h3>
                 <div style={{ display: 'flex', gap: 8, marginBottom: 12, flexWrap: 'wrap' }}>
-                  <button onClick={() => setAnnouncementScope('global')} style={{ padding: '6px 16px', borderRadius: 20, border: 'none', background: announcementScope === 'global' ? 'var(--accent-text)' : 'var(--border-strong)', color: announcementScope === 'global' ? 'white' : 'var(--text-secondary)', fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit', fontSize: 13 }}>🌐 All Campuses</button>
+                  <button onClick={() => setAnnouncementScope('global')} style={{ padding: '6px 16px', borderRadius: 20, border: 'none', background: announcementScope === 'global' ? 'var(--accent)' : 'var(--border-strong)', color: announcementScope === 'global' ? 'var(--on-accent)' : 'var(--text-secondary)', fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit', fontSize: 13 }}>🌐 All Campuses</button>
                   {campuses.map(c => (
-                    <button key={c.id} onClick={() => setAnnouncementScope(c.id)} style={{ padding: '6px 16px', borderRadius: 20, border: 'none', background: announcementScope === c.id ? 'var(--success-text)' : 'var(--border-strong)', color: announcementScope === c.id ? 'white' : 'var(--text-secondary)', fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit', fontSize: 13 }}>🏫 {c.name}</button>
+                    <button key={c.id} onClick={() => setAnnouncementScope(c.id)} style={{ padding: '6px 16px', borderRadius: 20, border: 'none', background: announcementScope === c.id ? 'var(--success)' : 'var(--border-strong)', color: announcementScope === c.id ? 'var(--on-accent)' : 'var(--text-secondary)', fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit', fontSize: 13 }}>🏫 {c.name}</button>
                   ))}
                 </div>
                 <textarea value={announcementText} onChange={e => setAnnouncementText(e.target.value)}
@@ -364,7 +364,7 @@ export default function AdminPage() {
                 <div style={{ display: 'flex', gap: 8, marginTop: 10 }}>
                   <button onClick={() => setShowAnnouncement(false)} style={{ flex: 1, background: 'var(--bg)', color: 'var(--text-secondary)', border: '1px solid var(--border)', borderRadius: 10, padding: '9px', fontSize: 14, cursor: 'pointer', fontFamily: 'inherit' }}>Cancel</button>
                   <button onClick={postAnnouncement} disabled={!announcementText.trim() || postingAnnouncement}
-                    style={{ flex: 2, background: postingAnnouncement ? 'var(--disabled)' : 'var(--accent-text)', color: 'white', border: 'none', borderRadius: 10, padding: '9px', fontSize: 14, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>
+                    style={{ flex: 2, background: postingAnnouncement ? 'var(--disabled)' : 'var(--accent)', color: 'var(--on-accent)', border: 'none', borderRadius: 10, padding: '9px', fontSize: 14, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>
                     {postingAnnouncement ? 'Posting...' : announcementScope === 'global' ? '🌐 Post Global Announcement' : '🏫 Post Campus Announcement'}
                   </button>
                 </div>
@@ -416,7 +416,7 @@ export default function AdminPage() {
                 </p>
               </div>
               <button onClick={aiDigest} disabled={digestLoading || !modItems.length}
-                style={{ padding: '8px 16px', borderRadius: 10, border: 'none', background: digestLoading || !modItems.length ? 'var(--purple-border)' : '#7c3aed', color: 'white', fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>
+                style={{ padding: '8px 16px', borderRadius: 10, border: 'none', background: digestLoading || !modItems.length ? 'var(--purple-border)' : 'var(--accent-purple)', color: 'var(--on-accent)', fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>
                 {digestLoading ? 'Thinking...' : '✨ AI Summary'}
               </button>
             </div>
@@ -484,11 +484,11 @@ export default function AdminPage() {
 
                       <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
                         <button onClick={() => resolveMod(item.item_id, 'approve')} disabled={modBusy === item.item_id}
-                          style={{ padding: '6px 14px', borderRadius: 8, border: 'none', background: '#16a34a', color: 'white', fontSize: 12, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>
+                          style={{ padding: '6px 14px', borderRadius: 8, border: 'none', background: '#16a34a', color: 'var(--on-accent)', fontSize: 12, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>
                           ✓ Approve
                         </button>
                         <button onClick={() => resolveMod(item.item_id, 'remove')} disabled={modBusy === item.item_id}
-                          style={{ padding: '6px 14px', borderRadius: 8, border: 'none', background: 'var(--danger)', color: 'white', fontSize: 12, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>
+                          style={{ padding: '6px 14px', borderRadius: 8, border: 'none', background: 'var(--danger)', color: 'var(--on-accent)', fontSize: 12, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>
                           ✕ Remove
                         </button>
                         <button onClick={() => resolveMod(item.item_id, 'dismiss')} disabled={modBusy === item.item_id}

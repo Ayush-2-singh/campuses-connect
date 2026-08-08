@@ -226,7 +226,7 @@ export default function OpportunitiesPage() {
     fontWeight: 500 as const,
     border: active ? 'none' : '1px solid var(--border)',
     background: active ? 'var(--accent)' : 'var(--bg)',
-    color: active ? 'white' : 'var(--text-secondary)',
+    color: active ? 'var(--on-accent)' : 'var(--text-secondary)',
     cursor: 'pointer' as const,
     fontFamily: 'inherit' as const,
   })
@@ -247,7 +247,7 @@ export default function OpportunitiesPage() {
           {isAdmin && (
             <button
               onClick={() => { closeCompose(); setShowCompose(true) }}
-              style={{ background: 'var(--accent)', color: 'white', border: 'none', padding: '9px 18px', borderRadius: 'var(--radius-sm)', fontSize: 14, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}
+              style={{ background: 'var(--accent)', color: 'var(--on-accent)', border: 'none', padding: '9px 18px', borderRadius: 'var(--radius-sm)', fontSize: 14, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}
             >+ Post</button>
           )}
         </div>
@@ -302,7 +302,7 @@ export default function OpportunitiesPage() {
             <div style={{ display: 'flex', gap: 8, marginTop: 14 }}>
               <button onClick={closeCompose} style={{ flex: 1, background: 'var(--bg)', color: 'var(--text-secondary)', border: '1px solid var(--border)', borderRadius: 10, padding: '10px', fontSize: 14, cursor: 'pointer', fontFamily: 'inherit' }}>Cancel</button>
               <button onClick={editTarget ? handleUpdate : handlePost} disabled={!form.title.trim() || posting}
-                style={{ flex: 1, background: posting ? 'var(--disabled)' : 'var(--accent)', color: 'white', border: 'none', borderRadius: 10, padding: '10px', fontSize: 14, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>
+                style={{ flex: 1, background: posting ? 'var(--disabled)' : 'var(--accent)', color: 'var(--on-accent)', border: 'none', borderRadius: 10, padding: '10px', fontSize: 14, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>
                 {posting ? (editTarget ? 'Saving...' : 'Posting...') : editTarget ? 'Save Changes' : 'Post +8⭐'}
               </button>
             </div>
@@ -388,7 +388,7 @@ export default function OpportunitiesPage() {
                       </button>
                       {opp.apply_link && (
                         <a href={opp.apply_link} target="_blank" rel="noopener noreferrer"
-                          style={{ background: 'var(--accent)', color: 'white', padding: '7px 16px', borderRadius: 8, fontSize: 13, fontWeight: 600, textDecoration: 'none' }}>
+                          style={{ background: 'var(--accent)', color: 'var(--on-accent)', padding: '7px 16px', borderRadius: 8, fontSize: 13, fontWeight: 600, textDecoration: 'none' }}>
                           Apply →
                         </a>
                       )}

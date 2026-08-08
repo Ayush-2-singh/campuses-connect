@@ -7,9 +7,11 @@ export const metadata: Metadata = {
   description: "Your campus. Connected.",
 };
 
-// Apply the saved theme before first paint to avoid a light/dark flash.
+// Apply the saved theme before first paint to avoid a flash.
+// Campus Connect is dark-first: the dark palette is the foundation and the
+// default; only an explicit saved 'light' preference opts into light mode.
 // Note: the 'cc-theme' key must stay in sync with THEME_KEY in ThemeToggle.tsx.
-const themeScript = `(function(){try{var t=localStorage.getItem('cc-theme');if(t==='dark'||(t!=='light'&&window.matchMedia&&window.matchMedia('(prefers-color-scheme: dark)').matches)){document.documentElement.setAttribute('data-theme','dark');}}catch(e){}})();`;
+const themeScript = `(function(){try{var t=localStorage.getItem('cc-theme');document.documentElement.setAttribute('data-theme',t==='light'?'light':'dark');}catch(e){}})();`;
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (

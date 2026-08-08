@@ -23,7 +23,7 @@ export default function LandingPage() {
   ]
 
   return (
-    <div style={{ minHeight: '100vh', background: 'var(--bg)', fontFamily: '-apple-system, BlinkMacSystemFont, Segoe UI, sans-serif' }}>
+    <div data-accent="gold" style={{ minHeight: '100vh', background: 'var(--bg)', fontFamily: '-apple-system, BlinkMacSystemFont, Segoe UI, sans-serif' }}>
 
       {/* Nav */}
       <nav className="landing-nav" style={{ position: 'sticky', top: 0, background: 'var(--bg)', borderBottom: '1px solid var(--border)', padding: '14px 20px', zIndex: 10 }}>
@@ -34,7 +34,7 @@ export default function LandingPage() {
           <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
             {user ? (
               <button onClick={() => router.push('/feed')}
-                style={{ background: 'var(--accent)', color: 'white', border: 'none', padding: '8px 18px', borderRadius: 8, fontSize: 14, fontWeight: 600, cursor: 'pointer' }}>
+                style={{ background: 'var(--accent)', color: 'var(--on-accent)', border: 'none', padding: '8px 18px', borderRadius: 8, fontSize: 14, fontWeight: 600, cursor: 'pointer' }}>
                 Go to Feed →
               </button>
             ) : (
@@ -44,7 +44,7 @@ export default function LandingPage() {
                   Sign in
                 </button>
                 <button onClick={() => router.push('/auth/signup')}
-                  style={{ background: 'var(--accent)', color: 'white', border: 'none', padding: '8px 18px', borderRadius: 8, fontSize: 14, fontWeight: 600, cursor: 'pointer' }}>
+                  style={{ background: 'var(--accent)', color: 'var(--on-accent)', border: 'none', padding: '8px 18px', borderRadius: 8, fontSize: 14, fontWeight: 600, cursor: 'pointer' }}>
                   Join Free
                 </button>
               </>
@@ -54,7 +54,7 @@ export default function LandingPage() {
       </nav>
 
       {/* Hero */}
-      <div style={{ maxWidth: 720, margin: '0 auto', padding: '80px 20px 60px', textAlign: 'center' }}>
+      <div className="ambient" style={{ maxWidth: 720, margin: '0 auto', padding: '80px 20px 60px', textAlign: 'center' }}>
         <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: 'var(--accent-light)', border: '1px solid var(--accent-border)', borderRadius: 20, padding: '5px 14px', fontSize: 12, color: 'var(--accent)', fontWeight: 600, marginBottom: 24 }}>
           🚀 Now live for PW IOI · Lucknow
         </div>
@@ -66,7 +66,7 @@ export default function LandingPage() {
         </p>
         <div style={{ display: 'flex', gap: 12, justifyContent: 'center', flexWrap: 'wrap' }}>
           <button onClick={() => router.push('/auth/signup')}
-            style={{ background: 'var(--accent)', color: 'white', border: 'none', padding: '14px 28px', borderRadius: 10, fontSize: 16, fontWeight: 700, cursor: 'pointer' }}>
+            style={{ background: 'var(--accent)', color: 'var(--on-accent)', border: 'none', padding: '14px 28px', borderRadius: 10, fontSize: 16, fontWeight: 700, cursor: 'pointer' }}>
             Join your campus →
           </button>
           <button onClick={() => router.push('/feed')}
@@ -118,8 +118,8 @@ export default function LandingPage() {
       {/* CTA */}
       <div style={{ maxWidth: 600, margin: '0 auto', padding: '60px 20px' }}>
         <div className="landing-cta" style={{ background: 'var(--accent)', borderRadius: 20, padding: '48px 40px', textAlign: 'center' }}>
-          <h3 style={{ fontSize: 28, fontWeight: 700, color: 'white', margin: '0 0 8px' }}>Ready to join?</h3>
-          <p style={{ fontSize: 14, color: 'rgba(255,255,255,0.8)', margin: '0 0 24px' }}>Free forever for students. No credit card needed.</p>
+          <h3 style={{ fontSize: 28, fontWeight: 700, color: 'var(--on-accent)', margin: '0 0 8px' }}>Ready to join?</h3>
+          <p style={{ fontSize: 14, color: 'rgba(29,21,3,0.72)', margin: '0 0 24px' }}>Free forever for students. No credit card needed.</p>
           <button onClick={() => router.push('/auth/signup')}
             style={{ background: 'var(--bg)', color: 'var(--accent)', border: 'none', padding: '13px 28px', borderRadius: 10, fontSize: 15, fontWeight: 700, cursor: 'pointer' }}>
             Create your account →

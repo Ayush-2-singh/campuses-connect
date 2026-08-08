@@ -126,7 +126,7 @@ export default function PostCard({
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, minWidth: 0, flex: 1 }}>
           <div
             onClick={() => post.profiles?.username && router.push(`/profile/${post.profiles.username}`)}
-            style={{ width: 38, height: 38, borderRadius: '50%', background: avatarColor(post.profiles?.full_name || ''), display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontSize: 14, fontWeight: 700, flexShrink: 0, cursor: 'pointer' }}>
+            style={{ width: 38, height: 38, borderRadius: '50%', background: avatarColor(post.profiles?.full_name || ''), display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--on-accent)', fontSize: 14, fontWeight: 700, flexShrink: 0, cursor: 'pointer' }}>
             {post.profiles?.full_name?.[0] || '?'}
           </div>
           <div style={{ minWidth: 0 }}>
@@ -156,7 +156,7 @@ export default function PostCard({
 
       {post.apply_link && (
         <a href={post.apply_link} target="_blank" rel="noopener noreferrer"
-          style={{ display: 'inline-block', background: 'var(--accent)', color: 'white', padding: '7px 16px', borderRadius: 8, fontSize: 13, fontWeight: 600, textDecoration: 'none', marginBottom: 12 }}>
+          style={{ display: 'inline-block', background: 'var(--accent)', color: 'var(--on-accent)', padding: '7px 16px', borderRadius: 8, fontSize: 13, fontWeight: 600, textDecoration: 'none', marginBottom: 12 }}>
           Apply →
         </a>
       )}
@@ -190,7 +190,7 @@ export default function PostCard({
         <div style={{ marginTop: 14, display: 'flex', flexDirection: 'column', gap: 10 }}>
           {comments.map((c: any) => (
             <div key={c.id} style={{ display: 'flex', gap: 8 }}>
-              <div style={{ width: 28, height: 28, borderRadius: '50%', background: avatarColor(c.profiles?.full_name || ''), display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontSize: 11, fontWeight: 700, flexShrink: 0 }}>
+              <div style={{ width: 28, height: 28, borderRadius: '50%', background: avatarColor(c.profiles?.full_name || ''), display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--on-accent)', fontSize: 11, fontWeight: 700, flexShrink: 0 }}>
                 {c.profiles?.full_name?.[0] || '?'}
               </div>
               <div style={{ background: 'var(--bg-secondary)', borderRadius: 10, padding: '8px 12px', flex: 1 }}>
@@ -205,7 +205,7 @@ export default function PostCard({
                 onKeyDown={e => e.key === 'Enter' && handleComment()}
                 placeholder="Write a comment..." style={{ flex: 1, border: '1px solid var(--border)', borderRadius: 20, padding: '8px 14px', fontSize: 13, outline: 'none', fontFamily: 'inherit', color: 'var(--text-primary)', background: 'var(--bg-secondary)' }} />
               <button onClick={handleComment} disabled={!commentText.trim()}
-                style={{ padding: '8px 14px', borderRadius: 20, border: 'none', background: commentText.trim() ? 'var(--accent)' : 'var(--disabled)', color: 'white', fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>
+                style={{ padding: '8px 14px', borderRadius: 20, border: 'none', background: commentText.trim() ? 'var(--accent)' : 'var(--disabled)', color: 'var(--on-accent)', fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>
                 Send
               </button>
             </div>

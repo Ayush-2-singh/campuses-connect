@@ -108,7 +108,7 @@ export default function UserProfilePage() {
   const isOwnProfile = user?.id === profile.id
 
   return (
-    <div style={{ minHeight: '100vh', background: 'var(--bg-secondary)', paddingBottom: 80 }}>
+    <div data-accent="gold" style={{ minHeight: '100vh', background: 'var(--bg-secondary)', paddingBottom: 80 }}>
       {/* Header */}
       <div style={{ position: 'sticky', top: 0, background: 'var(--bg)', borderBottom: '1px solid var(--border)', padding: '13px 16px', zIndex: 10 }}>
         <div style={{ maxWidth: 640, margin: '0 auto', display: 'flex', alignItems: 'center', gap: 10 }}>
@@ -123,7 +123,7 @@ export default function UserProfilePage() {
         <div style={{ background: 'var(--bg)', border: '1px solid var(--border)', borderRadius: 16, padding: '24px', marginBottom: 16, boxShadow: 'var(--shadow-sm)' }}>
           <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 16 }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
-              <div style={{ width: 56, height: 56, borderRadius: '50%', background: avatarColor(profile.full_name || ''), display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontSize: 22, fontWeight: 700, flexShrink: 0 }}>
+              <div style={{ width: 56, height: 56, borderRadius: '50%', background: avatarColor(profile.full_name || ''), display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--on-accent)', fontSize: 22, fontWeight: 700, flexShrink: 0 }}>
                 {profile.full_name?.[0] || '?'}
               </div>
               <div>
@@ -134,7 +134,7 @@ export default function UserProfilePage() {
 
             {!isOwnProfile && user && (
               <button onClick={handleConnect} disabled={connected || connecting}
-                style={{ padding: '8px 18px', borderRadius: 8, border: connected ? '1px solid var(--border)' : '1px solid var(--accent)', background: connected ? 'var(--bg)' : 'var(--accent)', color: connected ? 'var(--text-secondary)' : 'white', fontSize: 13, fontWeight: 600, cursor: connected ? 'default' : 'pointer', fontFamily: 'inherit' }}>
+                style={{ padding: '8px 18px', borderRadius: 8, border: connected ? '1px solid var(--border)' : '1px solid var(--accent)', background: connected ? 'var(--bg)' : 'var(--accent)', color: connected ? 'var(--text-secondary)' : 'var(--on-accent)', fontSize: 13, fontWeight: 600, cursor: connected ? 'default' : 'pointer', fontFamily: 'inherit' }}>
                 {connected ? 'Connected ✓' : connecting ? 'Connecting…' : 'Connect'}
               </button>
             )}

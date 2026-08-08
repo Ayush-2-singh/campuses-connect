@@ -69,7 +69,7 @@ export default function TalentPage() {
               return (
                 <div key={s.id} onClick={() => router.push(`/profile/${s.username}`)}
                   style={{ background: 'var(--bg)', border: '1px solid var(--border)', borderRadius: 12, padding: '14px 16px', display: 'flex', alignItems: 'center', gap: 12, cursor: 'pointer', boxShadow: 'var(--shadow-sm)' }}>
-                  <div style={{ width: 44, height: 44, borderRadius: '50%', background: avatarColor(s.full_name || ''), display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontSize: 16, fontWeight: 700, flexShrink: 0 }}>
+                  <div style={{ width: 44, height: 44, borderRadius: '50%', background: avatarColor(s.full_name || ''), display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--on-accent)', fontSize: 16, fontWeight: 700, flexShrink: 0 }}>
                     {s.full_name?.[0] || '?'}
                   </div>
                   <div style={{ flex: 1, minWidth: 0 }}>

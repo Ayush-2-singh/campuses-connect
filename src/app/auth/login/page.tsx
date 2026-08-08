@@ -35,7 +35,7 @@ export default function LoginPage() {
   }
 
   return (
-    <div style={{ minHeight: '100vh', background: 'var(--bg-secondary)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 }}>
+    <div data-accent="gold" style={{ minHeight: '100vh', background: 'var(--bg-secondary)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 }}>
       <div style={{ width: '100%', maxWidth: 400 }}>
         <div style={{ textAlign: 'center', marginBottom: 32 }}>
           <h1 style={{ fontSize: 28, fontWeight: 800, color: 'var(--text-primary)', margin: '0 0 6px' }}>
@@ -82,7 +82,7 @@ export default function LoginPage() {
           <button
             onClick={handleLogin}
             disabled={loading}
-            style={{ width: '100%', background: loading ? 'var(--disabled)' : 'var(--accent)', color: 'white', border: 'none', borderRadius: 10, padding: '12px', fontSize: 15, fontWeight: 700, cursor: loading ? 'not-allowed' : 'pointer', marginTop: 20, fontFamily: 'inherit' }}
+            style={{ width: '100%', background: loading ? 'var(--disabled)' : 'var(--accent)', color: 'var(--on-accent)', border: 'none', borderRadius: 10, padding: '12px', fontSize: 15, fontWeight: 700, cursor: loading ? 'not-allowed' : 'pointer', marginTop: 20, fontFamily: 'inherit' }}
           >
             {loading ? 'Signing in…' : 'Sign In'}
           </button>

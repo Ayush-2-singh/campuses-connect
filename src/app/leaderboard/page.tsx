@@ -46,7 +46,7 @@ export default function LeaderboardPage() {
               <div key={leader.id} onClick={() => leader.username && router.push(`/profile/${leader.username}`)}
                 style={{ background: 'var(--bg)', border: i < 3 ? '1px solid var(--accent-border)' : '1px solid var(--border)', borderRadius: 12, padding: '14px 16px', display: 'flex', alignItems: 'center', gap: 12, cursor: 'pointer', boxShadow: 'var(--shadow-sm)' }}>
                 <span style={{ fontSize: 20, width: 28, textAlign: 'center', flexShrink: 0 }}>{medal(i) || `${i + 1}`}</span>
-                <div style={{ width: 36, height: 36, borderRadius: '50%', background: avatarColor(leader.full_name || ''), display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontSize: 14, fontWeight: 700, flexShrink: 0 }}>
+                <div style={{ width: 36, height: 36, borderRadius: '50%', background: avatarColor(leader.full_name || ''), display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--on-accent)', fontSize: 14, fontWeight: 700, flexShrink: 0 }}>
                   {leader.full_name?.[0] || '?'}
                 </div>
                 <div style={{ flex: 1, minWidth: 0 }}>

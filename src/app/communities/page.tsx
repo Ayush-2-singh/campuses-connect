@@ -62,7 +62,7 @@ export default function CommunitiesPage() {
                 </div>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 8, flexShrink: 0 }}>
                   <button onClick={() => router.push(`/communities/${c.key}`)}
-                    style={{ background: 'var(--accent)', color: 'white', border: 'none', padding: '8px 18px', borderRadius: 10, fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>
+                    style={{ background: 'var(--accent)', color: 'var(--on-accent)', border: 'none', padding: '8px 18px', borderRadius: 10, fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>
                     Open
                   </button>
                   <button onClick={() => toggleJoin(c.id)}

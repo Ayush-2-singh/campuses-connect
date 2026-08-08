@@ -156,7 +156,7 @@ export default function BrainPage() {
 
   return (
     <Layout user={user} profile={profile}>
-      <div style={{ maxWidth: 720, margin: '0 auto', padding: '24px 20px' }}>
+      <div className="ambient" style={{ maxWidth: 720, margin: '0 auto', padding: '24px 20px' }}>
         <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 20 }}>
           <div>
             <h2 style={{ fontSize: 22, fontWeight: 700, color: 'var(--text-primary)', margin: '0 0 4px' }}>🧠 AI Brain</h2>
@@ -166,7 +166,7 @@ export default function BrainPage() {
           </div>
           {user && (
             <button onClick={() => setShowUpload(s => !s)}
-              style={{ background: 'var(--accent)', color: 'white', border: 'none', padding: '9px 18px', borderRadius: 10, fontSize: 14, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>
+              style={{ background: 'var(--accent)', color: 'var(--on-accent)', border: 'none', padding: '9px 18px', borderRadius: 10, fontSize: 14, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>
               + Upload
             </button>
           )}
@@ -222,7 +222,7 @@ export default function BrainPage() {
                 <div key={i} style={{
                   alignSelf: m.role === 'user' ? 'flex-end' : 'flex-start',
                   maxWidth: '92%', background: m.role === 'user' ? 'var(--accent)' : 'var(--bg)',
-                  color: m.role === 'user' ? 'white' : 'var(--text-primary)',
+                  color: m.role === 'user' ? 'var(--on-accent)' : 'var(--text-primary)',
                   border: m.role === 'user' ? 'none' : '1px solid var(--border)',
                   borderRadius: 14, padding: '12px 16px', boxShadow: 'var(--shadow-sm)',
                   whiteSpace: 'pre-wrap', lineHeight: 1.6, fontSize: 14,
@@ -260,7 +260,7 @@ export default function BrainPage() {
                 onKeyDown={e => e.key === 'Enter' && handleAsk()}
                 placeholder="Ask your brain..." style={{ ...inputStyle, flex: 1 }} />
               <button onClick={handleAsk} disabled={!input.trim() || asking}
-                style={{ padding: '10px 20px', borderRadius: 10, border: 'none', background: !input.trim() || asking ? 'var(--disabled)' : 'var(--accent)', color: 'white', fontSize: 14, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>
+                style={{ padding: '10px 20px', borderRadius: 10, border: 'none', background: !input.trim() || asking ? 'var(--disabled)' : 'var(--accent)', color: 'var(--on-accent)', fontSize: 14, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }} className={!input.trim() || asking ? '' : 'grad-ai'}>
                 {asking ? '…' : 'Ask'}
               </button>
             </div>

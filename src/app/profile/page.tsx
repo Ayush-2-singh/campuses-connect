@@ -55,7 +55,7 @@ export default function ProfilePage() {
   )
 
   return (
-    <div style={{ minHeight: '100vh', background: 'var(--bg-secondary)', paddingBottom: 80 }}>
+    <div data-accent="gold" style={{ minHeight: '100vh', background: 'var(--bg-secondary)', paddingBottom: 80 }}>
       <div style={{ position: 'sticky', top: 0, background: 'var(--bg)', borderBottom: '1px solid var(--border)', padding: '13px 16px', zIndex: 10 }}>
         <div style={{ maxWidth: 640, margin: '0 auto', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
@@ -63,7 +63,7 @@ export default function ProfilePage() {
             <h1 style={{ fontSize: 17, fontWeight: 700, margin: 0, color: 'var(--text-primary)' }}>Profile</h1>
           </div>
           <button onClick={() => editing ? handleSave() : setEditing(true)} disabled={saving}
-            style={{ background: editing ? 'var(--accent)' : 'var(--bg)', color: editing ? 'white' : 'var(--accent)', border: '1px solid var(--accent)', padding: '7px 16px', borderRadius: 8, fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>
+            style={{ background: editing ? 'var(--accent)' : 'var(--bg)', color: editing ? 'var(--on-accent)' : 'var(--accent)', border: '1px solid var(--accent)', padding: '7px 16px', borderRadius: 8, fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>
             {saving ? 'Saving...' : editing ? 'Save' : 'Edit'}
           </button>
         </div>
@@ -74,7 +74,7 @@ export default function ProfilePage() {
         {/* Profile Card */}
         <div style={{ background: 'var(--bg)', borderRadius: 14, border: '1px solid var(--border)', padding: 20, boxShadow: 'var(--shadow-sm)' }}>
           <div style={{ display: 'flex', alignItems: 'flex-start', gap: 14, marginBottom: 16 }}>
-            <div style={{ width: 64, height: 64, borderRadius: '50%', background: avatarColor(profile?.full_name || ''), display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontSize: 24, fontWeight: 700, flexShrink: 0 }}>
+            <div style={{ width: 64, height: 64, borderRadius: '50%', background: avatarColor(profile?.full_name || ''), display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--on-accent)', fontSize: 24, fontWeight: 700, flexShrink: 0 }}>
               {profile?.full_name?.[0] || user?.email?.[0] || '?'}
             </div>
             <div style={{ flex: 1 }}>

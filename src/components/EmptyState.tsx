@@ -40,7 +40,7 @@ export default function EmptyState({
           disabled={!onCta}
           style={{
             background: 'var(--accent)',
-            color: 'white',
+            color: 'var(--on-accent)',
             border: 'none',
             borderRadius: 'var(--radius-sm)',
             padding: '10px 20px',

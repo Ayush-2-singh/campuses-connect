@@ -68,7 +68,7 @@ export default function ClubsPage() {
             </div>
           </div>
           {(admin.isPlatformAdmin || admin.isCampusAdmin) && (
-            <button onClick={() => setShowCreate(s => !s)} style={{ background: 'var(--accent)', color: 'white', border: 'none', padding: '9px 18px', borderRadius: 10, fontSize: 14, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>+ Create Club</button>
+            <button onClick={() => setShowCreate(s => !s)} style={{ background: 'var(--accent)', color: 'var(--on-accent)', border: 'none', padding: '9px 18px', borderRadius: 10, fontSize: 14, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>+ Create Club</button>
           )}
         </div>
 
@@ -76,7 +76,7 @@ export default function ClubsPage() {
           <div style={{ background: 'var(--bg)', border: '1px solid var(--border)', borderRadius: 14, padding: 20, marginBottom: 20, boxShadow: 'var(--shadow-sm)' }}>
             <input type="text" value={name} onChange={e => setName(e.target.value)} placeholder="Club name *" style={{ width: '100%', border: '1px solid var(--border)', borderRadius: 10, padding: '10px 14px', fontSize: 14, outline: 'none', fontFamily: 'inherit', boxSizing: 'border-box', marginBottom: 10 }} />
             <textarea value={desc} onChange={e => setDesc(e.target.value)} placeholder="What does this club do?" rows={2} style={{ width: '100%', border: '1px solid var(--border)', borderRadius: 10, padding: '10px 14px', fontSize: 14, outline: 'none', fontFamily: 'inherit', boxSizing: 'border-box', resize: 'none', marginBottom: 10 }} />
-            <button onClick={create} disabled={!name.trim()} style={{ background: name.trim() ? 'var(--accent)' : 'var(--disabled)', color: 'white', border: 'none', borderRadius: 10, padding: '10px 18px', fontSize: 14, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>Create</button>
+            <button onClick={create} disabled={!name.trim()} style={{ background: name.trim() ? 'var(--accent)' : 'var(--disabled)', color: 'var(--on-accent)', border: 'none', borderRadius: 10, padding: '10px 18px', fontSize: 14, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>Create</button>
           </div>
         )}
 
@@ -90,7 +90,7 @@ export default function ClubsPage() {
                 <p style={{ fontSize: 14, fontWeight: 600, color: 'var(--text-primary)', margin: '0 0 3px' }}>{c.name}</p>
                 {c.description && <p style={{ fontSize: 12, color: 'var(--text-muted)', margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{c.description}</p>}
               </div>
-              <button onClick={() => join(c.id)} style={{ background: memberships.includes(c.id) ? 'var(--bg-secondary)' : 'var(--accent)', color: memberships.includes(c.id) ? 'var(--text-secondary)' : 'white', border: memberships.includes(c.id) ? '1px solid var(--border)' : 'none', padding: '7px 16px', borderRadius: 8, fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>
+              <button onClick={() => join(c.id)} style={{ background: memberships.includes(c.id) ? 'var(--bg-secondary)' : 'var(--accent)', color: memberships.includes(c.id) ? 'var(--text-secondary)' : 'var(--on-accent)', border: memberships.includes(c.id) ? '1px solid var(--border)' : 'none', padding: '7px 16px', borderRadius: 8, fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>
                 {memberships.includes(c.id) ? '✓ Joined' : 'Join'}
               </button>
             </div>

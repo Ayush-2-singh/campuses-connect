@@ -77,7 +77,7 @@ export default function CommunityPage() {
               </div>
             </div>
             <button onClick={toggleJoin}
-              style={{ flexShrink: 0, background: isMember ? 'var(--bg-secondary)' : 'var(--accent)', color: isMember ? 'var(--text-secondary)' : 'white', border: isMember ? '1px solid var(--border)' : 'none', padding: '9px 18px', borderRadius: 10, fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>
+              style={{ flexShrink: 0, background: isMember ? 'var(--bg-secondary)' : 'var(--accent)', color: isMember ? 'var(--text-secondary)' : 'var(--on-accent)', border: isMember ? '1px solid var(--border)' : 'none', padding: '9px 18px', borderRadius: 10, fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>
               {isMember ? '✓ Joined' : 'Join'}
             </button>
           </div>

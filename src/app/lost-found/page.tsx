@@ -53,12 +53,12 @@ export default function LostFoundPage() {
             </div>
             <p style={{ fontSize: 13, color: 'var(--text-muted)', margin: 0, marginLeft: 34 }}>Report lost items or return found ones</p>
           </div>
-          {user && admin.isAdmin && <button onClick={() => setShowCompose(true)} style={{ background: 'var(--accent)', color: 'white', border: 'none', padding: '9px 18px', borderRadius: 10, fontSize: 14, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>+ Post</button>}
+          {user && admin.isAdmin && <button onClick={() => setShowCompose(true)} style={{ background: 'var(--accent)', color: 'var(--on-accent)', border: 'none', padding: '9px 18px', borderRadius: 10, fontSize: 14, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>+ Post</button>}
         </div>
 
         <div style={{ display: 'flex', gap: 8, marginBottom: 20 }}>
           {(['all', 'lost', 'found'] as const).map(f => (
-            <button key={f} onClick={() => setFilter(f)} style={{ padding: '7px 18px', borderRadius: 20, fontSize: 13, fontWeight: 500, border: filter === f ? 'none' : '1px solid var(--border)', background: filter === f ? 'var(--accent)' : 'var(--bg)', color: filter === f ? 'white' : 'var(--text-secondary)', cursor: 'pointer', textTransform: 'capitalize', fontFamily: 'inherit' }}>{f}</button>
+            <button key={f} onClick={() => setFilter(f)} style={{ padding: '7px 18px', borderRadius: 20, fontSize: 13, fontWeight: 500, border: filter === f ? 'none' : '1px solid var(--border)', background: filter === f ? 'var(--accent)' : 'var(--bg)', color: filter === f ? 'var(--on-accent)' : 'var(--text-secondary)', cursor: 'pointer', textTransform: 'capitalize', fontFamily: 'inherit' }}>{f}</button>
           ))}
         </div>
 
@@ -88,7 +88,7 @@ export default function LostFoundPage() {
             </div>
             <div style={{ display: 'flex', gap: 8, marginTop: 14 }}>
               <button onClick={() => setShowCompose(false)} style={{ flex: 1, background: 'var(--bg)', color: 'var(--text-secondary)', border: '1px solid var(--border)', borderRadius: 10, padding: '10px', fontSize: 14, cursor: 'pointer', fontFamily: 'inherit' }}>Cancel</button>
-              <button onClick={handlePost} disabled={!form.title || posting} style={{ flex: 1, background: posting ? 'var(--disabled)' : 'var(--accent)', color: 'white', border: 'none', borderRadius: 10, padding: '10px', fontSize: 14, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>
+              <button onClick={handlePost} disabled={!form.title || posting} style={{ flex: 1, background: posting ? 'var(--disabled)' : 'var(--accent)', color: 'var(--on-accent)', border: 'none', borderRadius: 10, padding: '10px', fontSize: 14, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>
                 {posting ? 'Posting...' : 'Post'}
               </button>
             </div>

@@ -6,6 +6,7 @@ import { useRouter, usePathname } from 'next/navigation'
 import ThemeToggle from '@/components/ThemeToggle'
 import CommandPalette from '@/components/CommandPalette'
 import { Icon } from '@/components/icons'
+import { AVATAR_COLORS, accentForPath } from '@/theme/colors'
 
 const NAV_ITEMS = [
   { label: 'Home', href: '/feed', icon: 'home' },
@@ -94,14 +95,17 @@ export default function Layout({ children, user, profile }: { children: React.Re
   }, [cmdOpen])
 
   const avatarColor = (name: string) => {
-    const colors = ['#2563eb', '#7c3aed', '#16a34a', '#d97706', 'var(--danger)', '#0891b2']
-    return colors[(name?.charCodeAt(0) || 0) % colors.length]
+    return AVATAR_COLORS[(name?.charCodeAt(0) || 0) % AVATAR_COLORS.length]
   }
 
   const isActive = (href: string) => pathname === href || pathname.startsWith(href + '/')
 
+  // Contextual accent for the current section — recolors the whole shell
+  // (sidebar active states, FAB, bottom nav) to match the page identity.
+  const sectionAccent = accentForPath(pathname)
+
   return (
-    <div style={{ minHeight: '100vh', background: 'var(--bg-secondary)', display: 'flex' }}>
+    <div data-accent={sectionAccent} style={{ minHeight: '100vh', background: 'var(--bg-secondary)', display: 'flex' }}>
 
       {/* ── Desktop Sidebar ── */}
       <aside
@@ -109,7 +113,7 @@ export default function Layout({ children, user, profile }: { children: React.Re
         className="desktop-sidebar"
       >
         <div style={{ padding: '0 12px 18px', borderBottom: '1px solid var(--border)', marginBottom: 14, display: 'flex', alignItems: 'center', gap: 10 }}>
-          <div style={{ width: 34, height: 34, borderRadius: 10, background: 'var(--accent)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', flexShrink: 0 }}>
+          <div style={{ width: 34, height: 34, borderRadius: 10, background: 'var(--accent)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--on-accent)', flexShrink: 0 }}>
             <Icon name="grad" size={19} />
           </div>
           <div>
@@ -172,7 +176,7 @@ export default function Layout({ children, user, profile }: { children: React.Re
               onClick={() => router.push('/profile')}
               style={{ display: 'flex', alignItems: 'center', gap: 10, cursor: 'pointer', padding: '9px 10px', borderRadius: 'var(--radius-sm)', background: 'var(--bg-secondary)' }}
             >
-              <div style={{ width: 34, height: 34, borderRadius: '50%', background: avatarColor(profile?.full_name || ''), display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontSize: 14, fontWeight: 700, flexShrink: 0 }}>
+              <div style={{ width: 34, height: 34, borderRadius: '50%', background: avatarColor(profile?.full_name || ''), display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--on-accent)', fontSize: 14, fontWeight: 700, flexShrink: 0 }}>
                 {profile?.full_name?.[0] || '?'}
               </div>
               <div style={{ flex: 1, minWidth: 0 }}>
@@ -197,7 +201,7 @@ export default function Layout({ children, user, profile }: { children: React.Re
           <div style={{ padding: '12px 6px 0', borderTop: '1px solid var(--border)' }}>
             <button
               onClick={() => router.push('/auth/signup')}
-              style={{ width: '100%', background: 'var(--accent)', color: 'white', border: 'none', borderRadius: 'var(--radius-sm)', padding: '10px', fontSize: 14, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit', marginBottom: 8 }}
+              style={{ width: '100%', background: 'var(--accent)', color: 'var(--on-accent)', border: 'none', borderRadius: 'var(--radius-sm)', padding: '10px', fontSize: 14, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit', marginBottom: 8 }}
             >Join Free</button>
             <button
               onClick={() => router.push('/auth/login')}
@@ -234,7 +238,7 @@ export default function Layout({ children, user, profile }: { children: React.Re
             >
               <Icon name="bell" size={17} />
               {unreadCount > 0 && (
-                <span style={{ position: 'absolute', top: 2, right: 2, minWidth: 16, height: 16, padding: '0 4px', borderRadius: 10, background: 'var(--danger)', color: 'white', fontSize: 10, fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <span style={{ position: 'absolute', top: 2, right: 2, minWidth: 16, height: 16, padding: '0 4px', borderRadius: 10, background: 'var(--danger)', color: 'var(--on-accent)', fontSize: 10, fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                   {unreadCount > 9 ? '9+' : unreadCount}
                 </span>
               )}
@@ -242,7 +246,7 @@ export default function Layout({ children, user, profile }: { children: React.Re
             <button
               onClick={() => router.push('/profile')}
               aria-label="Profile"
-              style={{ width: 38, height: 38, borderRadius: '50%', border: '1px solid var(--border)', background: avatarColor(profile?.full_name || ''), color: 'white', fontSize: 14, fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+              style={{ width: 38, height: 38, borderRadius: '50%', border: '1px solid var(--border)', background: avatarColor(profile?.full_name || ''), color: 'var(--on-accent)', fontSize: 14, fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
             >
               {profile?.full_name?.[0] || '?'}
             </button>
@@ -256,7 +260,7 @@ export default function Layout({ children, user, profile }: { children: React.Re
         >
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-              <div style={{ width: 28, height: 28, borderRadius: 8, background: 'var(--accent)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white' }}>
+              <div style={{ width: 28, height: 28, borderRadius: 8, background: 'var(--accent)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--on-accent)' }}>
                 <Icon name="grad" size={16} />
               </div>
               <h1 style={{ fontSize: 17, fontWeight: 800, color: 'var(--text-primary)', margin: 0 }}>
@@ -285,7 +289,7 @@ export default function Layout({ children, user, profile }: { children: React.Re
               ) : (
                 <div
                   onClick={() => router.push('/profile')}
-                  style={{ width: 30, height: 30, borderRadius: '50%', background: avatarColor(profile?.full_name || ''), display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontSize: 12, fontWeight: 700, cursor: 'pointer' }}
+                  style={{ width: 30, height: 30, borderRadius: '50%', background: avatarColor(profile?.full_name || ''), display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--on-accent)', fontSize: 12, fontWeight: 700, cursor: 'pointer' }}
                 >{profile?.full_name?.[0] || '?'}</div>
               )}
             </div>
