@@ -248,11 +248,11 @@ export default function UserProfilePage() {
       <div style={{ position: 'fixed', bottom: 0, left: 0, right: 0, background: 'var(--bg)', borderTop: '1px solid var(--border)', zIndex: 10 }}>
         <div style={{ maxWidth: 640, margin: '0 auto', display: 'flex' }}>
           {[
-            { icon: '🏠', label: 'Feed', href: '/feed' },
-            { icon: '💼', label: 'Jobs', href: '/opportunities' },
-            { icon: '📚', label: 'Notes', href: '/notes' },
-            { icon: '🔍', label: 'Talent', href: '/talent' },
-            { icon: '⋯', label: 'More', href: '/more' },
+            { icon: '🏠', label: 'Home', href: '/feed' },
+            { icon: '🏫', label: 'Classroom', href: '/college' },
+            { icon: '💼', label: 'Opportunities', href: '/opportunities' },
+            { icon: '🌐', label: 'Communities', href: '/communities' },
+            { icon: '👤', label: 'Profile', href: '/profile' },
           ].map(item => (
             <button key={item.href} onClick={() => router.push(item.href)}
               style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2, padding: '10px 0 8px', background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'inherit' }}>

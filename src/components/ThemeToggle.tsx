@@ -29,7 +29,7 @@ function SunIcon() {
   )
 }
 
-export default function ThemeToggle({ inline = false }: { inline?: boolean }) {
+export default function ThemeToggle({ mode = 'floating' }: { mode?: 'floating' | 'inline' | 'plain' }) {
   const [isDark, setIsDark] = React.useState(false)
   const [mounted, setMounted] = React.useState(false)
 
@@ -57,7 +57,7 @@ export default function ThemeToggle({ inline = false }: { inline?: boolean }) {
     <button
       type="button"
       onClick={toggle}
-      className={`theme-toggle${inline ? ' theme-toggle--inline' : ' theme-toggle--floating'}`}
+      className={`theme-toggle${mode === 'floating' ? ' theme-toggle--floating' : mode === 'inline' ? ' theme-toggle--inline' : ' theme-toggle--plain'}`}
       aria-label={isDark ? 'Switch to light mode' : 'Switch to dark mode'}
       aria-pressed={isDark}
       title={isDark ? 'Switch to light mode' : 'Switch to dark mode'}
