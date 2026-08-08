@@ -125,9 +125,9 @@ export default function OnboardingPage() {
               <p style={{ fontSize: 13, color: 'var(--text-muted)', marginBottom: 12 }}>Select your campus</p>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                 {campuses.map(c => (
-                  <button key={c.id} onClick={() => c.is_active && setSelected(s => ({ ...s, campus_id: c.id }))}
-                    style={{ ...cardStyle(selected.campus_id === c.id), opacity: c.is_active ? 1 : 0.5, cursor: c.is_active ? 'pointer' : 'not-allowed' }}>
-                    {c.name} {!c.is_active && <span style={{ fontSize: 11, color: 'var(--text-muted)' }}>· Coming Soon</span>}
+                  <button key={c.id} onClick={() => setSelected(s => ({ ...s, campus_id: c.id }))}
+                    style={cardStyle(selected.campus_id === c.id)}>
+                    {c.name}
                   </button>
                 ))}
               </div>
