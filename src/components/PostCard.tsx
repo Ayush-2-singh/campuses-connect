@@ -34,10 +34,12 @@ export default function PostCard({
   post,
   currentUserId,
   canInteract,
+  onChanged,
 }: {
   post: Post
   currentUserId?: string
   canInteract?: boolean
+  onChanged?: () => void
 }) {
   const router = useRouter()
   const [liked, setLiked] = useState(false)
@@ -45,6 +47,9 @@ export default function PostCard({
   const [showComments, setShowComments] = useState(false)
   const [comments, setComments] = useState<any[]>([])
   const [commentText, setCommentText] = useState('')
+  const [editing, setEditing] = useState(false)
+  const [editBody, setEditBody] = useState(post.body || '')
+  const [saving, setSaving] = useState(false)
 
   const sc = SCOPE_CONFIG[post.scope] || SCOPE_CONFIG.global
   const catIcon = CATEGORY_ICONS[post.categories?.key || ''] || '📄'
@@ -120,6 +125,26 @@ export default function PostCard({
     if (!showComments && comments.length === 0) loadComments()
   }
 
+  const isAuthor = !!currentUserId && post.author_id === currentUserId
+
+  const handleEditSave = async () => {
+    if (!isAuthor || !editBody.trim() || saving) return
+    setSaving(true)
+    const supabase = (await import('@/lib/supabase/client')).createClient()
+    await supabase.from('posts').update({ body: editBody.trim() }).eq('id', post.id).eq('author_id', currentUserId)
+    setSaving(false)
+    setEditing(false)
+    onChanged?.()
+  }
+
+  const handleDelete = async () => {
+    if (!isAuthor) return
+    if (!window.confirm('Delete this post? This cannot be undone.')) return
+    const supabase = (await import('@/lib/supabase/client')).createClient()
+    await supabase.from('posts').update({ status: 'removed' }).eq('id', post.id).eq('author_id', currentUserId)
+    onChanged?.()
+  }
+
   return (
     <div style={{ background: 'var(--bg)', borderRadius: 14, border: post.is_pinned ? '1px solid var(--accent-border)' : '1px solid var(--border)', padding: '18px', boxShadow: 'var(--shadow-sm)' }}>
       <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 8, marginBottom: 10 }}>
@@ -152,7 +177,30 @@ export default function PostCard({
         </div>
       )}
       {post.title && <h3 style={{ fontSize: 15, fontWeight: 700, color: 'var(--text-primary)', margin: '0 0 6px' }}>{post.title}</h3>}
-      <p style={{ fontSize: 14, color: 'var(--text-secondary)', lineHeight: 1.6, margin: '0 0 12px', whiteSpace: 'pre-wrap' }}>{post.body}</p>
+      {editing ? (
+        <div style={{ marginBottom: 12 }}>
+          <textarea
+            value={editBody}
+            onChange={e => setEditBody(e.target.value)}
+            rows={4}
+            autoFocus
+            placeholder="Edit your post..."
+            style={{ width: '100%', boxSizing: 'border-box', border: '1px solid var(--accent-border)', borderRadius: 10, padding: '10px 14px', fontSize: 14, fontFamily: 'inherit', background: 'var(--bg-secondary)', color: 'var(--text-primary)', outline: 'none', resize: 'vertical' }}
+          />
+          <div style={{ display: 'flex', gap: 8, marginTop: 8 }}>
+            <button onClick={() => { setEditing(false); setEditBody(post.body || '') }} disabled={saving}
+              style={{ padding: '7px 14px', borderRadius: 8, border: '1px solid var(--border)', background: 'var(--bg)', color: 'var(--text-secondary)', fontSize: 13, cursor: 'pointer', fontFamily: 'inherit' }}>
+              Cancel
+            </button>
+            <button onClick={handleEditSave} disabled={!editBody.trim() || saving}
+              style={{ padding: '7px 14px', borderRadius: 8, border: 'none', background: !editBody.trim() || saving ? 'var(--disabled)' : 'var(--accent)', color: 'var(--on-accent)', fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>
+              {saving ? 'Saving…' : 'Save'}
+            </button>
+          </div>
+        </div>
+      ) : (
+        <p style={{ fontSize: 14, color: 'var(--text-secondary)', lineHeight: 1.6, margin: '0 0 12px', whiteSpace: 'pre-wrap' }}>{post.body}</p>
+      )}
 
       {post.apply_link && (
         <a href={post.apply_link} target="_blank" rel="noopener noreferrer"
@@ -182,6 +230,18 @@ export default function PostCard({
           <button onClick={handleReport}
             style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 13, color: 'var(--text-muted)', background: 'none', border: 'none', cursor: 'pointer', padding: 0, fontFamily: 'inherit' }}>
             🚩 Report
+          </button>
+        )}
+        {isAuthor && !editing && (
+          <button onClick={() => { setEditBody(post.body || ''); setEditing(true) }}
+            style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 13, color: 'var(--text-muted)', background: 'none', border: 'none', cursor: 'pointer', padding: 0, fontFamily: 'inherit' }}>
+            ✏️ Edit
+          </button>
+        )}
+        {isAuthor && !editing && (
+          <button onClick={handleDelete}
+            style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 13, color: 'var(--danger-text)', background: 'none', border: 'none', cursor: 'pointer', padding: 0, fontFamily: 'inherit' }}>
+            🗑️ Delete
           </button>
         )}
       </div>

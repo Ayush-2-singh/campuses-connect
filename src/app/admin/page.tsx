@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
+import ThemeToggle from '@/components/ThemeToggle'
 
 const TABS = ['Overview', 'Users', 'Posts', 'Moderation', 'Colleges']
 
@@ -257,10 +258,13 @@ export default function AdminPage() {
               {grants.some((g: any) => g.admin_type === 'platform_admin') ? 'Platform Admin' : 'Campus Admin'}
             </p>
           </div>
-          <button onClick={() => router.push('/feed')}
-            style={{ background: 'none', border: '1px solid var(--border)', padding: '7px 14px', borderRadius: 8, fontSize: 13, color: 'var(--text-secondary)', cursor: 'pointer', fontFamily: 'inherit' }}>
-            ← Back to Feed
-          </button>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            <ThemeToggle mode="inline" />
+            <button onClick={() => router.push('/feed')}
+              style={{ background: 'none', border: '1px solid var(--border)', padding: '7px 14px', borderRadius: 8, fontSize: 13, color: 'var(--text-secondary)', cursor: 'pointer', fontFamily: 'inherit' }}>
+              ← Back to Feed
+            </button>
+          </div>
         </div>
       </div>
 

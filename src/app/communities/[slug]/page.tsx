@@ -20,6 +20,17 @@ export default function CommunityPage() {
   const [isPlatformAdmin, setIsPlatformAdmin] = useState(false)
   const supabase = createClient()
 
+  const loadPosts = async () => {
+    if (!community) return
+    const { data } = await supabase
+      .from('posts')
+      .select('*, profiles!posts_author_id_fkey(full_name, username, is_verified), content_categories(key, label)')
+      .eq('community_id', community.id)
+      .order('created_at', { ascending: false })
+      .limit(50)
+    setPosts(data || [])
+  }
+
   useEffect(() => {
     const load = async () => {
       const { data: { user } } = await supabase.auth.getUser()
@@ -87,15 +98,7 @@ export default function CommunityPage() {
           <PostComposer
             userId={user.id}
             profile={profile}
-            onPosted={async () => {
-              const { data } = await supabase
-                .from('posts')
-                .select('*, profiles!posts_author_id_fkey(full_name, username, is_verified), content_categories(key, label)')
-                .eq('community_id', community.id)
-                .order('created_at', { ascending: false })
-                .limit(50)
-              setPosts(data || [])
-            }}
+            onPosted={loadPosts}
             context={{ communityId: community.id }}
             placeholder={`Post to ${community.name}...`}
           />
@@ -107,7 +110,7 @@ export default function CommunityPage() {
               <p style={{ fontWeight: 600, color: 'var(--text-primary)', margin: 0 }}>Nothing here yet</p>
             </div>
           ) : posts.map((post: any) => (
-            <PostCard key={post.id} post={post} currentUserId={user?.id} canInteract={!!user && isMember} />
+            <PostCard key={post.id} post={post} currentUserId={user?.id} canInteract={!!user && isMember} onChanged={loadPosts} />
           ))}
         </div>
       </div>

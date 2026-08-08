@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
 import Layout from '@/components/Layout'
@@ -14,6 +14,16 @@ export default function SavedPage() {
   const router = useRouter()
   const supabase = createClient()
 
+  const loadPosts = useCallback(async () => {
+    const { data } = await supabase
+      .from('saved_posts')
+      .select('posts(*, profiles!posts_author_id_fkey(full_name, username, is_verified), content_categories(key, label))')
+      .eq('user_id', user.id)
+      .order('created_at', { ascending: false })
+      .limit(50)
+    setPosts((data || []).map((s: any) => s.posts).filter(Boolean))
+  }, [supabase, user?.id])
+
   useEffect(() => {
     const load = async () => {
       const { data: { user } } = await supabase.auth.getUser()
@@ -21,17 +31,11 @@ export default function SavedPage() {
       setUser(user)
       const { data: prof } = await supabase.from('profiles').select('*').eq('id', user.id).single()
       setProfile(prof)
-      const { data } = await supabase
-        .from('saved_posts')
-        .select('posts(*, profiles!posts_author_id_fkey(full_name, username, is_verified), content_categories(key, label))')
-        .eq('user_id', user.id)
-        .order('created_at', { ascending: false })
-        .limit(50)
-      setPosts((data || []).map((s: any) => s.posts).filter(Boolean))
+      await loadPosts()
       setLoading(false)
     }
     load()
-  }, [supabase, router])
+  }, [supabase, router, loadPosts])
 
   return (
     <Layout user={user} profile={profile}>
@@ -50,7 +54,7 @@ export default function SavedPage() {
         ) : (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
             {posts.map((post: any) => (
-              <PostCard key={post.id} post={post} currentUserId={user?.id} canInteract={!!user} />
+              <PostCard key={post.id} post={post} currentUserId={user?.id} canInteract={!!user} onChanged={loadPosts} />
             ))}
           </div>
         )}

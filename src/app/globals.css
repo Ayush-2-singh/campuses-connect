@@ -454,6 +454,12 @@ body:has(.app-topbar) .theme-toggle--floating {
   display: none;
 }
 
+/* Standalone pages (profile etc.) render their own header controls — the
+   floating toggle would cover their Edit / action buttons, so hide it there. */
+body:has(.standalone-bottomnav) .theme-toggle--floating {
+  display: none;
+}
+
 @media (max-width: 768px) {
   body:has(.mobile-topbar) .theme-toggle--floating {
     display: none;

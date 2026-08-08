@@ -46,6 +46,7 @@ export default function EventsPage() {
   const [uploadUrl, setUploadUrl] = useState('')
   const [uploadCaption, setUploadCaption] = useState('')
   const [uploading, setUploading] = useState(false)
+  const [editTarget, setEditTarget] = useState<Event | null>(null)
   const [form, setForm] = useState({ title: '', description: '', category: 'general', location: '', starts_at: '', ends_at: '', max_attendees: '' })
 
   useEffect(() => {
@@ -84,9 +85,31 @@ export default function EventsPage() {
     setGallery(g => ({ ...g, [ev.id]: data || [] }))
   }
 
+  const reloadEvents = async () => {
+    const { data: evs } = await supabase.from('campus_events').select('*, profiles(full_name, username)').eq('status', 'published').order('starts_at', { ascending: false }).limit(30)
+    setEvents(evs || [])
+  }
+
   const createEvent = async () => {
     if (!form.title.trim() || !form.starts_at) return
     setPosting(true)
+    if (editTarget) {
+      await supabase.from('campus_events').update({
+        title: form.title.trim(),
+        description: form.description,
+        category: form.category,
+        location: form.location,
+        starts_at: new Date(form.starts_at).toISOString(),
+        ends_at: form.ends_at ? new Date(form.ends_at).toISOString() : null,
+        max_attendees: form.max_attendees ? parseInt(form.max_attendees) : null,
+      }).eq('id', editTarget.id)
+      setEditTarget(null)
+      setShowCreate(false)
+      setForm({ title: '', description: '', category: 'general', location: '', starts_at: '', ends_at: '', max_attendees: '' })
+      await reloadEvents()
+      setPosting(false)
+      return
+    }
     const { data, error } = await supabase.from('campus_events').insert({
       campus_id: profile?.campus_id,
       college_id: profile?.college_id,
@@ -106,10 +129,30 @@ export default function EventsPage() {
     if (!error) {
       setShowCreate(false)
       setForm({ title: '', description: '', category: 'general', location: '', starts_at: '', ends_at: '', max_attendees: '' })
-      const { data: evs } = await supabase.from('campus_events').select('*, profiles(full_name, username)').eq('status', 'published').order('starts_at', { ascending: false }).limit(30)
-      setEvents(evs || [])
+      await reloadEvents()
     }
     setPosting(false)
+  }
+
+  const openEdit = (ev: Event) => {
+    setEditTarget(ev)
+    setShowCreate(true)
+    setForm({
+      title: ev.title,
+      description: ev.description || '',
+      category: ev.category || 'general',
+      location: ev.location || '',
+      starts_at: ev.starts_at ? ev.starts_at.slice(0, 16) : '',
+      ends_at: ev.ends_at ? ev.ends_at.slice(0, 16) : '',
+      max_attendees: ev.max_attendees ? String(ev.max_attendees) : '',
+    })
+    window.scrollTo({ top: 0, behavior: 'smooth' })
+  }
+
+  const deleteEvent = async (ev: Event) => {
+    if (!window.confirm(`Delete "${ev.title}"? This removes the event and its gallery.`)) return
+    await supabase.from('campus_events').update({ status: 'cancelled' }).eq('id', ev.id)
+    await reloadEvents()
   }
 
   const toggleAttend = async (ev: Event) => {
@@ -152,7 +195,7 @@ export default function EventsPage() {
             <h2 style={{ fontSize: 22, fontWeight: 800, color: 'var(--text-primary)', margin: '0 0 2px' }}>🎪 Events</h2>
             <p style={{ fontSize: 13, color: 'var(--text-muted)', margin: 0 }}>Campus events, hackathons & meetups — attend, share memories, earn karma.</p>
           </div>
-          <button onClick={() => setShowCreate(s => !s)}
+          <button onClick={() => { setShowCreate(s => !s); if (!showCreate) setEditTarget(null) }}
             style={{ background: 'var(--accent)', color: 'var(--on-accent)', border: 'none', padding: '9px 18px', borderRadius: 10, fontSize: 14, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>
             + Host Event
           </button>
@@ -161,7 +204,7 @@ export default function EventsPage() {
         {/* Create form */}
         {showCreate && (
           <div style={{ background: 'var(--bg)', border: '1px solid var(--accent-border)', borderRadius: 14, padding: 20, marginBottom: 20, boxShadow: 'var(--shadow-sm)' }}>
-            <h3 style={{ fontSize: 15, fontWeight: 700, color: 'var(--text-primary)', margin: '0 0 14px' }}>Host a campus event 🎉</h3>
+            <h3 style={{ fontSize: 15, fontWeight: 700, color: 'var(--text-primary)', margin: '0 0 14px' }}>{editTarget ? 'Edit event' : 'Host a campus event 🎉'}</h3>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
               <input value={form.title} onChange={e => setForm(f => ({ ...f, title: e.target.value }))} placeholder="Event title *"
                 style={{ width: '100%', boxSizing: 'border-box', border: '1px solid var(--border)', borderRadius: 10, padding: '10px 14px', fontSize: 14, background: 'var(--bg)', color: 'var(--text-primary)', outline: 'none', fontFamily: 'inherit' }} />
@@ -185,10 +228,10 @@ export default function EventsPage() {
               </div>
             </div>
             <div style={{ display: 'flex', gap: 8, marginTop: 14 }}>
-              <button onClick={() => setShowCreate(false)} style={{ flex: 1, background: 'var(--bg)', color: 'var(--text-secondary)', border: '1px solid var(--border)', borderRadius: 10, padding: '10px', fontSize: 14, cursor: 'pointer', fontFamily: 'inherit' }}>Cancel</button>
+              <button onClick={() => { setShowCreate(false); setEditTarget(null) }} style={{ flex: 1, background: 'var(--bg)', color: 'var(--text-secondary)', border: '1px solid var(--border)', borderRadius: 10, padding: '10px', fontSize: 14, cursor: 'pointer', fontFamily: 'inherit' }}>Cancel</button>
               <button onClick={createEvent} disabled={!form.title.trim() || !form.starts_at || posting}
                 style={{ flex: 2, background: !form.title.trim() || !form.starts_at ? 'var(--disabled)' : 'var(--accent)', color: 'var(--on-accent)', border: 'none', borderRadius: 10, padding: '10px', fontSize: 14, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>
-                {posting ? 'Creating…' : '🚀 Publish Event (+20 karma)'}
+                {posting ? 'Saving…' : editTarget ? 'Save Changes' : '🚀 Publish Event (+20 karma)'}
               </button>
             </div>
           </div>
@@ -235,6 +278,12 @@ export default function EventsPage() {
                           <button onClick={() => openGallery(ev)} style={{ padding: '7px 14px', borderRadius: 10, fontSize: 12, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit', border: '1px solid var(--border)', background: 'var(--bg)', color: 'var(--text-secondary)' }}>
                             📸 Gallery ({gallery[ev.id]?.length || 0})
                           </button>
+                          {user?.id === ev.created_by && (
+                            <div style={{ display: 'flex', gap: 5 }}>
+                              <button onClick={() => openEdit(ev)} style={{ fontSize: 11, padding: '4px 10px', borderRadius: 6, border: '1px solid var(--border)', background: 'var(--bg)', color: 'var(--text-secondary)', cursor: 'pointer', fontFamily: 'inherit' }}>Edit</button>
+                              <button onClick={() => deleteEvent(ev)} style={{ fontSize: 11, padding: '4px 10px', borderRadius: 6, border: '1px solid var(--danger-border)', background: 'var(--danger-light)', color: 'var(--danger-text)', cursor: 'pointer', fontFamily: 'inherit' }}>Delete</button>
+                            </div>
+                          )}
                         </div>
                       </div>
                       {ev.description && <p style={{ fontSize: 13, color: 'var(--text-secondary)', lineHeight: 1.6, margin: 0 }}>{ev.description}</p>}

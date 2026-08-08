@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
+import ThemeToggle from '@/components/ThemeToggle'
 
 export default function ProfilePage() {
   const [user, setUser] = useState<any>(null)
@@ -62,10 +63,13 @@ export default function ProfilePage() {
             <button onClick={() => router.push('/feed')} style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', fontSize: 18 }}>←</button>
             <h1 style={{ fontSize: 17, fontWeight: 700, margin: 0, color: 'var(--text-primary)' }}>Profile</h1>
           </div>
-          <button onClick={() => editing ? handleSave() : setEditing(true)} disabled={saving}
-            style={{ background: editing ? 'var(--accent)' : 'var(--bg)', color: editing ? 'var(--on-accent)' : 'var(--accent)', border: '1px solid var(--accent)', padding: '7px 16px', borderRadius: 8, fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>
-            {saving ? 'Saving...' : editing ? 'Save' : 'Edit'}
-          </button>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <ThemeToggle mode="inline" />
+            <button onClick={() => editing ? handleSave() : setEditing(true)} disabled={saving}
+              style={{ background: editing ? 'var(--accent)' : 'var(--bg)', color: editing ? 'var(--on-accent)' : 'var(--accent)', border: '1px solid var(--accent)', padding: '7px 16px', borderRadius: 8, fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>
+              {saving ? 'Saving...' : editing ? 'Save' : 'Edit'}
+            </button>
+          </div>
         </div>
       </div>
 

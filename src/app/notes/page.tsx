@@ -37,6 +37,17 @@ export default function NotesPage() {
 
   const canUpload = admin.isPlatformAdmin
 
+  const deleteNote = async (note: any) => {
+    if (!window.confirm(`Delete "${note.title}"? This cannot be undone.`)) return
+    await supabase.from('notes').delete().eq('id', note.id).eq('uploaded_by', user?.id)
+    const { data } = await supabase
+      .from('notes')
+      .select('*, profiles(full_name, username)')
+      .order('created_at', { ascending: false })
+      .limit(100)
+    setNotes(data || [])
+  }
+
   const askAI = async () => {
     const q = query.trim()
     if (!q || aiLoading) return
@@ -280,14 +291,14 @@ export default function NotesPage() {
               <div key={group.subject}>
                 <h3 style={{ fontSize: 13, fontWeight: 700, color: 'var(--text-secondary)', margin: '0 0 8px' }}>{group.subject} · {group.items.length}</h3>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                  {group.items.map(note => <NoteRow key={note.id} note={note} />)}
+                  {group.items.map(note => <NoteRow key={note.id} note={note} canDelete={note.uploaded_by === user?.id} onDelete={deleteNote} />)}
                 </div>
               </div>
             ))}
           </div>
         ) : (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-            {(byTab as any[]).map(note => <NoteRow key={note.id} note={note} />)}
+            {(byTab as any[]).map(note => <NoteRow key={note.id} note={note} canDelete={note.uploaded_by === user?.id} onDelete={deleteNote} />)}
           </div>
         )}
       </div>
@@ -295,7 +306,7 @@ export default function NotesPage() {
   )
 }
 
-function NoteRow({ note }: { note: any }) {
+function NoteRow({ note, canDelete, onDelete }: { note: any; canDelete?: boolean; onDelete?: (note: any) => void }) {
   return (
     <div className="card-hover" style={{ background: 'var(--bg)', border: '1px solid var(--border)', borderRadius: 'var(--radius)', padding: 14, display: 'flex', alignItems: 'center', gap: 14, boxShadow: 'var(--shadow-sm)' }}>
       <span style={{ fontSize: 26, flexShrink: 0 }}>{typeIcon[note.resource_type] || '📎'}</span>
@@ -324,6 +335,12 @@ function NoteRow({ note }: { note: any }) {
             style={{ background: 'var(--bg-secondary)', color: 'var(--text-secondary)', padding: '7px 14px', borderRadius: 8, fontSize: 13, textDecoration: 'none', textAlign: 'center', border: '1px solid var(--border)' }}>
             Link →
           </a>
+        )}
+        {canDelete && (
+          <button onClick={() => onDelete?.(note)}
+            style={{ fontSize: 11, padding: '4px 10px', borderRadius: 6, border: '1px solid var(--danger-border)', background: 'var(--danger-light)', color: 'var(--danger-text)', cursor: 'pointer', fontFamily: 'inherit' }}>
+            Delete
+          </button>
         )}
       </div>
     </div>

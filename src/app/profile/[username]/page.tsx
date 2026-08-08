@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { useRouter, useParams } from 'next/navigation'
+import ThemeToggle from '@/components/ThemeToggle'
 
 export default function UserProfilePage() {
   const [user, setUser] = useState<any>(null)
@@ -114,7 +115,8 @@ export default function UserProfilePage() {
         <div style={{ maxWidth: 640, margin: '0 auto', display: 'flex', alignItems: 'center', gap: 10 }}>
           <button onClick={() => router.back()}
             style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', fontSize: 18 }}>←</button>
-          <h1 style={{ fontSize: 17, fontWeight: 700, margin: 0, color: 'var(--text-primary)' }}>@{profile.username}</h1>
+          <h1 style={{ fontSize: 17, fontWeight: 700, margin: 0, color: 'var(--text-primary)', flex: 1 }}>@{profile.username}</h1>
+          <ThemeToggle mode="inline" />
         </div>
       </div>
 

@@ -27,8 +27,13 @@ const SECONDARY_NAV = [
 const MOBILE_NAV = [
   { label: 'Home', href: '/feed', icon: 'home' },
   { label: 'Classroom', href: '/college', icon: 'book' },
+  { label: 'Events', href: '/events', icon: 'calendar' },
+  { label: 'Compete', href: '/compete', icon: 'zap' },
   { label: 'Opportunities', href: '/opportunities', icon: 'briefcase' },
+  { label: 'Notes', href: '/notes', icon: 'notebook' },
+  { label: 'Talent', href: '/talent', icon: 'star' },
   { label: 'Communities', href: '/communities', icon: 'users' },
+  { label: 'More', href: '/more', icon: 'more' },
   { label: 'Profile', href: '/profile', icon: 'user' },
 ]
 
@@ -306,17 +311,17 @@ export default function Layout({ children, user, profile }: { children: React.Re
         style={{ position: 'fixed', bottom: 0, left: 0, right: 0, background: 'var(--bg)', borderTop: '1px solid var(--border)', zIndex: 50, display: 'none' }}
         className="mobile-bottomnav"
       >
-        <div style={{ display: 'flex' }}>
+        <div style={{ display: 'flex', overflowX: 'auto', scrollbarWidth: 'none', WebkitOverflowScrolling: 'touch' }} className="scrollbar-hide">
           {MOBILE_NAV.map(item => {
             const active = isActive(item.href)
             return (
               <button
                 key={item.href}
                 onClick={() => router.push(item.href)}
-                style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3, padding: '9px 0 8px', background: 'none', border: 'none', cursor: 'pointer', color: active ? 'var(--accent)' : 'var(--text-muted)', fontFamily: 'inherit' }}
+                style={{ flexShrink: 0, minWidth: 62, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3, padding: '9px 6px 8px', background: 'none', border: 'none', cursor: 'pointer', color: active ? 'var(--accent)' : 'var(--text-muted)', fontFamily: 'inherit' }}
               >
                 <Icon name={item.icon} size={20} strokeWidth={active ? 2.4 : 2} />
-                <span style={{ fontSize: 10, fontWeight: active ? 600 : 400 }}>{item.label}</span>
+                <span style={{ fontSize: 10, fontWeight: active ? 600 : 400, whiteSpace: 'nowrap' }}>{item.label}</span>
               </button>
             )
           })}

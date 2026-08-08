@@ -28,6 +28,18 @@ export default function CollegePage() {
   const supabase = createClient()
   const admin = useAdminContext(user?.id)
 
+  const loadPosts = async () => {
+    const { data } = await supabase
+      .from('posts')
+      .select('*, profiles!posts_author_id_fkey(full_name, username, is_verified), content_categories(key, label)')
+      .or(`college_id.eq.${profile?.college_id || '00000000-0000-0000-0000-000000000000'},scope.eq.global`)
+      .eq('community_id', null)
+      .order('is_pinned', { ascending: false })
+      .order('created_at', { ascending: false })
+      .limit(30)
+    setPosts(data || [])
+  }
+
   useEffect(() => {
     const load = async () => {
       const { data: { user } } = await supabase.auth.getUser()
@@ -35,15 +47,7 @@ export default function CollegePage() {
         setUser(user)
         const { data: prof } = await supabase.from('profiles').select('*, colleges(name), campuses(name)').eq('id', user.id).single()
         setProfile(prof)
-        const { data } = await supabase
-          .from('posts')
-          .select('*, profiles!posts_author_id_fkey(full_name, username, is_verified), content_categories(key, label)')
-          .or(`college_id.eq.${prof?.college_id || '00000000-0000-0000-0000-000000000000'},scope.eq.global`)
-          .eq('community_id', null)
-          .order('is_pinned', { ascending: false })
-          .order('created_at', { ascending: false })
-          .limit(30)
-        setPosts(data || [])
+        await loadPosts()
       }
       setLoading(false)
     }
@@ -74,16 +78,7 @@ export default function CollegePage() {
           <PostComposer
             userId={user.id}
             profile={profile}
-            onPosted={async () => {
-              const { data } = await supabase
-                .from('posts')
-                .select('*, profiles!posts_author_id_fkey(full_name, username, is_verified), content_categories(key, label)')
-                .or(`college_id.eq.${profile.college_id},scope.eq.global`)
-                .eq('community_id', null)
-                .order('created_at', { ascending: false })
-                .limit(30)
-              setPosts(data || [])
-            }}
+            onPosted={loadPosts}
             context={{ campusId: profile?.campus_id, collegeId: profile?.college_id }}
             placeholder="Post to your college..."
           />
@@ -97,7 +92,7 @@ export default function CollegePage() {
             {posts.length === 0 ? (
               <p style={{ color: 'var(--text-muted)', textAlign: 'center', padding: '30px 0' }}>No posts in your college yet.</p>
             ) : posts.map((post: any) => (
-              <PostCard key={post.id} post={post} currentUserId={user?.id} canInteract={!!user} />
+              <PostCard key={post.id} post={post} currentUserId={user?.id} canInteract={!!user} onChanged={loadPosts} />
             ))}
           </div>
         )}

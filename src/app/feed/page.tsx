@@ -173,7 +173,7 @@ export default function FeedPage() {
         ) : (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
             {posts.map(post => (
-              <PostCard key={post.id} post={post} currentUserId={user?.id} canInteract={!!user} />
+              <PostCard key={post.id} post={post} currentUserId={user?.id} canInteract={!!user} onChanged={fetchPosts} />
             ))}
           </div>
         )}
