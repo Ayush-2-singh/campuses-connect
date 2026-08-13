@@ -89,13 +89,15 @@ export default function PostComposer({
     }
 
     // 2. Insert (held when flagged so only the author + moderators see it)
+    //    Global is a separate entity — global posts carry no campus/college.
+    const isGlobal = scope === 'global'
     const insertPayload: any = {
       author_id: userId,
       category_id: current.category_id,
       scope,
       community_id: context.communityId || null,
-      college_id: context.collegeId || null,
-      campus_id: context.campusId || null,
+      college_id: isGlobal ? null : (context.collegeId || null),
+      campus_id: isGlobal ? null : (context.campusId || null),
       body: body.trim(),
       status: flagged ? 'held' : 'published',
     }

@@ -188,13 +188,35 @@ export default function LandingPage() {
         </div>
       </div>
 
-      {/* Colleges — live today, more joining every week */}
+      {/* Global — a separate community for everyone */}
+      <div style={{ background: 'var(--cyan-light)', borderTop: '1px solid var(--cyan-border)', padding: '64px 20px', textAlign: 'center' }}>
+        <div style={{ maxWidth: 640, margin: '0 auto' }}>
+          <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: 'var(--cyan)', color: 'var(--on-accent)', borderRadius: 20, padding: '5px 14px', fontSize: 12, fontWeight: 700, marginBottom: 18 }}>
+            🌐 Global
+          </div>
+          <h3 style={{ fontSize: 28, fontWeight: 800, color: 'var(--text-primary)', margin: '0 0 10px', letterSpacing: '-0.02em' }}>A community of its own — not under any college</h3>
+          <p style={{ fontSize: 14.5, color: 'var(--text-secondary)', margin: '0 auto 28px', lineHeight: 1.65, maxWidth: 540 }}>
+            The Global feed is CampusConnect&apos;s nationwide layer — hackathons, opportunities, notes and teammates from students everywhere. No college on the platform? You&apos;re already home.
+          </p>
+          <div style={{ display: 'flex', gap: 10, justifyContent: 'center', flexWrap: 'wrap' }}>
+            <button onClick={() => router.push('/global')}
+              style={{ background: 'var(--cyan)', color: 'var(--on-accent)', border: 'none', padding: '12px 24px', borderRadius: 12, fontSize: 14.5, fontWeight: 700, cursor: 'pointer' }}>
+              🌐 Open the Global feed
+            </button>
+            <button onClick={() => router.push('/communities')}
+              style={{ background: 'var(--bg)', color: 'var(--text-primary)', border: '1px solid var(--border-strong)', padding: '12px 24px', borderRadius: 12, fontSize: 14.5, fontWeight: 600, cursor: 'pointer' }}>
+              Browse Global Communities
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* Colleges — the optional campus layer, live today */}
       <div style={{ background: 'var(--bg-secondary)', padding: '60px 20px', textAlign: 'center' }}>
         <h3 style={{ fontSize: 28, fontWeight: 700, color: 'var(--text-primary)', margin: '0 0 8px', letterSpacing: '-0.02em' }}>Built for every Indian college</h3>
-        <p style={{ fontSize: 14, color: 'var(--text-muted)', margin: '0 0 8px' }}>
-          {totalCampuses > 0 ? `${totalCampuses} campuses are live for their students today — and every other college joins on the Global feed.` : 'Every college is welcome — join your campus when it goes live, or start on Global today.'}
+        <p style={{ fontSize: 14, color: 'var(--text-muted)', margin: '0 0 28px' }}>
+          {totalCampuses > 0 ? `${totalCampuses} campuses are live for their students today — more join every week.` : 'Campuses go live every week — stay tuned for yours.'}
         </p>
-        <p style={{ fontSize: 13, color: 'var(--accent)', margin: '0 0 28px', fontWeight: 600 }}>🌐 Not on this list? You&apos;re still in — join Global right now.</p>
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10, justifyContent: 'center', maxWidth: 720, margin: '0 auto 24px' }}>
           {liveColleges.length === 0 ? (
             <div className="skeleton" style={{ width: 260, height: 36, borderRadius: 20 }} />
@@ -216,7 +238,7 @@ export default function LandingPage() {
           ))}
         </div>
         <p style={{ fontSize: 13, color: 'var(--text-muted)', margin: 0 }}>
-          Your college missing? <span style={{ color: 'var(--accent)', fontWeight: 600, cursor: 'pointer' }} onClick={() => router.push('/auth/signup')}>Request it</span> — or join the Global feed now.
+          Your college missing? <span style={{ color: 'var(--accent)', fontWeight: 600, cursor: 'pointer' }} onClick={() => router.push('/auth/signup')}>Request it</span> — we&apos;ll bring it live for your campus.
         </p>
       </div>
 
