@@ -38,8 +38,7 @@ export default function ClubsPage() {
     init()
   }, [supabase])
 
-  const join = async (clubId: string) => {
-    if (!user) { router.push('/auth/login'); return }
+  const join = async (clubId: string) => {      if (!user) { router.replace('/auth/login?redirect=' + encodeURIComponent(typeof window !== 'undefined' ? window.location.pathname : '')); return }
     if (memberships.includes(clubId)) {
       await supabase.from('club_members').delete().eq('club_id', clubId).eq('user_id', user.id)
       setMemberships(m => m.filter(id => id !== clubId))

@@ -31,9 +31,16 @@ export default function SignupPage() {
       setError(error.message)
       setLoading(false)
     } else if (data.session) {
-      // Email confirmation is disabled — user is immediately logged in
+      // Email confirmation is disabled — user is immediately logged in.
+      // Honor ?redirect=<path> (guests coming from a protected page) so they
+      // return there after signing up. replace() keeps back working.
       router.refresh()
-      router.push('/onboarding')
+      let target = '/onboarding'
+      try {
+        const r = new URLSearchParams(window.location.search).get('redirect')
+        if (r && r.startsWith('/') && !r.startsWith('/auth')) target = r
+      } catch { /* ignore */ }
+      router.replace(target)
     } else {
       // Email confirmation is enabled — show "check your inbox" screen
       setSuccess(true)

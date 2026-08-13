@@ -235,7 +235,7 @@ export default function AskPage() {
                       )}
                       {!user && (
                         <p style={{ fontSize: 12, color: 'var(--text-muted)', margin: 0 }}>
-                          <span onClick={() => router.push('/auth/login')} style={{ color: 'var(--accent)', cursor: 'pointer', fontWeight: 600 }}>Sign in</span> to answer
+                          <span onClick={() => router.push('/auth/login?redirect=/ask')} style={{ color: 'var(--accent)', cursor: 'pointer', fontWeight: 600 }}>Sign in</span> to answer
                         </p>
                       )}
                     </div>

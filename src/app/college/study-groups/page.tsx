@@ -35,8 +35,7 @@ export default function StudyGroupsPage() {
     init()
   }, [supabase])
 
-  const join = async (groupId: string) => {
-    if (!user) { router.push('/auth/login'); return }
+  const join = async (groupId: string) => {      if (!user) { router.replace('/auth/login?redirect=' + encodeURIComponent(typeof window !== 'undefined' ? window.location.pathname : '')); return }
     if (memberships.includes(groupId)) {
       await supabase.from('study_group_members').delete().eq('group_id', groupId).eq('user_id', user.id)
       setMemberships(m => m.filter(id => id !== groupId))

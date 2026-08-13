@@ -29,8 +29,7 @@ export default function CommunitiesPage() {
     load()
   }, [supabase])
 
-  const toggleJoin = async (communityId: string, key: string) => {
-    if (!user) { router.push('/auth/login'); return }
+  const toggleJoin = async (communityId: string, key: string) => {      if (!user) { router.replace('/auth/login?redirect=' + encodeURIComponent(typeof window !== 'undefined' ? window.location.pathname : '')); return }
     if (memberships.includes(communityId)) {
       await supabase.from('community_members').delete().eq('community_id', communityId).eq('user_id', user.id)
       setMemberships(m => m.filter(id => id !== communityId))

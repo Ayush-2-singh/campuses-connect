@@ -100,8 +100,7 @@ export default function CommunityPage() {
   }, [slug, supabase, router, loadPendingMembers])
 
   // ── Join flows ──────────────────────────────────────────────
-  const handleJoin = async () => {
-    if (!user) { router.push('/auth/login'); return }
+  const handleJoin = async () => {      if (!user) { router.replace('/auth/login?redirect=' + encodeURIComponent(typeof window !== 'undefined' ? window.location.pathname : '')); return }
     setJoinMsg('')
     const { data } = await supabase.rpc('join_community', { p_community_id: community.id })
     const res = data as string

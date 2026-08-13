@@ -66,7 +66,7 @@ export default function OnboardingPage() {
     setLoading(true)
     setError('')
     const { data: { user } } = await supabase.auth.getUser()
-    if (!user) { router.push('/auth/login'); return }
+    if (!user) { router.replace('/auth/login?redirect=' + encodeURIComponent(typeof window !== 'undefined' ? window.location.pathname : '')); return }
     const { error } = await supabase.from('profiles').update({
       college_id: selected.college_id || null,
       campus_id: selected.campus_id || null,

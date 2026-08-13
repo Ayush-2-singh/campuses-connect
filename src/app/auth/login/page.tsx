@@ -24,9 +24,16 @@ export default function LoginPage() {
       setError(error.message)
       setLoading(false)
     } else {
-      // router.refresh() syncs the server-side session before navigating
+      // router.refresh() syncs the server-side session before navigating.
+      // Guests arrive here with ?redirect=<path> — return them there after
+      // login. replace() keeps the browser back button working (no loop).
       router.refresh()
-      router.push('/feed')
+      let target = '/feed'
+      try {
+        const r = new URLSearchParams(window.location.search).get('redirect')
+        if (r && r.startsWith('/') && !r.startsWith('/auth')) target = r
+      } catch { /* ignore */ }
+      router.replace(target)
     }
   }
 

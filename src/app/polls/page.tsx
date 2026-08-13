@@ -64,8 +64,7 @@ export default function PollsPage() {
     return () => { alive = false; supabase.removeChannel(channel) }
   }, [])
 
-  const vote = async (pollId: string, optionIndex: number) => {
-    if (!user) { router.push('/auth/login'); return }
+  const vote = async (pollId: string, optionIndex: number) => {      if (!user) { router.replace('/auth/login?redirect=' + encodeURIComponent(typeof window !== 'undefined' ? window.location.pathname : '')); return }
     const { error } = await supabase.from('poll_votes').upsert(
       { poll_id: pollId, user_id: user.id, option_index: optionIndex },
       { onConflict: 'poll_id,user_id' }
