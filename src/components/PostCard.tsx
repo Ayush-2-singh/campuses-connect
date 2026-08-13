@@ -261,7 +261,7 @@ export default function PostCard({
   }
 
   return (
-    <div style={{ background: 'var(--bg)', borderRadius: 14, border: post.is_pinned ? '1px solid var(--accent-border)' : '1px solid var(--border)', padding: '18px', boxShadow: 'var(--shadow-sm)' }}>
+    <div className="post-card" style={{ background: 'var(--bg)', borderRadius: 14, border: post.is_pinned ? '1px solid var(--accent-border)' : '1px solid var(--border)', padding: '18px', boxShadow: 'var(--shadow-sm)' }}>
       <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 8, marginBottom: 10 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, minWidth: 0, flex: 1 }}>
           <Avatar

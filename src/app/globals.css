@@ -720,6 +720,18 @@ button, a, [role='button'] {
   }
 }
 
+/* Post/discussion cards — never let content force the card wider than the
+   screen (long URLs, code, unbroken words cut the right side on mobile). */
+.post-card {
+  max-width: 100%;
+  min-width: 0;
+  overflow-wrap: break-word;
+  word-break: break-word;
+}
+.post-card > div {
+  min-width: 0;
+}
+
 /* Small stat cards (e.g. the home feed Pulse cards) — grid layout only, so
    every card stays fully visible (no cut-off, no scroll needed). */
 .stat-grid {
