@@ -174,7 +174,7 @@ export default function PostComposer({
           <textarea autoFocus value={body} onChange={e => setBody(e.target.value)} rows={4}
             placeholder={placeholder}
             style={{ width: '100%', border: '1px solid var(--border)', borderRadius: 10, padding: '10px 14px', fontSize: 14, outline: 'none', resize: 'none', fontFamily: 'inherit', marginBottom: 10, background: 'var(--bg-secondary)', boxSizing: 'border-box' }} />
-          <div style={{ display: 'flex', gap: 6, overflowX: 'auto', paddingBottom: 4, marginBottom: 10 }} className="scrollbar-hide chip-scroll" role="tablist" aria-label="Post category">
+          <div className="scrollbar-hide chips-wrap" style={{ display: 'flex', gap: 6, paddingBottom: 4, marginBottom: 10 }} role="tablist" aria-label="Post category">
             {visibleCategories.map(c => (
               <button key={c.category_key} onClick={() => { setCategory(c); setScope((c.max_scope as PostScope) || 'campus') }}
                 style={{ flexShrink: 0, whiteSpace: 'nowrap', padding: '5px 12px', borderRadius: 20, fontSize: 12, fontWeight: 500, border: category?.category_key === c.category_key ? 'none' : '1px solid var(--border)', background: category?.category_key === c.category_key ? 'var(--accent)' : 'var(--bg)', color: category?.category_key === c.category_key ? 'var(--on-accent)' : 'var(--text-secondary)', cursor: 'pointer', fontFamily: 'inherit' }}>

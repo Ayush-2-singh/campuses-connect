@@ -271,7 +271,7 @@ export default function NotesPage() {
               </button>
             ))}
           </div>
-          <div style={{ display: 'flex', gap: 6, overflowX: 'auto', paddingBottom: 4 }} className="scrollbar-hide fade-x chip-scroll" role="tablist" aria-label="Filter by resource type">
+          <div className="scrollbar-hide fade-x chips-wrap" style={{ display: 'flex', gap: 6, paddingBottom: 4 }} role="tablist" aria-label="Filter by resource type">
             {RESOURCE_TYPES.map(t => {
               const label = t === 'all' ? 'All types' : t === 'pyq' ? 'PYQ' : t === 'video_link' ? 'Video' : t.charAt(0).toUpperCase() + t.slice(1)
               return (

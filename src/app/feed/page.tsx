@@ -152,7 +152,7 @@ export default function FeedPage() {
         )}
 
         {/* Category filters */}
-        <div style={{ display: 'flex', gap: 6, overflowX: 'auto', paddingBottom: 4, marginBottom: 16 }} className="scrollbar-hide fade-x chip-scroll" role="tablist" aria-label="Filter posts">
+        <div className="scrollbar-hide fade-x chips-wrap" style={{ display: 'flex', gap: 6, paddingBottom: 4, marginBottom: 16 }} role="tablist" aria-label="Filter posts">
           {FILTERS.map(type => (
             <button key={type} onClick={() => setFilter(type)}
               style={{ flexShrink: 0, padding: '6px 14px', borderRadius: 20, fontSize: 12, fontWeight: 500, border: filter === type ? 'none' : '1px solid var(--border)', background: filter === type ? 'var(--accent)' : 'var(--bg)', color: filter === type ? 'var(--on-accent)' : 'var(--text-secondary)', cursor: 'pointer', fontFamily: 'inherit' }}>
