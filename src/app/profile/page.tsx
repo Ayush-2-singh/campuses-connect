@@ -300,8 +300,8 @@ export default function ProfilePage() {
           <h3 style={{ fontSize: 14, fontWeight: 700, color: 'var(--text-primary)', margin: '0 0 14px' }}>Campus Info</h3>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
             {[
-              { label: 'College', value: profile?.colleges?.name },
-              { label: 'Campus', value: profile?.campuses?.name },
+              { label: 'College', value: profile?.colleges?.name || (profile?.campus_id ? null : '🌐 Global Campus') },
+              { label: 'Campus', value: profile?.campuses?.name || (!profile?.campus_id ? '🌐 Global Campus' : null) },
               { label: 'Department', value: profile?.departments?.short_name },
               { label: 'Year', value: profile?.current_year ? `Year ${profile.current_year}` : null },
               { label: 'Batch', value: profile?.batch_year },
@@ -318,8 +318,8 @@ export default function ProfilePage() {
         {/* Join your campus later — for users who joined globally */}
         {!profile?.campus_id && (
           <div style={{ background: 'var(--bg)', borderRadius: 14, border: '1px solid var(--accent-border)', padding: 20, boxShadow: 'var(--shadow-sm)' }}>
-            <h3 style={{ fontSize: 14, fontWeight: 700, color: 'var(--text-primary)', margin: '0 0 4px' }}>🌐 You&apos;re on Global</h3>
-            <p style={{ fontSize: 12.5, color: 'var(--text-muted)', margin: '0 0 14px' }}>Your college went live? Attach your campus to see campus-only posts and events.</p>
+            <h3 style={{ fontSize: 14, fontWeight: 700, color: 'var(--text-primary)', margin: '0 0 4px' }}>🎓 You&apos;re at the Global Campus</h3>
+            <p style={{ fontSize: 12.5, color: 'var(--text-muted)', margin: '0 0 14px' }}>Anyone can join the Global Campus. When your college goes live, move to your own campus — your posts and profile stay with you.</p>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
               <select value={campusPick.college_id} onChange={e => setCampusPick(p => ({ ...p, college_id: e.target.value, campus_id: '', department_id: '' }))} style={inputStyle}>
                 <option value="">Select your college…</option>
@@ -342,7 +342,7 @@ export default function ProfilePage() {
                 disabled={!campusPick.college_id || !campusPick.campus_id || campusSaving}
                 style={{ background: !campusPick.college_id || !campusPick.campus_id || campusSaving ? 'var(--disabled)' : 'var(--accent)', color: 'var(--on-accent)', border: 'none', borderRadius: 10, padding: '11px', fontSize: 13.5, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}
               >
-                {campusSaving ? 'Joining…' : 'Join my campus'}
+                {campusSaving ? 'Joining…' : 'Move to my campus'}
               </button>
             </div>
           </div>

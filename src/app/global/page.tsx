@@ -88,7 +88,7 @@ export default function GlobalPage() {
             </h2>
           </div>
           <p style={{ fontSize: 13.5, color: 'var(--text-muted)', margin: '6px 0 0', paddingLeft: 44 }}>
-            A community of its own — hackathons, internships and posts from students everywhere. No campus required.
+            The Global Campus — open to every student, anywhere in India. Join now, move to your own college when it goes live.
           </p>
         </div>
 

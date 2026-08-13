@@ -136,7 +136,16 @@ export default function OnboardingPage() {
 
           {step === 0 && (
             <div style={{ marginTop: 16 }}>
-              <p style={{ fontSize: 13, color: 'var(--text-muted)', marginBottom: 12 }}>Select your college — or join globally from anywhere</p>
+              {/* Global Campus — join from anywhere, move to your own college later */}
+              <button
+                onClick={joinGlobally}
+                style={{ width: '100%', textAlign: 'left', background: 'var(--accent-light)', border: '2px solid var(--accent)', borderRadius: 12, padding: '14px 16px', cursor: 'pointer', fontFamily: 'inherit', marginBottom: 16, display: 'flex', flexDirection: 'column', gap: 3 }}
+              >
+                <span style={{ fontSize: 15, fontWeight: 700, color: 'var(--accent)' }}>🌐 Global Campus</span>
+                <span style={{ fontSize: 12.5, color: 'var(--text-secondary)', lineHeight: 1.5 }}>Open to every student, anywhere in India. Join now — move to your own college the moment it goes live.</span>
+              </button>
+
+              <p style={{ fontSize: 13, color: 'var(--text-muted)', marginBottom: 12 }}>…or pick your college</p>
               <input
                 type="text"
                 value={q.college}
@@ -157,19 +166,6 @@ export default function OnboardingPage() {
               </div>
               <button disabled={!selected.college_id} onClick={next} style={{ ...btnPrimary(!selected.college_id), width: '100%', marginTop: 14 }}>
                 Continue
-              </button>
-
-              <div style={{ display: 'flex', alignItems: 'center', gap: 12, margin: '16px 0' }}>
-                <div style={{ flex: 1, height: 1, background: 'var(--border)' }} />
-                <span style={{ fontSize: 11, color: 'var(--text-muted)', fontWeight: 500 }}>or</span>
-                <div style={{ flex: 1, height: 1, background: 'var(--border)' }} />
-              </div>
-
-              <button
-                onClick={joinGlobally}
-                style={{ width: '100%', textAlign: 'center', background: 'var(--accent-light)', color: 'var(--accent)', border: '1px solid var(--accent-border)', borderRadius: 10, padding: '12px', fontSize: 14, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}
-              >
-                🌐 My college isn&apos;t listed — Join globally
               </button>
 
               {!requestSent ? (
@@ -306,7 +302,7 @@ export default function OnboardingPage() {
                 <button onClick={back} style={btnSecondary}>Back</button>
                 <button disabled={!selected.username || loading} onClick={handleFinish}
                   style={btnPrimary(!selected.username || loading)}>
-                  {loading ? 'Setting up...' : 'Enter Campus →'}
+                  {loading ? 'Setting up...' : selected.college_id ? 'Enter Campus →' : 'Enter Global Campus →'}
                 </button>
               </div>
             </div>

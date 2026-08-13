@@ -194,9 +194,9 @@ export default function LandingPage() {
           <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: 'var(--cyan)', color: 'var(--on-accent)', borderRadius: 20, padding: '5px 14px', fontSize: 12, fontWeight: 700, marginBottom: 18 }}>
             🌐 Global
           </div>
-          <h3 style={{ fontSize: 28, fontWeight: 800, color: 'var(--text-primary)', margin: '0 0 10px', letterSpacing: '-0.02em' }}>A community of its own — not under any college</h3>
+          <h3 style={{ fontSize: 28, fontWeight: 800, color: 'var(--text-primary)', margin: '0 0 10px', letterSpacing: '-0.02em' }}>The Global Campus — a home for everyone</h3>
           <p style={{ fontSize: 14.5, color: 'var(--text-secondary)', margin: '0 auto 28px', lineHeight: 1.65, maxWidth: 540 }}>
-            The Global feed is CampusConnect&apos;s nationwide layer — hackathons, opportunities, notes and teammates from students everywhere. No college on the platform? You&apos;re already home.
+            Open to every student in India. Join the Global Campus today — hackathons, opportunities, notes and teammates from everywhere — and move to your own college campus the moment it goes live.
           </p>
           <div style={{ display: 'flex', gap: 10, justifyContent: 'center', flexWrap: 'wrap' }}>
             <button onClick={() => router.push('/global')}
