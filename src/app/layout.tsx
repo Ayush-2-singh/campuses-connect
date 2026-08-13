@@ -3,7 +3,7 @@ import "./globals.css";
 import ThemeToggle from "@/components/ThemeToggle";
 import { ToastProvider } from "@/components/Toast";
 
-const APP_URL = process.env.NEXT_PUBLIC_APP_URL || "https://campus-connect.vercel.app";
+const APP_URL = process.env.NEXT_PUBLIC_APP_URL || "https://campus-connect-ayush.vercel.app";
 
 export const metadata: Metadata = {
   metadataBase: new URL(APP_URL),
