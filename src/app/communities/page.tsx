@@ -29,14 +29,21 @@ export default function CommunitiesPage() {
     load()
   }, [supabase])
 
-  const toggleJoin = async (communityId: string) => {
+  const toggleJoin = async (communityId: string, key: string) => {
     if (!user) { router.push('/auth/login'); return }
     if (memberships.includes(communityId)) {
       await supabase.from('community_members').delete().eq('community_id', communityId).eq('user_id', user.id)
       setMemberships(m => m.filter(id => id !== communityId))
-    } else {
-      await supabase.from('community_members').insert({ community_id: communityId, user_id: user.id })
+      return
+    }
+    // Joins go through the gateway: test / password / approval flows open the community page.
+    const { data } = await supabase.rpc('join_community', { p_community_id: communityId })
+    const res = data as string
+    if (res === 'joined' || res === 'already') {
       setMemberships(m => [...m, communityId])
+    } else {
+      // test_required | wrong_password | pending — full flow lives on the community page
+      router.push(`/communities/${key}`)
     }
   }
 
@@ -65,7 +72,7 @@ export default function CommunitiesPage() {
                     style={{ background: 'var(--accent)', color: 'var(--on-accent)', border: 'none', padding: '8px 18px', borderRadius: 10, fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>
                     Open
                   </button>
-                  <button onClick={() => toggleJoin(c.id)}
+                  <button onClick={() => toggleJoin(c.id, c.key)}
                     style={{ background: memberships.includes(c.id) ? 'var(--bg-secondary)' : 'var(--bg)', color: memberships.includes(c.id) ? 'var(--text-secondary)' : 'var(--accent)', border: memberships.includes(c.id) ? '1px solid var(--border)' : '1px solid var(--accent)', padding: '8px 18px', borderRadius: 10, fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>
                     {memberships.includes(c.id) ? '✓ Joined' : 'Join'}
                   </button>

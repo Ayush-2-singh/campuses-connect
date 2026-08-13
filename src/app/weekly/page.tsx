@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
 import Layout from '@/components/Layout'
+import EmptyState from '@/components/EmptyState'
 
 export default function WeeklyPage() {
   const [user, setUser] = useState<any>(null)
@@ -35,7 +36,7 @@ export default function WeeklyPage() {
     <Layout user={user} profile={profile}>
       <div style={{ maxWidth: 720, margin: '0 auto', padding: '24px 20px' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 4 }}>
-          <button onClick={() => router.push('/more')} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 20, color: 'var(--text-muted)' }}>←</button>
+          <button onClick={() => router.push('/more')} aria-label="Back" style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 20, color: 'var(--text-muted)', width: 44, height: 44, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', borderRadius: 10, margin: '-10px 0 -10px -12px', flexShrink: 0 }}>←</button>
           <h2 style={{ fontSize: 22, fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>Weekly Wrap</h2>
         </div>
         <p style={{ fontSize: 13, color: 'var(--text-muted)', margin: '0 0 20px', marginLeft: 34 }}>This week on your campus</p>
@@ -57,7 +58,7 @@ export default function WeeklyPage() {
 
         <h3 style={{ fontSize: 16, fontWeight: 700, color: 'var(--text-primary)', margin: '0 0 12px' }}>Recent Posts</h3>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-          {topPosts.length === 0 ? <p style={{ color: 'var(--text-muted)', fontSize: 13 }}>No posts this week yet</p> :
+          {topPosts.length === 0 ? <EmptyState compact icon="message" title="No posts this week yet" body="When your campus gets posting, the best of the week lands here." /> :
             topPosts.map(post => (
               <div key={post.id} style={{ background: 'var(--bg)', border: '1px solid var(--border)', borderRadius: 12, padding: '14px 16px', boxShadow: 'var(--shadow-sm)' }}>
                 <p style={{ fontSize: 13, color: 'var(--text-secondary)', margin: '0 0 6px', lineHeight: 1.5 }}>{post.body?.slice(0, 120)}{post.body?.length > 120 ? '...' : ''}</p>

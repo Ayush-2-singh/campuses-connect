@@ -4,6 +4,8 @@ import { useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
+import PasswordField from '@/components/PasswordField'
+import GoogleSignInButton from '@/components/GoogleSignInButton'
 
 export default function SignupPage() {
   const [email, setEmail] = useState('')
@@ -76,6 +78,14 @@ export default function SignupPage() {
         <div style={{ background: 'var(--bg)', borderRadius: 16, border: '1px solid var(--border)', padding: 28, boxShadow: 'var(--shadow)' }}>
           <h2 style={{ fontSize: 20, fontWeight: 700, color: 'var(--text-primary)', margin: '0 0 20px' }}>Create your account</h2>
 
+          <GoogleSignInButton label="Sign up with Google" />
+
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12, margin: '18px 0' }}>
+            <div style={{ flex: 1, height: 1, background: 'var(--border)' }} />
+            <span style={{ fontSize: 11, color: 'var(--text-muted)', fontWeight: 500 }}>or with email</span>
+            <div style={{ flex: 1, height: 1, background: 'var(--border)' }} />
+          </div>
+
           {error && (
             <div style={{ background: 'var(--danger-light)', border: '1px solid var(--danger-border)', borderRadius: 8, padding: '10px 14px', marginBottom: 16, fontSize: 13, color: 'var(--danger)' }}>
               {error}
@@ -105,18 +115,13 @@ export default function SignupPage() {
                 autoComplete="email"
               />
             </div>
-            <div>
-              <label style={{ fontSize: 13, fontWeight: 500, color: 'var(--text-secondary)', display: 'block', marginBottom: 6 }}>Password</label>
-              <input
-                type="password"
-                value={password}
-                onChange={e => setPassword(e.target.value)}
-                placeholder="Min. 6 characters"
-                onKeyDown={e => e.key === 'Enter' && handleSignup()}
-                style={inputStyle}
-                autoComplete="new-password"
-              />
-            </div>
+            <PasswordField
+              value={password}
+              onChange={setPassword}
+              placeholder="Min. 6 characters"
+              autoComplete="new-password"
+              onKeyDown={e => e.key === 'Enter' && handleSignup()}
+            />
           </div>
 
           <button

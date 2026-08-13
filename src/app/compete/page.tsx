@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import Layout from '@/components/Layout'
+import Avatar from '@/components/Avatar'
 
 type Problem = {
   id: string
@@ -367,7 +368,7 @@ function RankingsTab() {
       const col = mode === 'aura' ? 'aura_points' : 'karma_points'
       const { data } = await supabase
         .from('profiles')
-        .select(`full_name, username, ${col}`)
+        .select(`full_name, username, avatar_url, ${col}`)
         .eq('is_public', true)
         .order(col, { ascending: false })
         .limit(25)
@@ -376,11 +377,6 @@ function RankingsTab() {
     }
     load()
   }, [mode])
-
-  const avatarColor = (name: string) => {
-    const colors = ['var(--accent)', 'var(--cyan)', 'var(--purple)', 'var(--success)', 'var(--blue)', 'var(--danger)']
-    return colors[(name?.charCodeAt(0) || 0) % colors.length]
-  }
 
   return (
     <div>
@@ -402,9 +398,7 @@ function RankingsTab() {
           {leaders.map((l, i) => (
             <div key={l.username} style={{ background: 'var(--bg)', border: i < 3 ? '1px solid var(--accent-border)' : '1px solid var(--border)', borderRadius: 12, padding: '12px 16px', display: 'flex', alignItems: 'center', gap: 12, boxShadow: 'var(--shadow-sm)' }}>
               <span style={{ fontSize: 17, width: 26, textAlign: 'center', flexShrink: 0 }}>{i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : i + 1}</span>
-              <div style={{ width: 34, height: 34, borderRadius: '50%', background: avatarColor(l.full_name || ''), display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--on-accent)', fontSize: 13, fontWeight: 700, flexShrink: 0 }}>
-                {l.full_name?.[0] || '?'}
-              </div>
+              <Avatar name={l.full_name} avatarUrl={l.avatar_url} size={34} />
               <div style={{ flex: 1, minWidth: 0 }}>
                 <p style={{ fontSize: 13.5, fontWeight: 600, color: 'var(--text-primary)', margin: 0 }}>{l.full_name || 'Anonymous'}</p>
                 <p style={{ fontSize: 11.5, color: 'var(--text-muted)', margin: 0 }}>@{l.username}</p>

@@ -5,6 +5,8 @@ import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
 import Layout from '@/components/Layout'
 import PostCard from '@/components/PostCard'
+import EmptyState from '@/components/EmptyState'
+import { ListSkeleton } from '@/components/Skeleton'
 
 export default function SavedPage() {
   const [user, setUser] = useState<any>(null)
@@ -44,13 +46,9 @@ export default function SavedPage() {
         <p style={{ fontSize: 13, color: 'var(--text-muted)', margin: '0 0 20px' }}>Posts you bookmarked</p>
 
         {loading ? (
-          <p style={{ color: 'var(--text-muted)', textAlign: 'center', padding: '40px 0' }}>Loading...</p>
+          <ListSkeleton count={3} />
         ) : posts.length === 0 ? (
-          <div style={{ textAlign: 'center', padding: '60px 0' }}>
-            <div style={{ fontSize: 48, marginBottom: 12 }}>🔖</div>
-            <p style={{ fontWeight: 600, color: 'var(--text-primary)', margin: '0 0 4px' }}>Nothing saved yet</p>
-            <p style={{ fontSize: 13, color: 'var(--text-muted)', margin: 0 }}>Tap Save on any post to find it here.</p>
-          </div>
+          <EmptyState icon="bookmark" title="Nothing saved yet" body="Tap Save on any post to find it here." cta="Browse the feed" onCta={() => router.push('/feed')} />
         ) : (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
             {posts.map((post: any) => (

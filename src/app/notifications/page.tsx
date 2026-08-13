@@ -54,7 +54,12 @@ export default function NotificationsPage() {
       setUser(user)
       const { data: prof } = await supabase.from('profiles').select('*').eq('id', user.id).single()
       setProfile(prof)
-      const { data } = await supabase.from('notifications').select('*').eq('recipient_id', user.id).order('created_at', { ascending: false }).limit(30)
+      const { data } = await supabase
+        .from('notifications')
+        .select('*, profiles!notifications_actor_id_fkey(full_name, username)')
+        .eq('recipient_id', user.id)
+        .order('created_at', { ascending: false })
+        .limit(30)
       setNotifications(data || [])
       setLoading(false)
     }
@@ -65,6 +70,35 @@ export default function NotificationsPage() {
     if (!user) return
     await supabase.from('notifications').update({ is_read: true }).eq('recipient_id', user.id).eq('is_read', false)
     setNotifications(ns => ns.map(n => ({ ...n, is_read: true })))
+  }
+
+  /** Where does this notification point? null = no destination. */
+  const targetFor = (n: any): string | null => {
+    if (n.ref_type === 'post' && n.ref_id) return `/post/${n.ref_id}`
+    if (n.ref_type === 'team_request') return '/teams'
+    switch (n.type) {
+      case 'answer': return '/ask'
+      case 'new_opportunity': return '/opportunities'
+      case 'new_event': return '/events'
+      case 'new_note': return '/notes'
+      case 'connection_request':
+      case 'connection_accepted':
+        return n.profiles?.username ? `/profile/${n.profiles.username}` : '/profile'
+      case 'moderation':
+        return n.ref_type === 'post' && n.ref_id ? `/post/${n.ref_id}` : '/more'
+      default:
+        return null
+    }
+  }
+
+  const openNotification = async (n: any) => {
+    // Mark as read first (fire-and-forget) so the badge clears.
+    if (!n.is_read) {
+      supabase.from('notifications').update({ is_read: true }).eq('id', n.id)
+      setNotifications(ns => ns.map(x => x.id === n.id ? { ...x, is_read: true } : x))
+    }
+    const target = targetFor(n)
+    if (target) router.push(target)
   }
 
   const groups = useMemo<NotifGroup[]>(() => {
@@ -84,7 +118,7 @@ export default function NotificationsPage() {
       <div style={{ maxWidth: 680, margin: '0 auto', padding: '28px 20px 40px' }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-            <button onClick={() => router.push('/more')} aria-label="Back" style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 18, color: 'var(--text-muted)' }}>←</button>
+            <button onClick={() => router.push('/more')} aria-label="Back" style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 18, color: 'var(--text-muted)', width: 44, height: 44, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', borderRadius: 10, margin: '-10px 0 -10px -12px', flexShrink: 0 }}>←</button>
             <h2 style={{ fontSize: 24, fontWeight: 800, color: 'var(--text-primary)', margin: 0 }}>Notifications</h2>
           </div>
           {unreadCount > 0 && (
@@ -123,8 +157,17 @@ export default function NotificationsPage() {
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                   {gr.items.map(n => {
                     const cls = classify(n.body || n.title || '')
+                    const target = targetFor(n)
                     return (
-                      <div key={n.id} className="card-hover" style={{ background: n.is_read ? 'var(--bg)' : 'var(--accent-light)', border: '1px solid var(--border)', borderRadius: 'var(--radius)', padding: '13px 16px', boxShadow: 'var(--shadow-sm)' }}>
+                      <div
+                        key={n.id}
+                        role={target ? 'button' : undefined}
+                        tabIndex={target ? 0 : undefined}
+                        onClick={() => openNotification(n)}
+                        onKeyDown={e => { if (target && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); openNotification(n) } }}
+                        className="card-hover"
+                        style={{ background: n.is_read ? 'var(--bg)' : 'var(--accent-light)', border: '1px solid var(--border)', borderRadius: 'var(--radius)', padding: '13px 16px', boxShadow: 'var(--shadow-sm)', cursor: target ? 'pointer' : 'default' }}
+                      >
                         <div style={{ display: 'flex', alignItems: 'flex-start', gap: 12 }}>
                           <span style={{ width: 32, height: 32, borderRadius: 10, background: 'var(--bg)', border: '1px solid var(--border)', color: cls.tone, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
                             <Icon name={cls.icon} size={15} />
@@ -133,6 +176,7 @@ export default function NotificationsPage() {
                             <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 3, flexWrap: 'wrap' }}>
                               <span style={{ fontSize: 10.5, fontWeight: 700, color: cls.tone }}>{cls.label}</span>
                               {!n.is_read && <span style={{ width: 7, height: 7, borderRadius: '50%', background: 'var(--accent)', flexShrink: 0 }} />}
+                              {target && <span style={{ fontSize: 10.5, color: 'var(--accent)', marginLeft: 'auto', fontWeight: 700 }}>Open →</span>}
                             </div>
                             <p style={{ fontSize: 13.5, color: 'var(--text-primary)', margin: '0 0 3px', lineHeight: 1.5 }}>{n.body || n.title || 'New notification'}</p>
                             <p style={{ fontSize: 11, color: 'var(--text-muted)', margin: 0 }}>{timeAgo(n.created_at)}</p>

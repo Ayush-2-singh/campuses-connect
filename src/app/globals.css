@@ -333,8 +333,75 @@ button:disabled {
 }
 .card-hover:hover {
   transform: translateY(-2px);
-  box-shadow: var(--shadow), 0 0 0 1px var(--accent-border);
+  box-shadow: var(--shadow), 0 0 0 1px var(--accent-border), var(--accent-glow);
   border-color: var(--accent-border);
+}
+
+/* ── Premium polish: gradient text, glow accents, animated ambient ── */
+
+/* Headline text that carries the section accent gradient */
+.text-gradient {
+  background: linear-gradient(120deg, var(--accent) 0%, color-mix(in srgb, var(--accent) 45%, #ffffff) 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  color: transparent;
+}
+
+/* Glow ring around key cards (profile banner, featured cards) */
+.card-premium {
+  position: relative;
+  border: 1px solid color-mix(in srgb, var(--accent) 28%, var(--border));
+  box-shadow: var(--shadow-sm), 0 0 0 1px color-mix(in srgb, var(--accent) 6%, transparent);
+  transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+}
+.card-premium:hover {
+  transform: translateY(-3px);
+  border-color: color-mix(in srgb, var(--accent) 55%, var(--border));
+  box-shadow: var(--shadow), 0 0 0 1px var(--accent-border), var(--accent-glow);
+}
+
+/* Soft pulsing ambient orb used behind hero sections */
+@keyframes orbDrift {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  50% { transform: translate(12px, -10px) scale(1.08); }
+}
+.orb {
+  position: absolute;
+  border-radius: 50%;
+  pointer-events: none;
+  filter: blur(46px);
+  opacity: 0.4;
+  animation: orbDrift 9s ease-in-out infinite;
+}
+
+/* Shine sweep on primary CTA buttons */
+.btn-shine {
+  position: relative;
+  overflow: hidden;
+}
+.btn-shine::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -70%;
+  width: 50%;
+  height: 100%;
+  background: linear-gradient(105deg, transparent, rgba(255, 255, 255, 0.35), transparent);
+  transform: skewX(-20deg);
+  transition: left 0.5s ease;
+}
+.btn-shine:hover::after {
+  left: 130%;
+}
+
+/* Slight entrance lift for cards as they appear */
+.rise-in {
+  animation: riseIn 0.35s cubic-bezier(0.2, 0.8, 0.3, 1) both;
+}
+@keyframes riseIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: none; }
 }
 
 /* Gently dim images so white-backed icons don't glare on dark surfaces */
@@ -343,6 +410,11 @@ img {
 }
 [data-theme='light'] img {
   filter: none;
+}
+
+/* Profile photos must stay true-to-life — no dimming */
+img.avatar-img {
+  filter: none !important;
 }
 
 /* ───────────────────────── Skeleton / shimmer ───────────────────────── */
@@ -444,8 +516,8 @@ img {
 }
 
 .theme-toggle--inline {
-  width: 30px;
-  height: 30px;
+  width: 36px;
+  height: 36px;
   background: var(--bg-tertiary);
   box-shadow: none;
 }
@@ -617,6 +689,24 @@ button, a, [role='button'] {
   }
 }
 
+/* Sidebar premium — gradient active nav pill */
+.nav-pill {
+  transition: background 0.18s ease, box-shadow 0.18s ease, color 0.18s ease;
+}
+.nav-pill:hover {
+  background: var(--accent-light);
+  color: var(--accent-text);
+}
+
+/* Topbar search — accent ring + glow on hover/focus */
+.search-pill {
+  transition: border-color 0.18s ease, box-shadow 0.18s ease;
+}
+.search-pill:hover {
+  border-color: var(--accent-border);
+  box-shadow: 0 0 0 1px var(--accent-border), var(--accent-glow);
+}
+
 /* ── Landing page ── */
 .landing-nav > div {
   flex-wrap: wrap;
@@ -634,6 +724,34 @@ button, a, [role='button'] {
 @media (max-width: 360px) {
   .landing-hero {
     font-size: 31px !important;
+  }
+}
+
+/* Landing hero — text + phone mockup side by side on desktop, stacked on mobile */
+.landing-hero-grid {
+  display: grid;
+  grid-template-columns: 1.15fr 0.85fr;
+  gap: 48px;
+  align-items: center;
+}
+@media (max-width: 880px) {
+  .landing-hero-grid {
+    grid-template-columns: 1fr;
+    gap: 48px;
+  }
+}
+
+/* Landing stats — 4 across on desktop, 2x2 on small screens */
+.landing-stats {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 10px;
+  max-width: 520px;
+}
+@media (max-width: 480px) {
+  .landing-stats {
+    grid-template-columns: repeat(2, 1fr);
+    max-width: none;
   }
 }
 
@@ -672,4 +790,129 @@ button, a, [role='button'] {
   html, body {
     overflow-x: clip;
   }
+}
+
+/* ───────────────────────── Page transitions ───────────────────────── */
+/* Route changes remount the main content (keyed on pathname); this fades +
+   slides the new page in for a softer, more premium feel. */
+.page-enter {
+  animation: pageIn 0.22s ease;
+}
+@keyframes pageIn {
+  from { opacity: 0; transform: translateY(5px); }
+  to { opacity: 1; transform: none; }
+}
+
+/* ───────────────────────── Press feedback ───────────────────────── */
+/* Every tappable element gets a subtle press-down. Class-specific rules
+   (theme-toggle, fab-btn, card-hover) override via higher specificity. */
+button:not(:disabled):active,
+a:active,
+[role='button']:not(:disabled):active {
+  transform: scale(0.97);
+}
+.card-hover:active {
+  transform: translateY(-1px) scale(0.99);
+}
+
+/* ───────────────────────── Scrolling chip rows ───────────────────────── */
+/* Fades the edges of horizontally scrollable chip/tab rows so users can
+   tell there is more content past the fold. */
+.fade-x {
+  -webkit-mask-image: linear-gradient(90deg, transparent 0, #000 14px, #000 calc(100% - 14px), transparent 100%);
+  mask-image: linear-gradient(90deg, transparent 0, #000 14px, #000 calc(100% - 14px), transparent 100%);
+}
+
+/* ───────────────────────── Toasts ───────────────────────── */
+.toast-viewport {
+  position: fixed;
+  left: 50%;
+  transform: translateX(-50%);
+  bottom: calc(96px + env(safe-area-inset-bottom));
+  z-index: 9999;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  pointer-events: none;
+  max-width: calc(100vw - 32px);
+}
+@media (min-width: 769px) {
+  .toast-viewport { bottom: 24px; }
+}
+.toast {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--bg-tertiary);
+  color: var(--text-primary);
+  border: 1px solid var(--border-strong);
+  padding: 10px 18px;
+  border-radius: 999px;
+  font-size: 13px;
+  font-weight: 600;
+  box-shadow: var(--shadow-lg);
+  animation: toastIn 0.18s ease;
+  white-space: nowrap;
+}
+.toast--success {
+  border-color: var(--success-border);
+  color: var(--success-text);
+}
+.toast--danger {
+  border-color: var(--danger-border);
+  color: var(--danger-text);
+}
+@keyframes toastIn {
+  from { opacity: 0; transform: translateY(8px) scale(0.96); }
+  to { opacity: 1; transform: none; }
+}
+
+/* ───────────────────────── Like pop ───────────────────────── */
+.like-pop {
+  animation: likePop 0.32s cubic-bezier(0.2, 0.8, 0.3, 1.2);
+}
+@keyframes likePop {
+  0% { transform: scale(1); }
+  45% { transform: scale(1.35); }
+  100% { transform: scale(1); }
+}
+
+/* ───────────────────────── Mobile bottom sheets ───────────────────────── */
+/* Dialogs become bottom sheets on small screens — thumb-friendly, feels native. */
+.modal-sheet {
+  animation: sheetIn 0.18s ease;
+}
+@keyframes sheetIn {
+  from { opacity: 0; transform: translateY(18px); }
+  to { opacity: 1; transform: none; }
+}
+@media (max-width: 480px) {
+  .modal-overlay {
+    align-items: flex-end !important;
+    padding: 0 !important;
+  }
+  .modal-sheet {
+    width: 100% !important;
+    max-width: none !important;
+    border-radius: 20px 20px 0 0 !important;
+    border-bottom: none !important;
+    padding-bottom: max(20px, env(safe-area-inset-bottom)) !important;
+  }
+}
+
+/* ───────────────────────── Keyboard-aware bars ───────────────────────── */
+/* Toggled by MobileBottomNav while the user types — keeps the bottom bar and
+   FAB out of the on-screen keyboard's way. Wins over the media-query rules. */
+html.nav-hidden .mobile-bottomnav,
+html.nav-hidden .fab-wrap {
+  display: none !important;
+}
+
+/* Don't let the fixed bars chain-scroll (bounce the page behind them). */
+.mobile-topbar,
+.mobile-bottomnav,
+.standalone-bottomnav,
+.fab-wrap {
+  overscroll-behavior: contain;
 }

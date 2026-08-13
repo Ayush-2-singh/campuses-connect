@@ -85,6 +85,9 @@ export interface Community {
   icon?: string
   is_global: boolean
   is_active: boolean
+  visibility?: 'open' | 'approval' | 'private'
+  join_test?: { q: string; options: string[]; answer: number }[] | null
+  can_post?: 'anyone' | 'members' | 'moderators'
   created_at?: string
 }
 

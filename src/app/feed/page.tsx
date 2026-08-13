@@ -3,7 +3,6 @@
 import { useCallback, useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
-import { useAdminContext } from '@/lib/permissions'
 import Layout from '@/components/Layout'
 import PostCard from '@/components/PostCard'
 import PostComposer from '@/components/PostComposer'
@@ -39,12 +38,12 @@ export default function FeedPage() {
   const [profile, setProfile] = useState<any>(null)
   const [posts, setPosts] = useState<Post[]>([])
   const [filter, setFilter] = useState('all')
+  const [scopeFilter, setScopeFilter] = useState<'all' | 'campus' | 'global'>('all')
   const [loading, setLoading] = useState(true)
   const [pulse, setPulse] = useState<{ opportunities: number; notes: number; discussions: number; hackathons: number }>({ opportunities: 0, notes: 0, discussions: 0, hackathons: 0 })
   const [mounted, setMounted] = useState(false)
   const supabase = createClient()
   const router = useRouter()
-  const admin = useAdminContext(user?.id)
 
   const fetchPosts = useCallback(async () => {
     let q = supabase
@@ -54,10 +53,11 @@ export default function FeedPage() {
       .order('created_at', { ascending: false })
       .limit(50)
     if (filter !== 'all') q = q.eq('content_categories.key', filter)
+    if (scopeFilter !== 'all') q = q.eq('scope', scopeFilter)
     const { data } = await q
     setPosts(data || [])
     setLoading(false)
-  }, [filter, supabase])
+  }, [filter, scopeFilter, supabase])
 
   const fetchPulse = useCallback(async () => {
     const now = new Date().toISOString()
@@ -97,7 +97,7 @@ export default function FeedPage() {
   const PULSE_CARDS = [
     { key: 'opportunities', icon: 'briefcase', label: 'opportunities', desc: 'open right now', value: pulse.opportunities, href: '/opportunities' },
     { key: 'notes', icon: 'notebook', label: 'notes & resources', desc: 'in the library', value: pulse.notes, href: '/notes' },
-    { key: 'discussions', icon: 'message', label: 'campus discussions', desc: 'happening now', value: pulse.discussions, href: '/feed' },
+    { key: 'discussions', icon: 'message', label: 'discussions', desc: 'happening now', value: pulse.discussions, href: '/feed' },
     { key: 'hackathons', icon: 'zap', label: 'hackathons closing soon', desc: 'within 7 days', value: pulse.hackathons, href: '/opportunities?type=hackathon' },
   ]
 
@@ -110,7 +110,7 @@ export default function FeedPage() {
           <h2 style={{ fontSize: 26, fontWeight: 800, color: 'var(--text-primary)', margin: '0 0 4px' }}>
             {mounted ? (firstName ? `${greeting()}, ${firstName} 👋` : greeting()) : 'Welcome 👋'}
           </h2>
-          <p style={{ fontSize: 13.5, color: 'var(--text-muted)', margin: 0 }}>Here&apos;s what&apos;s happening around your campus.</p>
+          <p style={{ fontSize: 13.5, color: 'var(--text-muted)', margin: 0 }}>Here&apos;s what&apos;s happening around your campus and across India.</p>
         </div>
 
         {/* Pulse stats — real counts from the database */}
@@ -134,7 +134,7 @@ export default function FeedPage() {
           ))}
         </div>
 
-        {user && admin.isAdmin && (
+        {user && (
           <PostComposer
             userId={user.id}
             profile={profile}
@@ -146,12 +146,27 @@ export default function FeedPage() {
         {!user && (
           <div style={{ background: 'var(--bg)', border: '1px solid var(--border)', borderRadius: 'var(--radius)', padding: '14px 16px', marginBottom: 16 }}>
             <p style={{ fontWeight: 600, fontSize: 14, color: 'var(--text-primary)', margin: '0 0 4px' }}>Browse CampusConnect</p>
-            <p style={{ fontSize: 13, color: 'var(--text-secondary)', margin: 0 }}>Join your campus community to like, comment and save.</p>
+            <p style={{ fontSize: 13, color: 'var(--text-secondary)', margin: 0 }}>Join your campus community to like, comment and save — or browse the <span style={{ color: 'var(--accent)', fontWeight: 600, cursor: 'pointer' }} onClick={() => router.push('/global')}>Global</span> feed.</p>
           </div>
         )}
 
+        {/* Scope tabs — campus vs global */}
+        <div style={{ display: 'flex', gap: 4, background: 'var(--bg-secondary)', border: '1px solid var(--border)', borderRadius: 10, padding: 3, marginBottom: 10 }} role="tablist" aria-label="Post scope">
+          {([['all', 'All'], ['campus', '🏫 Campus'], ['global', '🌐 Global']] as const).map(([key, label]) => (
+            <button
+              key={key}
+              onClick={() => setScopeFilter(key)}
+              role="tab"
+              aria-selected={scopeFilter === key}
+              style={{ flex: 1, padding: '7px 0', borderRadius: 8, fontSize: 12.5, fontWeight: 600, border: 'none', cursor: 'pointer', fontFamily: 'inherit', background: scopeFilter === key ? 'var(--bg)' : 'transparent', color: scopeFilter === key ? 'var(--accent)' : 'var(--text-muted)', boxShadow: scopeFilter === key ? 'var(--shadow-sm)' : 'none' }}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
+
         {/* Category filters */}
-        <div style={{ display: 'flex', gap: 6, overflowX: 'auto', paddingBottom: 4, marginBottom: 16 }} className="scrollbar-hide" role="tablist" aria-label="Filter posts">
+        <div style={{ display: 'flex', gap: 6, overflowX: 'auto', paddingBottom: 4, marginBottom: 16 }} className="scrollbar-hide fade-x" role="tablist" aria-label="Filter posts">
           {FILTERS.map(type => (
             <button key={type} onClick={() => setFilter(type)}
               style={{ flexShrink: 0, padding: '6px 14px', borderRadius: 20, fontSize: 12, fontWeight: 500, border: filter === type ? 'none' : '1px solid var(--border)', background: filter === type ? 'var(--accent)' : 'var(--bg)', color: filter === type ? 'var(--on-accent)' : 'var(--text-secondary)', cursor: 'pointer', fontFamily: 'inherit' }}>
@@ -166,7 +181,7 @@ export default function FeedPage() {
           <EmptyState
             icon="message"
             title={filter === 'all' ? 'No posts yet' : `No ${FILTER_LABELS[filter]?.toLowerCase()} posts yet`}
-            body={admin.isAdmin ? 'Use the composer above to make the first post.' : 'Admins will post announcements soon. Try a different category.'}
+            body={user ? 'Be the first to post — use the composer above.' : 'Join your campus to post and discuss. Try a different category.'}
             cta={filter !== 'all' ? 'View all posts' : undefined}
             onCta={filter !== 'all' ? () => setFilter('all') : undefined}
           />

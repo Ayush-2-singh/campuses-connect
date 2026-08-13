@@ -6,6 +6,8 @@ import { useRouter } from 'next/navigation'
 import Layout from '@/components/Layout'
 import PostCard from '@/components/PostCard'
 import PostComposer from '@/components/PostComposer'
+import EmptyState from '@/components/EmptyState'
+import { ListSkeleton } from '@/components/Skeleton'
 import { useAdminContext } from '@/lib/permissions'
 
 const SECTIONS = [
@@ -86,11 +88,11 @@ export default function CollegePage() {
 
         <h3 style={{ fontSize: 16, fontWeight: 700, color: 'var(--text-primary)', margin: '0 0 12px' }}>College Feed</h3>
         {loading ? (
-          <p style={{ color: 'var(--text-muted)', textAlign: 'center', padding: '30px 0' }}>Loading...</p>
+          <ListSkeleton count={2} />
         ) : (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
             {posts.length === 0 ? (
-              <p style={{ color: 'var(--text-muted)', textAlign: 'center', padding: '30px 0' }}>No posts in your college yet.</p>
+              <EmptyState icon="book" title="No posts in your college yet" body="Admins can share announcements, events and resources right from this page." />
             ) : posts.map((post: any) => (
               <PostCard key={post.id} post={post} currentUserId={user?.id} canInteract={!!user} onChanged={loadPosts} />
             ))}

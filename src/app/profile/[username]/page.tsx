@@ -2,8 +2,14 @@
 
 import { useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
-import { useRouter, useParams } from 'next/navigation'
+import { useRouter, useParams, usePathname } from 'next/navigation'
 import ThemeToggle from '@/components/ThemeToggle'
+import MobileBottomNav from '@/components/MobileBottomNav'
+import MobileMenu from '@/components/MobileMenu'
+import Avatar from '@/components/Avatar'
+import EmptyState from '@/components/EmptyState'
+import { CardSkeleton } from '@/components/Skeleton'
+import { Icon } from '@/components/icons'
 
 export default function UserProfilePage() {
   const [user, setUser] = useState<any>(null)
@@ -14,10 +20,14 @@ export default function UserProfilePage() {
   const [activeTab, setActiveTab] = useState('posts')
   const [connected, setConnected] = useState(false)
   const [connecting, setConnecting] = useState(false)
+  const [menuOpen, setMenuOpen] = useState(false)
   const router = useRouter()
   const params = useParams()
+  const pathname = usePathname()
   const username = params.username as string
   const supabase = createClient()
+
+  useEffect(() => { setMenuOpen(false) }, [pathname])
 
   useEffect(() => {
     const load = async () => {
@@ -68,11 +78,6 @@ export default function UserProfilePage() {
     setConnected(true)
   }
 
-  const avatarColor = (name: string) => {
-    const colors = ['#2563eb', '#7c3aed', '#16a34a', '#d97706', 'var(--danger)', '#0891b2']
-    return colors[(name?.charCodeAt(0) || 0) % colors.length]
-  }
-
   const timeAgo = (date: string) => {
     const diff = Date.now() - new Date(date).getTime()
     const days = Math.floor(diff / 86400000)
@@ -91,8 +96,10 @@ export default function UserProfilePage() {
   }
 
   if (loading) return (
-    <div style={{ minHeight: '100vh', background: 'var(--bg-secondary)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-      <p style={{ color: 'var(--text-muted)', fontSize: 14 }}>Loading profile…</p>
+    <div style={{ minHeight: '100vh', background: 'var(--bg-secondary)', padding: '24px 16px', maxWidth: 640, margin: '0 auto' }}>
+      <CardSkeleton rows={3} />
+      <div style={{ height: 12 }} />
+      <CardSkeleton rows={2} />
     </div>
   )
 
@@ -111,24 +118,34 @@ export default function UserProfilePage() {
   return (
     <div data-accent="gold" style={{ minHeight: '100vh', background: 'var(--bg-secondary)', paddingBottom: 80 }}>
       {/* Header */}
-      <div style={{ position: 'sticky', top: 0, background: 'var(--bg)', borderBottom: '1px solid var(--border)', padding: '13px 16px', zIndex: 10 }}>
+      <div style={{ position: 'sticky', top: 0, background: 'var(--bg)', borderBottom: '1px solid var(--border)', padding: '13px 16px', zIndex: 30 }}>
         <div style={{ maxWidth: 640, margin: '0 auto', display: 'flex', alignItems: 'center', gap: 10 }}>
           <button onClick={() => router.back()}
-            style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', fontSize: 18 }}>←</button>
+            aria-label="Back" style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', fontSize: 18, width: 44, height: 44, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', borderRadius: 10, margin: '-10px 0 -10px -12px', flexShrink: 0 }}>←</button>
           <h1 style={{ fontSize: 17, fontWeight: 700, margin: 0, color: 'var(--text-primary)', flex: 1 }}>@{profile.username}</h1>
           <ThemeToggle mode="inline" />
+          <button
+            onClick={() => setMenuOpen(o => !o)}
+            aria-label={menuOpen ? 'Close menu' : 'Open menu'}
+            aria-expanded={menuOpen}
+            style={{ width: 30, height: 30, borderRadius: '50%', border: menuOpen ? '1px solid var(--accent)' : '1px solid var(--border)', background: menuOpen ? 'var(--accent-light)' : 'var(--bg)', color: menuOpen ? 'var(--accent-text)' : 'var(--text-secondary)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', flexShrink: 0 }}
+          >
+            <Icon name="menu" size={15} />
+          </button>
         </div>
       </div>
 
       <div style={{ maxWidth: 640, margin: '0 auto', padding: '24px 16px' }}>
-        {/* Profile card */}
-        <div style={{ background: 'var(--bg)', border: '1px solid var(--border)', borderRadius: 16, padding: '24px', marginBottom: 16, boxShadow: 'var(--shadow-sm)' }}>
-          <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 16 }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
-              <div style={{ width: 56, height: 56, borderRadius: '50%', background: avatarColor(profile.full_name || ''), display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--on-accent)', fontSize: 22, fontWeight: 700, flexShrink: 0 }}>
-                {profile.full_name?.[0] || '?'}
-              </div>
-              <div>
+        {/* Profile card — premium with gradient banner */}
+        <div style={{ background: 'var(--bg)', border: '1px solid var(--border)', borderRadius: 16, overflow: 'hidden', marginBottom: 16, boxShadow: 'var(--shadow-sm)' }}>
+          <div style={{ height: 68, background: 'linear-gradient(120deg, #E0A83C 0%, #41C8D8 55%, #A97BF0 100%)', position: 'relative' }}>
+            <div style={{ position: 'absolute', inset: 0, background: 'radial-gradient(260px 80px at 85% 20%, rgba(255,255,255,0.35), transparent 70%)' }} />
+          </div>
+          <div style={{ padding: '0 24px 24px' }}>
+          <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', marginBottom: 14, marginTop: -30, position: 'relative' }}>
+            <div style={{ display: 'flex', alignItems: 'flex-end', gap: 14 }}>
+              <Avatar name={profile.full_name} avatarUrl={profile.avatar_url} size={64} ring fontSize={24} />
+              <div style={{ paddingBottom: 2 }}>
                 <p style={{ fontSize: 18, fontWeight: 700, color: 'var(--text-primary)', margin: '0 0 2px' }}>{profile.full_name}</p>
                 <p style={{ fontSize: 13, color: 'var(--text-muted)', margin: 0 }}>@{profile.username}</p>
               </div>
@@ -148,8 +165,20 @@ export default function UserProfilePage() {
             )}
           </div>
 
+          {profile.headline && (
+            <p style={{ fontSize: 13.5, fontWeight: 600, color: 'var(--accent-text)', margin: '0 0 8px' }}>{profile.headline}</p>
+          )}
+
           {profile.bio && (
             <p style={{ fontSize: 14, color: 'var(--text-secondary)', lineHeight: 1.6, margin: '0 0 14px' }}>{profile.bio}</p>
+          )}
+
+          {Array.isArray(profile.skills) && profile.skills.length > 0 && (
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 12 }}>
+              {profile.skills.map((s: string) => (
+                <span key={s} style={{ fontSize: 12, fontWeight: 600, color: 'var(--accent-text)', background: 'var(--accent-light)', border: '1px solid var(--accent-border)', padding: '3px 10px', borderRadius: 20 }}>{s}</span>
+              ))}
+            </div>
           )}
 
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, fontSize: 13, color: 'var(--text-muted)' }}>
@@ -189,6 +218,7 @@ export default function UserProfilePage() {
               {profile.portfolio_url && <a href={profile.portfolio_url} target="_blank" rel="noopener noreferrer" style={{ fontSize: 12, color: 'var(--accent)', textDecoration: 'none', background: 'var(--accent-light)', padding: '4px 10px', borderRadius: 6 }}>Portfolio →</a>}
             </div>
           )}
+          </div>
         </div>
 
         {/* Tabs */}
@@ -205,10 +235,7 @@ export default function UserProfilePage() {
         {activeTab === 'posts' && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
             {posts.length === 0 ? (
-              <div style={{ textAlign: 'center', padding: '40px 0' }}>
-                <p style={{ fontSize: 36, marginBottom: 8 }}>📝</p>
-                <p style={{ fontSize: 13, color: 'var(--text-muted)' }}>No posts yet</p>
-              </div>
+              <EmptyState icon="message" title="No posts yet" body="When this person shares something on campus, it will show up here." />
             ) : posts.map(post => {
               const pc = postTypeConfig[post.post_type] || postTypeConfig.general
               return (
@@ -230,10 +257,7 @@ export default function UserProfilePage() {
         {activeTab === 'notes' && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
             {notes.length === 0 ? (
-              <div style={{ textAlign: 'center', padding: '40px 0' }}>
-                <p style={{ fontSize: 36, marginBottom: 8 }}>📚</p>
-                <p style={{ fontSize: 13, color: 'var(--text-muted)' }}>No notes uploaded yet</p>
-              </div>
+              <EmptyState icon="book" title="No notes uploaded yet" body="Notes this person adds to the library will appear here." />
             ) : notes.map(note => (
               <div key={note.id} style={{ background: 'var(--bg)', border: '1px solid var(--border)', borderRadius: 12, padding: '14px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', boxShadow: 'var(--shadow-sm)' }}>
                 <div>
@@ -252,24 +276,8 @@ export default function UserProfilePage() {
         )}
       </div>
 
-      {/* Bottom nav */}
-      <div className="standalone-bottomnav" style={{ position: 'fixed', bottom: 0, left: 0, right: 0, background: 'var(--bg)', borderTop: '1px solid var(--border)', zIndex: 10 }}>
-        <div style={{ maxWidth: 640, margin: '0 auto', display: 'flex' }}>
-          {[
-            { icon: '🏠', label: 'Home', href: '/feed' },
-            { icon: '🏫', label: 'Classroom', href: '/college' },
-            { icon: '💼', label: 'Opportunities', href: '/opportunities' },
-            { icon: '🌐', label: 'Communities', href: '/communities' },
-            { icon: '👤', label: 'Profile', href: '/profile' },
-          ].map(item => (
-            <button key={item.href} onClick={() => router.push(item.href)}
-              style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2, padding: '10px 0 8px', background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'inherit' }}>
-              <span style={{ fontSize: 20 }}>{item.icon}</span>
-              <span style={{ fontSize: 10, color: 'var(--text-muted)' }}>{item.label}</span>
-            </button>
-          ))}
-        </div>
-      </div>
+      <MobileBottomNav pathname={pathname} onNavigate={href => router.push(href)} />
+      <MobileMenu open={menuOpen} top={52} pathname={pathname} onClose={() => setMenuOpen(false)} onNavigate={href => router.push(href)} />
     </div>
   )
 }

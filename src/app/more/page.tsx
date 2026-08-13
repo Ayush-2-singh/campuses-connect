@@ -6,8 +6,10 @@ import { useRouter } from 'next/navigation'
 import Layout from '@/components/Layout'
 
 const SECTIONS = [
+  { icon: '🌐', label: 'Global', desc: 'Post & connect with students everywhere', href: '/global' },
   { icon: '⚔️', label: 'Compete', desc: 'Daily DSA challenges, Campus Clash & Aura rankings', href: '/compete' },
   { icon: '🎪', label: 'Events', desc: 'Campus events, hackathons & memories', href: '/events' },
+  { icon: '🤝', label: 'Find Teammates', desc: 'Post or join hackathon teams', href: '/teams' },
   { icon: '📚', label: 'Notes Library', desc: 'Subject-wise notes, PYQs and resources', href: '/notes' },
   { icon: '⭐', label: 'Talent', desc: 'Discover students by skill', href: '/talent' },
   { icon: '🧠', label: 'AI Brain', desc: 'Your personal academic memory — ask your notes anything', href: '/brain' },

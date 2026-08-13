@@ -32,12 +32,14 @@ export async function PUT(
   const allowed = [
     'title', 'description', 'opp_type', 'company_org',
     'apply_link', 'deadline', 'is_paid', 'stipend_range',
-    'location_type', 'is_active',
+    'location_type', 'skills_required', 'is_active',
   ] as const
 
   const updates: Record<string, unknown> = {}
   for (const key of allowed) {
-    if (key in body) updates[key] = body[key]
+    if (key in body) updates[key] = key === 'skills_required'
+      ? (Array.isArray(body[key]) ? body[key].map(String).filter(Boolean).slice(0, 12) : null)
+      : body[key]
   }
 
   if (Object.keys(updates).length === 0) {

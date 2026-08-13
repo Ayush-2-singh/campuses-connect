@@ -4,6 +4,8 @@ import { useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
+import PasswordField from '@/components/PasswordField'
+import GoogleSignInButton from '@/components/GoogleSignInButton'
 
 export default function LoginPage() {
   const [email, setEmail] = useState('')
@@ -47,6 +49,14 @@ export default function LoginPage() {
         <div style={{ background: 'var(--bg)', borderRadius: 16, border: '1px solid var(--border)', padding: 28, boxShadow: 'var(--shadow)' }}>
           <h2 style={{ fontSize: 20, fontWeight: 700, color: 'var(--text-primary)', margin: '0 0 20px' }}>Welcome back</h2>
 
+          <GoogleSignInButton />
+
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12, margin: '18px 0' }}>
+            <div style={{ flex: 1, height: 1, background: 'var(--border)' }} />
+            <span style={{ fontSize: 11, color: 'var(--text-muted)', fontWeight: 500 }}>or with email</span>
+            <div style={{ flex: 1, height: 1, background: 'var(--border)' }} />
+          </div>
+
           {error && (
             <div style={{ background: 'var(--danger-light)', border: '1px solid var(--danger-border)', borderRadius: 8, padding: '10px 14px', marginBottom: 16, fontSize: 13, color: 'var(--danger)' }}>
               {error}
@@ -66,15 +76,18 @@ export default function LoginPage() {
               />
             </div>
             <div>
-              <label style={{ fontSize: 13, fontWeight: 500, color: 'var(--text-secondary)', display: 'block', marginBottom: 6 }}>Password</label>
-              <input
-                type="password"
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                <label style={{ fontSize: 13, fontWeight: 500, color: 'var(--text-secondary)', display: 'block', marginBottom: 6 }}>Password</label>
+                <Link href="/auth/forgot-password" style={{ fontSize: 12.5, color: 'var(--accent)', fontWeight: 600, textDecoration: 'none', marginBottom: 6 }}>
+                  Forgot password?
+                </Link>
+              </div>
+              <PasswordField
                 value={password}
-                onChange={e => setPassword(e.target.value)}
+                onChange={setPassword}
                 placeholder="••••••••"
-                onKeyDown={e => e.key === 'Enter' && handleLogin()}
-                style={inputStyle}
                 autoComplete="current-password"
+                onKeyDown={e => e.key === 'Enter' && handleLogin()}
               />
             </div>
           </div>

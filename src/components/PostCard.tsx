@@ -1,7 +1,9 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
+import { useToast } from '@/components/Toast'
+import Avatar from '@/components/Avatar'
 import type { Post } from '@/types'
 
 const SCOPE_CONFIG: Record<string, { label: string; bg: string; text: string }> = {
@@ -13,11 +15,6 @@ const SCOPE_CONFIG: Record<string, { label: string; bg: string; text: string }> 
 const CATEGORY_ICONS: Record<string, string> = {
   discussion: '💬', resource: '🔗', notes: '📚', hackathon: '⚡',
   internship: '💼', event: '📅', announcement: '📢', project: '🚀', opportunity: '🎯',
-}
-
-const avatarColor = (name: string) => {
-  const colors = ['#2563eb', '#7c3aed', '#16a34a', '#d97706', 'var(--danger)', '#0891b2']
-  return colors[(name?.charCodeAt(0) || 0) % colors.length]
 }
 
 const timeAgo = (date: string) => {
@@ -50,6 +47,57 @@ export default function PostCard({
   const [editing, setEditing] = useState(false)
   const [editBody, setEditBody] = useState(post.body || '')
   const [saving, setSaving] = useState(false)
+  const [reportOpen, setReportOpen] = useState(false)
+  const [reportReason, setReportReason] = useState('')
+  const [reportSending, setReportSending] = useState(false)
+  const [joined, setJoined] = useState(false)
+  const [joinCount, setJoinCount] = useState(0)
+  const [joining, setJoining] = useState(false)
+  const { show: toast } = useToast()
+
+  const isHackathon = post.categories?.key === 'hackathon'
+
+  // Load hackathon join state (count is visible to anyone who can see the post).
+  useEffect(() => {
+    if (!isHackathon || !currentUserId) return
+    let alive = true
+    const load = async () => {
+      const supabase = (await import('@/lib/supabase/client')).createClient()
+      const [{ count }, { data: mine }] = await Promise.all([
+        supabase.from('post_joins').select('id', { count: 'exact', head: true }).eq('post_id', post.id),
+        supabase.from('post_joins').select('user_id').eq('post_id', post.id).eq('user_id', currentUserId).maybeSingle(),
+      ])
+      if (!alive) return
+      setJoinCount(count || 0)
+      setJoined(!!mine)
+    }
+    load()
+    return () => { alive = false }
+  }, [isHackathon, currentUserId, post.id])
+
+  const handleJoinToggle = async () => {
+    if (!currentUserId || !canInteract || joining) return
+    setJoining(true)
+    const supabase = (await import('@/lib/supabase/client')).createClient()
+    if (joined) {
+      await supabase.rpc('leave_hackathon', { p_post_id: post.id })
+      setJoined(false)
+      setJoinCount(c => Math.max(0, c - 1))
+    } else {
+      await supabase.rpc('join_hackathon', { p_post_id: post.id })
+      setJoined(true)
+      setJoinCount(c => c + 1)
+    }
+    setJoining(false)
+  }
+
+  // Close the report modal with the Escape key.
+  useEffect(() => {
+    if (!reportOpen) return
+    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') { setReportOpen(false); setReportReason('') } }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [reportOpen])
 
   const sc = SCOPE_CONFIG[post.scope] || SCOPE_CONFIG.global
   const catIcon = CATEGORY_ICONS[post.categories?.key || ''] || '📄'
@@ -70,9 +118,11 @@ export default function PostCard({
     if (saved) {
       await supabase.from('saved_posts').delete().eq('user_id', currentUserId).eq('post_id', post.id)
       setSaved(false)
+      toast('Removed from saved')
     } else {
       await supabase.from('saved_posts').insert({ user_id: currentUserId, post_id: post.id })
       setSaved(true)
+      toast('Saved to bookmarks', { tone: 'success' })
     }
   }
 
@@ -82,31 +132,42 @@ export default function PostCard({
         await navigator.share({ title: post.title || 'Post', text: post.body, url: window.location.href })
       } catch { /* cancelled */ }
     } else {
-      navigator.clipboard?.writeText(window.location.href)
+      try {
+        await navigator.clipboard?.writeText(window.location.href)
+        toast('Link copied', { tone: 'success' })
+      } catch {
+        toast('Could not copy link')
+      }
     }
   }
 
-  const handleReport = async () => {
-    if (!currentUserId) return
-    const reason = window.prompt('Report this post to moderators — why? (spam, harassment, etc.)')
-    if (!reason?.trim()) return
+  const submitReport = async () => {
+    if (!currentUserId || !reportReason.trim()) return
+    setReportSending(true)
     try {
       const res = await fetch('/api/admin/copilot/report', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ content_type: 'post', content_id: post.id, reason: reason.trim() }),
+        body: JSON.stringify({ content_type: 'post', content_id: post.id, reason: reportReason.trim() }),
       })
-      window.alert(res.ok ? 'Thanks — our moderators will review it.' : 'Could not submit the report.')
+      if (res.ok) {
+        toast('Thanks — our moderators will review it.', { tone: 'success' })
+        setReportOpen(false)
+        setReportReason('')
+      } else {
+        toast('Could not submit the report.', { tone: 'danger' })
+      }
     } catch {
-      window.alert('Could not submit the report.')
+      toast('Could not submit the report.', { tone: 'danger' })
     }
+    setReportSending(false)
   }
 
   const loadComments = async () => {
     const supabase = (await import('@/lib/supabase/client')).createClient()
     const { data } = await supabase
       .from('post_comments')
-      .select('*, profiles(full_name, username)')
+      .select('*, profiles(full_name, username, avatar_url)')
       .eq('post_id', post.id)
       .order('created_at', { ascending: true })
     setComments(data || [])
@@ -149,11 +210,12 @@ export default function PostCard({
     <div style={{ background: 'var(--bg)', borderRadius: 14, border: post.is_pinned ? '1px solid var(--accent-border)' : '1px solid var(--border)', padding: '18px', boxShadow: 'var(--shadow-sm)' }}>
       <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 8, marginBottom: 10 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, minWidth: 0, flex: 1 }}>
-          <div
+          <Avatar
+            name={post.profiles?.full_name}
+            avatarUrl={post.profiles?.avatar_url}
+            size={38}
             onClick={() => post.profiles?.username && router.push(`/profile/${post.profiles.username}`)}
-            style={{ width: 38, height: 38, borderRadius: '50%', background: avatarColor(post.profiles?.full_name || ''), display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--on-accent)', fontSize: 14, fontWeight: 700, flexShrink: 0, cursor: 'pointer' }}>
-            {post.profiles?.full_name?.[0] || '?'}
-          </div>
+          />
           <div style={{ minWidth: 0 }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
               <span onClick={() => post.profiles?.username && router.push(`/profile/${post.profiles.username}`)} style={{ fontSize: 14, fontWeight: 700, color: 'var(--text-primary)', cursor: 'pointer', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
@@ -200,59 +262,92 @@ export default function PostCard({
         </div>
       ) : (
         <p style={{ fontSize: 14, color: 'var(--text-secondary)', lineHeight: 1.6, margin: '0 0 12px', whiteSpace: 'pre-wrap' }}>{post.body}</p>
-      )}
-
-      {post.apply_link && (
+      )}        {post.apply_link && (
         <a href={post.apply_link} target="_blank" rel="noopener noreferrer"
           style={{ display: 'inline-block', background: 'var(--accent)', color: 'var(--on-accent)', padding: '7px 16px', borderRadius: 8, fontSize: 13, fontWeight: 600, textDecoration: 'none', marginBottom: 12 }}>
           Apply →
         </a>
       )}
 
-      <div style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', columnGap: 18, rowGap: 8, borderTop: '1px solid var(--border)', paddingTop: 12 }}>
+      {isHackathon && currentUserId && (
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 12 }}>
+          <button onClick={handleJoinToggle} disabled={!canInteract || joining}
+            style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '7px 16px', borderRadius: 8, fontSize: 13, fontWeight: 600, cursor: !canInteract || joining ? 'default' : 'pointer', border: 'none', fontFamily: 'inherit', background: joined ? 'var(--success)' : 'var(--accent)', color: 'var(--on-accent)' }}>
+            {joining ? '…' : joined ? '✓ Joined' : '⚡ Join Hackathon'}
+          </button>
+          <span style={{ fontSize: 12, color: 'var(--text-muted)' }}>👥 {joinCount} joined</span>
+        </div>
+      )}
+
+      <div style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', columnGap: 4, rowGap: 2, borderTop: '1px solid var(--border)', paddingTop: 12 }}>
         <button onClick={handleLike} disabled={!canInteract}
-          style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 13, color: liked ? 'var(--accent)' : 'var(--text-muted)', background: 'none', border: 'none', cursor: canInteract ? 'pointer' : 'not-allowed', padding: 0, fontFamily: 'inherit' }}>
-          👍 {liked ? 'Liked' : 'Like'}
+          style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 13, color: liked ? 'var(--accent)' : 'var(--text-muted)', background: 'none', border: 'none', cursor: canInteract ? 'pointer' : 'not-allowed', padding: '9px 8px', borderRadius: 8, minHeight: 40, fontFamily: 'inherit' }}>
+          <span className={liked ? 'like-pop' : ''} style={{ display: 'inline-block' }}>👍</span> {liked ? 'Liked' : 'Like'}
         </button>
         <button onClick={toggleComments}
-          style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 13, color: showComments ? 'var(--accent)' : 'var(--text-muted)', background: 'none', border: 'none', cursor: 'pointer', padding: 0, fontFamily: 'inherit' }}>
+          style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 13, color: showComments ? 'var(--accent)' : 'var(--text-muted)', background: 'none', border: 'none', cursor: 'pointer', padding: '9px 8px', borderRadius: 8, minHeight: 40, fontFamily: 'inherit' }}>
           💬 Comment
         </button>
         <button onClick={handleSave}
-          style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 13, color: saved ? 'var(--accent)' : 'var(--text-muted)', background: 'none', border: 'none', cursor: 'pointer', padding: 0, fontFamily: 'inherit' }}>
+          style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 13, color: saved ? 'var(--accent)' : 'var(--text-muted)', background: 'none', border: 'none', cursor: 'pointer', padding: '9px 8px', borderRadius: 8, minHeight: 40, fontFamily: 'inherit' }}>
           {saved ? '🔖 Saved' : '🔖 Save'}
         </button>
         <button onClick={handleShare}
-          style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 13, color: 'var(--text-muted)', background: 'none', border: 'none', cursor: 'pointer', padding: 0, fontFamily: 'inherit' }}>
+          style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 13, color: 'var(--text-muted)', background: 'none', border: 'none', cursor: 'pointer', padding: '9px 8px', borderRadius: 8, minHeight: 40, fontFamily: 'inherit' }}>
           ↗ Share
         </button>
         {currentUserId && (
-          <button onClick={handleReport}
-            style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 13, color: 'var(--text-muted)', background: 'none', border: 'none', cursor: 'pointer', padding: 0, fontFamily: 'inherit' }}>
+          <button onClick={() => setReportOpen(true)}
+            style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 13, color: 'var(--text-muted)', background: 'none', border: 'none', cursor: 'pointer', padding: '9px 8px', borderRadius: 8, minHeight: 40, fontFamily: 'inherit' }}>
             🚩 Report
           </button>
         )}
         {isAuthor && !editing && (
           <button onClick={() => { setEditBody(post.body || ''); setEditing(true) }}
-            style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 13, color: 'var(--text-muted)', background: 'none', border: 'none', cursor: 'pointer', padding: 0, fontFamily: 'inherit' }}>
+            style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 13, color: 'var(--text-muted)', background: 'none', border: 'none', cursor: 'pointer', padding: '9px 8px', borderRadius: 8, minHeight: 40, fontFamily: 'inherit' }}>
             ✏️ Edit
           </button>
         )}
         {isAuthor && !editing && (
           <button onClick={handleDelete}
-            style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 13, color: 'var(--danger-text)', background: 'none', border: 'none', cursor: 'pointer', padding: 0, fontFamily: 'inherit' }}>
+            style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 13, color: 'var(--danger-text)', background: 'none', border: 'none', cursor: 'pointer', padding: '9px 8px', borderRadius: 8, minHeight: 40, fontFamily: 'inherit' }}>
             🗑️ Delete
           </button>
         )}
       </div>
 
+      {reportOpen && (
+        <div className="modal-overlay" style={{ position: 'fixed', inset: 0, zIndex: 300, background: 'rgba(0,0,0,0.45)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }} onClick={() => { if (!reportSending) { setReportOpen(false); setReportReason('') } }}>
+          <div className="modal-sheet" style={{ width: '100%', maxWidth: 400, background: 'var(--bg)', border: '1px solid var(--border)', borderRadius: 16, padding: 20, boxShadow: 'var(--shadow-lg)' }} onClick={e => e.stopPropagation()} role="dialog" aria-label="Report post">
+            <p style={{ fontSize: 16, fontWeight: 700, color: 'var(--text-primary)', margin: '0 0 4px' }}>🚩 Report this post</p>
+            <p style={{ fontSize: 12.5, color: 'var(--text-muted)', margin: '0 0 14px' }}>Our moderators will review it. False reports hurt the community.</p>
+            <textarea
+              value={reportReason}
+              onChange={e => setReportReason(e.target.value)}
+              placeholder="Why are you reporting this? (spam, harassment, etc.)"
+              rows={3}
+              autoFocus
+              style={{ width: '100%', boxSizing: 'border-box', border: '1px solid var(--border)', borderRadius: 10, padding: '10px 14px', fontSize: 13, outline: 'none', resize: 'none', fontFamily: 'inherit', color: 'var(--text-primary)', background: 'var(--bg-secondary)' }}
+            />
+            <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end', marginTop: 14 }}>
+              <button onClick={() => { setReportOpen(false); setReportReason('') }} disabled={reportSending}
+                style={{ padding: '8px 16px', borderRadius: 10, border: '1px solid var(--border)', background: 'var(--bg)', color: 'var(--text-secondary)', fontSize: 13, cursor: 'pointer', fontFamily: 'inherit' }}>
+                Cancel
+              </button>
+              <button onClick={submitReport} disabled={!reportReason.trim() || reportSending}
+                style={{ padding: '8px 16px', borderRadius: 10, border: 'none', background: !reportReason.trim() || reportSending ? 'var(--disabled)' : 'var(--danger)', color: 'var(--on-accent)', fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>
+                {reportSending ? 'Submitting…' : 'Submit report'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {showComments && (
         <div style={{ marginTop: 14, display: 'flex', flexDirection: 'column', gap: 10 }}>
           {comments.map((c: any) => (
             <div key={c.id} style={{ display: 'flex', gap: 8 }}>
-              <div style={{ width: 28, height: 28, borderRadius: '50%', background: avatarColor(c.profiles?.full_name || ''), display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--on-accent)', fontSize: 11, fontWeight: 700, flexShrink: 0 }}>
-                {c.profiles?.full_name?.[0] || '?'}
-              </div>
+              <Avatar name={c.profiles?.full_name} avatarUrl={c.profiles?.avatar_url} size={28} />
               <div style={{ background: 'var(--bg-secondary)', borderRadius: 10, padding: '8px 12px', flex: 1 }}>
                 <p style={{ fontSize: 12, fontWeight: 600, color: 'var(--accent)', margin: '0 0 2px' }}>@{c.profiles?.username}</p>
                 <p style={{ fontSize: 13, color: 'var(--text-secondary)', margin: 0 }}>{c.body}</p>

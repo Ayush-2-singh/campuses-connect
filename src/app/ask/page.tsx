@@ -4,6 +4,8 @@ import { useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
 import Layout from '@/components/Layout'
+import EmptyState from '@/components/EmptyState'
+import { ListSkeleton } from '@/components/Skeleton'
 
 export default function AskPage() {
   const [user, setUser] = useState<any>(null)
@@ -167,13 +169,9 @@ export default function AskPage() {
         )}
 
         {loading ? (
-          <p style={{ textAlign: 'center', color: 'var(--text-muted)', padding: '40px 0' }}>Loading...</p>
+          <ListSkeleton count={3} />
         ) : questions.length === 0 ? (
-          <div style={{ textAlign: 'center', padding: '60px 0' }}>
-            <div style={{ fontSize: 48, marginBottom: 12 }}>❓</div>
-            <p style={{ fontWeight: 600, color: 'var(--text-primary)', margin: '0 0 4px' }}>No questions yet</p>
-            <p style={{ fontSize: 13, color: 'var(--text-muted)', margin: 0 }}>Be the first to ask — seniors earn karma for helping!</p>
-          </div>
+          <EmptyState icon="message" title="No questions yet" body="Be the first to ask — seniors earn karma for helping!" />
         ) : (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
             {questions.map(q => {

@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
-import { listCreatableCategories } from '@/lib/permissions'
+import { listCreatableCategories, useAdminContext } from '@/lib/permissions'
 import type { CreatableCategory, PostScope } from '@/types'
 
 const SCOPE_LABELS: Record<string, string> = {
@@ -33,6 +33,7 @@ export default function PostComposer({
   const [checking, setChecking] = useState(false)
   const [heldNotice, setHeldNotice] = useState('')
   const [postError, setPostError] = useState('')
+  const admin = useAdminContext(userId)
 
   useEffect(() => {
     listCreatableCategories(userId, context).then(list => {
@@ -44,16 +45,25 @@ export default function PostComposer({
     })
   }, [userId, context.communityId, context.campusId, context.collegeId])
 
-  if (!creatable.length) return null // no posting rights in this context
-
   const scopeLevel = (s?: string) => (s === 'global' ? 3 : s === 'college_network' ? 2 : s === 'campus' ? 1 : 0)
-  const maxScope = creatable.find(c => c.category_key === category?.category_key)?.max_scope
-  const scopeOptions = (['campus', 'college_network', 'global'] as PostScope[]).filter(
-    s => scopeLevel(maxScope) >= scopeLevel(s)
-  )
+  // Community posts are always global. Students get campus | global
+  // (college_network stays admin territory).
+  const baseScopes = context.communityId ? (['global'] as PostScope[]) : (['campus', 'college_network', 'global'] as PostScope[])
+  // A scope is valid only if the actor may use it here: college_network is
+  // admin-only, and 'campus' requires an actual campus/college context.
+  const scopeUsable = (s: PostScope) =>
+    (admin.isAdmin || s !== 'college_network')
+    && (s !== 'campus' || !!(context.campusId || context.collegeId))
+  const hasValidScope = (c: CreatableCategory) => baseScopes.some(s => scopeLevel(c.max_scope) >= scopeLevel(s) && scopeUsable(s))
+  const visibleCategories = creatable.filter(hasValidScope)
+  const current = visibleCategories.find(c => c.category_key === category?.category_key) || visibleCategories[0] || null
+  const maxScope = current?.max_scope
+  const scopeOptions = baseScopes.filter(s => scopeLevel(maxScope) >= scopeLevel(s) && scopeUsable(s))
+
+  if (!current) return null // no posting rights in this context
 
   const handlePost = async () => {
-    if (!body.trim() || !category || posting) return
+    if (!body.trim() || !current || posting) return
     setPosting(true)
     setChecking(true)
     setPostError('')
@@ -67,7 +77,7 @@ export default function PostComposer({
       const res = await fetch('/api/admin/copilot/check', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ text: body.trim(), contentType: category.category_key }),
+        body: JSON.stringify({ text: body.trim(), contentType: current.category_key }),
       })
       if (res.ok) {
         const data = await res.json()
@@ -81,7 +91,7 @@ export default function PostComposer({
     // 2. Insert (held when flagged so only the author + moderators see it)
     const insertPayload: any = {
       author_id: userId,
-      category_id: category.category_id,
+      category_id: current.category_id,
       scope,
       community_id: context.communityId || null,
       college_id: context.collegeId || null,
@@ -163,7 +173,7 @@ export default function PostComposer({
             placeholder={placeholder}
             style={{ width: '100%', border: '1px solid var(--border)', borderRadius: 10, padding: '10px 14px', fontSize: 14, outline: 'none', resize: 'none', fontFamily: 'inherit', marginBottom: 10, background: 'var(--bg-secondary)', boxSizing: 'border-box' }} />
           <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 10 }}>
-            {creatable.map(c => (
+            {visibleCategories.map(c => (
               <button key={c.category_key} onClick={() => { setCategory(c); setScope((c.max_scope as PostScope) || 'campus') }}
                 style={{ padding: '5px 12px', borderRadius: 20, fontSize: 12, fontWeight: 500, border: category?.category_key === c.category_key ? 'none' : '1px solid var(--border)', background: category?.category_key === c.category_key ? 'var(--accent)' : 'var(--bg)', color: category?.category_key === c.category_key ? 'var(--on-accent)' : 'var(--text-secondary)', cursor: 'pointer', fontFamily: 'inherit' }}>
                 {c.label}

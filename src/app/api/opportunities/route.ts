@@ -54,7 +54,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Invalid JSON body.' }, { status: 400 })
   }
 
-  const { title, description, opp_type, company_org, apply_link, deadline, is_paid, stipend_range, location_type } = body
+  const { title, description, opp_type, company_org, apply_link, deadline, is_paid, stipend_range, location_type, skills_required } = body
 
   if (!title || typeof title !== 'string' || !title.trim()) {
     return NextResponse.json({ error: 'title is required.' }, { status: 422 })
@@ -77,6 +77,7 @@ export async function POST(request: NextRequest) {
       is_paid: Boolean(is_paid),
       stipend_range: stipend_range ?? null,
       location_type: location_type ?? 'remote',
+      skills_required: Array.isArray(skills_required) ? skills_required.map(String).filter(Boolean).slice(0, 12) : null,
       visibility: 'platform',
       is_active: true,
     })

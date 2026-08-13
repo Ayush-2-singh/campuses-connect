@@ -12,8 +12,14 @@ export default function OnboardingPage() {
   const [campuses, setCampuses] = useState<any[]>([])
   const [departments, setDepartments] = useState<any[]>([])
   const [selected, setSelected] = useState({ college_id: '', campus_id: '', department_id: '', current_year: '', batch_year: '', username: '', bio: '', college_email: '' })
+  const [q, setQ] = useState({ college: '', campus: '', department: '' })
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
+  const [requestOpen, setRequestOpen] = useState(false)
+  const [requestName, setRequestName] = useState('')
+  const [requestCity, setRequestCity] = useState('')
+  const [requestSent, setRequestSent] = useState(false)
+  const [requesting, setRequesting] = useState(false)
   const router = useRouter()
   const supabase = createClient()
 
@@ -32,6 +38,29 @@ export default function OnboardingPage() {
   const next = () => setStep(s => s + 1)
   const back = () => setStep(s => s - 1)
 
+  // No college listed → skip straight to the Profile step and join globally.
+  const joinGlobally = () => {
+    setSelected(s => ({ ...s, college_id: '', campus_id: '', department_id: '' }))
+    setStep(3)
+  }
+
+  const requestCollege = async () => {
+    if (!requestName.trim() || requesting) return
+    setRequesting(true)
+    const { data: { user } } = await supabase.auth.getUser()
+    await supabase.from('college_requests').insert({
+      name: requestName.trim(),
+      city: requestCity.trim() || null,
+      requested_by: user?.id || null,
+    })
+    setRequesting(false)
+    setRequestSent(true)
+  }
+
+  const filteredColleges = colleges.filter(c => c.name.toLowerCase().includes(q.college.toLowerCase()))
+  const filteredCampuses = campuses.filter(c => c.name.toLowerCase().includes(q.campus.toLowerCase()))
+  const filteredDepartments = departments.filter(d => (d.name + ' ' + d.short_name).toLowerCase().includes(q.department.toLowerCase()))
+
   const handleFinish = async () => {
     if (!selected.username.trim()) { setError('Username is required'); return }
     setLoading(true)
@@ -49,7 +78,8 @@ export default function OnboardingPage() {
       batch_year: selected.batch_year ? parseInt(selected.batch_year) : null,
     }).eq('id', user.id)
     if (error) { setError(error.message); setLoading(false) }
-    else router.push('/feed')
+    // No campus → land on Global so the user is never stuck with nothing to see.
+    else router.push(selected.campus_id ? '/feed' : '/global')
   }
 
   const cardStyle = (active: boolean) => ({
@@ -106,30 +136,86 @@ export default function OnboardingPage() {
 
           {step === 0 && (
             <div style={{ marginTop: 16 }}>
-              <p style={{ fontSize: 13, color: 'var(--text-muted)', marginBottom: 12 }}>Select your college</p>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                {colleges.map(c => (
+              <p style={{ fontSize: 13, color: 'var(--text-muted)', marginBottom: 12 }}>Select your college — or join globally from anywhere</p>
+              <input
+                type="text"
+                value={q.college}
+                onChange={e => setQ(s => ({ ...s, college: e.target.value }))}
+                placeholder="Search your college…"
+                style={{ ...inputStyle, marginBottom: 10 }}
+                autoComplete="off"
+              />
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 8, maxHeight: 300, overflowY: 'auto' }}>
+                {filteredColleges.map(c => (
                   <button key={c.id} onClick={() => setSelected(s => ({ ...s, college_id: c.id }))} style={cardStyle(selected.college_id === c.id)}>
                     {c.name}
                   </button>
                 ))}
+                {filteredColleges.length === 0 && (
+                  <p style={{ fontSize: 13, color: 'var(--text-muted)', textAlign: 'center', padding: '16px 0' }}>No colleges match “{q.college}”. Clear the search or join globally below.</p>
+                )}
               </div>
-              <button disabled={!selected.college_id} onClick={next} style={{ ...btnPrimary(!selected.college_id), width: '100%', marginTop: 16 }}>
+              <button disabled={!selected.college_id} onClick={next} style={{ ...btnPrimary(!selected.college_id), width: '100%', marginTop: 14 }}>
                 Continue
               </button>
+
+              <div style={{ display: 'flex', alignItems: 'center', gap: 12, margin: '16px 0' }}>
+                <div style={{ flex: 1, height: 1, background: 'var(--border)' }} />
+                <span style={{ fontSize: 11, color: 'var(--text-muted)', fontWeight: 500 }}>or</span>
+                <div style={{ flex: 1, height: 1, background: 'var(--border)' }} />
+              </div>
+
+              <button
+                onClick={joinGlobally}
+                style={{ width: '100%', textAlign: 'center', background: 'var(--accent-light)', color: 'var(--accent)', border: '1px solid var(--accent-border)', borderRadius: 10, padding: '12px', fontSize: 14, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}
+              >
+                🌐 My college isn&apos;t listed — Join globally
+              </button>
+
+              {!requestSent ? (
+                <div style={{ marginTop: 10, textAlign: 'center' }}>
+                  <button onClick={() => setRequestOpen(o => !o)} style={{ fontSize: 12.5, color: 'var(--text-muted)', background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'inherit', textDecoration: 'underline' }}>
+                    Can&apos;t find it? Request your college
+                  </button>
+                  {requestOpen && (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginTop: 10, textAlign: 'left' }}>
+                      <input type="text" value={requestName} onChange={e => setRequestName(e.target.value)} placeholder="College name *" style={inputStyle} />
+                      <input type="text" value={requestCity} onChange={e => setRequestCity(e.target.value)} placeholder="City (optional)" style={inputStyle} />
+                      <button onClick={requestCollege} disabled={!requestName.trim() || requesting} style={{ ...btnPrimary(!requestName.trim() || requesting), width: '100%' }}>
+                        {requesting ? 'Sending…' : 'Request college'}
+                      </button>
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <p style={{ fontSize: 12.5, color: 'var(--success-text)', textAlign: 'center', marginTop: 12 }}>
+                  ✓ Request sent — we&apos;ll add your college soon!
+                </p>
+              )}
             </div>
           )}
 
           {step === 1 && (
             <div style={{ marginTop: 16 }}>
               <p style={{ fontSize: 13, color: 'var(--text-muted)', marginBottom: 12 }}>Select your campus</p>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                {campuses.map(c => (
+              <input
+                type="text"
+                value={q.campus}
+                onChange={e => setQ(s => ({ ...s, campus: e.target.value }))}
+                placeholder="Search campus…"
+                style={{ ...inputStyle, marginBottom: 10 }}
+                autoComplete="off"
+              />
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 8, maxHeight: 320, overflowY: 'auto' }}>
+                {filteredCampuses.map(c => (
                   <button key={c.id} onClick={() => setSelected(s => ({ ...s, campus_id: c.id }))}
                     style={cardStyle(selected.campus_id === c.id)}>
                     {c.name}
                   </button>
                 ))}
+                {filteredCampuses.length === 0 && (
+                  <p style={{ fontSize: 13, color: 'var(--text-muted)', textAlign: 'center', padding: '16px 0' }}>No campuses match “{q.campus}”. Clear the search to see the full list.</p>
+                )}
               </div>
               <div style={{ display: 'flex', gap: 8, marginTop: 16 }}>
                 <button onClick={back} style={btnSecondary}>Back</button>
@@ -141,13 +227,24 @@ export default function OnboardingPage() {
           {step === 2 && (
             <div style={{ marginTop: 16 }}>
               <p style={{ fontSize: 13, color: 'var(--text-muted)', marginBottom: 12 }}>Select your department</p>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 14 }}>
-                {departments.map(d => (
+              <input
+                type="text"
+                value={q.department}
+                onChange={e => setQ(s => ({ ...s, department: e.target.value }))}
+                placeholder="Search department…"
+                style={{ ...inputStyle, marginBottom: 10 }}
+                autoComplete="off"
+              />
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 14, maxHeight: 260, overflowY: 'auto' }}>
+                {filteredDepartments.map(d => (
                   <button key={d.id} onClick={() => setSelected(s => ({ ...s, department_id: d.id }))} style={cardStyle(selected.department_id === d.id)}>
                     <span style={{ fontWeight: 600 }}>{d.short_name}</span>
                     <span style={{ fontSize: 12, color: 'var(--text-muted)', marginLeft: 8 }}>{d.name}</span>
                   </button>
                 ))}
+                {filteredDepartments.length === 0 && (
+                  <p style={{ fontSize: 13, color: 'var(--text-muted)', textAlign: 'center', padding: '16px 0' }}>No departments match “{q.department}”. Clear the search to see the full list.</p>
+                )}
               </div>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 16 }}>
                 <div>

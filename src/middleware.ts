@@ -34,8 +34,9 @@ export async function middleware(request: NextRequest) {
     if (!isAdmin) return NextResponse.redirect(new URL('/feed', request.url))
   }
 
-  // Auth pages redirect to feed if logged in
-  if (user && path.startsWith('/auth')) {
+  // Auth pages redirect to feed if logged in — except the password-recovery
+  // pages, which must load even for signed-in users clicking an email link.
+  if (user && path.startsWith('/auth') && !path.startsWith('/auth/reset-password') && !path.startsWith('/auth/forgot-password') && !path.startsWith('/auth/callback')) {
     return NextResponse.redirect(new URL('/feed', request.url))
   }
 

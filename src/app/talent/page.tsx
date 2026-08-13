@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
 import Layout from '@/components/Layout'
+import Avatar from '@/components/Avatar'
 
 export default function TalentPage() {
   const [user, setUser] = useState<any>(null)
@@ -31,15 +32,10 @@ export default function TalentPage() {
 
   const handleSearch = async (val: string) => {
     setSearch(val)
-    let query = supabase.from('profiles').select('*, campuses(name), departments(short_name)').eq('is_public', true).order('karma_points', { ascending: false }).limit(50)
+    let query = supabase.from('profiles').select('avatar_url, *, campuses(name), departments(short_name)').eq('is_public', true).order('karma_points', { ascending: false }).limit(50)
     if (val.trim()) query = query.ilike('full_name', `%${val}%`)
     const { data } = await query
     setStudents(data || [])
-  }
-
-  const avatarColor = (name: string) => {
-    const colors = ['#2563eb','#7c3aed','#16a34a','#d97706','var(--danger)','#0891b2']
-    return colors[(name?.charCodeAt(0) || 0) % colors.length]
   }
 
   return (
@@ -69,9 +65,7 @@ export default function TalentPage() {
               return (
                 <div key={s.id} onClick={() => router.push(`/profile/${s.username}`)}
                   style={{ background: 'var(--bg)', border: '1px solid var(--border)', borderRadius: 12, padding: '14px 16px', display: 'flex', alignItems: 'center', gap: 12, cursor: 'pointer', boxShadow: 'var(--shadow-sm)' }}>
-                  <div style={{ width: 44, height: 44, borderRadius: '50%', background: avatarColor(s.full_name || ''), display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--on-accent)', fontSize: 16, fontWeight: 700, flexShrink: 0 }}>
-                    {s.full_name?.[0] || '?'}
-                  </div>
+                  <Avatar name={s.full_name} avatarUrl={s.avatar_url} size={44} />
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 3 }}>
                       <p style={{ fontSize: 14, fontWeight: 600, color: 'var(--text-primary)', margin: 0 }}>{s.full_name || 'No name'}</p>

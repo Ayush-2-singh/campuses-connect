@@ -4,6 +4,8 @@ import { useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
 import Layout from '@/components/Layout'
+import EmptyState from '@/components/EmptyState'
+import { ListSkeleton } from '@/components/Skeleton'
 
 type Event = {
   id: string
@@ -238,13 +240,9 @@ export default function EventsPage() {
         )}
 
         {/* Event list */}
-        {loading ? <p style={{ color: 'var(--text-muted)', textAlign: 'center', padding: '40px 0' }}>Loading events…</p> :
+        {loading ? <ListSkeleton count={2} /> :
           events.length === 0 ? (
-            <div style={{ textAlign: 'center', padding: '48px 20px' }}>
-              <p style={{ fontSize: 36, margin: '0 0 10px' }}>🎪</p>
-              <p style={{ fontSize: 15, fontWeight: 600, color: 'var(--text-primary)', margin: '0 0 4px' }}>No events yet</p>
-              <p style={{ fontSize: 13, color: 'var(--text-muted)', margin: 0 }}>Be the first to host something on your campus.</p>
-            </div>
+            <EmptyState icon="calendar" title="No events yet" body="Be the first to host something on your campus — fests, hackathons, tech talks." />
           ) : (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
               {events.map(ev => {
@@ -309,7 +307,7 @@ export default function EventsPage() {
                                 {g.media_type === 'video' ? (
                                   <video src={g.media_url} controls style={{ width: '100%', height: 90, objectFit: 'cover', display: 'block' }} />
                                 ) : (
-                                  <img src={g.media_url} alt={g.caption || 'memory'} style={{ width: '100%', height: 90, objectFit: 'cover', display: 'block' }} />
+                                  <img src={g.media_url} alt={g.caption || 'memory'} loading="lazy" decoding="async" style={{ width: '100%', height: 90, objectFit: 'cover', display: 'block' }} />
                                 )}
                                 {g.caption && <p style={{ fontSize: 10.5, color: 'var(--text-muted)', margin: 0, padding: '4px 8px' }}>{g.caption}</p>}
                               </div>

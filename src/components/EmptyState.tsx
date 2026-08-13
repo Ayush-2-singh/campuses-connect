@@ -8,15 +8,17 @@ export default function EmptyState({
   body,
   cta,
   onCta,
+  compact,
 }: {
   icon?: string
   title: string
   body?: string
   cta?: string
   onCta?: () => void
+  compact?: boolean
 }) {
   return (
-    <div style={{ textAlign: 'center', padding: '56px 24px' }}>
+    <div style={{ textAlign: 'center', padding: compact ? '28px 16px' : '56px 24px' }}>
       <div
         style={{
           width: 56,

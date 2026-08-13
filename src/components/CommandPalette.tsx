@@ -22,6 +22,7 @@ const COMMANDS: CmdItem[] = [
   { icon: 'grad', label: 'Talk to your AI Brain', hint: 'AI Brain', href: '/brain', group: 'Ask Campus Connect' },
   // Navigation
   { icon: 'home', label: 'Home — Campus Pulse', href: '/feed', group: 'Navigate' },
+  { icon: 'globe', label: 'Global — connect everywhere', href: '/global', group: 'Navigate' },
   { icon: 'book', label: 'Classroom', href: '/college', group: 'Navigate' },
   { icon: 'briefcase', label: 'Opportunities', href: '/opportunities', group: 'Navigate' },
   { icon: 'notebook', label: 'Notes', href: '/notes', group: 'Navigate' },
@@ -153,6 +154,7 @@ export default function CommandPalette({ open, onClose }: { open: boolean; onClo
                     className="cmd-item"
                     data-active={idx === activeIndex}
                     onMouseEnter={() => setActiveIndex(idx)}
+                    onPointerDown={() => setActiveIndex(idx)}
                     onClick={() => select(item)}
                   >
                     <span style={{ display: 'flex', color: idx === activeIndex ? 'var(--accent-text)' : 'var(--text-muted)', width: 18 }}>

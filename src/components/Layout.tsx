@@ -5,11 +5,15 @@ import { createClient } from '@/lib/supabase/client'
 import { useRouter, usePathname } from 'next/navigation'
 import ThemeToggle from '@/components/ThemeToggle'
 import CommandPalette from '@/components/CommandPalette'
+import MobileBottomNav from '@/components/MobileBottomNav'
+import MobileMenu from '@/components/MobileMenu'
+import Avatar from '@/components/Avatar'
 import { Icon } from '@/components/icons'
-import { AVATAR_COLORS, accentForPath } from '@/theme/colors'
+import { accentForPath } from '@/theme/colors'
 
 const NAV_ITEMS = [
   { label: 'Home', href: '/feed', icon: 'home' },
+  { label: 'Global', href: '/global', icon: 'globe' },
   { label: 'Classroom', href: '/college', icon: 'book' },
   { label: 'Events', href: '/events', icon: 'calendar' },
   { label: 'Compete', href: '/compete', icon: 'zap' },
@@ -20,19 +24,6 @@ const NAV_ITEMS = [
 ]
 
 const SECONDARY_NAV = [
-  { label: 'More', href: '/more', icon: 'more' },
-  { label: 'Profile', href: '/profile', icon: 'user' },
-]
-
-const MOBILE_NAV = [
-  { label: 'Home', href: '/feed', icon: 'home' },
-  { label: 'Classroom', href: '/college', icon: 'book' },
-  { label: 'Events', href: '/events', icon: 'calendar' },
-  { label: 'Compete', href: '/compete', icon: 'zap' },
-  { label: 'Opportunities', href: '/opportunities', icon: 'briefcase' },
-  { label: 'Notes', href: '/notes', icon: 'notebook' },
-  { label: 'Talent', href: '/talent', icon: 'star' },
-  { label: 'Communities', href: '/communities', icon: 'users' },
   { label: 'More', href: '/more', icon: 'more' },
   { label: 'Profile', href: '/profile', icon: 'user' },
 ]
@@ -70,6 +61,12 @@ export default function Layout({ children, user, profile }: { children: React.Re
   const [unreadCount, setUnreadCount] = React.useState(0)
   const [cmdOpen, setCmdOpen] = React.useState(false)
   const [fabOpen, setFabOpen] = React.useState(false)
+  const [menuOpen, setMenuOpen] = React.useState(false)
+
+  // Close the mobile ☰ menu whenever the route changes.
+  React.useEffect(() => {
+    setMenuOpen(false)
+  }, [pathname])
 
   React.useEffect(() => {
     if (!user) return
@@ -101,10 +98,6 @@ export default function Layout({ children, user, profile }: { children: React.Re
     return () => { document.documentElement.style.overflow = '' }
   }, [cmdOpen])
 
-  const avatarColor = (name: string) => {
-    return AVATAR_COLORS[(name?.charCodeAt(0) || 0) % AVATAR_COLORS.length]
-  }
-
   const isActive = (href: string) => pathname === href || pathname.startsWith(href + '/')
 
   // Contextual accent for the current section — recolors the whole shell
@@ -120,12 +113,12 @@ export default function Layout({ children, user, profile }: { children: React.Re
         className="desktop-sidebar"
       >
         <div style={{ padding: '0 12px 18px', borderBottom: '1px solid var(--border)', marginBottom: 14, display: 'flex', alignItems: 'center', gap: 10 }}>
-          <div style={{ width: 34, height: 34, borderRadius: 10, background: 'var(--accent)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--on-accent)', flexShrink: 0 }}>
-            <Icon name="grad" size={19} />
+          <div style={{ width: 36, height: 36, borderRadius: 11, background: 'linear-gradient(135deg, var(--accent) 0%, color-mix(in srgb, var(--accent) 40%, var(--accent-purple)) 100%)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--on-accent)', flexShrink: 0, boxShadow: 'var(--accent-glow)' }}>
+            <Icon name="grad" size={20} />
           </div>
           <div>
-            <h1 style={{ fontSize: 16, fontWeight: 800, color: 'var(--text-primary)', margin: 0, lineHeight: 1.2 }}>
-              Campus<span style={{ color: 'var(--accent)' }}>Connect</span>
+            <h1 style={{ fontSize: 16, fontWeight: 800, color: 'var(--text-primary)', margin: 0, lineHeight: 1.2, letterSpacing: '-0.02em' }}>
+              Campus<span className="text-gradient">Connect</span>
             </h1>
             <p style={{ fontSize: 10.5, color: 'var(--text-muted)', margin: 0 }}>Your campus, connected.</p>
           </div>
@@ -140,12 +133,14 @@ export default function Layout({ children, user, profile }: { children: React.Re
                 onClick={() => router.push(item.href)}
                 style={{
                   width: '100%', textAlign: 'left', padding: '9px 12px', borderRadius: 'var(--radius-sm)',
-                  background: active ? 'var(--accent-light)' : 'transparent',
+                  background: active ? 'linear-gradient(90deg, var(--accent-light), transparent)' : 'transparent',
                   color: active ? 'var(--accent-text)' : 'var(--text-secondary)',
                   border: 'none', fontSize: 14, fontWeight: active ? 600 : 500,
                   cursor: 'pointer', marginBottom: 2, fontFamily: 'inherit',
                   display: 'flex', alignItems: 'center', gap: 12,
+                  boxShadow: active ? 'inset 2px 0 0 var(--accent)' : 'none',
                 }}
+                className="nav-pill"
               >
                 <NavIcon icon={item.icon} active={active} />
                 {item.label}
@@ -163,12 +158,14 @@ export default function Layout({ children, user, profile }: { children: React.Re
                 onClick={() => router.push(item.href)}
                 style={{
                   width: '100%', textAlign: 'left', padding: '9px 12px', borderRadius: 'var(--radius-sm)',
-                  background: active ? 'var(--accent-light)' : 'transparent',
+                  background: active ? 'linear-gradient(90deg, var(--accent-light), transparent)' : 'transparent',
                   color: active ? 'var(--accent-text)' : 'var(--text-secondary)',
                   border: 'none', fontSize: 14, fontWeight: active ? 600 : 500,
                   cursor: 'pointer', marginBottom: 2, fontFamily: 'inherit',
                   display: 'flex', alignItems: 'center', gap: 12,
+                  boxShadow: active ? 'inset 2px 0 0 var(--accent)' : 'none',
                 }}
+                className="nav-pill"
               >
                 <NavIcon icon={item.icon} active={active} />
                 {item.label}
@@ -181,11 +178,10 @@ export default function Layout({ children, user, profile }: { children: React.Re
           <div style={{ padding: '10px 6px 0', borderTop: '1px solid var(--border)' }}>
             <div
               onClick={() => router.push('/profile')}
-              style={{ display: 'flex', alignItems: 'center', gap: 10, cursor: 'pointer', padding: '9px 10px', borderRadius: 'var(--radius-sm)', background: 'var(--bg-secondary)' }}
+              className="nav-pill"
+              style={{ display: 'flex', alignItems: 'center', gap: 10, cursor: 'pointer', padding: '9px 10px', borderRadius: 'var(--radius-sm)', background: 'var(--bg-secondary)', border: '1px solid var(--border)' }}
             >
-              <div style={{ width: 34, height: 34, borderRadius: '50%', background: avatarColor(profile?.full_name || ''), display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--on-accent)', fontSize: 14, fontWeight: 700, flexShrink: 0 }}>
-                {profile?.full_name?.[0] || '?'}
-              </div>
+              <Avatar name={profile?.full_name} avatarUrl={profile?.avatar_url} size={34} />
               <div style={{ flex: 1, minWidth: 0 }}>
                 <p style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-primary)', margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{profile?.full_name || 'You'}</p>
                 <p style={{ fontSize: 11, color: 'var(--text-muted)', margin: 0 }}>@{profile?.username}</p>
@@ -229,7 +225,8 @@ export default function Layout({ children, user, profile }: { children: React.Re
           <div style={{ maxWidth: 1100, margin: '0 auto', padding: '10px 24px', display: 'flex', alignItems: 'center', gap: 12 }}>
             <button
               onClick={() => setCmdOpen(true)}
-              style={{ display: 'flex', alignItems: 'center', gap: 9, flex: 1, maxWidth: 420, background: 'var(--bg-secondary)', border: '1px solid var(--border)', borderRadius: 'var(--radius-sm)', padding: '8px 12px', color: 'var(--text-muted)', cursor: 'pointer', fontFamily: 'inherit', fontSize: 13 }}
+              style={{ display: 'flex', alignItems: 'center', gap: 9, flex: 1, maxWidth: 420, background: 'var(--bg-secondary)', border: '1px solid var(--border)', borderRadius: 'var(--radius-sm)', padding: '8px 12px', color: 'var(--text-muted)', cursor: 'pointer', fontFamily: 'inherit', fontSize: 13, boxShadow: '0 0 0 0 transparent' }}
+              className="search-pill"
               aria-label="Open search"
             >
               <Icon name="search" size={15} />
@@ -250,13 +247,13 @@ export default function Layout({ children, user, profile }: { children: React.Re
                 </span>
               )}
             </button>
-            <button
+            <Avatar
+              name={profile?.full_name}
+              avatarUrl={profile?.avatar_url}
+              size={38}
+              border
               onClick={() => router.push('/profile')}
-              aria-label="Profile"
-              style={{ width: 38, height: 38, borderRadius: '50%', border: '1px solid var(--border)', background: avatarColor(profile?.full_name || ''), color: 'var(--on-accent)', fontSize: 14, fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
-            >
-              {profile?.full_name?.[0] || '?'}
-            </button>
+            />
           </div>
         </div>
 
@@ -267,66 +264,58 @@ export default function Layout({ children, user, profile }: { children: React.Re
         >
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-              <div style={{ width: 28, height: 28, borderRadius: 8, background: 'var(--accent)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--on-accent)' }}>
-                <Icon name="grad" size={16} />
+              <div style={{ width: 30, height: 30, borderRadius: 9, background: 'linear-gradient(135deg, var(--accent) 0%, color-mix(in srgb, var(--accent) 40%, var(--accent-purple)) 100%)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--on-accent)', boxShadow: 'var(--accent-glow)' }}>
+                <Icon name="grad" size={17} />
               </div>
               <h1 style={{ fontSize: 17, fontWeight: 800, color: 'var(--text-primary)', margin: 0 }}>
                 Campus<span style={{ color: 'var(--accent)' }}>Connect</span>
               </h1>
             </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
               <button
                 onClick={() => setCmdOpen(true)}
                 aria-label="Search"
-                style={{ width: 32, height: 32, borderRadius: '50%', border: '1px solid var(--border)', background: 'var(--bg)', color: 'var(--text-secondary)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}
+                style={{ width: 40, height: 40, borderRadius: '50%', border: '1px solid var(--border)', background: 'var(--bg)', color: 'var(--text-secondary)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}
               >
-                <Icon name="search" size={15} />
+                <Icon name="search" size={17} />
               </button>
               <ThemeToggle mode="inline" />
-              {user && profile?.streak_days > 0 && (
-                <span style={{ fontSize: 12, background: 'var(--orange-light)', color: 'var(--orange-text)', padding: '3px 8px', borderRadius: 20, fontWeight: 500, display: 'inline-flex', alignItems: 'center', gap: 3 }}>
-                  <Icon name="flame" size={12} /> {profile.streak_days}
-                </span>
-              )}
               {!user ? (
                 <button
                   onClick={() => router.push('/auth/login')}
-                  style={{ fontSize: 13, color: 'var(--accent)', border: '1px solid var(--accent)', padding: '5px 12px', borderRadius: 8, background: 'var(--bg)', cursor: 'pointer' }}
+                  style={{ fontSize: 13, color: 'var(--accent)', border: '1px solid var(--accent)', padding: '8px 14px', borderRadius: 8, background: 'var(--bg)', cursor: 'pointer', minHeight: 40 }}
                 >Sign in</button>
               ) : (
-                <div
+                <Avatar
+                  name={profile?.full_name}
+                  avatarUrl={profile?.avatar_url}
+                  size={36}
+                  border
                   onClick={() => router.push('/profile')}
-                  style={{ width: 30, height: 30, borderRadius: '50%', background: avatarColor(profile?.full_name || ''), display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--on-accent)', fontSize: 12, fontWeight: 700, cursor: 'pointer' }}
-                >{profile?.full_name?.[0] || '?'}</div>
+                />
               )}
+              <button
+                onClick={() => setMenuOpen(o => !o)}
+                aria-label={menuOpen ? 'Close menu' : 'Open menu'}
+                aria-expanded={menuOpen}
+                style={{ width: 40, height: 40, borderRadius: '50%', border: menuOpen ? '1px solid var(--accent)' : '1px solid var(--border)', background: menuOpen ? 'var(--accent-light)' : 'var(--bg)', color: menuOpen ? 'var(--accent-text)' : 'var(--text-secondary)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}
+              >
+                <Icon name="menu" size={17} />
+              </button>
             </div>
           </div>
         </div>
 
-        {children}
+        <div key={pathname} className="page-enter">
+          {children}
+        </div>
       </main>
 
-      {/* ── Mobile bottom nav ── */}
-      <div
-        style={{ position: 'fixed', bottom: 0, left: 0, right: 0, background: 'var(--bg)', borderTop: '1px solid var(--border)', zIndex: 50, display: 'none' }}
-        className="mobile-bottomnav"
-      >
-        <div style={{ display: 'flex', overflowX: 'auto', scrollbarWidth: 'none', WebkitOverflowScrolling: 'touch' }} className="scrollbar-hide">
-          {MOBILE_NAV.map(item => {
-            const active = isActive(item.href)
-            return (
-              <button
-                key={item.href}
-                onClick={() => router.push(item.href)}
-                style={{ flexShrink: 0, minWidth: 62, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3, padding: '9px 6px 8px', background: 'none', border: 'none', cursor: 'pointer', color: active ? 'var(--accent)' : 'var(--text-muted)', fontFamily: 'inherit' }}
-              >
-                <Icon name={item.icon} size={20} strokeWidth={active ? 2.4 : 2} />
-                <span style={{ fontSize: 10, fontWeight: active ? 600 : 400, whiteSpace: 'nowrap' }}>{item.label}</span>
-              </button>
-            )
-          })}
-        </div>
-      </div>
+      {/* ── Mobile bottom nav (shared 4-tab bar) ── */}
+      <MobileBottomNav pathname={pathname} onNavigate={href => router.push(href)} />
+
+      {/* ── Mobile ☰ menu (shared dropdown) ── */}
+      <MobileMenu open={menuOpen} top={54} pathname={pathname} onClose={() => setMenuOpen(false)} onNavigate={href => router.push(href)} />
 
       {/* ── Mobile floating action button ── */}
       <div className="fab-wrap" role="menu" aria-label="Create">

@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
 import Layout from '@/components/Layout'
+import EmptyState from '@/components/EmptyState'
 import { useAdminContext } from '@/lib/permissions'
 
 export default function LostFoundPage() {
@@ -48,7 +49,7 @@ export default function LostFoundPage() {
         <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 20 }}>
           <div>
             <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 4 }}>
-              <button onClick={() => router.push('/more')} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 20, color: 'var(--text-muted)' }}>←</button>
+              <button onClick={() => router.push('/more')} aria-label="Back" style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 20, color: 'var(--text-muted)', width: 44, height: 44, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', borderRadius: 10, margin: '-10px 0 -10px -12px', flexShrink: 0 }}>←</button>
               <h2 style={{ fontSize: 22, fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>Lost & Found</h2>
             </div>
             <p style={{ fontSize: 13, color: 'var(--text-muted)', margin: 0, marginLeft: 34 }}>Report lost items or return found ones</p>
@@ -96,11 +97,7 @@ export default function LostFoundPage() {
         )}
 
         {filtered.length === 0 ? (
-          <div style={{ textAlign: 'center', padding: '60px 0' }}>
-            <div style={{ fontSize: 48, marginBottom: 12 }}>🔍</div>
-            <p style={{ fontWeight: 600, color: 'var(--text-primary)', margin: '0 0 4px' }}>Nothing here yet</p>
-            <p style={{ fontSize: 13, color: 'var(--text-muted)', margin: 0 }}>Be the first to post!</p>
-          </div>
+          <EmptyState icon="search" title="Nothing here yet" body="Report a lost item or return something found — be the first to post!" />
         ) : (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
             {filtered.map(item => (

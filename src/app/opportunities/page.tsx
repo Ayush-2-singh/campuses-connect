@@ -42,6 +42,7 @@ const SAVED_KEY = 'cc-saved-opps'
 const emptyForm = {
   title: '', description: '', opp_type: 'hackathon', company_org: '',
   apply_link: '', deadline: '', is_paid: false, stipend_range: '', location_type: 'remote',
+  skills_required: [] as string[], skillsInput: '',
 }
 
 export default function OpportunitiesPage() {
@@ -111,11 +112,12 @@ export default function OpportunitiesPage() {
     setPosting(true)
     setError(null)
     try {
+      const { skillsInput, ...payload } = form
       const res = await fetch('/api/opportunities', {
         method: 'POST',
         credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(form),
+        body: JSON.stringify({ ...payload, skills_required: payload.skills_required }),
       })
       const json = await res.json()
       if (!res.ok) { setError(json.error ?? 'Failed to post.'); return }
@@ -140,6 +142,8 @@ export default function OpportunitiesPage() {
       is_paid:       opp.is_paid       ?? false,
       stipend_range: opp.stipend_range ?? '',
       location_type: opp.location_type ?? 'remote',
+      skills_required: Array.isArray(opp.skills_required) ? opp.skills_required : [],
+      skillsInput: '',
     })
     setShowCompose(true)
     setError(null)
@@ -151,11 +155,12 @@ export default function OpportunitiesPage() {
     setPosting(true)
     setError(null)
     try {
+      const { skillsInput, ...payload } = form
       const res = await fetch(`/api/opportunities/${editTarget.id}`, {
         method: 'PUT',
         credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(form),
+        body: JSON.stringify({ ...payload, skills_required: payload.skills_required }),
       })
       const json = await res.json()
       if (!res.ok) { setError(json.error ?? 'Failed to update.'); return }
@@ -236,20 +241,30 @@ export default function OpportunitiesPage() {
     <Layout user={user} profile={profile}>
       <div style={{ maxWidth: 720, margin: '0 auto', padding: '28px 20px 40px' }}>
 
-        {/* Header */}
-        <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 20 }}>
-          <div>
-            <h2 style={{ fontSize: 24, fontWeight: 800, color: 'var(--text-primary)', margin: '0 0 4px' }}>Opportunities</h2>
-            <p style={{ fontSize: 13, color: 'var(--text-muted)', margin: 0 }}>
-              Hackathons, internships, jobs & scholarships — AI-matched to your profile
-            </p>
-          </div>
+        {/* Header — premium hero strip */}
+        <div className="ambient" style={{ borderRadius: 'var(--radius-lg)', padding: '22px 22px', marginBottom: 18, border: '1px solid var(--border)', background: 'linear-gradient(135deg, var(--accent-light), transparent 60%), var(--bg)', position: 'relative', overflow: 'hidden' }}>
+          <div style={{ position: 'absolute', top: -30, right: -20, width: 160, height: 160, borderRadius: '50%', background: 'radial-gradient(circle, var(--accent-glow), transparent 70%)', opacity: 0.5, pointerEvents: 'none' }} />
+          <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12, position: 'relative' }}>
+            <div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
+                <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5, fontSize: 11, fontWeight: 800, textTransform: 'uppercase', letterSpacing: 0.8, color: 'var(--accent-text)', background: 'var(--accent-light)', padding: '4px 10px', borderRadius: 20 }}>
+                  <Icon name="sparkles" size={12} /> AI-Matched
+                </span>
+              </div>
+              <h2 style={{ fontSize: 26, fontWeight: 800, color: 'var(--text-primary)', margin: '0 0 4px', letterSpacing: '-0.02em' }}>
+                Opportunities
+              </h2>
+              <p style={{ fontSize: 13, color: 'var(--text-muted)', margin: 0 }}>
+                Hackathons, internships, jobs & scholarships — matched to what is actually in your profile
+              </p>
+            </div>
           {isAdmin && (
             <button
               onClick={() => { closeCompose(); setShowCompose(true) }}
               style={{ background: 'var(--accent)', color: 'var(--on-accent)', border: 'none', padding: '9px 18px', borderRadius: 'var(--radius-sm)', fontSize: 14, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}
             >+ Post</button>
           )}
+          </div>
         </div>
 
         {/* Global error banner */}
@@ -269,6 +284,54 @@ export default function OpportunitiesPage() {
             <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
               <input type="text" value={form.title} onChange={e => setForm(f => ({ ...f, title: e.target.value }))} placeholder="Title *" style={inputStyle} />
               <textarea value={form.description} onChange={e => setForm(f => ({ ...f, description: e.target.value }))} placeholder="Description" rows={3} style={{ ...inputStyle, resize: 'none' }} />
+
+              {/* Skills tags — power the honest AI match for students */}
+              <div>
+                <label style={{ fontSize: 12, color: 'var(--text-muted)', display: 'block', marginBottom: 6 }}>
+                  Skills (what students should match against) — Enter + comma to add
+                </label>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                  <input
+                    type="text"
+                    value={form.skillsInput}
+                    onChange={e => setForm(f => ({ ...f, skillsInput: e.target.value }))}
+                    onKeyDown={e => {
+                      if (e.key === 'Enter' || e.key === ',') {
+                        e.preventDefault()
+                        const v = form.skillsInput.trim()
+                        if (v && !form.skills_required.includes(v)) {
+                          setForm(f => ({ ...f, skills_required: [...f.skills_required, v], skillsInput: '' }))
+                        } else if (v) {
+                          setForm(f => ({ ...f, skillsInput: '' }))
+                        }
+                      }
+                    }}
+                    placeholder="e.g. React, Python, Figma"
+                    style={{ ...inputStyle, flex: 1 }}
+                  />
+                  <button
+                    onClick={() => {
+                      const v = form.skillsInput.trim()
+                      if (v && !form.skills_required.includes(v)) setForm(f => ({ ...f, skills_required: [...f.skills_required, v], skillsInput: '' }))
+                    }}
+                    style={{ background: 'var(--bg-tertiary)', color: 'var(--text-secondary)', border: '1px solid var(--border)', borderRadius: 10, padding: '10px 14px', fontSize: 13, cursor: 'pointer', fontFamily: 'inherit' }}
+                  >+ Add</button>
+                </div>
+                {form.skills_required.length > 0 && (
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginTop: 8 }}>
+                    {form.skills_required.map(s => (
+                      <span key={s} style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 12, fontWeight: 600, color: 'var(--accent-text)', background: 'var(--accent-light)', border: '1px solid var(--accent-border)', padding: '3px 10px', borderRadius: 20 }}>
+                        {s}
+                        <button
+                          onClick={() => setForm(f => ({ ...f, skills_required: f.skills_required.filter(x => x !== s) }))}
+                          aria-label={`Remove ${s}`}
+                          style={{ background: 'none', border: 'none', color: 'inherit', cursor: 'pointer', padding: 0, fontSize: 14, lineHeight: 1, fontFamily: 'inherit' }}
+                        >×</button>
+                      </span>
+                    ))}
+                  </div>
+                )}
+              </div>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
                 <select value={form.opp_type} onChange={e => setForm(f => ({ ...f, opp_type: e.target.value }))} style={{ ...inputStyle, padding: '10px 12px' }}>
                   <option value="hackathon">Hackathon</option>
@@ -310,7 +373,7 @@ export default function OpportunitiesPage() {
         )}
 
         {/* Type filter */}
-        <div style={{ display: 'flex', gap: 6, overflowX: 'auto', paddingBottom: 4, marginBottom: 20 }} className="scrollbar-hide" role="tablist" aria-label="Filter opportunities">
+        <div style={{ display: 'flex', gap: 6, overflowX: 'auto', paddingBottom: 4, marginBottom: 20 }} className="scrollbar-hide fade-x" role="tablist" aria-label="Filter opportunities">
           {OPP_TYPES.map(type => (
             <button key={type} onClick={() => setFilter(type)} style={filterBtn(filter === type)}>
               {TYPE_LABELS[type] || type}
