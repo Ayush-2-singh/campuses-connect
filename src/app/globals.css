@@ -845,10 +845,24 @@ button, a, [role='button'] {
   gap: 10px;
   max-width: 520px;
 }
-@media (max-width: 480px) {
+/* Stat cards (opportunities / notes / discussions / hackathons) — clean 2x2
+   grid on every mobile width; never squeeze into 4 cramped columns. */
+@media (max-width: 768px) {
   .landing-stats {
     grid-template-columns: repeat(2, 1fr);
     max-width: none;
+    gap: 8px;
+  }
+  .landing-stats > div {
+    padding: 8px 10px !important;
+  }
+  .landing-stats p:first-child {
+    font-size: 18px !important;
+    margin-bottom: 3px !important;
+  }
+  .landing-stats p:last-child {
+    font-size: 10px !important;
+    line-height: 1.35 !important;
   }
 }
 
