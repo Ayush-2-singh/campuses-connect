@@ -51,6 +51,28 @@ export default function EventsPage() {
   const [editTarget, setEditTarget] = useState<Event | null>(null)
   const [form, setForm] = useState({ title: '', description: '', category: 'general', location: '', starts_at: '', ends_at: '', max_attendees: '' })
 
+  const fetchEvents = async () => {
+    // NOTE: campus_events has no FK to profiles, so we can't embed profiles(...)
+    // (PostgREST would error the whole query). Fetch host names separately.
+    const { data: evs } = await supabase
+      .from('campus_events')
+      .select('*')
+      .eq('status', 'published')
+      .order('starts_at', { ascending: false })
+      .limit(30)
+    const list = (evs || []) as Event[]
+    const hostIds = [...new Set(list.map(e => e.created_by))]
+    if (hostIds.length) {
+      const { data: hosts } = await supabase
+        .from('profiles')
+        .select('id, full_name, username')
+        .in('id', hostIds)
+      const hostMap = new Map((hosts || []).map((h: any) => [h.id, h]))
+      for (const e of list) e.profiles = hostMap.get(e.created_by) || undefined
+    }
+    return list
+  }
+
   useEffect(() => {
     const load = async () => {
       const { data: { user } } = await supabase.auth.getUser()
@@ -59,23 +81,18 @@ export default function EventsPage() {
       const { data: prof } = await supabase.from('profiles').select('*').eq('id', user.id).single()
       setProfile(prof)
 
-      const { data: evs } = await supabase
-        .from('campus_events')
-        .select('*, profiles(full_name, username)')
-        .eq('status', 'published')
-        .order('starts_at', { ascending: false })
-        .limit(30)
-      setEvents(evs || [])
+      const evs = await fetchEvents()
+      setEvents(evs)
 
       // my attendance + counts
       const { data: mine } = await supabase.from('event_attendees').select('event_id').eq('user_id', user.id)
       const attending = new Set((mine || []).map((a: any) => a.event_id))
-      for (const e of evs || []) {
+      for (const e of evs) {
         const { count } = await supabase.from('event_attendees').select('id', { count: 'exact', head: true }).eq('event_id', e.id)
         e.attendee_count = count || 0
         e.is_attending = attending.has(e.id)
       }
-      setEvents([...(evs || [])])
+      setEvents([...evs])
       setLoading(false)
     }
     load()
@@ -88,8 +105,8 @@ export default function EventsPage() {
   }
 
   const reloadEvents = async () => {
-    const { data: evs } = await supabase.from('campus_events').select('*, profiles(full_name, username)').eq('status', 'published').order('starts_at', { ascending: false }).limit(30)
-    setEvents(evs || [])
+    const evs = await fetchEvents()
+    setEvents(evs)
   }
 
   const createEvent = async () => {

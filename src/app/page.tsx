@@ -175,7 +175,7 @@ export default function LandingPage() {
       <div style={{ maxWidth: 1040, margin: '0 auto', padding: '0 20px 80px' }}>
         <h3 style={{ fontSize: 28, fontWeight: 800, color: 'var(--text-primary)', margin: '0 0 8px', textAlign: 'center', letterSpacing: '-0.02em' }}>Everything your campus needs</h3>
         <p style={{ fontSize: 14, color: 'var(--text-muted)', margin: '0 0 32px', textAlign: 'center' }}>One platform for notes, news, competitions and connections.</p>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 14 }}>
+        <div className="h-scroll-grid">
           {features.map(f => (
             <div key={f.title} className="card-hover" style={{ background: 'var(--bg)', border: '1px solid var(--border)', borderRadius: 16, padding: '22px 24px' }}>
               <div style={{ width: 44, height: 44, borderRadius: 12, background: 'var(--accent-light)', color: 'var(--accent-text)', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 14 }}>

@@ -22,7 +22,7 @@ export default function CommunityPage() {
   const [profile, setProfile] = useState<any>(null)
   const [community, setCommunity] = useState<any>(null)
   const [posts, setPosts] = useState<any[]>([])
-  const [membership, setMembership] = useState<{ id: string; status: string } | null>(null)
+  const [membership, setMembership] = useState<{ status: string } | null>(null)
   const [isCommunityAdmin, setIsCommunityAdmin] = useState(false)
   const [isPlatformAdmin, setIsPlatformAdmin] = useState(false)
   const [joinMsg, setJoinMsg] = useState('')
@@ -78,7 +78,7 @@ export default function CommunityPage() {
       if (!comm) { router.push('/communities'); return }
       setCommunity(comm)
       if (user) {
-        const { data: mem } = await supabase.from('community_members').select('id, status').eq('community_id', comm.id).eq('user_id', user.id).maybeSingle()
+        const { data: mem } = await supabase.from('community_members').select('status').eq('community_id', comm.id).eq('user_id', user.id).maybeSingle()
         setMembership(mem || null)
         const { data: grants } = await supabase.rpc('my_admin_grants')
         const g = (grants as any[]) || []
@@ -104,11 +104,11 @@ export default function CommunityPage() {
     setJoinMsg('')
     const { data } = await supabase.rpc('join_community', { p_community_id: community.id })
     const res = data as string
-    if (res === 'joined') { setMembership({ id: '', status: 'approved' }); return }
-    if (res === 'pending') { setMembership({ id: '', status: 'pending' }); setJoinMsg('Request sent — the owners will review it.') ; return }
+    if (res === 'joined') { setMembership({ status: 'approved' }); return }
+    if (res === 'pending') { setMembership({ status: 'pending' }); setJoinMsg('Request sent — the owners will review it.') ; return }
     if (res === 'test_required') { setTestAnswers((community.join_test || []).map(() => -1)); setTestResult(null); setShowTest(true); return }
     if (res === 'wrong_password') { setShowPassword(true); return }
-    if (res === 'already') { setMembership({ id: '', status: 'approved' }); return }
+    if (res === 'already') { setMembership({ status: 'approved' }); return }
     setJoinMsg('Could not join right now. Please try again.')
   }
 
@@ -118,9 +118,9 @@ export default function CommunityPage() {
     const { data } = await supabase.rpc('join_community', { p_community_id: community.id, p_password: password })
     const res = data as string
     setPasswordSending(false)
-    if (res === 'joined') { setMembership({ id: '', status: 'approved' }); setShowPassword(false); return }
+    if (res === 'joined') { setMembership({ status: 'approved' }); setShowPassword(false); return }
     if (res === 'test_required') { setShowPassword(false); setTestAnswers((community.join_test || []).map(() => -1)); setTestResult(null); setShowTest(true); return }
-    if (res === 'already') { setMembership({ id: '', status: 'approved' }); setShowPassword(false); return }
+    if (res === 'already') { setMembership({ status: 'approved' }); setShowPassword(false); return }
     setJoinMsg('Wrong password. Try again.')
   }
 
@@ -139,7 +139,7 @@ export default function CommunityPage() {
     const score = passed ? total : testAnswers.filter((a, i) => a === community.join_test[i]?.answer).length
     setTestResult({ passed, score, total })
     if (passed) {
-      setMembership({ id: '', status: community.visibility === 'approval' ? 'pending' : 'approved' })
+      setMembership({ status: community.visibility === 'approval' ? 'pending' : 'approved' })
       setShowTest(false)
     }
   }

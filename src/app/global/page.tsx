@@ -126,7 +126,7 @@ export default function GlobalPage() {
                     View all →
                   </button>
                 </div>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                <div className="h-scroll-cards">
                   {hackathons.map(post => (
                     <PostCard key={post.id} post={post} currentUserId={user?.id} canInteract={!!user} onChanged={fetchPosts} />
                   ))}
@@ -144,11 +144,11 @@ export default function GlobalPage() {
                     View all →
                   </button>
                 </div>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                <div className="h-scroll-cards">
                   {internships.map(opp => {
                     const dl = daysLeft(opp.deadline)
                     return (
-                      <div key={opp.id} style={{ background: 'var(--bg)', border: '1px solid var(--border)', borderRadius: 14, padding: '14px 16px', boxShadow: 'var(--shadow-sm)' }}>
+                      <div key={opp.id} style={{ background: 'var(--bg)', border: '1px solid var(--border)', borderRadius: 14, padding: '14px 16px', boxShadow: 'var(--shadow-sm)', height: 'auto' }}>
                         <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 10 }}>
                           <div style={{ minWidth: 0 }}>
                             <p style={{ fontSize: 14, fontWeight: 700, color: 'var(--text-primary)', margin: '0 0 3px' }}>{opp.title}</p>
