@@ -35,6 +35,8 @@ export default function ProfilePage() {
   const [campusDepartments, setCampusDepartments] = useState<any[]>([])
   const [campusPick, setCampusPick] = useState({ college_id: '', campus_id: '', department_id: '' })
   const [campusSaving, setCampusSaving] = useState(false)
+  const [connRequests, setConnRequests] = useState<any[]>([])
+  const [connections, setConnections] = useState<any[]>([])
   const router = useRouter()
   const pathname = usePathname()
   const supabase = createClient()
@@ -79,6 +81,28 @@ export default function ProfilePage() {
       setUser(user)
       const { data } = await supabase.from('profiles').select('*, colleges(name), campuses(name), departments(name, short_name)').eq('id', user.id).single()
       setProfile(data)
+
+      // Connections: pending requests I received + my accepted connections
+      const [reqRes, connRes] = await Promise.all([
+        supabase.from('connections').select('id, requester_id').eq('receiver_id', user.id).eq('status', 'pending'),
+        supabase.from('connections').select('id, requester_id, receiver_id')
+          .or(`requester_id.eq.${user.id},receiver_id.eq.${user.id}`).eq('status', 'accepted'),
+      ])
+      const reqs = reqRes.data || []
+      const conns = connRes.data || []
+      const peerIds = [...new Set([
+        ...reqs.map(r => r.requester_id),
+        ...conns.map(c => c.requester_id === user.id ? c.receiver_id : c.requester_id),
+      ])]
+      let profs: any[] = []
+      if (peerIds.length) {
+        const { data: p } = await supabase.from('profiles').select('id, full_name, username, avatar_url').in('id', peerIds)
+        profs = p || []
+      }
+      const profMap = Object.fromEntries(profs.map(p => [p.id, p]))
+      setConnRequests(reqs.map(r => ({ id: r.id, profile: profMap[r.requester_id] })))
+      setConnections(conns.map(c => ({ id: c.id, profile: profMap[c.requester_id === user.id ? c.receiver_id : c.requester_id] })))
+
       const { data: grants } = await supabase.rpc('my_admin_grants')
       setIsAdmin((grants as any[])?.some((g: any) => g.admin_type === 'platform_admin' || g.admin_type === 'campus_admin') || false)
       setForm({
@@ -124,6 +148,19 @@ export default function ProfilePage() {
     if (file.size > 4 * 1024 * 1024) { toast('Image must be under 4MB', { tone: 'danger' }); return }
     setPreviewUrl(URL.createObjectURL(file))
     uploadPhoto(file)
+  }
+
+  const respondConnection = async (id: string, accept: boolean) => {
+    const { data: ok } = await supabase.rpc('respond_to_connection', { p_connection_id: id, p_accept: accept })
+    if (!ok) { toast('Could not update the request', { tone: 'danger' }); return }
+    setConnRequests(prev => prev.filter(r => r.id !== id))
+    if (accept) toast('Connected! You can now message each other', { tone: 'success' })
+  }
+
+  const openConversation = async (peerId: string) => {
+    const { data: convId, error } = await supabase.rpc('start_or_get_conversation', { p_peer_id: peerId })
+    if (error || !convId) { toast('You can only message people you are connected with', { tone: 'danger' }); return }
+    router.push(`/messages/${convId}`)
   }
 
   const handleSave = async () => {
@@ -293,6 +330,49 @@ export default function ProfilePage() {
               )}
             </div>
           </div>
+        </div>
+
+        {/* Connections — requests + accepted, with messaging */}
+        <div style={{ background: 'var(--bg)', borderRadius: 14, border: '1px solid var(--border)', padding: 20, boxShadow: 'var(--shadow-sm)' }}>
+          <h3 style={{ fontSize: 14, fontWeight: 700, color: 'var(--text-primary)', margin: '0 0 14px' }}>🤝 Connections</h3>
+
+          {connRequests.length > 0 && (
+            <>
+              <p style={{ fontSize: 11, fontWeight: 700, color: 'var(--accent)', textTransform: 'uppercase', letterSpacing: 0.6, margin: '0 0 4px' }}>Requests ({connRequests.length})</p>
+              {connRequests.map(r => (
+                <div key={r.id} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 0', borderBottom: '1px solid var(--border)' }}>
+                  <Avatar name={r.profile?.full_name} avatarUrl={r.profile?.avatar_url} size={36}
+                    onClick={() => r.profile?.username && router.push(`/profile/${r.profile.username}`)} />
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <p style={{ fontSize: 13.5, fontWeight: 600, color: 'var(--text-primary)', margin: 0 }}>{r.profile?.full_name || 'Student'}</p>
+                    <p style={{ fontSize: 12, color: 'var(--text-muted)', margin: 0 }}>@{r.profile?.username}</p>
+                  </div>
+                  <button onClick={() => respondConnection(r.id, true)}
+                    style={{ padding: '7px 14px', borderRadius: 8, border: 'none', background: 'var(--success)', color: 'var(--on-accent)', fontSize: 12.5, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>Accept</button>
+                  <button onClick={() => respondConnection(r.id, false)}
+                    style={{ padding: '7px 14px', borderRadius: 8, border: '1px solid var(--danger-border)', background: 'var(--bg)', color: 'var(--danger)', fontSize: 12.5, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>Decline</button>
+                </div>
+              ))}
+            </>
+          )}
+
+          <p style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: 0.6, margin: '14px 0 4px' }}>Your connections ({connections.length})</p>
+          {connections.length === 0 ? (
+            <p style={{ fontSize: 13, color: 'var(--text-muted)', margin: 0, lineHeight: 1.5 }}>
+              No connections yet. Connect with people from the Talent directory — only connected people can message each other.
+            </p>
+          ) : connections.map(c => (
+            <div key={c.id} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 0', borderBottom: '1px solid var(--border)' }}>
+              <Avatar name={c.profile?.full_name} avatarUrl={c.profile?.avatar_url} size={36}
+                onClick={() => c.profile?.username && router.push(`/profile/${c.profile.username}`)} />
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <p style={{ fontSize: 13.5, fontWeight: 600, color: 'var(--text-primary)', margin: 0 }}>{c.profile?.full_name || 'Student'}</p>
+                <p style={{ fontSize: 12, color: 'var(--text-muted)', margin: 0 }}>@{c.profile?.username}</p>
+              </div>
+              <button onClick={() => c.profile?.id && openConversation(c.profile.id)}
+                style={{ padding: '7px 14px', borderRadius: 8, border: 'none', background: 'var(--accent)', color: 'var(--on-accent)', fontSize: 12.5, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>💬 Message</button>
+            </div>
+          ))}
         </div>
 
         {/* Campus Info */}

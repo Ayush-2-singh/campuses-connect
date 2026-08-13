@@ -14,6 +14,7 @@ import { accentForPath } from '@/theme/colors'
 const NAV_ITEMS = [
   { label: 'Home', href: '/feed', icon: 'home' },
   { label: 'Global', href: '/global', icon: 'globe' },
+  { label: 'Messages', href: '/messages', icon: 'message' },
   { label: 'Classroom', href: '/college', icon: 'book' },
   { label: 'Events', href: '/events', icon: 'calendar' },
   { label: 'Compete', href: '/compete', icon: 'zap' },

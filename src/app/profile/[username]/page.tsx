@@ -10,6 +10,7 @@ import Avatar from '@/components/Avatar'
 import EmptyState from '@/components/EmptyState'
 import { CardSkeleton } from '@/components/Skeleton'
 import { Icon } from '@/components/icons'
+import { useToast } from '@/components/Toast'
 
 export default function UserProfilePage() {
   const [user, setUser] = useState<any>(null)
@@ -18,9 +19,11 @@ export default function UserProfilePage() {
   const [notes, setNotes] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [activeTab, setActiveTab] = useState('posts')
-  const [connected, setConnected] = useState(false)
-  const [connecting, setConnecting] = useState(false)
+  const [connState, setConnState] = useState<'none' | 'pending_sent' | 'pending_received' | 'accepted'>('none')
+  const [connId, setConnId] = useState<string | null>(null)
+  const [connBusy, setConnBusy] = useState(false)
   const [menuOpen, setMenuOpen] = useState(false)
+  const { show: toast } = useToast()
   const router = useRouter()
   const params = useParams()
   const pathname = usePathname()
@@ -51,14 +54,19 @@ export default function UserProfilePage() {
       setPosts(postsRes.data || [])
       setNotes(notesRes.data || [])
 
-      if (user) {
+      if (user && prof) {
         const { data: conn } = await supabase
           .from('connections')
-          .select('id, status')
-          .or(`requester_id.eq.${user.id},receiver_id.eq.${user.id}`)
-          .eq('status', 'accepted')
+          .select('id, status, requester_id, receiver_id')
+          .or(`and(requester_id.eq.${user.id},receiver_id.eq.${prof.id}),and(requester_id.eq.${prof.id},receiver_id.eq.${user.id})`)
           .limit(1)
-        setConnected((conn || []).length > 0)
+        const c = conn?.[0]
+        if (c) {
+          setConnId(c.id)
+          if (c.status === 'accepted') setConnState('accepted')
+          else if (c.requester_id === user.id) setConnState('pending_sent')
+          else setConnState('pending_received')
+        }
       }
 
       setLoading(false)
@@ -67,15 +75,50 @@ export default function UserProfilePage() {
   }, [username])
 
   const handleConnect = async () => {
-    if (!user || !profile) return
-    setConnecting(true)
-    await supabase.from('connections').insert({
+    if (!user || !profile || connBusy) return
+    setConnBusy(true)
+    const { error } = await supabase.from('connections').insert({
       requester_id: user.id,
       receiver_id: profile.id,
       status: 'pending',
     })
-    setConnecting(false)
-    setConnected(true)
+    setConnBusy(false)
+    if (error) { toast('Could not send the request', { tone: 'danger' }); return }
+    setConnState('pending_sent')
+    toast('Request sent — they will see it in their connections', { tone: 'success' })
+  }
+
+  const handleCancelRequest = async () => {
+    if (!connId || connBusy) return
+    setConnBusy(true)
+    await supabase.from('connections').delete().eq('id', connId)
+    setConnBusy(false)
+    setConnState('none')
+    setConnId(null)
+  }
+
+  const handleRespond = async (accept: boolean) => {
+    if (!connId || connBusy) return
+    setConnBusy(true)
+    const { data: ok } = await supabase.rpc('respond_to_connection', { p_connection_id: connId, p_accept: accept })
+    setConnBusy(false)
+    if (!ok) { toast('Could not update the request', { tone: 'danger' }); return }
+    if (accept) {
+      setConnState('accepted')
+      toast('Connected! You can now message each other', { tone: 'success' })
+    } else {
+      setConnState('none')
+      setConnId(null)
+    }
+  }
+
+  const handleMessage = async () => {
+    if (!user || !profile || connBusy) return
+    setConnBusy(true)
+    const { data: convId, error } = await supabase.rpc('start_or_get_conversation', { p_peer_id: profile.id })
+    setConnBusy(false)
+    if (error || !convId) { toast('You can only message people you are connected with', { tone: 'danger' }); return }
+    router.push(`/messages/${convId}`)
   }
 
   const timeAgo = (date: string) => {
@@ -151,10 +194,43 @@ export default function UserProfilePage() {
               </div>
             </div>
 
-            {!isOwnProfile && user && (
-              <button onClick={handleConnect} disabled={connected || connecting}
-                style={{ padding: '8px 18px', borderRadius: 8, border: connected ? '1px solid var(--border)' : '1px solid var(--accent)', background: connected ? 'var(--bg)' : 'var(--accent)', color: connected ? 'var(--text-secondary)' : 'var(--on-accent)', fontSize: 13, fontWeight: 600, cursor: connected ? 'default' : 'pointer', fontFamily: 'inherit' }}>
-                {connected ? 'Connected ✓' : connecting ? 'Connecting…' : 'Connect'}
+            {!isOwnProfile && user && connState === 'accepted' && (
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <button onClick={handleMessage} disabled={connBusy}
+                  style={{ padding: '8px 18px', borderRadius: 8, border: 'none', background: 'var(--accent)', color: 'var(--on-accent)', fontSize: 13, fontWeight: 600, cursor: connBusy ? 'default' : 'pointer', fontFamily: 'inherit' }}>
+                  💬 Message
+                </button>
+                <span style={{ fontSize: 12.5, fontWeight: 600, color: 'var(--success-text)' }}>Connected ✓</span>
+              </div>
+            )}
+            {!isOwnProfile && user && connState === 'pending_sent' && (
+              <button onClick={handleCancelRequest} disabled={connBusy}
+                style={{ padding: '8px 18px', borderRadius: 8, border: '1px solid var(--border)', background: 'var(--bg)', color: 'var(--text-secondary)', fontSize: 13, fontWeight: 600, cursor: connBusy ? 'default' : 'pointer', fontFamily: 'inherit' }}>
+                Requested — Cancel
+              </button>
+            )}
+            {!isOwnProfile && user && connState === 'pending_received' && (
+              <div style={{ display: 'flex', gap: 6 }}>
+                <button onClick={() => handleRespond(true)} disabled={connBusy}
+                  style={{ padding: '8px 16px', borderRadius: 8, border: 'none', background: 'var(--success)', color: 'var(--on-accent)', fontSize: 13, fontWeight: 600, cursor: connBusy ? 'default' : 'pointer', fontFamily: 'inherit' }}>
+                  Accept
+                </button>
+                <button onClick={() => handleRespond(false)} disabled={connBusy}
+                  style={{ padding: '8px 16px', borderRadius: 8, border: '1px solid var(--danger-border)', background: 'var(--bg)', color: 'var(--danger)', fontSize: 13, fontWeight: 600, cursor: connBusy ? 'default' : 'pointer', fontFamily: 'inherit' }}>
+                  Decline
+                </button>
+              </div>
+            )}
+            {!isOwnProfile && user && connState === 'none' && (
+              <button onClick={handleConnect} disabled={connBusy}
+                style={{ padding: '8px 18px', borderRadius: 8, border: '1px solid var(--accent)', background: 'var(--accent)', color: 'var(--on-accent)', fontSize: 13, fontWeight: 600, cursor: connBusy ? 'default' : 'pointer', fontFamily: 'inherit' }}>
+                {connBusy ? '…' : 'Connect'}
+              </button>
+            )}
+            {!isOwnProfile && !user && (
+              <button onClick={() => router.push('/auth/login?redirect=' + encodeURIComponent(`/profile/${profile.username}`))}
+                style={{ padding: '8px 18px', borderRadius: 8, border: '1px solid var(--accent)', background: 'var(--bg)', color: 'var(--accent)', fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>
+                Sign in to Connect
               </button>
             )}
             {isOwnProfile && (

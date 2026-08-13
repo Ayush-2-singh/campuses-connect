@@ -23,6 +23,7 @@ const COMMANDS: CmdItem[] = [
   // Navigation
   { icon: 'home', label: 'Home — Campus Pulse', href: '/feed', group: 'Navigate' },
   { icon: 'globe', label: 'Global — connect everywhere', href: '/global', group: 'Navigate' },
+  { icon: 'message', label: 'Messages — chat with connections', href: '/messages', group: 'Navigate' },
   { icon: 'book', label: 'Classroom', href: '/college', group: 'Navigate' },
   { icon: 'briefcase', label: 'Opportunities', href: '/opportunities', group: 'Navigate' },
   { icon: 'notebook', label: 'Notes', href: '/notes', group: 'Navigate' },
