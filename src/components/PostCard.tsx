@@ -40,9 +40,11 @@ export default function PostCard({
 }) {
   const router = useRouter()
   const [liked, setLiked] = useState(false)
+  const [likeCount, setLikeCount] = useState(0)
   const [saved, setSaved] = useState(false)
   const [showComments, setShowComments] = useState(false)
   const [comments, setComments] = useState<any[]>([])
+  const [commentCount, setCommentCount] = useState(0)
   const [commentText, setCommentText] = useState('')
   const [editing, setEditing] = useState(false)
   const [editBody, setEditBody] = useState(post.body || '')
@@ -56,6 +58,37 @@ export default function PostCard({
   const { show: toast } = useToast()
 
   const isHackathon = post.categories?.key === 'hackathon'
+
+  // Load like + comment counts (visible to anyone who can see the post).
+  useEffect(() => {
+    let alive = true
+    const load = async () => {
+      const supabase = (await import('@/lib/supabase/client')).createClient()
+      const [likeRes, commRes] = await Promise.all([
+        supabase.from('post_reactions').select('id', { count: 'exact', head: true }).eq('post_id', post.id),
+        supabase.from('post_comments').select('id', { count: 'exact', head: true }).eq('post_id', post.id),
+      ])
+      if (!alive) return
+      setLikeCount(likeRes.count || 0)
+      setCommentCount(commRes.count || 0)
+    }
+    load()
+    return () => { alive = false }
+  }, [post.id])
+
+  // Load whether the current user already liked this post.
+  useEffect(() => {
+    if (!currentUserId) return
+    let alive = true
+    const load = async () => {
+      const supabase = (await import('@/lib/supabase/client')).createClient()
+      const { data } = await supabase.from('post_reactions').select('id').eq('post_id', post.id).eq('profile_id', currentUserId).maybeSingle()
+      if (!alive) return
+      setLiked(!!data)
+    }
+    load()
+    return () => { alive = false }
+  }, [currentUserId, post.id])
 
   // Load hackathon join state (count is visible to anyone who can see the post).
   useEffect(() => {
@@ -102,14 +135,24 @@ export default function PostCard({
   const sc = SCOPE_CONFIG[post.scope] || SCOPE_CONFIG.global
   const catIcon = CATEGORY_ICONS[post.categories?.key || ''] || '📄'
 
+  // Like toggle — tap to like, tap again to remove (unlike).
   const handleLike = async () => {
     if (!currentUserId || !canInteract) return
     const supabase = (await import('@/lib/supabase/client')).createClient()
-    await supabase.from('post_reactions').upsert(
-      { post_id: post.id, profile_id: currentUserId, reaction: 'like' },
-      { onConflict: 'post_id,profile_id' }
-    )
-    setLiked(true)
+    if (liked) {
+      const { error } = await supabase.from('post_reactions').delete().eq('post_id', post.id).eq('profile_id', currentUserId)
+      if (error) return
+      setLiked(false)
+      setLikeCount(c => Math.max(0, c - 1))
+    } else {
+      const { error } = await supabase.from('post_reactions').upsert(
+        { post_id: post.id, profile_id: currentUserId, reaction: 'like' },
+        { onConflict: 'post_id,profile_id' }
+      )
+      if (error) return
+      setLiked(true)
+      setLikeCount(c => c + 1)
+    }
   }
 
   const handleSave = async () => {
@@ -176,9 +219,20 @@ export default function PostCard({
   const handleComment = async () => {
     if (!commentText.trim() || !currentUserId) return
     const supabase = (await import('@/lib/supabase/client')).createClient()
-    await supabase.from('post_comments').insert({ post_id: post.id, author_id: currentUserId, body: commentText })
+    const { error } = await supabase.from('post_comments').insert({ post_id: post.id, author_id: currentUserId, body: commentText })
+    if (error) return
     setCommentText('')
+    setCommentCount(c => c + 1)
     loadComments()
+  }
+
+  // Authors can delete their own comments (RLS allows it).
+  const deleteComment = async (id: string) => {
+    if (!currentUserId) return
+    const supabase = (await import('@/lib/supabase/client')).createClient()
+    await supabase.from('post_comments').delete().eq('id', id).eq('author_id', currentUserId)
+    setComments(cs => cs.filter(c => c.id !== id))
+    setCommentCount(c => Math.max(0, c - 1))
   }
 
   const toggleComments = async () => {
@@ -281,12 +335,12 @@ export default function PostCard({
 
       <div style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', columnGap: 4, rowGap: 2, borderTop: '1px solid var(--border)', paddingTop: 12 }}>
         <button onClick={handleLike} disabled={!canInteract}
-          style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 13, color: liked ? 'var(--accent)' : 'var(--text-muted)', background: 'none', border: 'none', cursor: canInteract ? 'pointer' : 'not-allowed', padding: '9px 8px', borderRadius: 8, minHeight: 40, fontFamily: 'inherit' }}>
-          <span className={liked ? 'like-pop' : ''} style={{ display: 'inline-block' }}>👍</span> {liked ? 'Liked' : 'Like'}
+          style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 13, color: liked ? 'var(--accent)' : 'var(--text-muted)', background: 'none', border: 'none', cursor: canInteract ? 'pointer' : 'not-allowed', padding: '9px 8px', borderRadius: 8, minHeight: 40, fontFamily: 'inherit', fontWeight: liked ? 700 : 500 }}>
+          <span className={liked ? 'like-pop' : ''} style={{ display: 'inline-block' }}>👍</span> {liked ? 'Liked' : 'Like'}{likeCount > 0 ? ` · ${likeCount}` : ''}
         </button>
         <button onClick={toggleComments}
           style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 13, color: showComments ? 'var(--accent)' : 'var(--text-muted)', background: 'none', border: 'none', cursor: 'pointer', padding: '9px 8px', borderRadius: 8, minHeight: 40, fontFamily: 'inherit' }}>
-          💬 Comment
+          💬 Comment{commentCount > 0 ? ` · ${commentCount}` : ''}
         </button>
         <button onClick={handleSave}
           style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 13, color: saved ? 'var(--accent)' : 'var(--text-muted)', background: 'none', border: 'none', cursor: 'pointer', padding: '9px 8px', borderRadius: 8, minHeight: 40, fontFamily: 'inherit' }}>
@@ -346,12 +400,18 @@ export default function PostCard({
       {showComments && (
         <div style={{ marginTop: 14, display: 'flex', flexDirection: 'column', gap: 10 }}>
           {comments.map((c: any) => (
-            <div key={c.id} style={{ display: 'flex', gap: 8 }}>
+            <div key={c.id} style={{ display: 'flex', gap: 8, alignItems: 'flex-start' }}>
               <Avatar name={c.profiles?.full_name} avatarUrl={c.profiles?.avatar_url} size={28} />
-              <div style={{ background: 'var(--bg-secondary)', borderRadius: 10, padding: '8px 12px', flex: 1 }}>
+              <div style={{ background: 'var(--bg-secondary)', borderRadius: 10, padding: '8px 12px', flex: 1, position: 'relative' }}>
                 <p style={{ fontSize: 12, fontWeight: 600, color: 'var(--accent)', margin: '0 0 2px' }}>@{c.profiles?.username}</p>
                 <p style={{ fontSize: 13, color: 'var(--text-secondary)', margin: 0 }}>{c.body}</p>
               </div>
+              {c.author_id === currentUserId && (
+                <button onClick={() => deleteComment(c.id)} aria-label="Delete comment" title="Delete comment"
+                  style={{ flexShrink: 0, background: 'none', border: 'none', color: 'var(--text-muted)', fontSize: 13, cursor: 'pointer', padding: '6px', minHeight: 32, fontFamily: 'inherit', lineHeight: 1 }}>
+                  🗑️
+                </button>
+              )}
             </div>
           ))}
           {canInteract && (
