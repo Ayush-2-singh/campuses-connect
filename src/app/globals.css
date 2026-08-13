@@ -720,30 +720,17 @@ button, a, [role='button'] {
   }
 }
 
-/* Small stat cards (e.g. the home feed Pulse cards) — compact grid on
-   desktop, a swipeable snap-scroll strip on mobile. */
-.h-scroll-sm {
+/* Small stat cards (e.g. the home feed Pulse cards) — grid layout only, so
+   every card stays fully visible (no cut-off, no scroll needed). */
+.stat-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
   gap: 10px;
 }
 @media (max-width: 768px) {
-  .h-scroll-sm {
-    display: flex;
-    flex-direction: row;
-    overflow-x: auto;
-    scroll-snap-type: x mandatory;
-    margin-left: -20px;
-    margin-right: -20px;
-    padding-left: 20px;
-    padding-right: 20px;
-    padding-bottom: 6px;
-    -webkit-overflow-scrolling: touch;
-  }
-  .h-scroll-sm > * {
-    flex: 0 0 62%;
-    max-width: 220px;
-    scroll-snap-align: start;
+  .stat-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 8px;
   }
 }
 
