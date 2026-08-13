@@ -38,7 +38,6 @@ export default function FeedPage() {
   const [profile, setProfile] = useState<any>(null)
   const [posts, setPosts] = useState<Post[]>([])
   const [filter, setFilter] = useState('all')
-  const [scopeFilter, setScopeFilter] = useState<'all' | 'campus' | 'global'>('all')
   const [loading, setLoading] = useState(true)
   const [pulse, setPulse] = useState<{ opportunities: number; notes: number; discussions: number; hackathons: number }>({ opportunities: 0, notes: 0, discussions: 0, hackathons: 0 })
   const [mounted, setMounted] = useState(false)
@@ -46,18 +45,20 @@ export default function FeedPage() {
   const router = useRouter()
 
   const fetchPosts = useCallback(async () => {
+    // Home = the campus layer only (campus + whole-college posts). Global has
+    // its own page — it is never mixed into the campus feed.
     let q = supabase
       .from('posts')
       .select('*, profiles!posts_author_id_fkey(full_name, username, is_verified), content_categories(key, label)')
+      .in('scope', ['campus', 'college_network'])
       .order('is_pinned', { ascending: false })
       .order('created_at', { ascending: false })
       .limit(50)
     if (filter !== 'all') q = q.eq('content_categories.key', filter)
-    if (scopeFilter !== 'all') q = q.eq('scope', scopeFilter)
     const { data } = await q
     setPosts(data || [])
     setLoading(false)
-  }, [filter, scopeFilter, supabase])
+  }, [filter, supabase])
 
   const fetchPulse = useCallback(async () => {
     const now = new Date().toISOString()
@@ -110,7 +111,7 @@ export default function FeedPage() {
           <h2 style={{ fontSize: 26, fontWeight: 800, color: 'var(--text-primary)', margin: '0 0 4px' }}>
             {mounted ? (firstName ? `${greeting()}, ${firstName} 👋` : greeting()) : 'Welcome 👋'}
           </h2>
-          <p style={{ fontSize: 13.5, color: 'var(--text-muted)', margin: 0 }}>Here&apos;s what&apos;s happening around your campus and across India.</p>
+          <p style={{ fontSize: 13.5, color: 'var(--text-muted)', margin: 0 }}>Here&apos;s what&apos;s happening around your campus. For everything nationwide, open the 🌐 Global feed.</p>
         </div>
 
         {/* Pulse stats — real counts from the database */}
@@ -149,21 +150,6 @@ export default function FeedPage() {
             <p style={{ fontSize: 13, color: 'var(--text-secondary)', margin: 0 }}>Join your campus community to like, comment and save — or browse the <span style={{ color: 'var(--accent)', fontWeight: 600, cursor: 'pointer' }} onClick={() => router.push('/global')}>Global</span> feed.</p>
           </div>
         )}
-
-        {/* Scope tabs — campus vs global */}
-        <div style={{ display: 'flex', gap: 4, background: 'var(--bg-secondary)', border: '1px solid var(--border)', borderRadius: 10, padding: 3, marginBottom: 10 }} role="tablist" aria-label="Post scope">
-          {([['all', 'All'], ['campus', '🏫 Campus'], ['global', '🌐 Global']] as const).map(([key, label]) => (
-            <button
-              key={key}
-              onClick={() => setScopeFilter(key)}
-              role="tab"
-              aria-selected={scopeFilter === key}
-              style={{ flex: 1, padding: '7px 0', borderRadius: 8, fontSize: 12.5, fontWeight: 600, border: 'none', cursor: 'pointer', fontFamily: 'inherit', background: scopeFilter === key ? 'var(--bg)' : 'transparent', color: scopeFilter === key ? 'var(--accent)' : 'var(--text-muted)', boxShadow: scopeFilter === key ? 'var(--shadow-sm)' : 'none' }}
-            >
-              {label}
-            </button>
-          ))}
-        </div>
 
         {/* Category filters */}
         <div style={{ display: 'flex', gap: 6, overflowX: 'auto', paddingBottom: 4, marginBottom: 16 }} className="scrollbar-hide fade-x" role="tablist" aria-label="Filter posts">
