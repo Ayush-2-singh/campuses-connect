@@ -114,8 +114,8 @@ export default function FeedPage() {
           <p style={{ fontSize: 13.5, color: 'var(--text-muted)', margin: 0 }}>Here&apos;s what&apos;s happening around your campus. For everything nationwide, open the 🌐 Global feed.</p>
         </div>
 
-        {/* Pulse stats — real counts from the database */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: 10, marginBottom: 24 }}>
+        {/* Pulse stats — real counts from the database, swipeable on mobile */}
+        <div className="h-scroll-sm" style={{ marginBottom: 24 }}>
           {PULSE_CARDS.map(c => (
             <button
               key={c.key}
