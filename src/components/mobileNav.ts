@@ -11,7 +11,6 @@ export const MOBILE_NAV = [
 
 export const MOBILE_MENU_NAV = [
   { label: 'Global', href: '/global', icon: 'globe' },
-  { label: 'Messages', href: '/messages', icon: 'message' },
   { label: 'Connections', href: '/connections', icon: 'link' },
   { label: 'Opportunities', href: '/opportunities', icon: 'briefcase' },
   { label: 'Notes', href: '/notes', icon: 'notebook' },

@@ -54,7 +54,7 @@ export default function ChatPage() {
   useEffect(() => {
     const load = async () => {
       const { data: { user } } = await supabase.auth.getUser()
-      if (!user) { router.replace('/auth/login?redirect=/messages'); return }
+      if (!user) { router.replace('/auth/login?redirect=' + encodeURIComponent('/connections?tab=chats')); return }
       setUser(user)
 
       const { data: conv } = await supabase
@@ -121,7 +121,7 @@ export default function ChatPage() {
         <p style={{ fontSize: 44, marginBottom: 10 }}>🔒</p>
         <p style={{ fontSize: 16, fontWeight: 700, color: 'var(--text-primary)', margin: '0 0 4px' }}>Conversation not found</p>
         <p style={{ fontSize: 13, color: 'var(--text-muted)', margin: '0 0 16px' }}>You can only open chats with people you&apos;re connected with.</p>
-        <button onClick={() => router.push('/messages')} style={{ color: 'var(--accent)', background: 'none', border: 'none', cursor: 'pointer', fontSize: 14, fontWeight: 600, fontFamily: 'inherit' }}>← Back to Messages</button>
+        <button onClick={() => router.push('/connections?tab=chats')} style={{ color: 'var(--accent)', background: 'none', border: 'none', cursor: 'pointer', fontSize: 14, fontWeight: 600, fontFamily: 'inherit' }}>← Back to Chats</button>
       </div>
     </div>
   )

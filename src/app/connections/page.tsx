@@ -10,13 +10,26 @@ import { useToast } from '@/components/Toast'
 
 type ConnRow = { id: string; requester_id: string; receiver_id: string; profile?: any; created_at?: string }
 
+const timeAgo = (date: string) => {
+  const diff = Date.now() - new Date(date).getTime()
+  const mins = Math.floor(diff / 60000)
+  if (mins < 1) return 'now'
+  if (mins < 60) return `${mins}m`
+  const hrs = Math.floor(mins / 60)
+  if (hrs < 24) return `${hrs}h`
+  return `${Math.floor(hrs / 24)}d`
+}
+
+type TabKey = 'chats' | 'connections' | 'received' | 'sent'
+
 export default function ConnectionsPage() {
   const [user, setUser] = useState<any>(null)
   const [profile, setProfile] = useState<any>(null)
+  const [tab, setTab] = useState<TabKey>('chats')
+  const [chats, setChats] = useState<any[]>([])
   const [connections, setConnections] = useState<ConnRow[]>([])
   const [received, setReceived] = useState<ConnRow[]>([])
   const [sent, setSent] = useState<ConnRow[]>([])
-  const [tab, setTab] = useState<'connections' | 'received' | 'sent'>('connections')
   const [query, setQuery] = useState('')
   const [loading, setLoading] = useState(true)
   const [busy, setBusy] = useState<string | null>(null)
@@ -24,21 +37,61 @@ export default function ConnectionsPage() {
   const router = useRouter()
   const { show: toast } = useToast()
 
-  const load = useCallback(async () => {
-    if (!user) return
+  // Support deep links like /connections?tab=chats
+  useEffect(() => {
+    try {
+      const t = new URLSearchParams(window.location.search).get('tab')
+      if (t && ['chats', 'connections', 'received', 'sent'].includes(t)) setTab(t as TabKey)
+    } catch { /* ignore */ }
+  }, [])
+
+  const loadChats = useCallback(async (uid: string) => {
+    const { data: convs } = await supabase
+      .from('conversations')
+      .select('id, created_at, conversation_participants(profile_id, last_read_at, profiles(full_name, username, avatar_url))')
+      .order('created_at', { ascending: false })
+      .limit(50)
+
+    const list = convs || []
+    const rows = await Promise.all(list.map(async (c: any) => {
+      const me = (c.conversation_participants || []).find((p: any) => p.profile_id === uid)
+      const peer = (c.conversation_participants || []).find((p: any) => p.profile_id !== uid)
+      const myLastRead = me?.last_read_at || '1970-01-01T00:00:00Z'
+      const [lastRes, unreadRes] = await Promise.all([
+        supabase.from('messages').select('content, created_at, sender_id')
+          .eq('conversation_id', c.id).order('created_at', { ascending: false }).limit(1),
+        supabase.from('messages').select('id', { count: 'exact', head: true })
+          .eq('conversation_id', c.id).neq('sender_id', uid).gt('created_at', myLastRead),
+      ])
+      return {
+        id: c.id,
+        peer: peer?.profiles || {},
+        last: lastRes.data?.[0] || null,
+        unread: unreadRes.count || 0,
+      }
+    }))
+    rows.sort((a, b) => {
+      const ta = a.last?.created_at || ''
+      const tb = b.last?.created_at || ''
+      return tb.localeCompare(ta)
+    })
+    setChats(rows)
+  }, [supabase])
+
+  const loadNetwork = useCallback(async (uid: string) => {
     const [connRes, recRes, sentRes] = await Promise.all([
       supabase.from('connections').select('id, requester_id, receiver_id, created_at')
-        .or(`requester_id.eq.${user.id},receiver_id.eq.${user.id}`).eq('status', 'accepted'),
+        .or(`requester_id.eq.${uid},receiver_id.eq.${uid}`).eq('status', 'accepted'),
       supabase.from('connections').select('id, requester_id, receiver_id, created_at')
-        .eq('receiver_id', user.id).eq('status', 'pending'),
+        .eq('receiver_id', uid).eq('status', 'pending'),
       supabase.from('connections').select('id, requester_id, receiver_id, created_at')
-        .eq('requester_id', user.id).eq('status', 'pending'),
+        .eq('requester_id', uid).eq('status', 'pending'),
     ])
     const conns = connRes.data || []
     const recs = recRes.data || []
     const sents = sentRes.data || []
     const peerIds = [...new Set([
-      ...conns.map((c: any) => c.requester_id === user.id ? c.receiver_id : c.requester_id),
+      ...conns.map((c: any) => c.requester_id === uid ? c.receiver_id : c.requester_id),
       ...recs.map((r: any) => r.requester_id),
       ...sents.map((s: any) => s.receiver_id),
     ])]
@@ -48,11 +101,10 @@ export default function ConnectionsPage() {
       profs = p || []
     }
     const profMap = Object.fromEntries(profs.map((p: any) => [p.id, p]))
-    setConnections(conns.map((c: any) => ({ id: c.id, requester_id: c.requester_id, receiver_id: c.receiver_id, profile: profMap[c.requester_id === user.id ? c.receiver_id : c.requester_id] })))
+    setConnections(conns.map((c: any) => ({ id: c.id, requester_id: c.requester_id, receiver_id: c.receiver_id, profile: profMap[c.requester_id === uid ? c.receiver_id : c.requester_id] })))
     setReceived(recs.map((r: any) => ({ id: r.id, requester_id: r.requester_id, receiver_id: r.receiver_id, profile: profMap[r.requester_id] })))
     setSent(sents.map((s: any) => ({ id: s.id, requester_id: s.requester_id, receiver_id: s.receiver_id, profile: profMap[s.receiver_id] })))
-    setLoading(false)
-  }, [user, supabase])
+  }, [supabase])
 
   useEffect(() => {
     const init = async () => {
@@ -61,12 +113,11 @@ export default function ConnectionsPage() {
       setUser(user)
       const { data: prof } = await supabase.from('profiles').select('*').eq('id', user.id).single()
       setProfile(prof)
+      await Promise.all([loadChats(user.id), loadNetwork(user.id)])
       setLoading(false)
     }
     init()
-  }, [supabase, router])
-
-  useEffect(() => { if (user) load() }, [user, load])
+  }, [supabase, router, loadChats, loadNetwork])
 
   const respond = async (id: string, accept: boolean) => {
     setBusy(id)
@@ -76,7 +127,7 @@ export default function ConnectionsPage() {
     if (accept) {
       setReceived(prev => prev.filter(r => r.id !== id))
       toast('Connected! You can now message each other', { tone: 'success' })
-      load()
+      loadNetwork(user.id)
     } else {
       setReceived(prev => prev.filter(r => r.id !== id))
       toast('Request declined')
@@ -104,7 +155,10 @@ export default function ConnectionsPage() {
     return list.filter(c => (c.profile?.full_name || '').toLowerCase().includes(q) || (c.profile?.username || '').toLowerCase().includes(q))
   }, [tab, connections, received, sent, query])
 
+  const totalUnread = chats.reduce((sum, c) => sum + (c.unread || 0), 0)
+
   const TABS = [
+    { key: 'chats' as const, label: '💬 Chats', count: totalUnread, showBadge: true },
     { key: 'connections' as const, label: 'Connections', count: connections.length },
     { key: 'received' as const, label: 'Received', count: received.length },
     { key: 'sent' as const, label: 'Sent', count: sent.length },
@@ -116,7 +170,7 @@ export default function ConnectionsPage() {
         {/* Header */}
         <div style={{ marginBottom: 18 }}>
           <h2 style={{ fontSize: 24, fontWeight: 800, color: 'var(--text-primary)', margin: '0 0 4px' }}>🤝 My Network</h2>
-          <p style={{ fontSize: 13, color: 'var(--text-muted)', margin: 0 }}>Manage your connections, pending requests and DMs — only connected students can message each other.</p>
+          <p style={{ fontSize: 13, color: 'var(--text-muted)', margin: 0 }}>Chats, connections and requests — only connected students can message each other.</p>
         </div>
 
         {/* Tabs */}
@@ -124,7 +178,12 @@ export default function ConnectionsPage() {
           {TABS.map(t => (
             <button key={t.key} onClick={() => setTab(t.key)}
               style={{ flexShrink: 0, padding: '10px 14px', fontSize: 13.5, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit', background: 'none', border: 'none', color: tab === t.key ? 'var(--accent)' : 'var(--text-muted)', borderBottom: tab === t.key ? '2px solid var(--accent)' : '2px solid transparent' }}>
-              {t.label} <span style={{ background: tab === t.key ? 'var(--accent-light)' : 'var(--bg-tertiary)', color: tab === t.key ? 'var(--accent-text)' : 'var(--text-secondary)', borderRadius: 20, padding: '1px 8px', fontSize: 11.5, marginLeft: 2 }}>{t.count}</span>
+              {t.label}
+              {t.count > 0 && (
+                <span style={{ background: tab === t.key ? 'var(--accent-light)' : 'var(--bg-tertiary)', color: t.showBadge ? 'var(--accent)' : (tab === t.key ? 'var(--accent-text)' : 'var(--text-secondary)'), borderRadius: 20, padding: '1px 8px', fontSize: 11.5, marginLeft: 2, fontWeight: 700 }}>
+                  {t.showBadge && t.count > 9 ? '9+' : t.count}
+                </span>
+              )}
             </button>
           ))}
         </div>
@@ -137,6 +196,43 @@ export default function ConnectionsPage() {
 
         {loading ? (
           <p style={{ color: 'var(--text-muted)', fontSize: 13, padding: '30px 0', textAlign: 'center' }}>Loading your network…</p>
+        ) : tab === 'chats' ? (
+          chats.length === 0 ? (
+            <EmptyState
+              icon="message"
+              title="No conversations yet"
+              body="Connect with people first — once they accept, you can message each other here."
+              cta="Find people to connect with"
+              onCta={() => router.push('/talent')}
+            />
+          ) : (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+              {chats.map(c => (
+                <button key={c.id} onClick={() => router.push(`/messages/${c.id}`)}
+                  style={{ display: 'flex', alignItems: 'center', gap: 12, width: '100%', textAlign: 'left', padding: '12px 14px', borderRadius: 12, border: 'none', background: c.unread > 0 ? 'var(--accent-light)' : 'transparent', cursor: 'pointer', fontFamily: 'inherit' }}>
+                  <Avatar name={c.peer.full_name} avatarUrl={c.peer.avatar_url} size={46} />
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
+                      <p style={{ fontSize: 14, fontWeight: c.unread > 0 ? 700 : 600, color: 'var(--text-primary)', margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                        {c.peer.full_name || '@' + c.peer.username}
+                      </p>
+                      {c.last && <span style={{ fontSize: 11, color: 'var(--text-muted)', flexShrink: 0 }}>{timeAgo(c.last.created_at)}</span>}
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
+                      <p style={{ fontSize: 12.5, color: c.unread > 0 ? 'var(--text-secondary)' : 'var(--text-muted)', margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', flex: 1 }}>
+                        {c.last ? (c.last.sender_id === user.id ? `You: ${c.last.content}` : c.last.content) : 'Say hi 👋'}
+                      </p>
+                      {c.unread > 0 && (
+                        <span style={{ minWidth: 18, height: 18, padding: '0 5px', borderRadius: 10, background: 'var(--accent)', color: 'var(--on-accent)', fontSize: 10.5, fontWeight: 700, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                          {c.unread > 9 ? '9+' : c.unread}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                </button>
+              ))}
+            </div>
+          )
         ) : filtered.length === 0 ? (
           <EmptyState
             icon="users"
