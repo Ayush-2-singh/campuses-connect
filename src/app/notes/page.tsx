@@ -262,19 +262,26 @@ export default function NotesPage() {
           </div>
         )}
 
-        {/* Tabs + type filter */}
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10, marginBottom: 12, flexWrap: 'wrap' }}>
-          <div style={{ display: 'flex', gap: 2, background: 'var(--bg-tertiary)', borderRadius: 'var(--radius-sm)', padding: 3 }} role="tablist" aria-label="Browse notes">
+        {/* Tabs + type filter — swipeable chips on mobile */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 12 }}>
+          <div style={{ display: 'flex', gap: 2, background: 'var(--bg-tertiary)', borderRadius: 'var(--radius-sm)', padding: 3, overflowX: 'auto' }} className="scrollbar-hide chip-scroll" role="tablist" aria-label="Browse notes">
             {(['recent', 'popular', 'subject'] as const).map(t => (
-              <button key={t} onClick={() => setTab(t)} style={tabBtn(tab === t)} role="tab" aria-selected={tab === t}>
+              <button key={t} onClick={() => setTab(t)} style={{ ...tabBtn(tab === t), flexShrink: 0, whiteSpace: 'nowrap' }} role="tab" aria-selected={tab === t}>
                 {t === 'recent' ? 'Recently Added' : t === 'popular' ? 'Popular' : 'By Subject'}
               </button>
             ))}
           </div>
-          <select value={filter} onChange={e => setFilter(e.target.value)} aria-label="Resource type"
-            style={{ border: '1px solid var(--border)', borderRadius: 'var(--radius-sm)', padding: '7px 10px', fontSize: 12.5, outline: 'none', fontFamily: 'inherit', background: 'var(--bg)', color: 'var(--text-primary)' }}>
-            {RESOURCE_TYPES.map(t => <option key={t} value={t}>{t === 'all' ? 'All types' : t === 'pyq' ? 'PYQ' : t === 'video_link' ? 'Video' : t.charAt(0).toUpperCase() + t.slice(1)}</option>)}
-          </select>
+          <div style={{ display: 'flex', gap: 6, overflowX: 'auto', paddingBottom: 4 }} className="scrollbar-hide fade-x chip-scroll" role="tablist" aria-label="Filter by resource type">
+            {RESOURCE_TYPES.map(t => {
+              const label = t === 'all' ? 'All types' : t === 'pyq' ? 'PYQ' : t === 'video_link' ? 'Video' : t.charAt(0).toUpperCase() + t.slice(1)
+              return (
+                <button key={t} onClick={() => setFilter(t)} role="tab" aria-selected={filter === t}
+                  style={{ flexShrink: 0, padding: '6px 14px', borderRadius: 20, fontSize: 12, fontWeight: 500, border: filter === t ? 'none' : '1px solid var(--border)', background: filter === t ? 'var(--accent)' : 'var(--bg)', color: filter === t ? 'var(--on-accent)' : 'var(--text-secondary)', cursor: 'pointer', fontFamily: 'inherit' }}>
+                  {label}
+                </button>
+              )
+            })}
+          </div>
         </div>
 
         {loading ? (

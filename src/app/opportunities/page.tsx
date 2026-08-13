@@ -373,7 +373,7 @@ export default function OpportunitiesPage() {
         )}
 
         {/* Type filter */}
-        <div style={{ display: 'flex', gap: 6, overflowX: 'auto', paddingBottom: 4, marginBottom: 20 }} className="scrollbar-hide fade-x" role="tablist" aria-label="Filter opportunities">
+        <div style={{ display: 'flex', gap: 6, overflowX: 'auto', paddingBottom: 4, marginBottom: 20 }} className="scrollbar-hide fade-x chip-scroll" role="tablist" aria-label="Filter opportunities">
           {OPP_TYPES.map(type => (
             <button key={type} onClick={() => setFilter(type)} style={filterBtn(filter === type)}>
               {TYPE_LABELS[type] || type}

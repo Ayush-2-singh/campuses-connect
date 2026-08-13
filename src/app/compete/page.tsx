@@ -200,7 +200,7 @@ export default function CompetePage() {
         </div>
 
         {/* Tabs */}
-        <div style={{ display: 'flex', gap: 4, marginBottom: 20, borderBottom: '1px solid var(--border)', overflowX: 'auto' }} className="compete-tabs">
+        <div style={{ display: 'flex', gap: 4, marginBottom: 20, borderBottom: '1px solid var(--border)', overflowX: 'auto' }} className="compete-tabs chip-scroll">
           {(['challenge', 'clash', 'rankings'] as const).map(t => (
             <button key={t} onClick={() => setTab(t)}
               style={{

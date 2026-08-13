@@ -720,6 +720,18 @@ button, a, [role='button'] {
   }
 }
 
+/* Filter/tab chip rows — edge-to-edge swipe on mobile so every option is
+   reachable by scrolling with a finger (opportunities, notes, feed). */
+@media (max-width: 768px) {
+  .chip-scroll {
+    margin-left: -20px;
+    margin-right: -20px;
+    padding-left: 20px;
+    padding-right: 20px;
+    -webkit-overflow-scrolling: touch;
+  }
+}
+
 /* Same idea for grids (e.g. the landing features) — auto-fit columns on
    desktop, a swipeable strip on mobile. */
 .h-scroll-grid {
