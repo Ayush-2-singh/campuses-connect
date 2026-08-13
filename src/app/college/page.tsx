@@ -12,9 +12,9 @@ import { useAdminContext } from '@/lib/permissions'
 
 const SECTIONS = [
   { icon: '🎭', label: 'Clubs', href: '/college/clubs' },
-  { icon: '📅', label: 'Events', href: '/feed?filter=event' },
-  { icon: '⚡', label: 'Hackathons', href: '/feed?filter=hackathon' },
-  { icon: '💼', label: 'Internships', href: '/feed?filter=internship' },
+  { icon: '📅', label: 'Events', href: '/events' },
+  { icon: '⚡', label: 'Hackathons', href: '/opportunities?type=hackathon' },
+  { icon: '💼', label: 'Internships', href: '/opportunities?type=internship' },
   { icon: '📢', label: 'Announcements', href: '/feed?filter=announcement' },
   { icon: '📊', label: 'Campus Insights', href: '/college/insights' },
   { icon: '🔍', label: 'Lost & Found', href: '/lost-found' },
@@ -81,7 +81,7 @@ export default function CollegePage() {
             userId={user.id}
             profile={profile}
             onPosted={loadPosts}
-            context={{ campusId: profile?.campus_id, collegeId: profile?.college_id }}
+            context={{ campusId: profile?.campus_id, collegeId: profile?.college_id, campusName: profile?.campuses?.name, collegeName: profile?.colleges?.name }}
             placeholder="Post to your college..."
           />
         )}

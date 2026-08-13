@@ -43,6 +43,7 @@ const emptyForm = {
   title: '', description: '', opp_type: 'hackathon', company_org: '',
   apply_link: '', deadline: '', is_paid: false, stipend_range: '', location_type: 'remote',
   skills_required: [] as string[], skillsInput: '',
+  visibility: 'global' as 'global' | 'campus',
 }
 
 export default function OpportunitiesPage() {
@@ -144,6 +145,7 @@ export default function OpportunitiesPage() {
       location_type: opp.location_type ?? 'remote',
       skills_required: Array.isArray(opp.skills_required) ? opp.skills_required : [],
       skillsInput: '',
+      visibility:    opp.visibility === 'campus' ? 'campus' : 'global',
     })
     setShowCompose(true)
     setError(null)
@@ -353,6 +355,10 @@ export default function OpportunitiesPage() {
                 <input type="text" value={form.company_org} onChange={e => setForm(f => ({ ...f, company_org: e.target.value }))} placeholder="Company / Organizer" style={inputStyle} />
                 <input type="date" value={form.deadline} onChange={e => setForm(f => ({ ...f, deadline: e.target.value }))} style={{ ...inputStyle, padding: '10px 12px' }} />
               </div>
+              <select value={form.visibility} onChange={e => setForm(f => ({ ...f, visibility: e.target.value as 'global' | 'campus' }))} style={{ ...inputStyle, padding: '10px 12px' }}>
+                <option value="global">🌐 Global — every student in India</option>
+                <option value="campus">🏫 Campus — only my campus/college</option>
+              </select>
               <input type="url" value={form.apply_link} onChange={e => setForm(f => ({ ...f, apply_link: e.target.value }))} placeholder="Apply / Register Link" style={inputStyle} />
               <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, color: 'var(--text-secondary)', cursor: 'pointer' }}>
                 <input type="checkbox" checked={form.is_paid} onChange={e => setForm(f => ({ ...f, is_paid: e.target.checked }))} />

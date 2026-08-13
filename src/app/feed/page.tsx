@@ -82,6 +82,15 @@ export default function FeedPage() {
 
   useEffect(() => { setMounted(true) }, [])
 
+  // Deep links like /feed?filter=event (from the Classroom tiles) must land on
+  // the filtered feed, not the plain home page.
+  useEffect(() => {
+    try {
+      const t = new URLSearchParams(window.location.search).get('filter')
+      if (t && FILTERS.includes(t)) setFilter(t)
+    } catch { /* ignore */ }
+  }, [])
+
   useEffect(() => {
     const load = async () => {
       const { data: { user } } = await supabase.auth.getUser()
@@ -143,7 +152,7 @@ export default function FeedPage() {
             userId={user.id}
             profile={profile}
             onPosted={fetchPosts}
-            context={{ campusId: profile?.campus_id, collegeId: profile?.college_id }}
+            context={{ campusId: profile?.campus_id, collegeId: profile?.college_id, campusName: profile?.campuses?.name, collegeName: profile?.colleges?.name }}
           />
         )}
 

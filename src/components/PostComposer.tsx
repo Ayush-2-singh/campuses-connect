@@ -5,12 +5,6 @@ import { createClient } from '@/lib/supabase/client'
 import { listCreatableCategories, useAdminContext } from '@/lib/permissions'
 import type { CreatableCategory, PostScope } from '@/types'
 
-const SCOPE_LABELS: Record<string, string> = {
-  campus: 'This Campus',
-  college_network: 'Whole College',
-  global: 'Global',
-}
-
 export default function PostComposer({
   userId,
   profile,
@@ -21,7 +15,7 @@ export default function PostComposer({
   userId: string
   profile?: any
   onPosted: () => void
-  context: { communityId?: string; campusId?: string; collegeId?: string }
+  context: { communityId?: string; campusId?: string; collegeId?: string; campusName?: string; collegeName?: string }
   placeholder?: string
 }) {
   const [creatable, setCreatable] = useState<CreatableCategory[]>([])
@@ -194,8 +188,23 @@ export default function PostComposer({
           )}
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10 }}>
             <select value={scope} onChange={e => setScope(e.target.value as PostScope)}
-              style={{ border: '1px solid var(--border)', borderRadius: 8, padding: '7px 10px', fontSize: 13, background: 'var(--bg)', outline: 'none', fontFamily: 'inherit' }}>
-              {scopeOptions.map(s => <option key={s} value={s}>🌍 {SCOPE_LABELS[s]}</option>)}
+              style={{ border: '1px solid var(--border)', borderRadius: 8, padding: '7px 10px', fontSize: 13, background: 'var(--bg)', outline: 'none', fontFamily: 'inherit', maxWidth: 170 }}>
+              {/* Two top-level choices: Global, or Campus (with sub-options) */}
+              {scopeOptions.includes('global') && (
+                <optgroup label="🌐 Global">
+                  <option value="global">Global — every student</option>
+                </optgroup>
+              )}
+              {(scopeOptions.includes('campus') || scopeOptions.includes('college_network')) && (
+                <optgroup label="🏫 Campus">
+                  {scopeOptions.includes('campus') && (
+                    <option value="campus">🏛️ My Campus{context.campusName ? ` — ${context.campusName}` : ''}</option>
+                  )}
+                  {scopeOptions.includes('college_network') && (
+                    <option value="college_network">🎓 My College — {context.collegeName || 'whole college'}</option>
+                  )}
+                </optgroup>
+              )}
             </select>
             <div style={{ display: 'flex', gap: 8 }}>
               <button onClick={() => setOpen(false)} style={{ padding: '7px 14px', borderRadius: 8, border: '1px solid var(--border)', background: 'var(--bg)', color: 'var(--text-secondary)', fontSize: 13, cursor: 'pointer', fontFamily: 'inherit' }}>Cancel</button>

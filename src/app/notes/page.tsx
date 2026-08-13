@@ -29,6 +29,7 @@ export default function NotesPage() {
   const [posting, setPosting] = useState(false)
   const [form, setForm] = useState({
     title: '', subject: '', resource_type: 'notes', description: '', drive_link: '', external_link: '',
+    visibility: 'campus' as 'global' | 'campus',
   })
   const supabase = createClient()
   const admin = useAdminContext(user?.id)
@@ -74,7 +75,7 @@ export default function NotesPage() {
       const { data: { user } } = await supabase.auth.getUser()
       if (user) {
         setUser(user)
-        const { data: prof } = await supabase.from('profiles').select('*').eq('id', user.id).single()
+        const { data: prof } = await supabase.from('profiles').select('*, campuses(name)').eq('id', user.id).single()
         setProfile(prof)
       }
       const { data } = await supabase
@@ -102,9 +103,10 @@ export default function NotesPage() {
       description: form.description,
       drive_link: form.drive_link || null,
       external_link: form.external_link || null,
+      visibility: profile?.campus_id ? form.visibility : 'global',
     }).select('id').single()
     try { await supabase.rpc('reward_note_upload', { p_note_id: noteRow?.id }) } catch {}
-    setForm({ title: '', subject: '', resource_type: 'notes', description: '', drive_link: '', external_link: '' })
+    setForm({ title: '', subject: '', resource_type: 'notes', description: '', drive_link: '', external_link: '', visibility: 'campus' })
     setShowCompose(false)
     const { data } = await supabase
       .from('notes')
@@ -248,6 +250,12 @@ export default function NotesPage() {
                 <option value="video_link">Video Link</option>
                 <option value="other">Other</option>
               </select>
+              {profile?.campus_id && (
+                <select value={form.visibility} onChange={e => setForm(f => ({ ...f, visibility: e.target.value as 'global' | 'campus' }))} style={{ ...inputStyle, padding: '10px 12px' }}>
+                  <option value="campus">🏫 My campus — only {profile?.campuses?.name || 'your campus'}</option>
+                  <option value="global">🌐 Global — every student in India</option>
+                </select>
+              )}
               <textarea value={form.description} onChange={e => setForm(f => ({ ...f, description: e.target.value }))} placeholder="Description (optional)" rows={2} style={{ ...inputStyle, resize: 'none' }} />
               <input type="url" value={form.drive_link} onChange={e => setForm(f => ({ ...f, drive_link: e.target.value }))} placeholder="Google Drive Link" style={inputStyle} />
               <input type="url" value={form.external_link} onChange={e => setForm(f => ({ ...f, external_link: e.target.value }))} placeholder="Other Link" style={inputStyle} />

@@ -5,7 +5,7 @@ import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
 import ThemeToggle from '@/components/ThemeToggle'
 
-const TABS = ['Overview', 'Users', 'Posts', 'Moderation', 'Colleges']
+const TABS = ['Overview', 'Users', 'Posts', 'Moderation', 'Colleges', 'Content']
 
 export default function AdminPage() {
   const [profile, setProfile] = useState<any>(null)
@@ -30,6 +30,8 @@ export default function AdminPage() {
   const [modDigest, setModDigest] = useState('')
   const [digestLoading, setDigestLoading] = useState(false)
   const [aiNotes, setAiNotes] = useState<Record<string, any>>({})
+  const [campusToGlobal, setCampusToGlobal] = useState(false)
+  const [contentSaving, setContentSaving] = useState(false)
   const router = useRouter()
   const supabase = createClient()
 
@@ -61,10 +63,28 @@ export default function AdminPage() {
         supabase.from('colleges').select('*', { count: 'exact', head: true }),
       ])
       setStats({ users: userCount || 0, posts: postCount || 0, colleges: collegeCount || 0 })
+
+      // Content visibility switch (platform admins can open campus content to global users)
+      const { data: setting } = await supabase.from('app_settings').select('value').eq('key', 'campus_content_to_global').maybeSingle()
+      setCampusToGlobal(setting?.value === 'true')
+
       setLoading(false)
     }
     load()
   }, [])
+
+  const toggleCampusToGlobal = async () => {
+    setContentSaving(true)
+    const next = !campusToGlobal
+    const { error } = await supabase.from('app_settings').update({ value: String(next) }).eq('key', 'campus_content_to_global')
+    if (error) {
+      setAdminError('Only platform admins can change this setting.')
+    } else {
+      setCampusToGlobal(next)
+      setAdminError('')
+    }
+    setContentSaving(false)
+  }
 
   const loadUsers = async () => {
     const { data } = await supabase
@@ -534,6 +554,46 @@ export default function AdminPage() {
                 </span>
               </div>
             ))}
+          </div>
+        )}
+
+        {/* Content visibility */}
+        {activeTab === 'Content' && (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+            <div style={{ background: 'var(--bg)', border: '1px solid var(--border)', borderRadius: 14, padding: 20, boxShadow: 'var(--shadow-sm)' }}>
+              <h3 style={{ fontSize: 15, fontWeight: 700, color: 'var(--text-primary)', margin: '0 0 4px' }}>🌐 Global vs Campus content</h3>
+              <p style={{ fontSize: 13, color: 'var(--text-secondary)', lineHeight: 1.6, margin: '0 0 16px' }}>
+                Global students (no college yet) only see content marked <strong>Global</strong>. Anything marked
+                <strong> Campus</strong> stays inside its own branch — Noida, Lucknow, Pune, Bangalore, Delhi and every
+                future campus. Use the switch below to open campus content to everyone.
+              </p>
+
+              {adminError && (
+                <div style={{ background: 'var(--danger-light)', border: '1px solid var(--danger-border)', borderRadius: 10, padding: '10px 14px', marginBottom: 14, fontSize: 13, color: 'var(--danger)' }}>{adminError}</div>
+              )}
+
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, background: 'var(--bg-secondary)', borderRadius: 12, padding: '14px 16px' }}>
+                <div>
+                  <p style={{ fontSize: 13.5, fontWeight: 700, color: 'var(--text-primary)', margin: '0 0 2px' }}>Campus content visible to Global users</p>
+                  <p style={{ fontSize: 12, color: 'var(--text-muted)', margin: 0 }}>{campusToGlobal ? 'ON — global students can see campus opportunities, notes & posts.' : 'OFF — global students only see global content. (recommended)'}</p>
+                </div>
+                <button
+                  onClick={toggleCampusToGlobal}
+                  disabled={contentSaving}
+                  aria-pressed={campusToGlobal}
+                  style={{ flexShrink: 0, width: 52, height: 30, borderRadius: 20, border: 'none', cursor: contentSaving ? 'default' : 'pointer', position: 'relative', background: campusToGlobal ? 'var(--accent)' : 'var(--border-strong)', transition: 'background 0.2s' }}
+                >
+                  <span style={{ position: 'absolute', top: 3, left: campusToGlobal ? 25 : 3, width: 24, height: 24, borderRadius: '50%', background: '#fff', transition: 'left 0.2s', boxShadow: '0 1px 3px rgba(0,0,0,0.25)' }} />
+                </button>
+              </div>
+
+              <div style={{ background: 'var(--accent-light)', borderRadius: 10, padding: '12px 14px', marginTop: 14 }}>
+                <p style={{ fontSize: 12.5, color: 'var(--accent-text)', margin: 0, lineHeight: 1.6 }}>
+                  💡 When posting opportunities or notes, choose <strong>Global</strong> (every student) or
+                  <strong> Campus</strong> (your branch only) — the same choice you see for posts in the composer.
+                </p>
+              </div>
+            </div>
           </div>
         )}
       </div>

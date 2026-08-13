@@ -28,6 +28,15 @@ export default function ProfilePage() {
     skills: [] as string[], skillsInput: '',
   })
   const [isAdmin, setIsAdmin] = useState(false)
+
+  const updateInteraction = async (scope: string) => {
+    if (!user) return
+    const sb = createClient()
+    const { error } = await sb.from('profiles').update({ interaction_scope: scope }).eq('id', user.id)
+    if (error) { toast('Could not update — try again.', { tone: 'danger' }); return }
+    setProfile((p: any) => ({ ...p, interaction_scope: scope }))
+    toast(scope === 'campus' ? 'Now only your campus can connect with you' : 'Now every student can connect with you', { tone: 'success' })
+  }
   const [menuOpen, setMenuOpen] = useState(false)
   // attach-campus-later pickers (shown when the user joined globally)
   const [campusColleges, setCampusColleges] = useState<any[]>([])
@@ -465,6 +474,30 @@ export default function ProfilePage() {
               )}
             </div>
           )}
+        </div>
+
+        {/* Interaction scope — who can connect with you */}
+        <div style={{ background: 'var(--bg)', borderRadius: 14, border: '1px solid var(--border)', padding: 20, boxShadow: 'var(--shadow-sm)' }}>
+          <h3 style={{ fontSize: 14, fontWeight: 700, color: 'var(--text-primary)', margin: '0 0 4px' }}>🔐 Who can connect with you?</h3>
+          <p style={{ fontSize: 12.5, color: 'var(--text-muted)', margin: '0 0 12px' }}>Choose who can send you connect requests and start chats with you.</p>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+            {[
+              { val: 'global', icon: '🌐', title: 'Everyone (Global)', desc: 'Any student can connect with you and message you.' },
+              ...(profile?.campus_id ? [{ val: 'campus', icon: '🏫', title: 'My campus only', desc: 'Only students from your own campus can connect with you.' }] : []),
+            ].map(opt => {
+              const active = (profile?.interaction_scope || 'global') === opt.val
+              return (
+                <button key={opt.val} onClick={() => { if (!active) updateInteraction(opt.val) }}
+                  style={{ display: 'flex', alignItems: 'center', gap: 12, textAlign: 'left', padding: '12px 14px', borderRadius: 12, cursor: 'pointer', fontFamily: 'inherit', border: active ? '1.5px solid var(--accent)' : '1px solid var(--border)', background: active ? 'var(--accent-light)' : 'var(--bg-secondary)', color: 'var(--text-primary)' }}>
+                  <span style={{ fontSize: 20, flexShrink: 0 }}>{opt.icon}</span>
+                  <span style={{ flex: 1 }}>
+                    <span style={{ display: 'block', fontSize: 13.5, fontWeight: 700 }}>{opt.title} {active && '✓'}</span>
+                    <span style={{ display: 'block', fontSize: 12, color: 'var(--text-muted)' }}>{opt.desc}</span>
+                  </span>
+                </button>
+              )
+            })}
+          </div>
         </div>
 
         {/* Admin */}
