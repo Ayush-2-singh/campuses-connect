@@ -47,9 +47,12 @@ export default function FeedPage() {
   const fetchPosts = useCallback(async () => {
     // Home = the campus layer only (campus + whole-college posts). Global has
     // its own page — it is never mixed into the campus feed.
+    // When filtering by category, the embed must be an INNER join — otherwise
+    // PostgREST keeps every post and only nulls the category (everything loads).
+    const inner = filter !== 'all' ? '!inner' : ''
     let q = supabase
       .from('posts')
-      .select('*, profiles!posts_author_id_fkey(full_name, username, is_verified), content_categories(key, label)')
+      .select(`*, profiles!posts_author_id_fkey(full_name, username, is_verified), content_categories${inner}(key, label)`)
       .in('scope', ['campus', 'college_network'])
       .order('is_pinned', { ascending: false })
       .order('created_at', { ascending: false })
