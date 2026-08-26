@@ -36,6 +36,7 @@ interface AuditEntry {
 
 const TABS = [
   'Overview',
+  'Analytics',
   'Features',
   'Settings',
   'Users',
@@ -236,6 +237,7 @@ export default function AdminPage() {
 
   // ── Tab data loading ────────────────────────────────────
   useEffect(() => {
+    if (activeTab === 'Analytics') { router.push('/admin/analytics'); return }
     if (activeTab === 'Users') loadUsers()
     if (activeTab === 'Posts') loadPosts()
     if (activeTab === 'Colleges') loadColleges()
@@ -562,6 +564,12 @@ export default function AdminPage() {
             <div style={{ background: 'var(--bg)', border: '1px solid var(--border)', borderRadius: 16, padding: 20, boxShadow: 'var(--shadow-sm)' }}>
               <h3 style={{ fontSize: 15, fontWeight: 700, color: 'var(--text-primary)', margin: '0 0 12px' }}>🚀 Quick Actions</h3>
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 10 }}>
+                <button onClick={() => router.push('/admin/analytics')}
+                  style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border)', borderRadius: 12, padding: '14px 16px', textAlign: 'left', cursor: 'pointer', fontFamily: 'inherit' }}>
+                  <p style={{ fontSize: 20, margin: '0 0 4px' }}>📊</p>
+                  <p style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-primary)', margin: 0 }}>Analytics Dashboard</p>
+                  <p style={{ fontSize: 11, color: 'var(--text-muted)', margin: '2px 0 0' }}>Metrics, growth, heatmap</p>
+                </button>
                 <button onClick={() => setActiveTab('Features')}
                   style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border)', borderRadius: 12, padding: '14px 16px', textAlign: 'left', cursor: 'pointer', fontFamily: 'inherit' }}>
                   <p style={{ fontSize: 20, margin: '0 0 4px' }}>⚡</p>
