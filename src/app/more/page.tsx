@@ -21,6 +21,7 @@ const SECTIONS = [
   { icon: '🔖', label: 'Saved', desc: 'Posts you bookmarked', href: '/saved' },
   { icon: '🔍', label: 'Lost & Found', desc: 'Report lost items or return found ones', href: '/lost-found' },
   { icon: '🚂', label: 'Travel Buddies', desc: 'Find campus mates on the same route', href: '/travel' },
+  { icon: '🏢', label: 'Companies & Jobs', desc: 'Explore companies, openings & interview exp', href: '/companies' },
   { icon: '🔗', label: 'Integrations', desc: 'Connect GitHub & LeetCode for the leaderboard', href: '/integrations' },
   { icon: '🏆', label: 'Leaderboard', desc: 'Top contributors on your campus', href: '/leaderboard' },
   { icon: '📊', label: 'Weekly Wrap', desc: 'This week on your campus', href: '/weekly' },
