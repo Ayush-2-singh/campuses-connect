@@ -26,6 +26,8 @@ const SECTIONS = [
   { icon: '🏆', label: 'Leaderboard', desc: 'Top contributors on your campus', href: '/leaderboard' },
   { icon: '📊', label: 'Weekly Wrap', desc: 'This week on your campus', href: '/weekly' },
   { icon: '🔔', label: 'Notifications', desc: 'Your latest activity', href: '/notifications' },
+  { icon: '⏰', label: 'Smart Reminders', desc: 'Never miss a deadline or event', href: '/reminders' },
+  { icon: '🏆', label: 'Badges & Streaks', desc: 'Earn badges, maintain streaks, unlock features', href: '/badges' },
 ]
 
 export default function MorePage() {
