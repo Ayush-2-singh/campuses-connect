@@ -41,6 +41,7 @@ const TABS = [
   'Settings',
   'Users',
   'Verify',
+  'Premium',
   'Posts',
   'Moderation',
   'Colleges',
@@ -130,6 +131,12 @@ export default function AdminPage() {
   const [verifyUserVerifications, setVerifyUserVerifications] = useState<any[]>([])
   const [verifyAction, setVerifyAction] = useState('change_campus')
   const [verifyForm, setVerifyForm] = useState({ campus_id: '', skill: '', role: '', label: '', value: '', notes: '' })
+
+  // ── Premium (NEW) ───────────────────────────────────────
+  const [premiumUsers, setPremiumUsers] = useState<any[]>([])
+  const [premiumLoading, setPremiumLoading] = useState(false)
+  const [premiumSearch, setPremiumSearch] = useState('')
+  const [premiumBusy, setPremiumBusy] = useState<string | null>(null)
 
   // ── Init ────────────────────────────────────────────────
   useEffect(() => {
@@ -311,6 +318,49 @@ export default function AdminPage() {
     } catch { /* ignore */ }
   }
 
+  // ── Premium load ────────────────────────────────────────
+  const loadPremiumUsers = useCallback(async (search?: string) => {
+    setPremiumLoading(true)
+    try {
+      const { data, error } = await supabase
+        .from('user_premium')
+        .select('*, profiles:user_id(full_name, username, avatar_url, email)')
+        .order('created_at', { ascending: false })
+      setPremiumUsers((data as any[]) || [])
+    } catch { /* ignore */ }
+    setPremiumLoading(false)
+  }, [])
+
+  const grantPremium = async (userId: string, type: string = 'admin_granted') => {
+    setPremiumBusy(userId)
+    try {
+      const { error } = await supabase.from('user_premium').upsert({
+        user_id: userId,
+        is_premium: true,
+        premium_type: type,
+        granted_by: profile?.id,
+      }, { onConflict: 'user_id' })
+      if (error) throw new Error(error.message)
+      loadPremiumUsers()
+    } catch (err: any) {
+      alert(err.message || 'Failed')
+    }
+    setPremiumBusy(null)
+  }
+
+  const revokePremium = async (userId: string) => {
+    if (!confirm('Revoke premium access?')) return
+    setPremiumBusy(userId)
+    try {
+      const { error } = await supabase.from('user_premium').delete().eq('user_id', userId)
+      if (error) throw new Error(error.message)
+      loadPremiumUsers()
+    } catch (err: any) {
+      alert(err.message || 'Failed')
+    }
+    setPremiumBusy(null)
+  }
+
   // ── Campus Changes load ─────────────────────────────────
   const loadCampusChanges = useCallback(async (status?: string) => {
     setCampusChangesLoading(true)
@@ -353,6 +403,7 @@ export default function AdminPage() {
     if (activeTab === 'Features') loadFeatures()
     if (activeTab === 'Settings') loadSettings()
     if (activeTab === 'Verify') loadVerifyUsers()
+    if (activeTab === 'Premium') loadPremiumUsers()
     if (activeTab === 'Campus Changes') loadCampusChanges()
     if (activeTab === 'Audit Log') loadAuditLog()
   }, [activeTab])
@@ -1165,6 +1216,73 @@ export default function AdminPage() {
                     <span style={{ color: 'var(--text-muted)', fontSize: 14, flexShrink: 0 }}>→</span>
                   </div>
                 ))}
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* ═══════════════════════════════════════════════════
+            PREMIUM (NEW)
+        ═══════════════════════════════════════════════════ */}
+        {activeTab === 'Premium' && (
+          <div>
+            <div style={{ marginBottom: 16 }}>
+              <h3 style={{ fontSize: 16, fontWeight: 700, color: 'var(--text-primary)', margin: '0 0 4px' }}>👑 Premium Users</h3>
+              <p style={{ fontSize: 13, color: 'var(--text-muted)', margin: 0 }}>
+                Manage premium access — grant or revoke Pro membership
+              </p>
+            </div>
+
+            {/* Search + Grant */}
+            <div style={{ display: 'flex', gap: 8, marginBottom: 16, flexWrap: 'wrap' }}>
+              <input value={premiumSearch} onChange={e => setPremiumSearch(e.target.value)}
+                placeholder="🔍 Search users..."
+                style={{ flex: 1, minWidth: 200, border: '1px solid var(--border)', borderRadius: 10, padding: '10px 14px', fontSize: 13, outline: 'none', fontFamily: 'inherit', background: 'var(--bg)', color: 'var(--text-primary)' }} />
+            </div>
+
+            {/* Stats */}
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 8, marginBottom: 16 }}>
+              <div style={{ background: 'var(--bg)', border: '1px solid var(--border)', borderRadius: 12, padding: '12px', textAlign: 'center' }}>
+                <p style={{ fontSize: 24, fontWeight: 800, color: '#f59e0b', margin: '0 0 2px' }}>👑 {premiumUsers.length}</p>
+                <p style={{ fontSize: 11, color: 'var(--text-muted)', margin: 0 }}>Premium Users</p>
+              </div>
+              <div style={{ background: 'var(--bg)', border: '1px solid var(--border)', borderRadius: 12, padding: '12px', textAlign: 'center' }}>
+                <p style={{ fontSize: 24, fontWeight: 800, color: 'var(--text-primary)', margin: '0 0 2px' }}>🧠 Brain</p>
+                <p style={{ fontSize: 11, color: 'var(--text-muted)', margin: 0 }}>Premium Feature</p>
+              </div>
+            </div>
+
+            {/* Premium users list */}
+            {premiumLoading ? (
+              <p style={{ textAlign: 'center', color: 'var(--text-muted)', padding: '40px 0' }}>Loading...</p>
+            ) : premiumUsers.length === 0 ? (
+              <div style={{ background: 'var(--bg)', border: '1px solid var(--border)', borderRadius: 16, padding: '40px 20px', textAlign: 'center', boxShadow: 'var(--shadow-sm)' }}>
+                <p style={{ fontSize: 32, margin: '0 0 8px' }}>👑</p>
+                <p style={{ fontSize: 15, fontWeight: 600, color: 'var(--text-primary)', margin: '0 0 4px' }}>No premium users yet</p>
+                <p style={{ fontSize: 13, color: 'var(--text-muted)', margin: 0 }}>Grant premium access from the Users tab</p>
+              </div>
+            ) : (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                {premiumUsers.map((pu: any) => {
+                  const u = pu.profiles
+                  return (
+                    <div key={pu.id}
+                      style={{ background: 'var(--bg)', border: '1px solid var(--border)', borderRadius: 12, padding: '12px 14px', display: 'flex', alignItems: 'center', gap: 12, boxShadow: 'var(--shadow-sm)' }}>
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                          <p style={{ fontSize: 14, fontWeight: 600, color: 'var(--text-primary)', margin: 0 }}>{u?.full_name || 'Unknown'}</p>
+                          <span style={{ fontSize: 10, padding: '1px 6px', borderRadius: 6, background: 'linear-gradient(135deg, #fbbf24, #f59e0b)', color: '#fff', fontWeight: 700 }}>👑 {pu.premium_type}</span>
+                        </div>
+                        <p style={{ fontSize: 12, color: 'var(--text-muted)', margin: '2px 0 0' }}>@{u?.username} · Since {new Date(pu.created_at).toLocaleDateString()}</p>
+                      </div>
+                      <button onClick={() => revokePremium(pu.user_id)}
+                        disabled={premiumBusy === pu.user_id}
+                        style={{ padding: '6px 12px', borderRadius: 8, border: '1px solid var(--danger-border)', background: 'var(--danger-light)', color: 'var(--danger)', fontSize: 11, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>
+                        Revoke
+                      </button>
+                    </div>
+                  )
+                })}
               </div>
             )}
           </div>

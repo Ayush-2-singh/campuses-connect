@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
 import Layout from '@/components/Layout'
+import PremiumGate from '@/components/PremiumGate'
 
 interface Msg {
   role: 'user' | 'assistant'
@@ -156,6 +157,7 @@ export default function BrainPage() {
 
   return (
     <Layout user={user} profile={profile}>
+      <PremiumGate featureKey="brain" showPreview={true}>
       <div className="ambient" style={{ maxWidth: 720, margin: '0 auto', padding: '24px 20px' }}>
         <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 20 }}>
           <div>
@@ -324,6 +326,7 @@ export default function BrainPage() {
           </div>
         )}
       </div>
+      </PremiumGate>
     </Layout>
   )
 }
