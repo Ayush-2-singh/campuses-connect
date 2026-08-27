@@ -28,6 +28,10 @@
 | Aug 2026 | **Skeleton loaders** | Professional shimmer loading across all pages |
 | Aug 2026 | **Error handling** | try/catch on all page loads and actions |
 | Aug 2026 | **Lost&Found UX** | Admin hint for regular users |
+| Aug 2026 | **Security headers** | CSP, X-Frame-Options, X-Content-Type-Options, Referrer-Policy |
+| Aug 2026 | **Navigation prefetch** | Pages prefetch on hover for instant navigation |
+| Aug 2026 | **Asset caching** | Images cached 30 days, public assets 7 days |
+| Aug 2026 | **Pull-to-refresh** | Mobile gesture component for feed pages |
 
 ---
 

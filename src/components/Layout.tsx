@@ -106,6 +106,11 @@ export default function Layout({ children, user, profile }: { children: React.Re
 
   const isActive = (href: string) => pathname === href || pathname.startsWith(href + '/')
 
+  // Prefetch pages on hover for instant navigation
+  const prefetch = (href: string) => {
+    try { router.prefetch(href) } catch { /* ignore */ }
+  }
+
   // Contextual accent for the current section — recolors the whole shell
   // (sidebar active states, FAB, bottom nav) to match the page identity.
   const sectionAccent = accentForPath(pathname)
@@ -147,6 +152,7 @@ export default function Layout({ children, user, profile }: { children: React.Re
                   boxShadow: active ? 'inset 2px 0 0 var(--accent)' : 'none',
                 }}
                 className="nav-pill"
+                onMouseEnter={() => prefetch(item.href)}
               >
                 <NavIcon icon={item.icon} active={active} />
                 {item.label}
@@ -162,6 +168,7 @@ export default function Layout({ children, user, profile }: { children: React.Re
               <button
                 key={item.href}
                 onClick={() => router.push(item.href)}
+                onMouseEnter={() => prefetch(item.href)}
                 style={{
                   width: '100%', textAlign: 'left', padding: '9px 12px', borderRadius: 'var(--radius-sm)',
                   background: active ? 'linear-gradient(90deg, var(--accent-light), transparent)' : 'transparent',
