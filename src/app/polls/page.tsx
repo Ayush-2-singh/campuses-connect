@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
 import Layout from '@/components/Layout'
+import { useHaptic } from '@/hooks/useMobile'
 
 export default function PollsPage() {
   const [user, setUser] = useState<any>(null)
@@ -17,6 +18,7 @@ export default function PollsPage() {
   const [loading, setLoading] = useState(true)
   const router = useRouter()
   const supabase = createClient()
+  const haptic = useHaptic()
 
   // Fetch votes only for the polls currently visible (not full table scan)
   const loadVotes = async (pollIds?: string[]) => {
@@ -88,6 +90,7 @@ export default function PollsPage() {
     )
     if (!error) {
       setMyVotes(m => ({ ...m, [pollId]: optionIndex }))
+      haptic.medium()
       // Optimistic: update local count immediately
       setVotes(prev => {
         const counts = [...(prev[pollId] || [])]

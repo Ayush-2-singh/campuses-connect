@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import { useToast } from '@/components/Toast'
 import Avatar from '@/components/Avatar'
 import { createClient } from '@/lib/supabase/client'
+import { useHaptic } from '@/hooks/useMobile'
 import type { Post } from '@/types'
 
 const SCOPE_CONFIG: Record<string, { label: string; bg: string; text: string }> = {
@@ -57,6 +58,7 @@ export default function PostCard({
   const [joinCount, setJoinCount] = useState(0)
   const [joining, setJoining] = useState(false)
   const { show: toast } = useToast()
+  const haptic = useHaptic()
 
   const isHackathon = post.categories?.key === 'hackathon'
 
@@ -145,6 +147,7 @@ export default function PostCard({
       if (error) return
       setLiked(false)
       setLikeCount(c => Math.max(0, c - 1))
+      haptic.tap()
     } else {
       const { error } = await supabase.from('post_reactions').upsert(
         { post_id: post.id, profile_id: currentUserId, reaction: 'like' },
@@ -153,6 +156,7 @@ export default function PostCard({
       if (error) return
       setLiked(true)
       setLikeCount(c => c + 1)
+      haptic.medium()
     }
   }
 
@@ -163,10 +167,12 @@ export default function PostCard({
       await supabase.from('saved_posts').delete().eq('user_id', currentUserId).eq('post_id', post.id)
       setSaved(false)
       toast('Removed from saved')
+      haptic.tap()
     } else {
       await supabase.from('saved_posts').insert({ user_id: currentUserId, post_id: post.id })
       setSaved(true)
       toast('Saved to bookmarks', { tone: 'success' })
+      haptic.medium()
     }
   }
 

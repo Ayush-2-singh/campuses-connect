@@ -32,6 +32,11 @@
 | Aug 2026 | **Navigation prefetch** | Pages prefetch on hover for instant navigation |
 | Aug 2026 | **Asset caching** | Images cached 30 days, public assets 7 days |
 | Aug 2026 | **Pull-to-refresh** | Mobile gesture component for feed pages |
+| Aug 2026 | **Offline indicator** | Banner when connection is lost, auto-hides on restore |
+| Aug 2026 | **Haptic feedback** | Vibration on like, save, vote (mobile devices) |
+| Aug 2026 | **Swipe-to-go-back** | iOS-style edge swipe gesture for navigation |
+| Aug 2026 | **Viewport height fix** | Fixes 100vh issue on mobile browsers |
+| Aug 2026 | **Mobile UX hooks** | Reusable hooks: online status, haptic, swipe, viewport |
 
 ---
 
