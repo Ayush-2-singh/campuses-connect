@@ -78,6 +78,45 @@ CREATE TABLE IF NOT EXISTS blog_likes (
 CREATE INDEX IF NOT EXISTS idx_blog_likes_post ON blog_likes(post_id);
 CREATE INDEX IF NOT EXISTS idx_blog_likes_user ON blog_likes(user_id);
 
+-- Blog comment likes
+CREATE TABLE IF NOT EXISTS blog_comment_likes (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  comment_id UUID NOT NULL REFERENCES blog_comments(id) ON DELETE CASCADE,
+  user_id UUID NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
+  created_at TIMESTAMPTZ DEFAULT now(),
+  UNIQUE(comment_id, user_id)
+);
+
+CREATE INDEX IF NOT EXISTS idx_blog_comment_likes_comment ON blog_comment_likes(comment_id);
+
+ALTER TABLE blog_comment_likes ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "blog_comment_likes_read" ON blog_comment_likes
+  FOR SELECT USING (true);
+
+CREATE POLICY "blog_comment_likes_insert_own" ON blog_comment_likes
+  FOR INSERT WITH CHECK (user_id = auth.uid());
+
+CREATE POLICY "blog_comment_likes_delete_own" ON blog_comment_likes
+  FOR DELETE USING (user_id = auth.uid());
+
+-- Toggle comment like
+CREATE OR REPLACE FUNCTION toggle_blog_comment_like(p_comment_id UUID)
+RETURNS BOOLEAN AS $$
+DECLARE
+  v_liked BOOLEAN;
+BEGIN
+  IF EXISTS (SELECT 1 FROM blog_comment_likes WHERE comment_id = p_comment_id AND user_id = auth.uid()) THEN
+    DELETE FROM blog_comment_likes WHERE comment_id = p_comment_id AND user_id = auth.uid();
+    v_liked := false;
+  ELSE
+    INSERT INTO blog_comment_likes (comment_id, user_id) VALUES (p_comment_id, auth.uid());
+    v_liked := true;
+  END IF;
+  RETURN v_liked;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
 -- ═══════════════════════════════════════════════════════════════════════════
 -- RLS Policies
 -- ═══════════════════════════════════════════════════════════════════════════
