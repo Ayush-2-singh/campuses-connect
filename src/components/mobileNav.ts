@@ -4,13 +4,14 @@
 
 export const MOBILE_NAV = [
   { label: 'Home', href: '/feed', icon: 'home' },
-  { label: 'Classroom', href: '/college', icon: 'book' },
+  { label: 'Blog', href: '/blog', icon: 'notebook' },
   { label: 'Events', href: '/events', icon: 'calendar' },
   { label: 'Compete', href: '/compete', icon: 'zap' },
 ]
 
 export const MOBILE_MENU_NAV = [
   { label: 'Global', href: '/global', icon: 'globe' },
+  { label: 'Classroom', href: '/college', icon: 'book' },
   { label: 'Connections', href: '/connections', icon: 'link' },
   { label: 'Opportunities', href: '/opportunities', icon: 'briefcase' },
   { label: 'Notes', href: '/notes', icon: 'notebook' },

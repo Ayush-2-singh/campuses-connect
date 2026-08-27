@@ -37,6 +37,11 @@
 | Aug 2026 | **Swipe-to-go-back** | iOS-style edge swipe gesture for navigation |
 | Aug 2026 | **Viewport height fix** | Fixes 100vh issue on mobile browsers |
 | Aug 2026 | **Mobile UX hooks** | Reusable hooks: online status, haptic, swipe, viewport |
+| Aug 2026 | **Blog section** | Interview experiences, tech blogs, campus stories with SEO |
+| Aug 2026 | **Blog categories** | Interviews, Tech, Campus, How-To, Projects, Reviews |
+| Aug 2026 | **Blog creation** | Rich editor with preview, tags, company/role fields |
+| Aug 2026 | **Blog SEO** | Full-text search, meta tags, slug URLs for ranking |
+| Aug 2026 | **Blog engagement** | Like, comment, bookmark, share on every post |
 
 ---
 
