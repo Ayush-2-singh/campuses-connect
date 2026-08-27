@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import Layout from '@/components/Layout'
 import Avatar from '@/components/Avatar'
+import ErrorBoundary from '@/components/ErrorBoundary'
 
 type Problem = {
   id: string
@@ -181,6 +182,7 @@ export default function CompetePage() {
 
   return (
     <Layout user={user} profile={profile}>
+    <ErrorBoundary pageName="compete">
       <div style={{ maxWidth: 760, margin: '0 auto', padding: '24px 20px 48px' }}>
 
         {/* Header */}
@@ -357,6 +359,7 @@ export default function CompetePage() {
           <RankingsTab />
         )}
       </div>
+    </ErrorBoundary>
     </Layout>
   )
 }

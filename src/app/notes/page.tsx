@@ -6,6 +6,7 @@ import Layout from '@/components/Layout'
 import { useAdminContext } from '@/lib/permissions'
 import { ListSkeleton } from '@/components/Skeleton'
 import EmptyState from '@/components/EmptyState'
+import ErrorBoundary from '@/components/ErrorBoundary'
 import { Icon } from '@/components/icons'
 
 const RESOURCE_TYPES = ['all', 'notes', 'pyq', 'assignment', 'book', 'cheatsheet', 'video_link']
@@ -153,6 +154,7 @@ export default function NotesPage() {
 
   return (
     <Layout user={user} profile={profile}>
+    <ErrorBoundary pageName="notes">
       <div style={{ maxWidth: 720, margin: '0 auto', padding: '28px 20px 40px' }}>
 
         {/* Header */}
@@ -317,10 +319,10 @@ export default function NotesPage() {
           </div>
         )}
       </div>
+    </ErrorBoundary>
     </Layout>
   )
 }
-
 function NoteRow({ note, canDelete, onDelete }: { note: any; canDelete?: boolean; onDelete?: (note: any) => void }) {
   return (
     <div className="card-hover" style={{ background: 'var(--bg)', border: '1px solid var(--border)', borderRadius: 'var(--radius)', padding: 14, display: 'flex', alignItems: 'center', gap: 14, boxShadow: 'var(--shadow-sm)' }}>
