@@ -68,6 +68,7 @@ export default function IntegrationsPage() {
       const res = await fetch(`/api/integrations/${platform}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
         body: JSON.stringify({ username }),
       })
       const data = await res.json()
@@ -80,6 +81,8 @@ export default function IntegrationsPage() {
       setError(err.message)
     }
     setConnecting(null)
+    // Clear success after 5 seconds
+    setTimeout(() => setSuccess(''), 5000)
   }
 
   // ── Disconnect platform ──────────────────────────────────
@@ -87,10 +90,12 @@ export default function IntegrationsPage() {
     if (!confirm(`Disconnect your ${platform === 'github' ? 'GitHub' : 'LeetCode'} account?`)) return
     setConnecting(platform)
     try {
-      await fetch(`/api/integrations/${platform}`, { method: 'DELETE' })
+      await fetch(`/api/integrations/${platform}`, { method: 'DELETE', credentials: 'include' })
       setSuccess('Disconnected successfully')
       if (user) await loadIntegrations(user.id)
-    } catch { /* ignore */ }
+    } catch (err: any) {
+      setError(err.message || 'Failed to disconnect')
+    }
     setConnecting(null)
   }
 
