@@ -26,12 +26,15 @@ export default function GlobalPage() {
   const [hackathons, setHackathons] = useState<Post[]>([])
   const [internships, setInternships] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
+  const [hasMore, setHasMore] = useState(true)
+  const [loadingMore, setLoadingMore] = useState(false)
+  const PAGE_SIZE = 30
   const supabase = createClient()
   const router = useRouter()
 
   const POST_SELECT = '*, profiles!posts_author_id_fkey(full_name, username, avatar_url, is_verified), content_categories(key, label)'
 
-  const fetchPosts = useCallback(async () => {
+  const fetchPosts = useCallback(async (offset = 0) => {
     // One global query, split client-side: hackathons get their own block,
     // everything else is the main feed.
     const { data } = await supabase
@@ -40,12 +43,25 @@ export default function GlobalPage() {
       .eq('scope', 'global')
       .order('is_pinned', { ascending: false })
       .order('created_at', { ascending: false })
-      .limit(60)
+      .range(offset, offset + PAGE_SIZE - 1)
     const all = data || []
-    setHackathons(all.filter(p => p.categories?.key === 'hackathon').slice(0, 4))
-    setPosts(all.filter(p => p.categories?.key !== 'hackathon'))
+    const hacks = all.filter(p => p.categories?.key === 'hackathon')
+    const regular = all.filter(p => p.categories?.key !== 'hackathon')
+    if (offset === 0) {
+      setHackathons(hacks.slice(0, 4))
+      setPosts(regular)
+    } else {
+      setPosts(prev => [...prev, ...regular])
+    }
+    setHasMore(all.length === PAGE_SIZE)
     setLoading(false)
+    setLoadingMore(false)
   }, [supabase])
+
+  const loadMore = async () => {
+    setLoadingMore(true)
+    await fetchPosts(posts.length)
+  }
 
   const fetchInternships = useCallback(async () => {
     try {
@@ -195,8 +211,14 @@ export default function GlobalPage() {
             ) : (
               <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
                 {posts.map(post => (
-                  <PostCard key={post.id} post={post} currentUserId={user?.id} canInteract={!!user} onChanged={fetchPosts} />
+                  <PostCard key={post.id} post={post} currentUserId={user?.id} canInteract={!!user} onChanged={() => fetchPosts(0)} />
                 ))}
+                {hasMore && (
+                  <button onClick={loadMore} disabled={loadingMore}
+                    style={{ width: '100%', padding: '12px', borderRadius: 10, border: '1px solid var(--border)', background: 'var(--bg)', color: loadingMore ? 'var(--text-muted)' : 'var(--accent)', fontSize: 14, fontWeight: 600, cursor: loadingMore ? 'default' : 'pointer', fontFamily: 'inherit', marginTop: 4 }}>
+                    {loadingMore ? 'Loading…' : 'Load more posts'}
+                  </button>
+                )}
               </div>
             )}
           </>

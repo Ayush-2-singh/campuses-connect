@@ -23,21 +23,23 @@ export default function BadgesPage() {
 
   useEffect(() => {
     const load = async () => {
-      const { data: { user: authUser } } = await supabase.auth.getUser()
-      if (!authUser) { router.replace('/auth/login?redirect=/badges'); return }
-      setUser(authUser)
-      const { data } = await supabase.from('profiles').select('*').eq('id', authUser.id).single()
-      setProfile(data)
+      try {
+        const { data: { user: authUser } } = await supabase.auth.getUser()
+        if (!authUser) { router.replace('/auth/login?redirect=/badges'); return }
+        setUser(authUser)
+        const { data } = await supabase.from('profiles').select('*').eq('id', authUser.id).single()
+        setProfile(data)
 
-      const res = await fetch('/api/badges')
-      if (res.ok) {
-        const d = await res.json()
-        setBadges(d.badges || [])
-        setUserBadges(d.user_badges || [])
-        setStreakDays(d.streak_days || 0)
-        setKarmaPoints(d.karma_points || 0)
-        setRecentActivity(d.recent_activity || [])
-      }
+        const res = await fetch('/api/badges')
+        if (res.ok) {
+          const d = await res.json()
+          setBadges(d.badges || [])
+          setUserBadges(d.user_badges || [])
+          setStreakDays(d.streak_days || 0)
+          setKarmaPoints(d.karma_points || 0)
+          setRecentActivity(d.recent_activity || [])
+        }
+      } catch { /* page shows empty state */ }
       setLoading(false)
     }
     load()
@@ -96,7 +98,11 @@ export default function BadgesPage() {
         </div>
 
         {loading ? (
-          <p style={{ textAlign: 'center', color: 'var(--text-muted)', padding: '40px 0' }}>Loading...</p>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+            {Array.from({ length: 3 }).map((_, i) => (
+              <div key={i} className="skeleton" style={{ height: 80, borderRadius: 'var(--radius)' }} />
+            ))}
+          </div>
         ) : (
           <>
             {/* Badges tab */}

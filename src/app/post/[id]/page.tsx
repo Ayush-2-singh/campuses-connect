@@ -19,19 +19,21 @@ export default function PostDetailPage() {
   const supabase = createClient()
 
   const load = useCallback(async () => {
-    const { data: { user } } = await supabase.auth.getUser()
-    if (user) {
-      setUser(user)
-      const { data: prof } = await supabase.from('profiles').select('*').eq('id', user.id).single()
-      setProfile(prof)
-    }
-    const { data } = await supabase
-      .from('posts')
-      .select('*, profiles!posts_author_id_fkey(full_name, username, avatar_url, is_verified), content_categories(key, label)')
-      .eq('id', id)
-      .single()
-    // RLS returns nothing when the post isn't viewable by this user.
-    setPost(data || null)
+    try {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (user) {
+        setUser(user)
+        const { data: prof } = await supabase.from('profiles').select('*').eq('id', user.id).single()
+        setProfile(prof)
+      }
+      const { data } = await supabase
+        .from('posts')
+        .select('*, profiles!posts_author_id_fkey(full_name, username, avatar_url, is_verified), content_categories(key, label)')
+        .eq('id', id)
+        .single()
+      // RLS returns nothing when the post isn't viewable by this user.
+      setPost(data || null)
+    } catch { /* page shows not-found state */ }
     setLoading(false)
   }, [id, supabase])
 

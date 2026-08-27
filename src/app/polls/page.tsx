@@ -18,8 +18,14 @@ export default function PollsPage() {
   const router = useRouter()
   const supabase = createClient()
 
-  const loadVotes = async () => {
-    const { data } = await supabase.from('poll_votes').select('poll_id, option_index')
+  // Fetch votes only for the polls currently visible (not full table scan)
+  const loadVotes = async (pollIds?: string[]) => {
+    const ids = pollIds || polls.map(p => p.id)
+    if (!ids.length) return
+    const { data } = await supabase
+      .from('poll_votes')
+      .select('poll_id, option_index')
+      .in('poll_id', ids)
     const counts: Record<string, number[]> = {}
     ;(data || []).forEach((v: any) => {
       if (!counts[v.poll_id]) counts[v.poll_id] = []
@@ -30,33 +36,40 @@ export default function PollsPage() {
 
   useEffect(() => {
     let alive = true
+    // Realtime: only refresh votes for the poll that changed (not full table)
     const channel = supabase
       .channel('poll-votes-live')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'poll_votes' }, () => {
-        if (alive) loadVotes()
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'poll_votes' }, (payload: any) => {
+        if (alive && payload.new?.poll_id) {
+          loadVotes([payload.new.poll_id])
+        }
       })
       .subscribe()
 
     const load = async () => {
-      const { data: { user } } = await supabase.auth.getUser()
-      if (user) {
-        setUser(user)
-        const { data } = await supabase.from('profiles').select('*').eq('id', user.id).single()
-        setProfile(data)
-        const { data: mine } = await supabase.from('poll_votes').select('poll_id, option_index').eq('user_id', user.id)
-        const m: Record<string, number> = {}
-        ;(mine || []).forEach((v: any) => { m[v.poll_id] = v.option_index })
-        setMyVotes(m)
-      }
-      const { data } = await supabase
-        .from('polls')
-        .select('*, profiles(full_name)')
-        .eq('is_active', true)
-        .or(`closes_at.is.null,closes_at.gt.${new Date().toISOString()}`)
-        .order('created_at', { ascending: false })
-        .limit(30)
-      setPolls(data || [])
-      await loadVotes()
+      try {
+        const { data: { user } } = await supabase.auth.getUser()
+        if (user) {
+          setUser(user)
+          const { data } = await supabase.from('profiles').select('*').eq('id', user.id).single()
+          setProfile(data)
+          const { data: mine } = await supabase.from('poll_votes').select('poll_id, option_index').eq('user_id', user.id)
+          const m: Record<string, number> = {}
+          ;(mine || []).forEach((v: any) => { m[v.poll_id] = v.option_index })
+          setMyVotes(m)
+        }
+        const { data } = await supabase
+          .from('polls')
+          .select('*, profiles(full_name)')
+          .eq('is_active', true)
+          .or(`closes_at.is.null,closes_at.gt.${new Date().toISOString()}`)
+          .order('created_at', { ascending: false })
+          .limit(30)
+        const pollList = data || []
+        setPolls(pollList)
+        // Batch: fetch votes only for these specific polls
+        await loadVotes(pollList.map(p => p.id))
+      } catch { /* page shows empty state */ }
       setLoading(false)
     }
     load()
@@ -64,14 +77,25 @@ export default function PollsPage() {
     return () => { alive = false; supabase.removeChannel(channel) }
   }, [])
 
-  const vote = async (pollId: string, optionIndex: number) => {      if (!user) { router.replace('/auth/login?redirect=' + encodeURIComponent(typeof window !== 'undefined' ? window.location.pathname : '')); return }
+  const vote = async (pollId: string, optionIndex: number) => {
+    if (!user) {
+      router.replace('/auth/login?redirect=' + encodeURIComponent(typeof window !== 'undefined' ? window.location.pathname : ''))
+      return
+    }
     const { error } = await supabase.from('poll_votes').upsert(
       { poll_id: pollId, user_id: user.id, option_index: optionIndex },
       { onConflict: 'poll_id,user_id' }
     )
     if (!error) {
       setMyVotes(m => ({ ...m, [pollId]: optionIndex }))
-      loadVotes()
+      // Optimistic: update local count immediately
+      setVotes(prev => {
+        const counts = [...(prev[pollId] || [])]
+        counts[optionIndex] = (counts[optionIndex] || 0) + 1
+        return { ...prev, [pollId]: counts }
+      })
+      // Then refresh from server in background
+      loadVotes([pollId])
     }
   }
 
@@ -79,22 +103,27 @@ export default function PollsPage() {
     const opts = form.options.map(o => o.trim()).filter(Boolean)
     if (!form.question.trim() || opts.length < 2 || !user) return
     setPosting(true)
-    await supabase.from('polls').insert({
-      question: form.question.trim(),
-      options: opts,
-      created_by: user.id,
-      campus_id: profile?.campus_id,
-    })
-    setForm({ question: '', options: ['', ''] })
-    setShowCreate(false)
-    const { data } = await supabase
-      .from('polls')
-      .select('*, profiles(full_name)')
-      .eq('is_active', true)
-      .or(`closes_at.is.null,closes_at.gt.${new Date().toISOString()}`)
-      .order('created_at', { ascending: false })
-      .limit(30)
-    setPolls(data || [])
+    try {
+      await supabase.from('polls').insert({
+        question: form.question.trim(),
+        options: opts,
+        created_by: user.id,
+        campus_id: profile?.campus_id,
+      })
+      setForm({ question: '', options: ['', ''] })
+      setShowCreate(false)
+      // Reload polls
+      const { data } = await supabase
+        .from('polls')
+        .select('*, profiles(full_name)')
+        .eq('is_active', true)
+        .or(`closes_at.is.null,closes_at.gt.${new Date().toISOString()}`)
+        .order('created_at', { ascending: false })
+        .limit(30)
+      const pollList = data || []
+      setPolls(pollList)
+      await loadVotes(pollList.map(p => p.id))
+    } catch { /* UI stays in current state */ }
     setPosting(false)
   }
 
@@ -159,7 +188,11 @@ export default function PollsPage() {
         )}
 
         {loading ? (
-          <p style={{ textAlign: 'center', color: 'var(--text-muted)', padding: '40px 0' }}>Loading...</p>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+            {Array.from({ length: 3 }).map((_, i) => (
+              <div key={i} className="skeleton" style={{ height: 120, borderRadius: 'var(--radius)' }} />
+            ))}
+          </div>
         ) : polls.length === 0 ? (
           <div style={{ textAlign: 'center', padding: '60px 0' }}>
             <div style={{ fontSize: 48, marginBottom: 12 }}>📊</div>
@@ -174,7 +207,7 @@ export default function PollsPage() {
               const total = counts.reduce((s, c) => s + (c || 0), 0)
               const myPick = myVotes[poll.id]
               return (
-                <div key={poll.id} style={{ background: 'var(--bg)', border: '1px solid var(--border)', borderRadius: 14, padding: '18px', boxShadow: 'var(--shadow-sm)' }}>
+                <div key={poll.id} className="card-hover" style={{ background: 'var(--bg)', border: '1px solid var(--border)', borderRadius: 14, padding: '18px', boxShadow: 'var(--shadow-sm)' }}>
                   <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 12 }}>
                     <p style={{ fontSize: 15, fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>{poll.question}</p>
                     <span style={{ fontSize: 12, color: 'var(--text-muted)', flexShrink: 0, marginLeft: 10 }}>{total} vote{total === 1 ? '' : 's'}</span>

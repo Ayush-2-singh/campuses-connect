@@ -32,11 +32,13 @@ export default function LostFoundPage() {
   const handlePost = async () => {
     if (!form.title) return
     setPosting(true)
-    await supabase.from('lost_found').insert({ posted_by: user.id, campus_id: profile?.campus_id, ...form, is_resolved: false })
-    setForm({ title: '', description: '', item_type: 'lost', category: 'electronics', location: '', contact_info: '' })
-    setShowCompose(false)
-    const { data } = await supabase.from('lost_found').select('*, profiles(full_name, username)').eq('is_resolved', false).order('created_at', { ascending: false }).limit(30)
-    setItems(data || [])
+    try {
+      await supabase.from('lost_found').insert({ posted_by: user.id, campus_id: profile?.campus_id, ...form, is_resolved: false })
+      setForm({ title: '', description: '', item_type: 'lost', category: 'electronics', location: '', contact_info: '' })
+      setShowCompose(false)
+      const { data } = await supabase.from('lost_found').select('*, profiles(full_name, username)').eq('is_resolved', false).order('created_at', { ascending: false }).limit(30)
+      setItems(data || [])
+    } catch { /* UI stays in current state */ }
     setPosting(false)
   }
 
@@ -54,7 +56,11 @@ export default function LostFoundPage() {
             </div>
             <p style={{ fontSize: 13, color: 'var(--text-muted)', margin: 0, marginLeft: 34 }}>Report lost items or return found ones</p>
           </div>
-          {user && admin.isAdmin && <button onClick={() => setShowCompose(true)} style={{ background: 'var(--accent)', color: 'var(--on-accent)', border: 'none', padding: '9px 18px', borderRadius: 10, fontSize: 14, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>+ Post</button>}
+          {user && admin.isAdmin ? (
+            <button onClick={() => setShowCompose(true)} style={{ background: 'var(--accent)', color: 'var(--on-accent)', border: 'none', padding: '9px 18px', borderRadius: 10, fontSize: 14, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>+ Post</button>
+          ) : user ? (
+            <span style={{ fontSize: 12, color: 'var(--text-muted)', padding: '8px 0' }}>Only admins can post</span>
+          ) : null}
         </div>
 
         <div style={{ display: 'flex', gap: 8, marginBottom: 20 }}>

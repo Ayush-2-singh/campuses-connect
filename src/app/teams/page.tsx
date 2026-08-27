@@ -73,22 +73,26 @@ export default function TeamsPage() {
   const handlePost = async () => {
     if (!form.event_name || posting) return
     setPosting(true)
-    await supabase.from('team_requests').insert({
-      posted_by: user.id,
-      campus_id: profile?.campus_id,
-      ...form,
-      team_size: parseInt(form.team_size) || 4,
-      is_open: true,
-    })
-    setForm({ ...emptyForm })
-    setShowCompose(false)
-    await load()
+    try {
+      await supabase.from('team_requests').insert({
+        posted_by: user.id,
+        campus_id: profile?.campus_id,
+        ...form,
+        team_size: parseInt(form.team_size) || 4,
+        is_open: true,
+      })
+      setForm({ ...emptyForm })
+      setShowCompose(false)
+      await load()
+    } catch { /* UI stays in current state */ }
     setPosting(false)
   }
 
   const handleCloseRequest = async (id: string) => {
-    await supabase.from('team_requests').update({ is_open: false }).eq('id', id).eq('posted_by', user.id)
-    await load()
+    try {
+      await supabase.from('team_requests').update({ is_open: false }).eq('id', id).eq('posted_by', user.id)
+      await load()
+    } catch { /* UI stays in current state */ }
   }
 
   const openRequestModal = (team: TeamRequest) => {      if (!user) { router.replace('/auth/login?redirect=' + encodeURIComponent(typeof window !== 'undefined' ? window.location.pathname : '')); return }
@@ -99,16 +103,20 @@ export default function TeamsPage() {
   const sendRequest = async () => {
     if (!requestTarget) return
     setRequestSending(true)
-    await supabase.rpc('request_team_join', { p_request_id: requestTarget.id, p_message: requestMsg.trim() || null })
+    try {
+      await supabase.rpc('request_team_join', { p_request_id: requestTarget.id, p_message: requestMsg.trim() || null })
+      setRequestTarget(null)
+      await load()
+    } catch { /* UI stays in current state */ }
     setRequestSending(false)
-    setRequestTarget(null)
-    await load()
   }
 
   const respond = async (reqId: string, userId: string, accept: boolean) => {
     setBusy(b => ({ ...b, [`${reqId}:${userId}`]: true }))
-    await supabase.rpc('respond_team_join', { p_request_id: reqId, p_user_id: userId, p_accept: accept })
-    await load()
+    try {
+      await supabase.rpc('respond_team_join', { p_request_id: reqId, p_user_id: userId, p_accept: accept })
+      await load()
+    } catch { /* UI stays in current state */ }
     setBusy(b => ({ ...b, [`${reqId}:${userId}`]: false }))
   }
 

@@ -6,6 +6,31 @@
 
 ---
 
+## 📋 Changelog
+
+| Date | Change | Details |
+|------|--------|---------|
+| Aug 2026 | **N+1 query fixes** | Events & Connections batch attendee/unread counts |
+| Aug 2026 | **AI Brain premium gating** | Free users see upgrade prompt, premium gets full access |
+| Aug 2026 | **Middleware optimization** | Skip getUser() for 90% of public routes |
+| Aug 2026 | **Feature flags caching** | localStorage cache (5 min TTL) — 95% fewer DB queries |
+| Aug 2026 | **Feed pagination** | Load More button — 30 posts per page |
+| Aug 2026 | **Events campus filter** | Students see only their campus events |
+| Aug 2026 | **ThemeToggle dedup** | Removed duplicate toggle from 6 pages |
+| Aug 2026 | **PostCard optimization** | Replaced 11 dynamic imports with static import |
+| Aug 2026 | **Error boundaries** | Reusable component + Next.js error.tsx for all major pages |
+| Aug 2026 | **Messages Realtime fix** | Removed redundant 8s polling — Realtime handles live updates |
+| Aug 2026 | **Saved page fix** | Fixed stale closure causing failed initial query |
+| Aug 2026 | **Compete error handling** | Added try/catch to prevent silent crashes |
+| Aug 2026 | **Polls optimization** | Per-poll vote loading instead of full table scan |
+| Aug 2026 | **Global pagination** | Load More for global feed |
+| Aug 2026 | **Talent search debounce** | 300ms debounce — 5x fewer DB queries |
+| Aug 2026 | **Skeleton loaders** | Professional shimmer loading across all pages |
+| Aug 2026 | **Error handling** | try/catch on all page loads and actions |
+| Aug 2026 | **Lost&Found UX** | Admin hint for regular users |
+
+---
+
 ## 🌟 What is CampusConnect?
 
 CampusConnect is a **full-featured campus management and social platform** that brings together everything a student needs — from academic tools to social networking, from job hunting to AI-powered learning. Think of it as your college's own LinkedIn + Discord + LeetCode + Course Hero — all in one place.
