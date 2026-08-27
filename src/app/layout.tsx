@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import "./globals.css";
 import { ToastProvider } from "@/components/Toast";
 import OfflineIndicator from "@/components/OfflineIndicator";
+import LoadingBar from "@/components/LoadingBar";
 
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL || "https://campus-connect-zeta-two.vercel.app";
 
@@ -83,6 +84,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <script dangerouslySetInnerHTML={{ __html: themeScript }} />
         <script dangerouslySetInnerHTML={{ __html: swScript }} />
         <ToastProvider>
+          <LoadingBar />
           <OfflineIndicator />
           {children}
         </ToastProvider>
