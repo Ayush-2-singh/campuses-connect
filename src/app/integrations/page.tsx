@@ -158,7 +158,7 @@ export default function IntegrationsPage() {
                   {/* Stats display (if connected) */}
                   {isConnected && p.key === 'github' && (
                     <div style={{ marginBottom: 16 }}>
-                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(100px, 1fr))', gap: 10, marginBottom: 12 }}>
+                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 8, marginBottom: 12 }}>
                         {[
                           { label: 'Repos', value: stats.public_repos || 0, emoji: '📦' },
                           { label: 'Contributions', value: stats.total_contributions || 0, emoji: '💻' },
@@ -201,7 +201,7 @@ export default function IntegrationsPage() {
 
                   {isConnected && p.key === 'leetcode' && (
                     <div style={{ marginBottom: 16 }}>
-                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(90px, 1fr))', gap: 10, marginBottom: 12 }}>
+                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 8, marginBottom: 12 }}>
                         {[
                           { label: 'Total Solved', value: stats.total_solved || 0, emoji: '✅' },
                           { label: 'Easy', value: stats.easy_solved || 0, emoji: '🟢', color: '#00b8a3' },
@@ -249,17 +249,17 @@ export default function IntegrationsPage() {
                     </div>
                   ) : (
                     <div>
-                      <div style={{ display: 'flex', gap: 8, marginBottom: 8 }}>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                         <input
                           value={usernameInput[p.key] || ''}
                           onChange={e => setUsernameInput(prev => ({ ...prev, [p.key]: e.target.value }))}
                           onKeyDown={e => e.key === 'Enter' && connectPlatform(p.key)}
                           placeholder={`Enter your ${p.name} username`}
-                          style={{ flex: 1, border: '1px solid var(--border)', borderRadius: 10, padding: '10px 14px', fontSize: 13, outline: 'none', fontFamily: p.key === 'github' ? 'monospace' : 'inherit', background: 'var(--bg-secondary)', color: 'var(--text-primary)' }}
+                          style={{ width: '100%', boxSizing: 'border-box', border: '1px solid var(--border)', borderRadius: 10, padding: '12px 14px', fontSize: 14, outline: 'none', fontFamily: p.key === 'github' ? 'monospace' : 'inherit', background: 'var(--bg-secondary)', color: 'var(--text-primary)' }}
                         />
                         <button onClick={() => connectPlatform(p.key)} disabled={connecting === p.key}
-                          style={{ padding: '10px 20px', borderRadius: 10, border: 'none', background: connecting === p.key ? 'var(--disabled)' : p.color, color: '#fff', fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit', whiteSpace: 'nowrap' }}>
-                          {connecting === p.key ? 'Connecting...' : `Connect ${p.name}`}
+                          style={{ width: '100%', padding: '12px 20px', borderRadius: 10, border: 'none', background: connecting === p.key ? 'var(--disabled)' : p.color, color: '#fff', fontSize: 14, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>
+                          {connecting === p.key ? 'Connecting...' : `🔗 Connect ${p.name}`}
                         </button>
                       </div>
                       <p style={{ fontSize: 11, color: 'var(--text-muted)', margin: 0 }}>

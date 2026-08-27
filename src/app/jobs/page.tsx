@@ -119,9 +119,9 @@ export default function JobsPage() {
                       ))}
                     </div>
                   )}
-                  <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 8, paddingTop: 8, borderTop: '1px solid var(--border)' }}>
-                    {job.deadline && <span style={{ fontSize: 11, color: 'var(--danger)' }}>⏰ Deadline: {new Date(job.deadline).toLocaleDateString()}</span>}
-                    <span style={{ fontSize: 11, color: 'var(--text-muted)' }}>👁️ {job.view_count} views · 📋 {job.apply_count} applied</span>
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginTop: 8, paddingTop: 8, borderTop: '1px solid var(--border)' }}>
+                    {job.deadline && <span style={{ fontSize: 11, color: 'var(--danger)' }}>⏰ {new Date(job.deadline).toLocaleDateString()}</span>}
+                    <span style={{ fontSize: 11, color: 'var(--text-muted)' }}>👁️ {job.view_count} · 📋 {job.apply_count}</span>
                   </div>
                 </div>
               )

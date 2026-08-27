@@ -182,26 +182,26 @@ export default function JobDetailPage() {
 
         {/* Apply section */}
         <div style={{ background: 'var(--bg)', border: '1px solid var(--border)', borderRadius: 16, padding: 20, boxShadow: 'var(--shadow-sm)' }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
-            <div>
-              <p style={{ fontSize: 13, color: 'var(--text-muted)', margin: 0 }}>
-                👁️ {job.view_count} views · 📋 {job.apply_count} applicants
-              </p>
+          <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between', gap: 10 }}>
+            <p style={{ fontSize: 12, color: 'var(--text-muted)', margin: 0 }}>
+              👁️ {job.view_count} views · 📋 {job.apply_count} applicants
+            </p>
+            <div style={{ display: 'flex', gap: 8, flexShrink: 0 }}>
+              {applied ? (
+                <span style={{ padding: '10px 16px', borderRadius: 10, fontSize: 13, fontWeight: 600, background: 'var(--success-light)', color: 'var(--success-text)' }}>
+                  ✅ Applied
+                </span>
+              ) : isExpired ? (
+                <span style={{ padding: '10px 16px', borderRadius: 10, fontSize: 13, fontWeight: 600, background: 'var(--danger-light)', color: 'var(--danger)' }}>
+                  ⏰ Expired
+                </span>
+              ) : !showApply ? (
+                <button onClick={() => setShowApply(true)}
+                  style={{ padding: '10px 20px', borderRadius: 10, border: 'none', background: 'var(--accent)', color: 'var(--on-accent)', fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>
+                  📤 Apply Now
+                </button>
+              ) : null}
             </div>
-            {applied ? (
-              <span style={{ padding: '10px 20px', borderRadius: 10, fontSize: 13, fontWeight: 600, background: 'var(--success-light)', color: 'var(--success-text)' }}>
-                ✅ Applied
-              </span>
-            ) : isExpired ? (
-              <span style={{ padding: '10px 20px', borderRadius: 10, fontSize: 13, fontWeight: 600, background: 'var(--danger-light)', color: 'var(--danger)' }}>
-                ⏰ Expired
-              </span>
-            ) : !showApply ? (
-              <button onClick={() => setShowApply(true)}
-                style={{ padding: '10px 24px', borderRadius: 10, border: 'none', background: 'var(--accent)', color: 'var(--on-accent)', fontSize: 14, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>
-                📤 Apply Now
-              </button>
-            ) : null}
           </div>
 
           {showApply && (
@@ -211,14 +211,14 @@ export default function JobDetailPage() {
                 placeholder="Why are you a good fit for this role? Mention relevant projects, skills, and experience..."
                 rows={4}
                 style={{ width: '100%', border: '1px solid var(--border)', borderRadius: 10, padding: '10px 14px', fontSize: 13, outline: 'none', fontFamily: 'inherit', resize: 'none', boxSizing: 'border-box', background: 'var(--bg-secondary)', color: 'var(--text-primary)' }} />
-              <div style={{ display: 'flex', gap: 8, marginTop: 10 }}>
+              <div style={{ display: 'flex', gap: 8, marginTop: 10, flexWrap: 'wrap' }}>
                 <button onClick={() => { setShowApply(false); setCoverNote('') }}
-                  style={{ flex: 1, padding: '10px', borderRadius: 10, border: '1px solid var(--border)', background: 'var(--bg)', color: 'var(--text-secondary)', fontSize: 13, cursor: 'pointer', fontFamily: 'inherit' }}>
+                  style={{ flex: 1, minWidth: 100, padding: '10px', borderRadius: 10, border: '1px solid var(--border)', background: 'var(--bg)', color: 'var(--text-secondary)', fontSize: 13, cursor: 'pointer', fontFamily: 'inherit' }}>
                   Cancel
                 </button>
                 <button onClick={apply} disabled={applying}
-                  style={{ flex: 2, padding: '10px', borderRadius: 10, border: 'none', background: applying ? 'var(--disabled)' : 'var(--accent)', color: 'var(--on-accent)', fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>
-                  {applying ? 'Applying...' : '📤 Submit Application'}
+                  style={{ flex: 2, minWidth: 160, padding: '10px', borderRadius: 10, border: 'none', background: applying ? 'var(--disabled)' : 'var(--accent)', color: 'var(--on-accent)', fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>
+                  {applying ? 'Applying...' : '📤 Submit'}
                 </button>
               </div>
             </div>

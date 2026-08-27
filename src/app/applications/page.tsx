@@ -63,7 +63,7 @@ export default function ApplicationsPage() {
         </p>
 
         {/* Stats bar */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(80px, 1fr))', gap: 8, marginBottom: 16 }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 6, marginBottom: 16 }}>
           {STATUSES.slice(1).map(s => {
             const cfg = STATUS_CONFIG[s]
             return (
@@ -126,7 +126,7 @@ export default function ApplicationsPage() {
                         {company?.name || '—'} · Applied {new Date(app.applied_at).toLocaleDateString()}
                       </p>
                     </div>
-                    <span style={{ padding: '4px 10px', borderRadius: 10, fontSize: 11, fontWeight: 600, background: cfg.bg, color: cfg.color, flexShrink: 0 }}>
+                    <span style={{ padding: '4px 8px', borderRadius: 10, fontSize: 10, fontWeight: 600, background: cfg.bg, color: cfg.color, flexShrink: 0, whiteSpace: 'nowrap' }}>
                       {cfg.emoji} {app.status.charAt(0).toUpperCase() + app.status.slice(1)}
                     </span>
                   </div>

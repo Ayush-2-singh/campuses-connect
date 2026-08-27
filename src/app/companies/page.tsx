@@ -86,21 +86,20 @@ export default function CompaniesPage() {
         </div>
 
         {/* Quick links */}
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 10, marginBottom: 20 }}>
-          <button onClick={() => router.push('/jobs')}
-            style={{ background: 'var(--bg)', border: '1px solid var(--border)', borderRadius: 12, padding: '14px', textAlign: 'center', cursor: 'pointer', fontFamily: 'inherit', boxShadow: 'var(--shadow-sm)' }}>
-            <p style={{ fontSize: 22, margin: '0 0 4px' }}>💼</p>
-            <p style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-primary)', margin: 0 }}>All Jobs</p>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(120px, 1fr))', gap: 8, marginBottom: 20 }}>              <button onClick={() => router.push('/jobs')}
+            style={{ background: 'var(--bg)', border: '1px solid var(--border)', borderRadius: 12, padding: '12px 8px', textAlign: 'center', cursor: 'pointer', fontFamily: 'inherit', boxShadow: 'var(--shadow-sm)' }}>
+            <p style={{ fontSize: 20, margin: '0 0 4px' }}>💼</p>
+            <p style={{ fontSize: 11, fontWeight: 600, color: 'var(--text-primary)', margin: 0 }}>All Jobs</p>
           </button>
           <button onClick={() => router.push('/applications')}
-            style={{ background: 'var(--bg)', border: '1px solid var(--border)', borderRadius: 12, padding: '14px', textAlign: 'center', cursor: 'pointer', fontFamily: 'inherit', boxShadow: 'var(--shadow-sm)' }}>
-            <p style={{ fontSize: 22, margin: '0 0 4px' }}>📋</p>
-            <p style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-primary)', margin: 0 }}>My Applications</p>
+            style={{ background: 'var(--bg)', border: '1px solid var(--border)', borderRadius: 12, padding: '12px 8px', textAlign: 'center', cursor: 'pointer', fontFamily: 'inherit', boxShadow: 'var(--shadow-sm)' }}>
+            <p style={{ fontSize: 20, margin: '0 0 4px' }}>📋</p>
+            <p style={{ fontSize: 11, fontWeight: 600, color: 'var(--text-primary)', margin: 0 }}>Applications</p>
           </button>
           <button onClick={() => router.push('/experiences')}
-            style={{ background: 'var(--bg)', border: '1px solid var(--border)', borderRadius: 12, padding: '14px', textAlign: 'center', cursor: 'pointer', fontFamily: 'inherit', boxShadow: 'var(--shadow-sm)' }}>
-            <p style={{ fontSize: 22, margin: '0 0 4px' }}>📝</p>
-            <p style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-primary)', margin: 0 }}>Interview Exp</p>
+            style={{ background: 'var(--bg)', border: '1px solid var(--border)', borderRadius: 12, padding: '12px 8px', textAlign: 'center', cursor: 'pointer', fontFamily: 'inherit', boxShadow: 'var(--shadow-sm)' }}>
+            <p style={{ fontSize: 20, margin: '0 0 4px' }}>📝</p>
+            <p style={{ fontSize: 11, fontWeight: 600, color: 'var(--text-primary)', margin: 0 }}>Experiences</p>
           </button>
         </div>
 

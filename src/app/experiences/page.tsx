@@ -115,7 +115,7 @@ export default function ExperiencesPage() {
               <input value={form.title} onChange={e => setForm({ ...form, title: e.target.value })} placeholder="Title (e.g. SDE Intern Interview)"
                 style={{ border: '1px solid var(--border)', borderRadius: 8, padding: '10px 12px', fontSize: 13, outline: 'none', fontFamily: 'inherit', background: 'var(--bg-secondary)', color: 'var(--text-primary)' }} />
             </div>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 10, marginBottom: 10 }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: 10, marginBottom: 10 }}>
               <input value={form.role} onChange={e => setForm({ ...form, role: e.target.value })} placeholder="Role (e.g. SDE Intern)"
                 style={{ border: '1px solid var(--border)', borderRadius: 8, padding: '10px 12px', fontSize: 13, outline: 'none', fontFamily: 'inherit', background: 'var(--bg-secondary)', color: 'var(--text-primary)' }} />
               <select value={form.difficulty} onChange={e => setForm({ ...form, difficulty: e.target.value })}
@@ -174,9 +174,9 @@ export default function ExperiencesPage() {
                       {exp.companies?.name || '—'} {exp.role && `· ${exp.role}`} · by {exp.profiles?.full_name || 'Anonymous'}
                     </p>
                   </div>
-                  <div style={{ display: 'flex', gap: 6, flexShrink: 0 }}>
-                    {exp.difficulty && <span style={{ fontSize: 11, padding: '3px 10px', borderRadius: 8, fontWeight: 600, background: 'var(--bg-secondary)', color: DIFF_COLORS[exp.difficulty] }}>{exp.difficulty}</span>}
-                    {exp.result && <span style={{ fontSize: 11, padding: '3px 10px', borderRadius: 8, fontWeight: 600, background: 'var(--bg-secondary)' }}>{RESULT_EMOJI[exp.result]} {exp.result}</span>}
+                  <div style={{ display: 'flex', gap: 6, flexShrink: 0, flexWrap: 'wrap' }}>
+                    {exp.difficulty && <span style={{ fontSize: 11, padding: '3px 8px', borderRadius: 8, fontWeight: 600, background: 'var(--bg-secondary)', color: DIFF_COLORS[exp.difficulty] }}>{exp.difficulty}</span>}
+                    {exp.result && <span style={{ fontSize: 11, padding: '3px 8px', borderRadius: 8, fontWeight: 600, background: 'var(--bg-secondary)' }}>{RESULT_EMOJI[exp.result]} {exp.result}</span>}
                     {exp.rating && <span style={{ fontSize: 12, color: 'var(--yellow-text)' }}>⭐ {exp.rating}/5</span>}
                   </div>
                 </div>
@@ -188,7 +188,7 @@ export default function ExperiencesPage() {
                     <p style={{ fontSize: 12, color: 'var(--accent-text)', margin: 0, lineHeight: 1.5 }}>💡 <strong>Tips:</strong> {exp.tips}</p>
                   </div>
                 )}
-                <div style={{ display: 'flex', alignItems: 'center', gap: 12, paddingTop: 8, borderTop: '1px solid var(--border)' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, paddingTop: 8, borderTop: '1px solid var(--border)', flexWrap: 'wrap' }}>
                   <div style={{ display: 'flex', gap: 4 }}>
                     <button onClick={() => vote(exp.id, 1)}
                       style={{ padding: '4px 10px', borderRadius: 6, border: '1px solid var(--border)', background: 'var(--bg)', cursor: 'pointer', fontSize: 12, fontFamily: 'inherit' }}>👍</button>

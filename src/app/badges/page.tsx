@@ -68,18 +68,18 @@ export default function BadgesPage() {
         </p>
 
         {/* Stats overview */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 10, marginBottom: 20 }}>
-          <div style={{ background: 'var(--bg)', border: '1px solid var(--border)', borderRadius: 14, padding: '16px', textAlign: 'center', boxShadow: 'var(--shadow-sm)' }}>
-            <p style={{ fontSize: 28, fontWeight: 800, color: 'var(--accent)', margin: '0 0 2px' }}>🔥 {streakDays}</p>
-            <p style={{ fontSize: 11, color: 'var(--text-muted)', margin: 0 }}>Day Streak</p>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 8, marginBottom: 20 }}>
+          <div style={{ background: 'var(--bg)', border: '1px solid var(--border)', borderRadius: 14, padding: '12px 8px', textAlign: 'center', boxShadow: 'var(--shadow-sm)' }}>
+            <p style={{ fontSize: 22, fontWeight: 800, color: 'var(--accent)', margin: '0 0 2px' }}>🔥 {streakDays}</p>
+            <p style={{ fontSize: 10, color: 'var(--text-muted)', margin: 0 }}>Streak</p>
           </div>
-          <div style={{ background: 'var(--bg)', border: '1px solid var(--border)', borderRadius: 14, padding: '16px', textAlign: 'center', boxShadow: 'var(--shadow-sm)' }}>
-            <p style={{ fontSize: 28, fontWeight: 800, color: 'var(--yellow-text)', margin: '0 0 2px' }}>⭐ {karmaPoints}</p>
-            <p style={{ fontSize: 11, color: 'var(--text-muted)', margin: 0 }}>Karma</p>
+          <div style={{ background: 'var(--bg)', border: '1px solid var(--border)', borderRadius: 14, padding: '12px 8px', textAlign: 'center', boxShadow: 'var(--shadow-sm)' }}>
+            <p style={{ fontSize: 22, fontWeight: 800, color: 'var(--yellow-text)', margin: '0 0 2px' }}>⭐ {karmaPoints}</p>
+            <p style={{ fontSize: 10, color: 'var(--text-muted)', margin: 0 }}>Karma</p>
           </div>
-          <div style={{ background: 'var(--bg)', border: '1px solid var(--border)', borderRadius: 14, padding: '16px', textAlign: 'center', boxShadow: 'var(--shadow-sm)' }}>
-            <p style={{ fontSize: 28, fontWeight: 800, color: 'var(--success-text)', margin: '0 0 2px' }}>🏅 {earnedCount}/{totalCount}</p>
-            <p style={{ fontSize: 11, color: 'var(--text-muted)', margin: 0 }}>Badges</p>
+          <div style={{ background: 'var(--bg)', border: '1px solid var(--border)', borderRadius: 14, padding: '12px 8px', textAlign: 'center', boxShadow: 'var(--shadow-sm)' }}>
+            <p style={{ fontSize: 22, fontWeight: 800, color: 'var(--success-text)', margin: '0 0 2px' }}>🏅 {earnedCount}/{totalCount}</p>
+            <p style={{ fontSize: 10, color: 'var(--text-muted)', margin: 0 }}>Badges</p>
           </div>
         </div>
 

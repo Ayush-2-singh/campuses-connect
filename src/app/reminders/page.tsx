@@ -114,7 +114,7 @@ export default function RemindersPage() {
 
         {/* Push notification banner */}
         {pushSupported && !pushEnabled && (
-          <div style={{ background: 'var(--accent-light)', border: '1px solid var(--accent)', borderRadius: 12, padding: '14px 18px', marginBottom: 16, display: 'flex', alignItems: 'center', gap: 12 }}>
+          <div style={{ background: 'var(--accent-light)', border: '1px solid var(--accent)', borderRadius: 12, padding: '12px 14px', marginBottom: 16, display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
             <span style={{ fontSize: 24 }}>🔔</span>
             <div style={{ flex: 1 }}>
               <p style={{ fontSize: 13, fontWeight: 600, color: 'var(--accent)', margin: 0 }}>Enable Push Notifications</p>
@@ -142,7 +142,7 @@ export default function RemindersPage() {
               style={{ width: '100%', border: '1px solid var(--border)', borderRadius: 8, padding: '10px 12px', fontSize: 13, outline: 'none', fontFamily: 'inherit', marginBottom: 10, boxSizing: 'border-box', background: 'var(--bg-secondary)', color: 'var(--text-primary)' }} />
             <textarea value={form.description} onChange={e => setForm({ ...form, description: e.target.value })} placeholder="Description (optional)" rows={2}
               style={{ width: '100%', border: '1px solid var(--border)', borderRadius: 8, padding: '10px 12px', fontSize: 13, outline: 'none', fontFamily: 'inherit', resize: 'none', marginBottom: 10, boxSizing: 'border-box', background: 'var(--bg-secondary)', color: 'var(--text-primary)' }} />
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 10 }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: 10, marginBottom: 10 }}>
               <select value={form.reminder_type} onChange={e => setForm({ ...form, reminder_type: e.target.value })}
                 style={{ border: '1px solid var(--border)', borderRadius: 8, padding: '10px 12px', fontSize: 13, outline: 'none', fontFamily: 'inherit', background: 'var(--bg-secondary)', color: 'var(--text-primary)' }}>
                 <option value="deadline">⏰ Deadline</option>

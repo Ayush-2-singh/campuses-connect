@@ -150,7 +150,7 @@ export default function LeaderboardPage() {
         </button>
 
         {/* Summary cards */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 10, marginBottom: 20 }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 8, marginBottom: 20 }}>
           <div style={{ background: 'var(--bg)', border: '1px solid var(--border)', borderRadius: 12, padding: '14px', textAlign: 'center', boxShadow: 'var(--shadow-sm)' }}>
             <p style={{ fontSize: 22, fontWeight: 800, color: '#333', margin: '0 0 2px' }}>🐙 {withGitHub}</p>
             <p style={{ fontSize: 11, color: 'var(--text-muted)', margin: 0 }}>GitHub connected · {totalGitHub.toLocaleString()} contributions</p>
@@ -234,12 +234,12 @@ export default function LeaderboardPage() {
                   </div>
 
                   <div style={{ textAlign: 'right', flexShrink: 0 }}>
-                    <p style={{ fontSize: 15, fontWeight: 700, color: 'var(--accent)', margin: '0 0 2px' }}>
+                    <p style={{ fontSize: 14, fontWeight: 700, color: 'var(--accent)', margin: '0 0 2px' }}>
                       {display.emoji} {display.value.toLocaleString()}
                     </p>
-                    <p style={{ fontSize: 10, color: 'var(--text-muted)', margin: 0 }}>{display.label}</p>
+                    <p style={{ fontSize: 9, color: 'var(--text-muted)', margin: 0 }}>{display.label}</p>
                     {leader.streak_days > 0 && (
-                      <p style={{ fontSize: 11, color: 'var(--orange-text)', margin: '2px 0 0' }}>🔥 {leader.streak_days} streak</p>
+                      <p style={{ fontSize: 10, color: 'var(--orange-text)', margin: '2px 0 0' }}>🔥 {leader.streak_days}</p>
                     )}
                   </div>
                 </div>

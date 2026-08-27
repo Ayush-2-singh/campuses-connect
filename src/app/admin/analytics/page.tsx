@@ -236,9 +236,7 @@ export default function AnalyticsPage() {
             </button>
           </div>
         </div>
-      </div>
-
-      <div style={{ maxWidth: 1200, margin: '0 auto', padding: '24px' }}>
+      </div>        <div style={{ maxWidth: 1200, margin: '0 auto', padding: '16px' }}>
         {/* Tabs */}
         <div style={{ display: 'flex', gap: 4, marginBottom: 24, borderBottom: '1px solid var(--border)', overflowX: 'auto' }}>
           {TABS.map(tab => (
@@ -273,29 +271,29 @@ export default function AnalyticsPage() {
               <div>
                 {/* Users */}
                 <h3 style={{ fontSize: 14, fontWeight: 700, color: 'var(--text-secondary)', margin: '0 0 12px', textTransform: 'uppercase', letterSpacing: 1 }}>👥 Users</h3>
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: 12, marginBottom: 24 }}>
-                  <StatCard emoji="👥" label="Total Users" value={overview.users.total} color="var(--accent)" />
-                  <StatCard emoji="🆕" label="Today" value={overview.users.daily_new} sub="new signups" color="var(--success-text)" />
-                  <StatCard emoji="📅" label="This Week" value={overview.users.weekly_new} sub="new users" color="var(--accent)" />
-                  <StatCard emoji="📆" label="This Month" value={overview.users.monthly_new} sub="new users" color="var(--purple-text)" />
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', gap: 8, marginBottom: 20 }}>
+                  <StatCard emoji="👥" label="Users" value={overview.users.total} color="var(--accent)" />
+                  <StatCard emoji="🆕" label="Today" value={overview.users.daily_new} sub="new" color="var(--success-text)" />
+                  <StatCard emoji="📅" label="This Week" value={overview.users.weekly_new} sub="new" color="var(--accent)" />
+                  <StatCard emoji="📆" label="This Month" value={overview.users.monthly_new} sub="new" color="var(--purple-text)" />
                   <StatCard emoji="🚫" label="Suspended" value={overview.users.suspended} color="var(--danger)" />
                   <StatCard emoji="⛔" label="Banned" value={overview.users.banned} color="var(--danger)" />
                 </div>
 
                 {/* Posts & Engagement */}
                 <h3 style={{ fontSize: 14, fontWeight: 700, color: 'var(--text-secondary)', margin: '0 0 12px', textTransform: 'uppercase', letterSpacing: 1 }}>📝 Content & Engagement</h3>
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: 12, marginBottom: 24 }}>
-                  <StatCard emoji="📝" label="Total Posts" value={overview.posts.total} />
-                  <StatCard emoji="🆕" label="Posts Today" value={overview.posts.daily} />
-                  <StatCard emoji="👁️" label="Total Views" value={overview.posts.total_views} color="var(--orange-text)" />
-                  <StatCard emoji="🔄" label="Total Shares" value={overview.posts.total_shares} color="var(--purple-text)" />
-                  <StatCard emoji="💬" label="Total Comments" value={overview.engagement.total_comments} color="var(--success-text)" />
-                  <StatCard emoji="❤️" label="Total Reactions" value={overview.engagement.total_reactions} color="var(--danger)" />
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', gap: 8, marginBottom: 20 }}>
+                  <StatCard emoji="📝" label="Posts" value={overview.posts.total} />
+                  <StatCard emoji="🆕" label="Today" value={overview.posts.daily} />
+                  <StatCard emoji="👁️" label="Views" value={overview.posts.total_views} color="var(--orange-text)" />
+                  <StatCard emoji="🔄" label="Shares" value={overview.posts.total_shares} color="var(--purple-text)" />
+                  <StatCard emoji="💬" label="Comments" value={overview.engagement.total_comments} color="var(--success-text)" />
+                  <StatCard emoji="❤️" label="Reactions" value={overview.engagement.total_reactions} color="var(--danger)" />
                 </div>
 
                 {/* Platform */}
                 <h3 style={{ fontSize: 14, fontWeight: 700, color: 'var(--text-secondary)', margin: '0 0 12px', textTransform: 'uppercase', letterSpacing: 1 }}>🏫 Platform</h3>
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: 12 }}>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', gap: 8 }}>
                   <StatCard emoji="🏫" label="Colleges" value={overview.platform.active_colleges} />
                   <StatCard emoji="🌐" label="Communities" value={overview.platform.active_communities} />
                   <StatCard emoji="📚" label="Notes" value={overview.platform.total_notes} />
@@ -320,7 +318,7 @@ export default function AnalyticsPage() {
                   <BarChart data={growthChartData.posts} labels={growthChartData.labels} colors={growthChartData.posts.map((v: number) => v > 0 ? 'var(--success-text)' : 'var(--bg-secondary)')} />
                 </div>
                 {/* Growth summary */}
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12, marginTop: 20 }}>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 8, marginTop: 16 }}>
                   <div style={{ background: 'var(--bg)', border: '1px solid var(--border)', borderRadius: 12, padding: '16px', textAlign: 'center' }}>
                     <p style={{ fontSize: 24, fontWeight: 800, color: 'var(--accent)', margin: 0 }}>{growthChartData.users.reduce((a: number, b: number) => a + b, 0)}</p>
                     <p style={{ fontSize: 11, color: 'var(--text-muted)', margin: '4px 0 0' }}>30-day new users</p>
@@ -363,7 +361,7 @@ export default function AnalyticsPage() {
                   }))
                   const peakHours = hourly.sort((a, b) => b.total - a.total).slice(0, 3)
                   return (
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12, marginTop: 16 }}>
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(100px, 1fr))', gap: 8, marginTop: 16 }}>
                       {peakHours.map((p, i) => (
                         <div key={p.hour} style={{ background: 'var(--bg)', border: '1px solid var(--border)', borderRadius: 12, padding: '14px', textAlign: 'center' }}>
                           <p style={{ fontSize: 22, fontWeight: 800, color: i === 0 ? 'var(--accent)' : 'var(--text-secondary)', margin: 0 }}>
@@ -465,8 +463,8 @@ export default function AnalyticsPage() {
             {activeTab === 'features' && featureStats && (
               <div>
                 <h3 style={{ fontSize: 15, fontWeight: 700, color: 'var(--text-primary)', margin: '0 0 16px' }}>⚡ Feature Flags Overview</h3>
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12, marginBottom: 20 }}>
-                  <StatCard emoji="⚡" label="Total Features" value={featureStats.total_flags} />
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 8, marginBottom: 16 }}>
+                  <StatCard emoji="⚡" label="Total" value={featureStats.total_flags} />
                   <StatCard emoji="✅" label="Enabled" value={featureStats.enabled_flags} color="var(--success-text)" />
                   <StatCard emoji="🚫" label="Disabled" value={featureStats.disabled_flags} color="var(--danger)" />
                 </div>

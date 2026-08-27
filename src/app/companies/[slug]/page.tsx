@@ -89,7 +89,7 @@ export default function CompanyPage() {
 
         {/* Company header */}
         <div style={{ background: 'var(--bg)', border: '1px solid var(--border)', borderRadius: 16, padding: 20, boxShadow: 'var(--shadow-sm)', marginBottom: 16 }}>
-          <div style={{ display: 'flex', alignItems: 'flex-start', gap: 16 }}>
+          <div style={{ display: 'flex', alignItems: 'flex-start', gap: 12, flexWrap: 'wrap' }}>
             <div style={{ width: 64, height: 64, borderRadius: 14, background: 'var(--bg-secondary)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 32, flexShrink: 0 }}>
               {company.logo_url ? <img src={company.logo_url} alt="" style={{ width: 64, height: 64, borderRadius: 14, objectFit: 'cover' }} /> : '🏢'}
             </div>
@@ -104,13 +104,13 @@ export default function CompanyPage() {
               {company.description && (
                 <p style={{ fontSize: 13, color: 'var(--text-secondary)', margin: '0 0 10px', lineHeight: 1.6 }}>{company.description}</p>
               )}
-              <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
+              <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center', marginTop: 4 }}>
                 <button onClick={toggleFollow}
-                  style={{ padding: '7px 16px', borderRadius: 10, border: 'none', fontSize: 12, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit',
+                  style={{ padding: '8px 16px', borderRadius: 10, border: 'none', fontSize: 12, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit',
                     background: isFollowing ? 'var(--danger-light)' : 'var(--accent)', color: isFollowing ? 'var(--danger)' : 'var(--on-accent)' }}>
                   {isFollowing ? '💔 Unfollow' : '❤️ Follow'} ({followerCount})
                 </button>
-                {avgRating && <span style={{ fontSize: 13, color: 'var(--yellow-text)' }}>⭐ {avgRating} avg rating</span>}
+                {avgRating && <span style={{ fontSize: 12, color: 'var(--yellow-text)' }}>⭐ {avgRating}</span>}
                 {company.website && (
                   <a href={company.website} target="_blank" rel="noopener noreferrer"
                     style={{ fontSize: 12, color: 'var(--accent)', textDecoration: 'none' }}>
@@ -152,7 +152,7 @@ export default function CompanyPage() {
             ) : jobs.map(job => (
               <div key={job.id} onClick={() => router.push(`/jobs/${job.id}`)}
                 style={{ background: 'var(--bg)', border: '1px solid var(--border)', borderRadius: 14, padding: '16px 18px', cursor: 'pointer', boxShadow: 'var(--shadow-sm)' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 10 }}>
+                <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10 }}>
                   <div>
                     <p style={{ fontSize: 15, fontWeight: 600, color: 'var(--text-primary)', margin: '0 0 4px' }}>{job.title}</p>
                     <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 6 }}>
@@ -210,7 +210,7 @@ export default function CompanyPage() {
                       {exp.role && `${exp.role} · `}{exp.profiles?.full_name || 'Anonymous'} · {new Date(exp.created_at).toLocaleDateString()}
                     </p>
                   </div>
-                  <div style={{ display: 'flex', gap: 6, flexShrink: 0 }}>
+                  <div style={{ display: 'flex', gap: 6, flexShrink: 0, flexWrap: 'wrap' }}>
                     {exp.difficulty && (
                       <span style={{ fontSize: 11, padding: '2px 8px', borderRadius: 8, background: 'var(--bg-secondary)', color: diffColor[exp.difficulty] || 'var(--text-muted)', fontWeight: 600 }}>
                         {exp.difficulty}
