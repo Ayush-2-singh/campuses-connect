@@ -44,6 +44,7 @@ const TABS = [
   'Moderation',
   'Colleges',
   'Content',
+  'Campus Changes',
   'Audit Log',
 ] as const
 
@@ -111,6 +112,12 @@ export default function AdminPage() {
   const [auditLoading, setAuditLoading] = useState(false)
   const [auditOffset, setAuditOffset] = useState(0)
   const [auditActionFilter, setAuditActionFilter] = useState('')
+
+  // ── Campus Changes (NEW) ────────────────────────────────
+  const [campusChanges, setCampusChanges] = useState<any[]>([])
+  const [campusChangesLoading, setCampusChangesLoading] = useState(false)
+  const [campusChangeFilter, setCampusChangeFilter] = useState('pending')
+  const [campusChangeBusy, setCampusChangeBusy] = useState<string | null>(null)
 
   // ── Init ────────────────────────────────────────────────
   useEffect(() => {
@@ -235,6 +242,38 @@ export default function AdminPage() {
     setAuditLoading(false)
   }, [])
 
+  // ── Campus Changes load ─────────────────────────────────
+  const loadCampusChanges = useCallback(async (status?: string) => {
+    setCampusChangesLoading(true)
+    try {
+      const s = status || campusChangeFilter
+      const res = await fetch(`/api/admin/campus-change?status=${s}`)
+      if (res.ok) {
+        const data = await res.json()
+        setCampusChanges(data.requests || [])
+      }
+    } catch { /* ignore */ }
+    setCampusChangesLoading(false)
+  }, [campusChangeFilter])
+
+  const reviewCampusChange = async (requestId: string, action: 'approve' | 'reject', reason?: string) => {
+    setCampusChangeBusy(requestId)
+    try {
+      const res = await fetch('/api/admin/campus-change', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ request_id: requestId, action, reason }),
+        credentials: 'include',
+      })
+      if (!res.ok) {
+        const data = await res.json()
+        alert(data.error || 'Failed')
+      }
+      loadCampusChanges()
+    } catch { /* ignore */ }
+    setCampusChangeBusy(null)
+  }
+
   // ── Tab data loading ────────────────────────────────────
   useEffect(() => {
     if (activeTab === 'Analytics') { router.push('/admin/analytics'); return }
@@ -244,6 +283,7 @@ export default function AdminPage() {
     if (activeTab === 'Moderation') loadModeration()
     if (activeTab === 'Features') loadFeatures()
     if (activeTab === 'Settings') loadSettings()
+    if (activeTab === 'Campus Changes') loadCampusChanges()
     if (activeTab === 'Audit Log') loadAuditLog()
   }, [activeTab])
 
@@ -1101,6 +1141,120 @@ export default function AdminPage() {
                 </p>
               </div>
             </div>
+          </div>
+        )}
+
+        {/* ═══════════════════════════════════════════════════
+            CAMPUS CHANGES (NEW)
+        ═══════════════════════════════════════════════════ */}
+        {activeTab === 'Campus Changes' && (
+          <div>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, marginBottom: 16, flexWrap: 'wrap' }}>
+              <div>
+                <h3 style={{ fontSize: 16, fontWeight: 700, color: 'var(--text-primary)', margin: '0 0 4px' }}>🏫 Campus Change Requests</h3>
+                <p style={{ fontSize: 13, color: 'var(--text-muted)', margin: 0 }}>
+                  Review ID cards and approve/reject campus change requests
+                </p>
+              </div>
+              <div style={{ display: 'flex', gap: 6 }}>
+                {['pending', 'all', 'approved', 'rejected'].map(s => (
+                  <button key={s} onClick={() => { setCampusChangeFilter(s); loadCampusChanges(s) }}
+                    style={{ padding: '5px 12px', borderRadius: 20, border: 'none', fontSize: 11, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit', whiteSpace: 'nowrap',
+                      background: campusChangeFilter === s ? 'var(--accent)' : 'var(--bg)',
+                      color: campusChangeFilter === s ? 'var(--on-accent)' : 'var(--text-secondary)' }}>
+                    {s === 'pending' ? '⏳ Pending' : s === 'approved' ? '✅ Approved' : s === 'rejected' ? '❌ Rejected' : '📋 All'}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {campusChangesLoading ? (
+              <p style={{ textAlign: 'center', color: 'var(--text-muted)', padding: '40px 0' }}>Loading...</p>
+            ) : campusChanges.length === 0 ? (
+              <div style={{ background: 'var(--bg)', border: '1px solid var(--border)', borderRadius: 16, padding: '40px 20px', textAlign: 'center', boxShadow: 'var(--shadow-sm)' }}>
+                <p style={{ fontSize: 32, margin: '0 0 8px' }}>🏫</p>
+                <p style={{ fontSize: 15, fontWeight: 600, color: 'var(--text-primary)', margin: '0 0 4px' }}>No campus change requests</p>
+                <p style={{ fontSize: 13, color: 'var(--text-muted)', margin: 0 }}>
+                  {campusChangeFilter === 'pending' ? 'All caught up!' : 'Try a different filter'}
+                </p>
+              </div>
+            ) : (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                {campusChanges.map((req: any) => {
+                  const user = req.profiles
+                  const fromCampus = req.campuses?.name || 'Unknown'
+                  const toCampus = req['campuses']?.name || 'Unknown'
+                  const statusColors: Record<string, string> = { pending: '#f59e0b', approved: '#16a34a', rejected: '#ef4444', cancelled: '#6b7280' }
+                  return (
+                    <div key={req.id}
+                      style={{ background: 'var(--bg)', border: `1px solid ${statusColors[req.status] || 'var(--border)'}`, borderRadius: 14, padding: '16px 18px', boxShadow: 'var(--shadow-sm)' }}>
+                      <div style={{ display: 'flex', alignItems: 'flex-start', gap: 12 }}>
+                        {/* User info */}
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
+                            <span style={{ fontSize: 11, padding: '3px 10px', borderRadius: 10, background: `${statusColors[req.status]}22`, color: statusColors[req.status], fontWeight: 700 }}>
+                              {req.status.toUpperCase()}
+                            </span>
+                            <span style={{ fontSize: 11, color: 'var(--text-muted)' }}>
+                              {new Date(req.created_at).toLocaleString()}
+                            </span>
+                          </div>
+                          <p style={{ fontSize: 14, fontWeight: 600, color: 'var(--text-primary)', margin: '0 0 4px' }}>
+                            {user?.full_name || 'Unknown'} (@{user?.username || '—'})
+                          </p>
+                          <p style={{ fontSize: 13, color: 'var(--text-secondary)', margin: '0 0 4px' }}>
+                            {fromCampus} → <strong>{toCampus}</strong>
+                          </p>
+                          {req.roll_number && <p style={{ fontSize: 12, color: 'var(--text-muted)', margin: '2px 0 0' }}>🎓 Roll: {req.roll_number}</p>}
+                          {req.college_email && <p style={{ fontSize: 12, color: 'var(--text-muted)', margin: '2px 0 0' }}>📧 {req.college_email}</p>}
+                          {req.reason && <p style={{ fontSize: 12, color: 'var(--text-muted)', margin: '4px 0 0', fontStyle: 'italic' }}>&ldquo;{req.reason}&rdquo;</p>}
+                          {/* AI Score */}
+                          {req.ai_verification_score > 0 && (
+                            <div style={{ marginTop: 6, display: 'flex', alignItems: 'center', gap: 8 }}>
+                              <span style={{ fontSize: 11, color: 'var(--text-muted)' }}>🤖 AI Score:</span>
+                              <div style={{ flex: 1, maxWidth: 120, height: 6, borderRadius: 3, background: 'var(--bg-secondary)', overflow: 'hidden' }}>
+                                <div style={{ height: '100%', borderRadius: 3, width: `${req.ai_verification_score}%`, background: req.ai_verification_score > 70 ? 'var(--success-text)' : req.ai_verification_score > 40 ? 'var(--yellow-text)' : 'var(--danger)' }} />
+                              </div>
+                              <span style={{ fontSize: 11, color: 'var(--text-muted)' }}>{req.ai_verification_score}/100</span>
+                            </div>
+                          )}
+                          {req.rejection_reason && (
+                            <p style={{ fontSize: 12, color: 'var(--danger)', margin: '4px 0 0' }}>❌ {req.rejection_reason}</p>
+                          )}
+                        </div>
+
+                        {/* ID Card preview + Actions */}
+                        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 8, flexShrink: 0 }}>
+                          {req.id_card_url && (
+                            <a href={req.id_card_url} target="_blank" rel="noopener noreferrer"
+                              style={{ padding: '6px 12px', borderRadius: 8, border: '1px solid var(--border)', background: 'var(--bg-secondary)', color: 'var(--accent)', fontSize: 11, fontWeight: 600, textDecoration: 'none', fontFamily: 'inherit' }}>
+                              📄 View ID Card
+                            </a>
+                          )}
+                          {req.status === 'pending' && (
+                            <div style={{ display: 'flex', gap: 6 }}>
+                              <button onClick={() => reviewCampusChange(req.id, 'approve')}
+                                disabled={campusChangeBusy === req.id}
+                                style={{ padding: '6px 14px', borderRadius: 8, border: 'none', background: 'var(--success-text)', color: '#fff', fontSize: 12, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit', opacity: campusChangeBusy === req.id ? 0.6 : 1 }}>
+                                ✅ Approve
+                              </button>
+                              <button onClick={() => {
+                                const reason = prompt('Rejection reason (optional):')
+                                reviewCampusChange(req.id, 'reject', reason || undefined)
+                              }}
+                                disabled={campusChangeBusy === req.id}
+                                style={{ padding: '6px 14px', borderRadius: 8, border: '1px solid var(--danger-border)', background: 'var(--danger-light)', color: 'var(--danger)', fontSize: 12, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit', opacity: campusChangeBusy === req.id ? 0.6 : 1 }}>
+                                ❌ Reject
+                              </button>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+            )}
           </div>
         )}
 
