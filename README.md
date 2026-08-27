@@ -168,11 +168,14 @@ CampusConnect is a **full-featured campus management and social platform** that 
 - **Skill endorsements** — get endorsed by peers
 - **Privacy controls** — control who sees what
 
-### 🏫 25. Multi-College Support
-- **College-specific feeds** — content relevant to your campus
-- **Cross-campus exploration** — see what's happening elsewhere
-- **College verification** — verified student status
-- **Campus unlock system** — unlock other campuses
+### 🏫 25. Campus Change with ID Verification
+- **Request campus change** — select new campus from dropdown
+- **Upload ID card** — JPEG, PNG, WebP, or PDF (max 5MB)
+- **AI verification score** — auto-checks file type, resolution, filename
+- **Admin review** — approve/reject with reason from admin panel
+- **30-day cooldown** — wait 30 days between changes
+- **Max 3 changes per year** — prevents abuse
+- **Request tracking** — see status, AI score, rejection reasons
 
 ### 🎓 26. Student Onboarding
 - **Guided onboarding** — smooth first-time experience
@@ -401,7 +404,7 @@ campus-connect/
 | `/notifications` | Notifications |
 | `/profile/[id]` | User profile |
 | `/college/[id]` | College page |
-| `/onboarding` | Student onboarding |
+| `/campus-change` | Campus change request |
 | `/admin` | Admin panel |
 | `/admin/analytics` | Analytics dashboard |
 | `/more` | More options menu |
