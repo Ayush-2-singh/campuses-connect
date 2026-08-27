@@ -150,6 +150,23 @@ export async function GET(req: NextRequest) {
   if (!username) return NextResponse.json({ error: 'username required' }, { status: 400 })
 
   try {
+    // Check if we have cached stats less than 7 days old
+    const { data: cached } = await supabase
+      .from('integration_stats')
+      .select('stats, synced_at')
+      .eq('user_id', user.id)
+      .eq('platform', 'leetcode')
+      .single()
+
+    if (cached && cached.synced_at) {
+      const syncedAt = new Date(cached.synced_at)
+      const daysSinceSync = (Date.now() - syncedAt.getTime()) / (1000 * 60 * 60 * 24)
+      if (daysSinceSync < 7) {
+        return NextResponse.json({ username, stats: cached.stats, cached: true, synced_at: cached.synced_at })
+      }
+    }
+
+    // Cache stale or missing — fetch fresh
     const data = await fetchLeetCodeStats(username)
     return NextResponse.json(data)
   } catch (err: any) {

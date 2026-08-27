@@ -32,6 +32,8 @@ export default function LeaderboardPage() {
   const [activeTab, setActiveTab] = useState<Tab>('overall')
   const [showFormula, setShowFormula] = useState(false)
   const [showUserDetail, setShowUserDetail] = useState<string | null>(null)
+  const [hasMore, setHasMore] = useState(true)
+  const [loadingMore, setLoadingMore] = useState(false)
   const router = useRouter()
   const supabase = createClient()
 
@@ -48,7 +50,7 @@ export default function LeaderboardPage() {
 
       const { data, error } = await supabase.rpc('get_enhanced_leaderboard', {
         p_campus_id: profile?.campus_id || null,
-        p_limit: 50,
+        p_limit: 20,
       })
 
       if (error) {
@@ -87,6 +89,22 @@ export default function LeaderboardPage() {
   }, [supabase, profile?.campus_id])
 
   useEffect(() => { loadLeaderboard() }, [activeTab])
+
+  const loadMore = async () => {
+    setLoadingMore(true)
+    try {
+      const { data } = await supabase.rpc('get_enhanced_leaderboard', {
+        p_campus_id: profile?.campus_id || null,
+        p_limit: leaders.length + 20,
+      })
+      if (data && (data as any[]).length > leaders.length) {
+        setLeaders(data as any[])
+      } else {
+        setHasMore(false)
+      }
+    } catch { setHasMore(false) }
+    setLoadingMore(false)
+  }
 
   // ── Sort by tab ──────────────────────────────────────────
   const sorted = [...leaders].sort((a, b) => {
@@ -385,6 +403,16 @@ export default function LeaderboardPage() {
                 </div>
               )
             })}
+          </div>
+        )}
+
+        {/* Load More */}
+        {!loading && hasMore && leaders.length >= 20 && (
+          <div style={{ textAlign: 'center', marginTop: 12 }}>
+            <button onClick={loadMore} disabled={loadingMore}
+              style={{ padding: '10px 24px', borderRadius: 10, border: '1px solid var(--border)', background: 'var(--bg)', color: 'var(--accent)', fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>
+              {loadingMore ? '⏳ Loading...' : `📋 Load More (${leaders.length} shown)`}
+            </button>
           </div>
         )}
 

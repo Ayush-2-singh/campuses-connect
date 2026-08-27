@@ -132,9 +132,12 @@ export default function ProfilePage() {
     if (!user) return
     setUploading(true)
     try {
-      const ext = file.name.split('.').pop()?.toLowerCase() || 'jpg'
+      // Compress image before upload to save storage
+      const { compressImage } = await import('@/lib/compressImage')
+      const compressed = await compressImage(file, { maxWidth: 800, maxHeight: 800, quality: 0.8 })
+      const ext = 'jpg' // always use jpg after compression
       const path = `${user.id}/avatar.${ext}`
-      const { error } = await supabase.storage.from(AVATAR_BUCKET).upload(path, file, { upsert: true, contentType: file.type })
+      const { error } = await supabase.storage.from(AVATAR_BUCKET).upload(path, compressed, { upsert: true, contentType: 'image/jpeg' })
       if (error) throw error
       const { data: pub } = supabase.storage.from(AVATAR_BUCKET).getPublicUrl(path)
       const { error: updErr } = await supabase.from('profiles').update({ avatar_url: pub.publicUrl }).eq('id', user.id)

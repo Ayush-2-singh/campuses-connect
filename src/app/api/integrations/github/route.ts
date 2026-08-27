@@ -22,10 +22,11 @@ interface GitHubRepo {
 
 // ── Fetch GitHub stats (shared helper) ──────────────────────
 async function fetchGitHubStats(username: string) {
+  const ghToken = process.env.GITHUB_TOKEN
   // Fetch GitHub user profile
   const userRes = await fetch(`https://api.github.com/users/${encodeURIComponent(username)}`, {
-    headers: { 'Accept': 'application/vnd.github.v3+json', 'User-Agent': 'CampusConnect/1.0' },
-  })
+      headers: { 'Accept': 'application/vnd.github.v3+json', 'User-Agent': 'CampusConnect/1.0', ...(ghToken ? { 'Authorization': `token ${ghToken}` } : {}) },
+    })
   if (!userRes.ok) {
     throw new Error('GitHub user not found. Please check your username.')
   }
@@ -33,19 +34,17 @@ async function fetchGitHubStats(username: string) {
 
   // Fetch top repos (sorted by stars)
   const reposRes = await fetch(
-    `https://api.github.com/users/${encodeURIComponent(username)}/repos?sort=stars&per_page=10`,
-    { headers: { 'Accept': 'application/vnd.github.v3+json', 'User-Agent': 'CampusConnect/1.0' } }
-  )
-  const repos: GitHubRepo[] = reposRes.ok ? await reposRes.json() : []
-
-  // Fetch contribution count from public events
+      `https://api.github.com/users/${encodeURIComponent(username)}/repos?sort=stars&per_page=10`,
+      { headers: { 'Accept': 'application/vnd.github.v3+json', 'User-Agent': 'CampusConnect/1.0', ...(ghToken ? { 'Authorization': `token ${ghToken}` } : {}) } }
+    )
+  const repos: GitHubRepo[] = reposRes.ok ? await reposRes.json() : []  // Fetch contribution count from public events
   let totalContributions = 0
   try {
-    const calRes = await fetch(
-      `https://api.github.com/users/${encodeURIComponent(username)}/events/public?per_page=100`,
-      { headers: { 'Accept': 'application/vnd.github.v3+json', 'User-Agent': 'CampusConnect/1.0' } }
-    )
-    if (calRes.ok) {
+      const calRes = await fetch(
+        `https://api.github.com/users/${encodeURIComponent(username)}/events/public?per_page=100`,
+        { headers: { 'Accept': 'application/vnd.github.v3+json', 'User-Agent': 'CampusConnect/1.0', ...(ghToken ? { 'Authorization': `token ${ghToken}` } : {}) } }
+      )
+      if (calRes.ok) {
       const events = await calRes.json()
       totalContributions = events.filter((e: any) =>
         e.type === 'PushEvent' || e.type === 'CreateEvent'
@@ -105,6 +104,24 @@ export async function GET(req: NextRequest) {
   if (!username) return NextResponse.json({ error: 'username required' }, { status: 400 })
 
   try {
+    // Check if we have cached stats less than 7 days old
+    const { data: cached } = await supabase
+      .from('integration_stats')
+      .select('stats, synced_at')
+      .eq('user_id', user.id)
+      .eq('platform', 'github')
+      .single()
+
+    if (cached && cached.synced_at) {
+      const syncedAt = new Date(cached.synced_at)
+      const daysSinceSync = (Date.now() - syncedAt.getTime()) / (1000 * 60 * 60 * 24)
+      if (daysSinceSync < 7) {
+        // Serve cached — no API call needed!
+        return NextResponse.json({ username, stats: cached.stats, cached: true, synced_at: cached.synced_at })
+      }
+    }
+
+    // Cache stale or missing — fetch fresh
     const data = await fetchGitHubStats(username)
     return NextResponse.json(data)
   } catch (err: any) {
