@@ -340,39 +340,141 @@ export default function PostCard({
         </div>
       )}
 
-      <div style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', columnGap: 4, rowGap: 2, borderTop: '1px solid var(--border)', paddingTop: 12 }}>
+      {/* Action bar — YouTube style: pill chips + stroke icons */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 4, borderTop: '1px solid var(--border)', paddingTop: 8, flexWrap: 'wrap' }}>
+        {/* Like — pill chip */}
         <button onClick={handleLike} disabled={!canInteract}
-          style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 13, color: liked ? 'var(--accent)' : 'var(--text-muted)', background: 'none', border: 'none', cursor: canInteract ? 'pointer' : 'not-allowed', padding: '9px 8px', borderRadius: 8, minHeight: 40, fontFamily: 'inherit', fontWeight: liked ? 700 : 500 }}>
-          <span className={liked ? 'like-pop' : ''} style={{ display: 'inline-block' }}>👍</span> {liked ? 'Liked' : 'Like'}{likeCount > 0 ? ` · ${likeCount}` : ''}
+          style={{
+            display: 'inline-flex', alignItems: 'center', gap: 6,
+            height: 34, padding: '0 12px', borderRadius: 17,
+            border: '1px solid var(--border)', background: liked ? 'var(--bg-tertiary)' : 'transparent',
+            color: 'var(--text-primary)', fontSize: 13, fontWeight: 500,
+            cursor: canInteract ? 'pointer' : 'not-allowed', fontFamily: 'inherit',
+            transition: 'all 0.15s ease', flexShrink: 0,
+          }}>
+          <span className={liked ? 'like-pop' : ''} style={{ display: 'inline-flex', flexShrink: 0 }}>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill={liked ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M14 9V5a3 3 0 0 0-3-3l-4 9v11h11.28a2 2 0 0 0 2-1.7l1.38-9a2 2 0 0 0-2-2.3zM7 22H4a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2h3"/>
+            </svg>
+          </span>
+          {liked ? 'Liked' : 'Like'}
+          {likeCount > 0 && <span style={{ fontSize: 12, color: 'var(--text-muted)' }}>{likeCount}</span>}
         </button>
+
+        {/* Dislike — bare icon, no border (YouTube exact) */}
+        {canInteract && (
+          <button style={{
+            display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+            width: 34, height: 34, borderRadius: '50%',
+            border: 'none', background: 'transparent',
+            color: 'var(--text-muted)', cursor: 'pointer',
+            transition: 'all 0.15s ease', flexShrink: 0,
+          }}>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M10 15v4a3 3 0 0 0 3 3l4-9V2H5.72a2 2 0 0 0-2 1.7l-1.38 9a2 2 0 0 0 2 2.3zm7-13h2.67A2.31 2.31 0 0 1 22 4v7a2.31 2.31 0 0 1-2.33 2H17"/>
+            </svg>
+          </button>
+        )}
+
+        {/* Comment — pill chip */}
         <button onClick={toggleComments}
-          style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 13, color: showComments ? 'var(--accent)' : 'var(--text-muted)', background: 'none', border: 'none', cursor: 'pointer', padding: '9px 8px', borderRadius: 8, minHeight: 40, fontFamily: 'inherit' }}>
-          💬 Comment{commentCount > 0 ? ` · ${commentCount}` : ''}
+          style={{
+            display: 'inline-flex', alignItems: 'center', gap: 6,
+            height: 34, padding: '0 12px', borderRadius: 17,
+            border: '1px solid var(--border)', background: showComments ? 'var(--bg-tertiary)' : 'transparent',
+            color: 'var(--text-primary)', fontSize: 13, fontWeight: 500,
+            cursor: 'pointer', fontFamily: 'inherit',
+            transition: 'all 0.15s ease', flexShrink: 0,
+          }}>
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+          </svg>
+          Comment
+          {commentCount > 0 && <span style={{ fontSize: 12, color: 'var(--text-muted)' }}>{commentCount}</span>}
         </button>
-        <button onClick={handleSave}
-          style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 13, color: saved ? 'var(--accent)' : 'var(--text-muted)', background: 'none', border: 'none', cursor: 'pointer', padding: '9px 8px', borderRadius: 8, minHeight: 40, fontFamily: 'inherit' }}>
-          {saved ? '🔖 Saved' : '🔖 Save'}
-        </button>
+
+        {/* Share — pill chip */}
         <button onClick={handleShare}
-          style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 13, color: 'var(--text-muted)', background: 'none', border: 'none', cursor: 'pointer', padding: '9px 8px', borderRadius: 8, minHeight: 40, fontFamily: 'inherit' }}>
-          ↗ Share
+          style={{
+            display: 'inline-flex', alignItems: 'center', gap: 6,
+            height: 34, padding: '0 12px', borderRadius: 17,
+            border: '1px solid var(--border)', background: 'transparent',
+            color: 'var(--text-primary)', fontSize: 13, fontWeight: 500,
+            cursor: 'pointer', fontFamily: 'inherit',
+            transition: 'all 0.15s ease', flexShrink: 0,
+          }}>
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/>
+            <polyline points="16 6 12 2 8 6"/>
+            <line x1="12" y1="2" x2="12" y2="15"/>
+          </svg>
+          Share
         </button>
+
+        {/* Save — pill chip */}
+        <button onClick={handleSave}
+          style={{
+            display: 'inline-flex', alignItems: 'center', gap: 6,
+            height: 34, padding: '0 12px', borderRadius: 17,
+            border: '1px solid var(--border)', background: saved ? 'var(--bg-tertiary)' : 'transparent',
+            color: 'var(--text-primary)', fontSize: 13, fontWeight: 500,
+            cursor: 'pointer', fontFamily: 'inherit',
+            transition: 'all 0.15s ease', flexShrink: 0,
+          }}>
+          <svg width="18" height="18" viewBox="0 0 24 24" fill={saved ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/>
+          </svg>
+          {saved ? 'Saved' : 'Save'}
+        </button>
+
+        {/* Report — bare icon (author actions) */}
         {currentUserId && (
           <button onClick={() => setReportOpen(true)}
-            style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 13, color: 'var(--text-muted)', background: 'none', border: 'none', cursor: 'pointer', padding: '9px 8px', borderRadius: 8, minHeight: 40, fontFamily: 'inherit' }}>
-            🚩 Report
+            style={{
+              display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+              width: 34, height: 34, borderRadius: '50%',
+              border: 'none', background: 'transparent',
+              color: 'var(--text-muted)', cursor: 'pointer',
+              transition: 'all 0.15s ease', flexShrink: 0,
+            }}>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/>
+              <line x1="4" y1="22" x2="4" y2="15"/>
+            </svg>
           </button>
         )}
+
+        {/* Edit — bare icon (author only) */}
         {isAuthor && !editing && (
           <button onClick={() => { setEditBody(post.body || ''); setEditing(true) }}
-            style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 13, color: 'var(--text-muted)', background: 'none', border: 'none', cursor: 'pointer', padding: '9px 8px', borderRadius: 8, minHeight: 40, fontFamily: 'inherit' }}>
-            ✏️ Edit
+            style={{
+              display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+              width: 34, height: 34, borderRadius: '50%',
+              border: 'none', background: 'transparent',
+              color: 'var(--text-muted)', cursor: 'pointer',
+              transition: 'all 0.15s ease', flexShrink: 0,
+            }}>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+              <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+            </svg>
           </button>
         )}
+
+        {/* Delete — bare icon (author only) */}
         {isAuthor && !editing && (
           <button onClick={handleDelete}
-            style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 13, color: 'var(--danger-text)', background: 'none', border: 'none', cursor: 'pointer', padding: '9px 8px', borderRadius: 8, minHeight: 40, fontFamily: 'inherit' }}>
-            🗑️ Delete
+            style={{
+              display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+              width: 34, height: 34, borderRadius: '50%',
+              border: 'none', background: 'transparent',
+              color: 'var(--danger-text)', cursor: 'pointer',
+              transition: 'all 0.15s ease', flexShrink: 0,
+            }}>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <polyline points="3 6 5 6 21 6"/>
+              <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+            </svg>
           </button>
         )}
       </div>
