@@ -1,20 +1,27 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
-import { requireAuth } from '@/lib/api/middleware'
+import { requireAuthLite, requirePremium } from '@/lib/api/middleware'
 import { chunkText, embedGemini, ocrImageViaGemini } from '@/lib/brain'
 import { checkRateLimit } from '@/lib/rateLimit'
 
 export const runtime = 'nodejs'
 const MAX_BYTES = 12 * 1024 * 1024 // 12 MB
 const MAX_CHARS = 200_000 // cap extracted text so embedding stays cheap
+const EMBED_BATCH_SIZE = 20 // Gemini supports up to 100 per call — 20 is a safe, fast batch
 
 const TEXT_EXTS = new Set(['txt', 'md'])
 const IMAGE_EXTS = new Set(['png', 'jpg', 'jpeg'])
 
 export async function POST(request: NextRequest) {
-  const authResult = await requireAuth()
+  const authResult = await requireAuthLite()
   if (!authResult.ok) return authResult.response
   const { userId } = authResult.auth
+
+  // Premium gate — AI Brain is a Pro feature
+  const premium = await requirePremium(userId)
+  if (!premium.ok) {
+    return NextResponse.json({ error: premium.error }, { status: 403 })
+  }
 
   // Paid-AI protection: max 5 uploads/hour per user
   const rl = checkRateLimit(`upload:${userId}`, 5, 60 * 60 * 1000)
@@ -83,10 +90,9 @@ export async function POST(request: NextRequest) {
   // 4. Embed + store chunks (small batches). On failure, clean up the
   //    document row so nothing is orphaned.
   const inserted: { id: string; content: string }[] = []
-  const batchSize = 5
   try {
-    for (let i = 0; i < chunks.length; i += batchSize) {
-      const batch = chunks.slice(i, i + batchSize)
+    for (let i = 0; i < chunks.length; i += EMBED_BATCH_SIZE) {
+      const batch = chunks.slice(i, i + EMBED_BATCH_SIZE)
       const embeddings = await Promise.all(batch.map(c => embedGemini(c, 'RETRIEVAL_DOCUMENT')))
       const rows = batch.map((c, j) => ({
         document_id: doc.id,

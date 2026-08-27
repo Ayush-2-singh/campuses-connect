@@ -41,10 +41,13 @@ export default function FeedPage() {
   const [loading, setLoading] = useState(true)
   const [pulse, setPulse] = useState<{ opportunities: number; notes: number; discussions: number; hackathons: number }>({ opportunities: 0, notes: 0, discussions: 0, hackathons: 0 })
   const [mounted, setMounted] = useState(false)
+  const [hasMore, setHasMore] = useState(true)
+  const [loadingMore, setLoadingMore] = useState(false)
+  const PAGE_SIZE = 30
   const supabase = createClient()
   const router = useRouter()
 
-  const fetchPosts = useCallback(async () => {
+  const fetchPosts = useCallback(async (offset = 0) => {
     // Home = the campus layer only (campus + whole-college posts). Global has
     // its own page — it is never mixed into the campus feed.
     // When filtering by category, the embed must be an INNER join — otherwise
@@ -56,12 +59,23 @@ export default function FeedPage() {
       .in('scope', ['campus', 'college_network'])
       .order('is_pinned', { ascending: false })
       .order('created_at', { ascending: false })
-      .limit(50)
+      .range(offset, offset + PAGE_SIZE - 1)
     if (filter !== 'all') q = q.eq('content_categories.key', filter)
     const { data } = await q
-    setPosts(data || [])
+    if (offset === 0) {
+      setPosts(data || [])
+    } else {
+      setPosts(prev => [...prev, ...(data || [])])
+    }
+    setHasMore((data || []).length === PAGE_SIZE)
     setLoading(false)
+    setLoadingMore(false)
   }, [filter, supabase])
+
+  const loadMore = async () => {
+    setLoadingMore(true)
+    await fetchPosts(posts.length)
+  }
 
   const fetchPulse = useCallback(async () => {
     const now = new Date().toISOString()
@@ -186,8 +200,14 @@ export default function FeedPage() {
         ) : (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
             {posts.map(post => (
-              <PostCard key={post.id} post={post} currentUserId={user?.id} canInteract={!!user} onChanged={fetchPosts} />
+              <PostCard key={post.id} post={post} currentUserId={user?.id} canInteract={!!user} onChanged={() => fetchPosts(0)} />
             ))}
+            {hasMore && (
+              <button onClick={loadMore} disabled={loadingMore}
+                style={{ width: '100%', padding: '12px', borderRadius: 10, border: '1px solid var(--border)', background: 'var(--bg)', color: loadingMore ? 'var(--text-muted)' : 'var(--accent)', fontSize: 14, fontWeight: 600, cursor: loadingMore ? 'default' : 'pointer', fontFamily: 'inherit', marginTop: 4 }}>
+                {loadingMore ? 'Loading…' : 'Load more posts'}
+              </button>
+            )}
           </div>
         )}
       </div>

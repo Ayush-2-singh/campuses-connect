@@ -1,15 +1,21 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
-import { requireAuth } from '@/lib/api/middleware'
+import { requireAuthLite, requirePremium } from '@/lib/api/middleware'
 import { embedGemini, extractMemoryViaGroq } from '@/lib/brain'
 import { checkRateLimit } from '@/lib/rateLimit'
 
 export const runtime = 'nodejs'
 
 export async function POST(request: NextRequest) {
-  const authResult = await requireAuth()
+  const authResult = await requireAuthLite()
   if (!authResult.ok) return authResult.response
   const { userId } = authResult.auth
+
+  // Premium gate — AI Brain is a Pro feature
+  const premium = await requirePremium(userId)
+  if (!premium.ok) {
+    return NextResponse.json({ error: premium.error }, { status: 403 })
+  }
 
   // Paid-AI protection: max 20 saves/hour per user
   const rl = checkRateLimit(`memorize:${userId}`, 20, 60 * 60 * 1000)

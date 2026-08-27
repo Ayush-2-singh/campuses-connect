@@ -19,6 +19,39 @@ export interface AuthResult {
 }
 
 /**
+ * Lightweight auth — skips the admin-grants RPC call.
+ * Use for non-admin API routes (Brain, etc.) to save one DB round-trip.
+ */
+export async function requireAuthLite(): Promise<
+  | { ok: true; auth: Pick<AuthResult, 'userId' | 'profile'> }
+  | { ok: false; response: NextResponse }
+> {
+  const supabase = await createClient()
+  const { data: { user }, error } = await supabase.auth.getUser()
+  if (error || !user) {
+    return { ok: false, response: NextResponse.json({ error: 'Unauthorized.' }, { status: 401 }) }
+  }
+  const { data: profile, error: pe } = await supabase
+    .from('profiles').select('id, campus_id, college_id').eq('id', user.id).single()
+  if (pe || !profile) {
+    return { ok: false, response: NextResponse.json({ error: 'Profile not found.' }, { status: 401 }) }
+  }
+  return { ok: true, auth: { userId: user.id, profile } }
+}
+
+/**
+ * Check if a user is a Pro/Enterprise subscriber.
+ * Uses the `is_user_premium` RPC — a single indexed query.
+ */
+export async function requirePremium(userId: string): Promise<{ ok: boolean; error?: string }> {
+  const supabase = await createClient()
+  const { data, error } = await supabase.rpc('is_user_premium', { p_user_id: userId })
+  if (error) return { ok: false, error: 'Could not verify premium status.' }
+  if (data === true) return { ok: true }
+  return { ok: false, error: 'This feature requires CampusConnect Pro.' }
+}
+
+/**
  * Verify the incoming request carries a valid Supabase session.
  * Returns `{ ok: true, auth }` or a ready-to-return 401 NextResponse.
  */

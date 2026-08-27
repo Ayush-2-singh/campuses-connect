@@ -69,17 +69,22 @@ export default function Layout({ children, user, profile }: { children: React.Re
     setMenuOpen(false)
   }, [pathname])
 
+  // Poll unread count — reduced frequency to save DB reads.
+  // On messages page we poll more often (10s); elsewhere every 60s is enough.
   React.useEffect(() => {
     if (!user) return
+    const isMessagesPage = pathname.startsWith('/messages')
+    const pollMs = isMessagesPage ? 10_000 : 60_000
+
     const fetchUnread = async () => {
       const sb = createClient()
       const { count } = await sb.from('notifications').select('*', { count: 'exact', head: true }).eq('recipient_id', user.id).eq('is_read', false)
       setUnreadCount(count || 0)
     }
     fetchUnread()
-    const interval = setInterval(fetchUnread, 30000)
+    const interval = setInterval(fetchUnread, pollMs)
     return () => clearInterval(interval)
-  }, [user])
+  }, [user, pathname])
 
   // Global shortcut: Cmd/Ctrl + K toggles the command palette.
   React.useEffect(() => {

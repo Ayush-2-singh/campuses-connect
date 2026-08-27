@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { useToast } from '@/components/Toast'
 import Avatar from '@/components/Avatar'
+import { createClient } from '@/lib/supabase/client'
 import type { Post } from '@/types'
 
 const SCOPE_CONFIG: Record<string, { label: string; bg: string; text: string }> = {
@@ -63,7 +64,7 @@ export default function PostCard({
   useEffect(() => {
     let alive = true
     const load = async () => {
-      const supabase = (await import('@/lib/supabase/client')).createClient()
+      const supabase = createClient()
       const [likeRes, commRes] = await Promise.all([
         supabase.from('post_reactions').select('id', { count: 'exact', head: true }).eq('post_id', post.id),
         supabase.from('post_comments').select('id', { count: 'exact', head: true }).eq('post_id', post.id),
@@ -81,7 +82,7 @@ export default function PostCard({
     if (!currentUserId) return
     let alive = true
     const load = async () => {
-      const supabase = (await import('@/lib/supabase/client')).createClient()
+      const supabase = createClient()
       const { data } = await supabase.from('post_reactions').select('id').eq('post_id', post.id).eq('profile_id', currentUserId).maybeSingle()
       if (!alive) return
       setLiked(!!data)
@@ -95,7 +96,7 @@ export default function PostCard({
     if (!isHackathon || !currentUserId) return
     let alive = true
     const load = async () => {
-      const supabase = (await import('@/lib/supabase/client')).createClient()
+      const supabase = createClient()
       const [{ count }, { data: mine }] = await Promise.all([
         supabase.from('post_joins').select('id', { count: 'exact', head: true }).eq('post_id', post.id),
         supabase.from('post_joins').select('user_id').eq('post_id', post.id).eq('user_id', currentUserId).maybeSingle(),
@@ -111,7 +112,7 @@ export default function PostCard({
   const handleJoinToggle = async () => {
     if (!currentUserId || !canInteract || joining) return
     setJoining(true)
-    const supabase = (await import('@/lib/supabase/client')).createClient()
+    const supabase = createClient()
     if (joined) {
       await supabase.rpc('leave_hackathon', { p_post_id: post.id })
       setJoined(false)
@@ -138,7 +139,7 @@ export default function PostCard({
   // Like toggle — tap to like, tap again to remove (unlike).
   const handleLike = async () => {
     if (!currentUserId || !canInteract) return
-    const supabase = (await import('@/lib/supabase/client')).createClient()
+    const supabase = createClient()
     if (liked) {
       const { error } = await supabase.from('post_reactions').delete().eq('post_id', post.id).eq('profile_id', currentUserId)
       if (error) return
@@ -157,7 +158,7 @@ export default function PostCard({
 
   const handleSave = async () => {
     if (!currentUserId) return
-    const supabase = (await import('@/lib/supabase/client')).createClient()
+    const supabase = createClient()
     if (saved) {
       await supabase.from('saved_posts').delete().eq('user_id', currentUserId).eq('post_id', post.id)
       setSaved(false)
@@ -207,7 +208,7 @@ export default function PostCard({
   }
 
   const loadComments = async () => {
-    const supabase = (await import('@/lib/supabase/client')).createClient()
+    const supabase = createClient()
     const { data } = await supabase
       .from('post_comments')
       .select('*, profiles(full_name, username, avatar_url)')
@@ -218,7 +219,7 @@ export default function PostCard({
 
   const handleComment = async () => {
     if (!commentText.trim() || !currentUserId) return
-    const supabase = (await import('@/lib/supabase/client')).createClient()
+    const supabase = createClient()
     const { error } = await supabase.from('post_comments').insert({ post_id: post.id, author_id: currentUserId, body: commentText })
     if (error) return
     setCommentText('')
@@ -229,7 +230,7 @@ export default function PostCard({
   // Authors can delete their own comments (RLS allows it).
   const deleteComment = async (id: string) => {
     if (!currentUserId) return
-    const supabase = (await import('@/lib/supabase/client')).createClient()
+    const supabase = createClient()
     await supabase.from('post_comments').delete().eq('id', id).eq('author_id', currentUserId)
     setComments(cs => cs.filter(c => c.id !== id))
     setCommentCount(c => Math.max(0, c - 1))
@@ -245,7 +246,7 @@ export default function PostCard({
   const handleEditSave = async () => {
     if (!isAuthor || !editBody.trim() || saving) return
     setSaving(true)
-    const supabase = (await import('@/lib/supabase/client')).createClient()
+    const supabase = createClient()
     await supabase.from('posts').update({ body: editBody.trim() }).eq('id', post.id).eq('author_id', currentUserId)
     setSaving(false)
     setEditing(false)
@@ -255,7 +256,7 @@ export default function PostCard({
   const handleDelete = async () => {
     if (!isAuthor) return
     if (!window.confirm('Delete this post? This cannot be undone.')) return
-    const supabase = (await import('@/lib/supabase/client')).createClient()
+    const supabase = createClient()
     await supabase.from('posts').update({ status: 'removed' }).eq('id', post.id).eq('author_id', currentUserId)
     onChanged?.()
   }

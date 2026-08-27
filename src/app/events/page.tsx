@@ -51,15 +51,20 @@ export default function EventsPage() {
   const [editTarget, setEditTarget] = useState<Event | null>(null)
   const [form, setForm] = useState({ title: '', description: '', category: 'general', location: '', starts_at: '', ends_at: '', max_attendees: '' })
 
-  const fetchEvents = async () => {
+  const fetchEvents = async (campusId?: string | null) => {
     // NOTE: campus_events has no FK to profiles, so we can't embed profiles(...)
     // (PostgREST would error the whole query). Fetch host names separately.
-    const { data: evs } = await supabase
+    // Filter by campus_id so students only see events from their campus.
+    let q = supabase
       .from('campus_events')
       .select('*')
       .eq('status', 'published')
       .order('starts_at', { ascending: false })
       .limit(30)
+    if (campusId) {
+      q = q.eq('campus_id', campusId)
+    }
+    const { data: evs } = await q
     const list = (evs || []) as Event[]
     const hostIds = [...new Set(list.map(e => e.created_by))]
     if (hostIds.length) {
@@ -81,15 +86,23 @@ export default function EventsPage() {
       const { data: prof } = await supabase.from('profiles').select('*').eq('id', user.id).single()
       setProfile(prof)
 
-      const evs = await fetchEvents()
-      setEvents(evs)
+      const evs = await fetchEvents(prof?.campus_id)
 
-      // my attendance + counts
-      const { data: mine } = await supabase.from('event_attendees').select('event_id').eq('user_id', user.id)
+      // Batch: fetch all attendance in one query instead of N+1
+      const eventIds = evs.map(e => e.id)
+      const [{ data: mine }, { data: allAttendees }] = await Promise.all([
+        supabase.from('event_attendees').select('event_id').eq('user_id', user.id),
+        eventIds.length
+          ? supabase.from('event_attendees').select('event_id').in('event_id', eventIds)
+          : Promise.resolve({ data: [] as any[] }),
+      ])
       const attending = new Set((mine || []).map((a: any) => a.event_id))
+      const countMap = new Map<string, number>()
+      for (const a of (allAttendees || []) as any[]) {
+        countMap.set(a.event_id, (countMap.get(a.event_id) || 0) + 1)
+      }
       for (const e of evs) {
-        const { count } = await supabase.from('event_attendees').select('id', { count: 'exact', head: true }).eq('event_id', e.id)
-        e.attendee_count = count || 0
+        e.attendee_count = countMap.get(e.id) || 0
         e.is_attending = attending.has(e.id)
       }
       setEvents([...evs])
@@ -105,7 +118,7 @@ export default function EventsPage() {
   }
 
   const reloadEvents = async () => {
-    const evs = await fetchEvents()
+    const evs = await fetchEvents(profile?.campus_id)
     setEvents(evs)
   }
 

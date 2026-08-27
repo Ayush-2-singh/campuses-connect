@@ -1,11 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
-import { requireAuth } from '@/lib/api/middleware'
+import { requireAuthLite } from '@/lib/api/middleware'
 
 export const runtime = 'nodejs'
 
 export async function GET(request: NextRequest) {
-  const authResult = await requireAuth()
+  const authResult = await requireAuthLite()
   if (!authResult.ok) return authResult.response
   const { userId } = authResult.auth
 
@@ -33,7 +33,7 @@ export async function GET(request: NextRequest) {
 }
 
 export async function DELETE(request: NextRequest) {
-  const authResult = await requireAuth()
+  const authResult = await requireAuthLite()
   if (!authResult.ok) return authResult.response
   const { userId } = authResult.auth
 

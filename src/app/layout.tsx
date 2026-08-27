@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 import "./globals.css";
-import ThemeToggle from "@/components/ThemeToggle";
 import { ToastProvider } from "@/components/Toast";
 
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL || "https://campus-connect-zeta-two.vercel.app";
@@ -82,7 +81,6 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <body>
         <script dangerouslySetInnerHTML={{ __html: themeScript }} />
         <script dangerouslySetInnerHTML={{ __html: swScript }} />
-        <ThemeToggle />
         <ToastProvider>{children}</ToastProvider>
       </body>
     </html>

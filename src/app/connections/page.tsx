@@ -53,28 +53,48 @@ export default function ConnectionsPage() {
       .limit(50)
 
     const list = convs || []
-    const rows = await Promise.all(list.map(async (c: any) => {
+    const convIds = list.map((c: any) => c.id)
+    if (!convIds.length) { setChats([]); return }
+
+    // Batch: fetch last messages for ALL conversations in one query
+    const [{ data: lastMessages }, { data: allMessages }] = await Promise.all([
+      supabase.from('messages')
+        .select('conversation_id, content, created_at, sender_id')
+        .in('conversation_id', convIds)
+        .order('created_at', { ascending: false }),
+      supabase.from('messages')
+        .select('conversation_id, sender_id, created_at')
+        .in('conversation_id', convIds)
+        .neq('sender_id', uid),
+    ])
+
+    // Deduplicate: keep only the latest message per conversation
+    const lastMap = new Map<string, any>()
+    for (const m of (lastMessages || []) as any[]) {
+      if (!lastMap.has(m.conversation_id)) lastMap.set(m.conversation_id, m)
+    }
+
+    // Count unread per conversation using each user's last_read_at
+    const unreadMap = new Map<string, number>()
+    for (const c of list) {
       const me = (c.conversation_participants || []).find((p: any) => p.profile_id === uid)
-      const peer = (c.conversation_participants || []).find((p: any) => p.profile_id !== uid)
       const myLastRead = me?.last_read_at || '1970-01-01T00:00:00Z'
-      const [lastRes, unreadRes] = await Promise.all([
-        supabase.from('messages').select('content, created_at, sender_id')
-          .eq('conversation_id', c.id).order('created_at', { ascending: false }).limit(1),
-        supabase.from('messages').select('id', { count: 'exact', head: true })
-          .eq('conversation_id', c.id).neq('sender_id', uid).gt('created_at', myLastRead),
-      ])
+      const unread = (allMessages || []).filter(
+        (m: any) => m.conversation_id === c.id && m.created_at > myLastRead
+      ).length
+      unreadMap.set(c.id, unread)
+    }
+
+    const rows = list.map((c: any) => {
+      const peer = (c.conversation_participants || []).find((p: any) => p.profile_id !== uid)
       return {
         id: c.id,
         peer: peer?.profiles || {},
-        last: lastRes.data?.[0] || null,
-        unread: unreadRes.count || 0,
+        last: lastMap.get(c.id) || null,
+        unread: unreadMap.get(c.id) || 0,
       }
-    }))
-    rows.sort((a, b) => {
-      const ta = a.last?.created_at || ''
-      const tb = b.last?.created_at || ''
-      return tb.localeCompare(ta)
     })
+    rows.sort((a, b) => (b.last?.created_at || '').localeCompare(a.last?.created_at || ''))
     setChats(rows)
   }, [supabase])
 

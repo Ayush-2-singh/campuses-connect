@@ -1,9 +1,32 @@
 import { createServerClient } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
 
+/**
+ * Routes that absolutely need a verified Supabase session.
+ * Everything else (feed, notes, leaderboard, etc.) works fine
+ * without an auth check in middleware — the client fetches
+ * user data on mount. Skipping getUser() here saves one
+ * RPC round-trip per page load on public/semi-public pages.
+ */
+const AUTH_REQUIRED_PREFIXES = ['/admin', '/onboarding', '/auth']
+
+function needsAuthCheck(path: string): boolean {
+  return AUTH_REQUIRED_PREFIXES.some(p => path.startsWith(p))
+}
+
 export async function middleware(request: NextRequest) {
   let supabaseResponse = NextResponse.next({ request })
   const path = request.nextUrl.pathname
+
+  // Skip Supabase client creation entirely for static assets
+  if (path.startsWith('/_next') || path.includes('.')) {
+    return supabaseResponse
+  }
+
+  // Only create Supabase client + call getUser() when the route needs it
+  if (!needsAuthCheck(path)) {
+    return supabaseResponse
+  }
 
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,

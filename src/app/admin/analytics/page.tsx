@@ -3,7 +3,7 @@
 import { useEffect, useState, useCallback, useMemo } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
-import ThemeToggle from '@/components/ThemeToggle'
+
 
 // ── Types ────────────────────────────────────────────────────
 interface Overview {
@@ -229,7 +229,6 @@ export default function AnalyticsPage() {
             </div>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-            <ThemeToggle mode="inline" />
             <button onClick={() => fetchData(activeTab)}
               style={{ padding: '7px 14px', borderRadius: 8, border: '1px solid var(--border)', background: 'var(--bg)', color: 'var(--text-secondary)', fontSize: 12, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>
               🔄 Refresh

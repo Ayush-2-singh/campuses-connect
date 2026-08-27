@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { useRouter, useParams, usePathname } from 'next/navigation'
-import ThemeToggle from '@/components/ThemeToggle'
+
 import MobileBottomNav from '@/components/MobileBottomNav'
 import MobileMenu from '@/components/MobileMenu'
 import Avatar from '@/components/Avatar'
@@ -166,7 +166,6 @@ export default function UserProfilePage() {
           <button onClick={() => router.back()}
             aria-label="Back" style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', fontSize: 18, width: 44, height: 44, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', borderRadius: 10, margin: '-10px 0 -10px -12px', flexShrink: 0 }}>←</button>
           <h1 style={{ fontSize: 17, fontWeight: 700, margin: 0, color: 'var(--text-primary)', flex: 1 }}>@{profile.username}</h1>
-          <ThemeToggle mode="inline" />
           <button
             onClick={() => setMenuOpen(o => !o)}
             aria-label={menuOpen ? 'Close menu' : 'Open menu'}

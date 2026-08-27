@@ -3,7 +3,7 @@
 import { useEffect, useState, useCallback } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
-import ThemeToggle from '@/components/ThemeToggle'
+
 
 // ── Types ────────────────────────────────────────────────────
 interface FeatureFlag {
@@ -672,7 +672,6 @@ export default function AdminPage() {
             </p>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-            <ThemeToggle mode="inline" />
             <button onClick={() => router.push('/feed')}
               style={{ background: 'none', border: '1px solid var(--border)', padding: '7px 14px', borderRadius: 8, fontSize: 13, color: 'var(--text-secondary)', cursor: 'pointer', fontFamily: 'inherit' }}>
               ← Back to Feed

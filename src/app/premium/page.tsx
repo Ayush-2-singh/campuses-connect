@@ -7,7 +7,7 @@ import Layout from '@/components/Layout'
 import { usePremium } from '@/lib/premium'
 
 const PRO_FEATURES = [
-  { icon: '🧠', title: 'AI Brain', desc: 'Ask your notes anything — instant answers from your study material' },
+  { icon: '🧠', title: 'AI Brain', desc: 'Upload your notes & ask anything — instant, contextual answers powered by AI. Free users get a preview; Pro unlocks unlimited use.', highlighted: true },
   { icon: '📊', title: 'Advanced Analytics', desc: 'Detailed insights into your activity, growth, and engagement' },
   { icon: '🏅', title: 'Premium Badges', desc: 'Exclusive badges and recognition on your profile' },
   { icon: '⚡', title: '5x Rate Limits', desc: 'Use features 5x more than free users — no throttling' },
@@ -23,7 +23,7 @@ const PLANS = [
     price: '₹0',
     period: 'forever',
     color: 'var(--text-muted)',
-    features: ['Basic feed & posts', 'Campus communities', 'Job listings', 'Leaderboard access', '5 AI Brain questions/day'],
+    features: ['Basic feed & posts', 'Campus communities', 'Job listings', 'Leaderboard access', 'AI Brain preview (limited)'],
     cta: 'Current Plan',
     disabled: true,
   },
@@ -104,8 +104,15 @@ export default function PremiumPage() {
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 10 }}>
             {PRO_FEATURES.map(f => (
               <div key={f.title}
-                style={{ background: 'var(--bg)', border: '1px solid var(--border)', borderRadius: 14, padding: '16px', boxShadow: 'var(--shadow-sm)' }}>
-                <p style={{ fontSize: 24, margin: '0 0 8px' }}>{f.icon}</p>
+                style={{
+                  background: (f as any).highlighted ? 'linear-gradient(135deg, rgba(245,158,11,0.08), rgba(217,119,6,0.04))' : 'var(--bg)',
+                  border: (f as any).highlighted ? '2px solid #f59e0b' : '1px solid var(--border)',
+                  borderRadius: 14, padding: '16px', boxShadow: (f as any).highlighted ? '0 4px 16px rgba(245,158,11,0.15)' : 'var(--shadow-sm)',
+                }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 8 }}>
+                  <p style={{ fontSize: 24, margin: 0 }}>{f.icon}</p>
+                  {(f as any).highlighted && <span style={{ fontSize: 10, background: 'linear-gradient(135deg, #fbbf24, #f59e0b)', color: '#fff', padding: '2px 8px', borderRadius: 20, fontWeight: 700 }}>PRO ONLY</span>}
+                </div>
                 <p style={{ fontSize: 14, fontWeight: 700, color: 'var(--text-primary)', margin: '0 0 4px' }}>{f.title}</p>
                 <p style={{ fontSize: 12, color: 'var(--text-muted)', margin: 0, lineHeight: 1.5 }}>{f.desc}</p>
               </div>

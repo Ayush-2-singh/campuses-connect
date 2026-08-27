@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { useRouter, usePathname } from 'next/navigation'
-import ThemeToggle from '@/components/ThemeToggle'
+
 import MobileBottomNav from '@/components/MobileBottomNav'
 import MobileMenu from '@/components/MobileMenu'
 import Avatar from '@/components/Avatar'
@@ -218,7 +218,6 @@ export default function ProfilePage() {
             <h1 style={{ fontSize: 17, fontWeight: 700, margin: 0, color: 'var(--text-primary)' }}>Profile</h1>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-            <ThemeToggle mode="inline" />
             <button onClick={() => editing ? handleSave() : setEditing(true)} disabled={saving}
               style={{ background: editing ? 'var(--accent)' : 'var(--bg)', color: editing ? 'var(--on-accent)' : 'var(--accent)', border: '1px solid var(--accent)', padding: '7px 16px', borderRadius: 8, fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>
               {saving ? 'Saving...' : editing ? 'Save' : 'Edit'}

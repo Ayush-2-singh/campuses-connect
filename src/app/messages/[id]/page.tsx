@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { useRouter, useParams } from 'next/navigation'
-import ThemeToggle from '@/components/ThemeToggle'
+
 import Avatar from '@/components/Avatar'
 import { CardSkeleton } from '@/components/Skeleton'
 
@@ -136,7 +136,6 @@ export default function ChatPage() {
           <p style={{ fontSize: 15, fontWeight: 700, color: 'var(--text-primary)', margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{peer.full_name || '@' + peer.username}</p>
           <p style={{ fontSize: 11.5, color: 'var(--success-text)', margin: 0 }}>Connected ✓</p>
         </div>
-        <ThemeToggle mode="inline" />
       </div>
 
       {/* Messages */}
