@@ -40,6 +40,7 @@ const TABS = [
   'Features',
   'Settings',
   'Users',
+  'Verify',
   'Posts',
   'Moderation',
   'Colleges',
@@ -118,6 +119,17 @@ export default function AdminPage() {
   const [campusChangesLoading, setCampusChangesLoading] = useState(false)
   const [campusChangeFilter, setCampusChangeFilter] = useState('pending')
   const [campusChangeBusy, setCampusChangeBusy] = useState<string | null>(null)
+
+  // ── Verifications (NEW) ─────────────────────────────────
+  const [verifyUsers, setVerifyUsers] = useState<any[]>([])
+  const [verifyCampuses, setVerifyCampuses] = useState<any[]>([])
+  const [verifyLoading, setVerifyLoading] = useState(false)
+  const [verifySearch, setVerifySearch] = useState('')
+  const [verifyBusy, setVerifyBusy] = useState<string | null>(null)
+  const [verifyUserDetail, setVerifyUserDetail] = useState<any>(null)
+  const [verifyUserVerifications, setVerifyUserVerifications] = useState<any[]>([])
+  const [verifyAction, setVerifyAction] = useState('change_campus')
+  const [verifyForm, setVerifyForm] = useState({ campus_id: '', skill: '', role: '', label: '', value: '', notes: '' })
 
   // ── Init ────────────────────────────────────────────────
   useEffect(() => {
@@ -242,6 +254,63 @@ export default function AdminPage() {
     setAuditLoading(false)
   }, [])
 
+  // ── Verifications load ──────────────────────────────────
+  const loadVerifyUsers = useCallback(async (search?: string) => {
+    setVerifyLoading(true)
+    try {
+      const res = await fetch(`/api/admin/verify?search=${encodeURIComponent(search || verifySearch)}`)
+      if (res.ok) {
+        const data = await res.json()
+        setVerifyUsers(data.users || [])
+        setVerifyCampuses(data.campuses || [])
+      }
+    } catch { /* ignore */ }
+    setVerifyLoading(false)
+  }, [verifySearch])
+
+  const loadUserVerifications = async (userId: string) => {
+    try {
+      const res = await fetch(`/api/admin/verify?user_id=${userId}`)
+      if (res.ok) {
+        const data = await res.json()
+        setVerifyUserVerifications(data.verifications || [])
+      }
+    } catch { /* ignore */ }
+  }
+
+  const performVerification = async (userId: string, action: string, extra: any = {}) => {
+    setVerifyBusy(userId)
+    try {
+      const res = await fetch('/api/admin/verify', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action, user_id: userId, ...extra, notes: verifyForm.notes || undefined }),
+        credentials: 'include',
+      })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error)
+      alert(data.message || 'Done!')
+      setVerifyForm({ campus_id: '', skill: '', role: '', label: '', value: '', notes: '' })
+      if (verifyUserDetail) loadUserVerifications(verifyUserDetail.user_id)
+    } catch (err: any) {
+      alert(err.message || 'Failed')
+    }
+    setVerifyBusy(null)
+  }
+
+  const revokeVerification = async (verificationId: string) => {
+    if (!confirm('Revoke this verification?')) return
+    try {
+      const res = await fetch('/api/admin/verify', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ verification_id: verificationId }),
+        credentials: 'include',
+      })
+      if (res.ok && verifyUserDetail) loadUserVerifications(verifyUserDetail.user_id)
+    } catch { /* ignore */ }
+  }
+
   // ── Campus Changes load ─────────────────────────────────
   const loadCampusChanges = useCallback(async (status?: string) => {
     setCampusChangesLoading(true)
@@ -283,6 +352,7 @@ export default function AdminPage() {
     if (activeTab === 'Moderation') loadModeration()
     if (activeTab === 'Features') loadFeatures()
     if (activeTab === 'Settings') loadSettings()
+    if (activeTab === 'Verify') loadVerifyUsers()
     if (activeTab === 'Campus Changes') loadCampusChanges()
     if (activeTab === 'Audit Log') loadAuditLog()
   }, [activeTab])
@@ -905,6 +975,198 @@ export default function AdminPage() {
                 )}
               </div>
             ))}
+          </div>
+        )}
+
+        {/* ═══════════════════════════════════════════════════
+            VERIFY (NEW) — Admin Manual Verification
+        ═══════════════════════════════════════════════════ */}
+        {activeTab === 'Verify' && (
+          <div>
+            <div style={{ marginBottom: 16 }}>
+              <h3 style={{ fontSize: 16, fontWeight: 700, color: 'var(--text-primary)', margin: '0 0 4px' }}>🛡️ Manual Verification</h3>
+              <p style={{ fontSize: 13, color: 'var(--text-muted)', margin: 0 }}>
+                Manually verify users — campus, identity, email, skills, roles. No AI needed.
+              </p>
+            </div>
+
+            {/* Search */}
+            <div style={{ display: 'flex', gap: 8, marginBottom: 16 }}>
+              <input value={verifySearch} onChange={e => setVerifySearch(e.target.value)}
+                onKeyDown={e => e.key === 'Enter' && loadVerifyUsers(verifySearch)}
+                placeholder="🔍 Search users by name, username, or email..."
+                style={{ flex: 1, border: '1px solid var(--border)', borderRadius: 10, padding: '10px 14px', fontSize: 13, outline: 'none', fontFamily: 'inherit', background: 'var(--bg)', color: 'var(--text-primary)' }} />
+              <button onClick={() => loadVerifyUsers(verifySearch)}
+                style={{ padding: '10px 16px', borderRadius: 10, border: 'none', background: 'var(--accent)', color: 'var(--on-accent)', fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>
+                Search
+              </button>
+            </div>
+
+            {/* User Detail Panel (when selected) */}
+            {verifyUserDetail && (
+              <div style={{ background: 'var(--bg)', border: '2px solid var(--accent)', borderRadius: 16, padding: 20, marginBottom: 16, boxShadow: 'var(--shadow-sm)' }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                    <button onClick={() => { setVerifyUserDetail(null); setVerifyUserVerifications([]) }}
+                      style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 16, color: 'var(--text-muted)', padding: 4 }}>←</button>
+                    <div>
+                      <p style={{ fontSize: 15, fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>{verifyUserDetail.full_name}</p>
+                      <p style={{ fontSize: 12, color: 'var(--text-muted)', margin: 0 }}>@{verifyUserDetail.username} · {verifyUserDetail.campus_name || 'No campus'}</p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Verification actions */}
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: 8, marginBottom: 14 }}>
+                  {[
+                    { key: 'change_campus', label: '🏫 Change Campus', color: 'var(--accent)' },
+                    { key: 'verify_identity', label: '🪪 Verify Identity', color: 'var(--success-text)' },
+                    { key: 'verify_email', label: '📧 Verify Email', color: 'var(--purple-text)' },
+                    { key: 'endorse_skill', label: '⭐ Endorse Skill', color: 'var(--yellow-text)' },
+                    { key: 'assign_role', label: '🎯 Assign Role', color: 'var(--orange-text)' },
+                    { key: 'custom', label: '📝 Custom Verify', color: 'var(--text-secondary)' },
+                  ].map(a => (
+                    <button key={a.key} onClick={() => setVerifyAction(a.key)}
+                      disabled={verifyBusy === verifyUserDetail.user_id}
+                      style={{ padding: '10px 12px', borderRadius: 10, border: verifyAction === a.key ? `2px solid ${a.color}` : '1px solid var(--border)',
+                        background: verifyAction === a.key ? `${a.color}15` : 'var(--bg-secondary)',
+                        fontSize: 12, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit', textAlign: 'left', color: 'var(--text-primary)' }}>
+                      {a.label}
+                    </button>
+                  ))}
+                </div>
+
+                {/* Action-specific inputs */}
+                <div style={{ background: 'var(--bg-secondary)', borderRadius: 12, padding: 14, marginBottom: 14 }}>
+                  {verifyAction === 'change_campus' && (
+                    <div>
+                      <label style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-secondary)', display: 'block', marginBottom: 4 }}>New Campus</label>
+                      <select value={verifyForm.campus_id} onChange={e => setVerifyForm({ ...verifyForm, campus_id: e.target.value })}
+                        style={{ width: '100%', boxSizing: 'border-box', border: '1px solid var(--border)', borderRadius: 8, padding: '10px 12px', fontSize: 13, outline: 'none', fontFamily: 'inherit', background: 'var(--bg)', color: 'var(--text-primary)' }}>
+                        <option value="">Select campus...</option>
+                        {verifyCampuses.map((c: any) => <option key={c.id} value={c.id}>{c.name}</option>)}
+                      </select>
+                    </div>
+                  )}
+                  {verifyAction === 'verify_email' && (
+                    <div>
+                      <label style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-secondary)', display: 'block', marginBottom: 4 }}>Email to verify</label>
+                      <input value={verifyForm.value} onChange={e => setVerifyForm({ ...verifyForm, value: e.target.value })} placeholder="user@college.edu"
+                        style={{ width: '100%', boxSizing: 'border-box', border: '1px solid var(--border)', borderRadius: 8, padding: '10px 12px', fontSize: 13, outline: 'none', fontFamily: 'inherit', background: 'var(--bg)', color: 'var(--text-primary)' }} />
+                    </div>
+                  )}
+                  {verifyAction === 'endorse_skill' && (
+                    <div>
+                      <label style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-secondary)', display: 'block', marginBottom: 4 }}>Skill to endorse</label>
+                      <input value={verifyForm.skill} onChange={e => setVerifyForm({ ...verifyForm, skill: e.target.value })} placeholder="e.g. React, DSA, Python"
+                        style={{ width: '100%', boxSizing: 'border-box', border: '1px solid var(--border)', borderRadius: 8, padding: '10px 12px', fontSize: 13, outline: 'none', fontFamily: 'inherit', background: 'var(--bg)', color: 'var(--text-primary)' }} />
+                    </div>
+                  )}
+                  {verifyAction === 'assign_role' && (
+                    <div>
+                      <label style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-secondary)', display: 'block', marginBottom: 4 }}>Role to assign</label>
+                      <input value={verifyForm.role} onChange={e => setVerifyForm({ ...verifyForm, role: e.target.value })} placeholder="e.g. Placement Head, TA, Club Lead"
+                        style={{ width: '100%', boxSizing: 'border-box', border: '1px solid var(--border)', borderRadius: 8, padding: '10px 12px', fontSize: 13, outline: 'none', fontFamily: 'inherit', background: 'var(--bg)', color: 'var(--text-primary)' }} />
+                    </div>
+                  )}
+                  {verifyAction === 'custom' && (
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
+                      <div>
+                        <label style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-secondary)', display: 'block', marginBottom: 4 }}>Label</label>
+                        <input value={verifyForm.label} onChange={e => setVerifyForm({ ...verifyForm, label: e.target.value })} placeholder="e.g. Hackathon Winner"
+                          style={{ width: '100%', boxSizing: 'border-box', border: '1px solid var(--border)', borderRadius: 8, padding: '10px 12px', fontSize: 13, outline: 'none', fontFamily: 'inherit', background: 'var(--bg)', color: 'var(--text-primary)' }} />
+                      </div>
+                      <div>
+                        <label style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-secondary)', display: 'block', marginBottom: 4 }}>Value (optional)</label>
+                        <input value={verifyForm.value} onChange={e => setVerifyForm({ ...verifyForm, value: e.target.value })} placeholder="Details"
+                          style={{ width: '100%', boxSizing: 'border-box', border: '1px solid var(--border)', borderRadius: 8, padding: '10px 12px', fontSize: 13, outline: 'none', fontFamily: 'inherit', background: 'var(--bg)', color: 'var(--text-primary)' }} />
+                      </div>
+                    </div>
+                  )}
+                  {/* Notes */}
+                  <div style={{ marginTop: 8 }}>
+                    <label style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-secondary)', display: 'block', marginBottom: 4 }}>Admin Notes (optional)</label>
+                    <input value={verifyForm.notes} onChange={e => setVerifyForm({ ...verifyForm, notes: e.target.value })} placeholder="Why this verification..."
+                      style={{ width: '100%', boxSizing: 'border-box', border: '1px solid var(--border)', borderRadius: 8, padding: '10px 12px', fontSize: 13, outline: 'none', fontFamily: 'inherit', background: 'var(--bg)', color: 'var(--text-primary)' }} />
+                  </div>
+                </div>
+
+                {/* Submit */}
+                <button onClick={() => {
+                    const extras: any = {}
+                    if (verifyAction === 'change_campus') extras.campus_id = verifyForm.campus_id
+                    if (verifyAction === 'verify_email') extras.email = verifyForm.value
+                    if (verifyAction === 'endorse_skill') extras.skill = verifyForm.skill
+                    if (verifyAction === 'assign_role') extras.role = verifyForm.role
+                    if (verifyAction === 'custom') { extras.label = verifyForm.label; extras.value = verifyForm.value }
+                    performVerification(verifyUserDetail.user_id, verifyAction, extras)
+                  }}
+                  disabled={verifyBusy === verifyUserDetail.user_id}
+                  style={{ width: '100%', padding: '10px', borderRadius: 10, border: 'none', background: verifyBusy ? 'var(--disabled)' : 'var(--success-text)', color: '#fff', fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>
+                  {verifyBusy === verifyUserDetail.user_id ? '⏳ Processing...' : '✅ Confirm Verification'}
+                </button>
+
+                {/* Existing verifications */}
+                {verifyUserVerifications.length > 0 && (
+                  <div style={{ marginTop: 14, paddingTop: 14, borderTop: '1px solid var(--border)' }}>
+                    <p style={{ fontSize: 12, fontWeight: 700, color: 'var(--text-secondary)', margin: '0 0 8px' }}>📋 Verification History</p>
+                    {verifyUserVerifications.map((v: any) => (
+                      <div key={v.id} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '6px 0', borderBottom: '1px solid var(--border)' }}>
+                        <span style={{ fontSize: 11, padding: '2px 8px', borderRadius: 8, background: 'var(--success-light)', color: 'var(--success-text)', fontWeight: 600, flexShrink: 0 }}>
+                          {v.verification_type}
+                        </span>
+                        <span style={{ fontSize: 11, color: 'var(--text-muted)', flex: 1 }}>
+                          {v.admin_notes || JSON.stringify(v.metadata)}
+                        </span>
+                        <span style={{ fontSize: 10, color: 'var(--text-muted)', flexShrink: 0 }}>
+                          {new Date(v.verified_at).toLocaleDateString()}
+                        </span>
+                        <button onClick={() => revokeVerification(v.id)}
+                          style={{ padding: '2px 8px', borderRadius: 6, border: '1px solid var(--danger-border)', background: 'var(--danger-light)', color: 'var(--danger)', fontSize: 10, cursor: 'pointer', fontFamily: 'inherit', flexShrink: 0 }}>
+                          Revoke
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Users list */}
+            {verifyLoading ? (
+              <p style={{ textAlign: 'center', color: 'var(--text-muted)', padding: '40px 0' }}>Loading...</p>
+            ) : verifyUsers.length === 0 ? (
+              <div style={{ background: 'var(--bg)', border: '1px solid var(--border)', borderRadius: 16, padding: '40px 20px', textAlign: 'center', boxShadow: 'var(--shadow-sm)' }}>
+                <p style={{ fontSize: 32, margin: '0 0 8px' }}>🛡️</p>
+                <p style={{ fontSize: 15, fontWeight: 600, color: 'var(--text-primary)', margin: '0 0 4px' }}>Search for users to verify</p>
+                <p style={{ fontSize: 13, color: 'var(--text-muted)', margin: 0 }}>Type a name, username, or email above</p>
+              </div>
+            ) : (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                {verifyUsers.map((u: any) => (
+                  <div key={u.user_id} onClick={() => { setVerifyUserDetail(u); loadUserVerifications(u.user_id) }}
+                    style={{ background: 'var(--bg)', border: '1px solid var(--border)', borderRadius: 12, padding: '12px 14px', display: 'flex', alignItems: 'center', gap: 12, cursor: 'pointer', boxShadow: 'var(--shadow-sm)' }}>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                        <p style={{ fontSize: 14, fontWeight: 600, color: 'var(--text-primary)', margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                          {u.full_name || 'Unknown'}
+                        </p>
+                        {u.is_verified && <span style={{ fontSize: 11, padding: '1px 6px', borderRadius: 6, background: 'var(--success-light)', color: 'var(--success-text)', fontWeight: 600 }}>✅</span>}
+                        {u.verification_count > 0 && (
+                          <span style={{ fontSize: 10, padding: '1px 6px', borderRadius: 6, background: 'var(--accent-light)', color: 'var(--accent)', fontWeight: 600 }}>
+                            🛡️ {u.verification_count}
+                          </span>
+                        )}
+                      </div>
+                      <p style={{ fontSize: 12, color: 'var(--text-muted)', margin: '2px 0 0' }}>
+                        @{u.username} · {u.campus_name || 'No campus'} · ⭐ {u.karma_points}
+                      </p>
+                    </div>
+                    <span style={{ color: 'var(--text-muted)', fontSize: 14, flexShrink: 0 }}>→</span>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         )}
 
