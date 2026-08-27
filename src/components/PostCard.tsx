@@ -342,13 +342,13 @@ export default function PostCard({
 
       {/* Action bar — YouTube style: pill chips + stroke icons */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 4, borderTop: '1px solid var(--border)', paddingTop: 8, flexWrap: 'wrap' }}>
-        {/* Like — pill chip */}
+        {/* Like — pill chip, black/dark like YouTube */}
         <button onClick={handleLike} disabled={!canInteract}
           style={{
             display: 'inline-flex', alignItems: 'center', gap: 6,
             height: 34, padding: '0 12px', borderRadius: 17,
-            border: '1px solid var(--border)', background: liked ? 'var(--bg-tertiary)' : 'transparent',
-            color: 'var(--text-primary)', fontSize: 13, fontWeight: 500,
+            border: '1px solid var(--border)', background: liked ? 'rgba(0,0,0,0.85)' : 'transparent',
+            color: liked ? '#fff' : 'var(--text-primary)', fontSize: 13, fontWeight: 500,
             cursor: canInteract ? 'pointer' : 'not-allowed', fontFamily: 'inherit',
             transition: 'all 0.15s ease', flexShrink: 0,
           }}>
@@ -358,7 +358,7 @@ export default function PostCard({
             </svg>
           </span>
           {liked ? 'Liked' : 'Like'}
-          {likeCount > 0 && <span style={{ fontSize: 12, color: 'var(--text-muted)' }}>{likeCount}</span>}
+          {likeCount > 0 && <span style={{ fontSize: 12, color: liked ? 'rgba(255,255,255,0.7)' : 'var(--text-muted)' }}>{likeCount}</span>}
         </button>
 
         {/* Dislike — bare icon, no border (YouTube exact) */}

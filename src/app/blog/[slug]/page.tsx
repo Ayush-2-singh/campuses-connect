@@ -172,8 +172,7 @@ function CommentItem({
               style={{
                 display: 'inline-flex', alignItems: 'center', gap: 4,
                 padding: '4px 8px', borderRadius: 16,
-                border: 'none', background: 'transparent',
-                color: comment.liked_by_me ? 'var(--accent)' : 'var(--text-muted)',
+                border: 'none', background: 'transparent',                 color: comment.liked_by_me ? '#000' : 'var(--text-muted)',
                 fontSize: 12, fontWeight: 500, cursor: 'pointer', fontFamily: 'inherit',
               }}
             >
@@ -551,12 +550,12 @@ export default function BlogPostPage() {
 
         {/* Action Bar — YouTube exact style: pill chips + bare icons */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 4, padding: '8px 0', marginBottom: 24 }}>
-          {/* Like — pill chip with border */}
+          {/* Like — pill chip, black/dark like YouTube */}
           <button onClick={toggleLike} style={{
             display: 'inline-flex', alignItems: 'center', gap: 6,
             height: 36, padding: '0 14px', borderRadius: 18,
-            border: '1px solid var(--border)', background: liked ? 'var(--bg-tertiary)' : 'transparent',
-            color: 'var(--text-primary)', fontSize: 13, fontWeight: 500,
+            border: '1px solid var(--border)', background: liked ? 'rgba(0,0,0,0.85)' : 'transparent',
+            color: liked ? '#fff' : 'var(--text-primary)', fontSize: 13, fontWeight: 500,
             cursor: 'pointer', fontFamily: 'inherit', transition: 'all 0.15s ease',
             flexShrink: 0,
           }}>
@@ -565,7 +564,7 @@ export default function BlogPostPage() {
             </svg>
             Like
             {post.like_count > 0 && (
-              <span style={{ fontSize: 12, color: 'var(--text-muted)', marginLeft: 2 }}>{post.like_count}</span>
+              <span style={{ fontSize: 12, color: liked ? 'rgba(255,255,255,0.7)' : 'var(--text-muted)', marginLeft: 2 }}>{post.like_count}</span>
             )}
           </button>
 
