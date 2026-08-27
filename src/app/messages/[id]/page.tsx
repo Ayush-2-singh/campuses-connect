@@ -74,9 +74,11 @@ export default function ChatPage() {
     load()
   }, [convId, supabase, router, fetchMessages])
 
-  // Realtime: live inserts + a gentle polling fallback so mobile always catches up.
+  // Realtime for live message inserts. Falls back to gentle 30s polling
+  // only if the Realtime connection fails (mobile browsers often kill WS).
   useEffect(() => {
     if (!convId) return
+    let fallbackPoll: ReturnType<typeof setInterval> | null = null
     const channel = supabase
       .channel(`messages:${convId}`)
       .on('postgres_changes',
@@ -85,9 +87,16 @@ export default function ChatPage() {
           append([payload.new])
           supabase.rpc('mark_conversation_read', { p_conversation_id: convId })
         })
-      .subscribe()
-    const poll = setInterval(fetchMessages, 8000)
-    return () => { supabase.removeChannel(channel); clearInterval(poll) }
+      .subscribe((status) => {
+        // If Realtime fails to connect, enable a gentle polling fallback
+        if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
+          fallbackPoll = setInterval(fetchMessages, 30000)
+        }
+      })
+    return () => {
+      supabase.removeChannel(channel)
+      if (fallbackPoll) clearInterval(fallbackPoll)
+    }
   }, [convId, supabase, append, fetchMessages])
 
   useEffect(() => {

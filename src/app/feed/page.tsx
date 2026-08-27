@@ -8,6 +8,7 @@ import PostCard from '@/components/PostCard'
 import PostComposer from '@/components/PostComposer'
 import { ListSkeleton } from '@/components/Skeleton'
 import EmptyState from '@/components/EmptyState'
+import ErrorBoundary from '@/components/ErrorBoundary'
 import { Icon } from '@/components/icons'
 import type { Post } from '@/types'
 
@@ -130,6 +131,7 @@ export default function FeedPage() {
 
   return (
     <Layout user={user} profile={profile}>
+    <ErrorBoundary pageName="feed">
       <div className="ambient" style={{ maxWidth: 680, margin: '0 auto', padding: '28px 20px 40px' }}>
 
         {/* Campus Pulse header */}
@@ -211,6 +213,7 @@ export default function FeedPage() {
           </div>
         )}
       </div>
+    </ErrorBoundary>
     </Layout>
   )
 }

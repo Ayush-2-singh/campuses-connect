@@ -74,54 +74,58 @@ export default function CompetePage() {
 
   useEffect(() => {
     const load = async () => {
-      const { data: { user } } = await supabase.auth.getUser()
-      if (!user) return
-      setUser(user)
-      const { data: prof } = await supabase.from('profiles').select('*').eq('id', user.id).single()
-      setProfile(prof)
-      const { data: sum } = await supabase.rpc('my_karma_summary')
-      if (sum && sum[0]) setKarma(sum[0])
+      try {
+        const { data: { user } } = await supabase.auth.getUser()
+        if (!user) return
+        setUser(user)
+        const { data: prof } = await supabase.from('profiles').select('*').eq('id', user.id).single()
+        setProfile(prof)
+        const { data: sum } = await supabase.rpc('my_karma_summary')
+        if (sum && sum[0]) setKarma(sum[0])
 
-      // daily challenge
-      const dcRes = await supabase
-        .from('daily_challenges')
-        .select('problem_id, day')
-        .eq('day', new Date().toISOString().slice(0, 10))
-        .maybeSingle()
-      const dc = dcRes.data
-      if (dc) {
-        const { data: p } = await supabase
+        // daily challenge
+        const dcRes = await supabase
+          .from('daily_challenges')
+          .select('problem_id, day')
+          .eq('day', new Date().toISOString().slice(0, 10))
+          .maybeSingle()
+        const dc = dcRes.data
+        if (dc) {
+          const { data: p } = await supabase
+            .from('dsa_problems')
+            .select('id, slug, title, difficulty, topics, description, constraints, examples, starter_code')
+            .eq('id', dc.problem_id)
+            .single()
+          if (p) {
+            setDaily(p)
+            setCode(p.starter_code?.[lang] || '')
+          }
+        }
+
+        // problem list + solved status (test_cases stays server-side)
+        const { data: all } = await supabase
           .from('dsa_problems')
           .select('id, slug, title, difficulty, topics, description, constraints, examples, starter_code')
-          .eq('id', dc.problem_id)
-          .single()
-        if (p) {
-          setDaily(p)
-          setCode(p.starter_code?.[lang] || '')
+          .eq('is_active', true)
+          .order('difficulty')
+        setProblems(all || [])
+        const { data: subs } = await supabase
+          .from('dsa_submissions').select('problem_id').eq('user_id', user.id).eq('verdict', 'accepted')
+        const solvedMap: Record<string, boolean> = {}
+        ;(subs || []).forEach(s => { solvedMap[s.problem_id] = true })
+        setSolved(solvedMap)
+
+        // upcoming / live contest
+        const { data: contests } = await supabase
+          .from('contests').select('*').order('starts_at', { ascending: true }).limit(5)
+        const next = (contests || []).find(c => new Date(c.ends_at).getTime() > Date.now())
+        if (next) {
+          setContest(next)
+          const { data: regs } = await supabase.from('contest_registrations').select('user_id').eq('contest_id', next.id).eq('user_id', user.id).maybeSingle()
+          setRegistered(!!regs)
         }
-      }
-
-      // problem list + solved status (test_cases stays server-side)
-      const { data: all } = await supabase
-        .from('dsa_problems')
-        .select('id, slug, title, difficulty, topics, description, constraints, examples, starter_code')
-        .eq('is_active', true)
-        .order('difficulty')
-      setProblems(all || [])
-      const { data: subs } = await supabase
-        .from('dsa_submissions').select('problem_id').eq('user_id', user.id).eq('verdict', 'accepted')
-      const solvedMap: Record<string, boolean> = {}
-      ;(subs || []).forEach(s => { solvedMap[s.problem_id] = true })
-      setSolved(solvedMap)
-
-      // upcoming / live contest
-      const { data: contests } = await supabase
-        .from('contests').select('*').order('starts_at', { ascending: true }).limit(5)
-      const next = (contests || []).find(c => new Date(c.ends_at).getTime() > Date.now())
-      if (next) {
-        setContest(next)
-        const { data: regs } = await supabase.from('contest_registrations').select('user_id').eq('contest_id', next.id).eq('user_id', user.id).maybeSingle()
-        setRegistered(!!regs)
+      } catch {
+        // Silently handle — page will show empty states
       }
     }
     load()
@@ -376,7 +380,7 @@ function RankingsTab() {
       setLoading(false)
     }
     load()
-  }, [mode])
+  }, [mode, supabase])
 
   return (
     <div>

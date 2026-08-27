@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation'
 import Layout from '@/components/Layout'
 import EmptyState from '@/components/EmptyState'
 import { ListSkeleton } from '@/components/Skeleton'
+import ErrorBoundary from '@/components/ErrorBoundary'
 
 type Event = {
   id: string
@@ -219,6 +220,7 @@ export default function EventsPage() {
 
   return (
     <Layout user={user} profile={profile}>
+    <ErrorBoundary pageName="events">
       <div style={{ maxWidth: 760, margin: '0 auto', padding: '24px 20px 48px' }}>
 
         {/* Header */}
@@ -354,6 +356,7 @@ export default function EventsPage() {
             </div>
           )}
       </div>
+    </ErrorBoundary>
     </Layout>
   )
 }

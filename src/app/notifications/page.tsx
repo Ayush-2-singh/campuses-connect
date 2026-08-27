@@ -49,18 +49,20 @@ export default function NotificationsPage() {
 
   useEffect(() => {
     const load = async () => {
-      const { data: { user } } = await supabase.auth.getUser()
-      if (!user) { router.replace('/auth/login?redirect=' + encodeURIComponent(typeof window !== 'undefined' ? window.location.pathname : '')); return }
-      setUser(user)
-      const { data: prof } = await supabase.from('profiles').select('*').eq('id', user.id).single()
-      setProfile(prof)
-      const { data } = await supabase
-        .from('notifications')
-        .select('*, profiles!notifications_actor_id_fkey(full_name, username)')
-        .eq('recipient_id', user.id)
-        .order('created_at', { ascending: false })
-        .limit(30)
-      setNotifications(data || [])
+      try {
+        const { data: { user } } = await supabase.auth.getUser()
+        if (!user) { router.replace('/auth/login?redirect=' + encodeURIComponent(typeof window !== 'undefined' ? window.location.pathname : '')); return }
+        setUser(user)
+        const { data: prof } = await supabase.from('profiles').select('*').eq('id', user.id).single()
+        setProfile(prof)
+        const { data } = await supabase
+          .from('notifications')
+          .select('*, profiles!notifications_actor_id_fkey(full_name, username)')
+          .eq('recipient_id', user.id)
+          .order('created_at', { ascending: false })
+          .limit(30)
+        setNotifications(data || [])
+      } catch { /* page shows empty state */ }
       setLoading(false)
     }
     load()
@@ -68,7 +70,10 @@ export default function NotificationsPage() {
 
   const markAllRead = async () => {
     if (!user) return
-    await supabase.from('notifications').update({ is_read: true }).eq('recipient_id', user.id).eq('is_read', false)
+    try {
+      const { error } = await supabase.from('notifications').update({ is_read: true }).eq('recipient_id', user.id).eq('is_read', false)
+      if (error) return // silently fail — UI stays in current state
+    } catch { /* ignore */ }
     setNotifications(ns => ns.map(n => ({ ...n, is_read: true })))
   }
 

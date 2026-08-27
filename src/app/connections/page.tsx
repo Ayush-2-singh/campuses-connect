@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation'
 import Layout from '@/components/Layout'
 import Avatar from '@/components/Avatar'
 import EmptyState from '@/components/EmptyState'
+import ErrorBoundary from '@/components/ErrorBoundary'
 import { useToast } from '@/components/Toast'
 
 type ConnRow = { id: string; requester_id: string; receiver_id: string; profile?: any; created_at?: string }
@@ -186,6 +187,7 @@ export default function ConnectionsPage() {
 
   return (
     <Layout user={user} profile={profile}>
+    <ErrorBoundary pageName="network">
       <div style={{ maxWidth: 680, margin: '0 auto', padding: '28px 20px 40px' }}>
         {/* Header */}
         <div style={{ marginBottom: 18 }}>
@@ -306,6 +308,7 @@ export default function ConnectionsPage() {
           </div>
         )}
       </div>
+    </ErrorBoundary>
     </Layout>
   )
 }

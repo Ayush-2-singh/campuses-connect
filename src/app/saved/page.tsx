@@ -33,11 +33,18 @@ export default function SavedPage() {
       setUser(user)
       const { data: prof } = await supabase.from('profiles').select('*').eq('id', user.id).single()
       setProfile(prof)
-      await loadPosts()
+      // Use user.id directly (not from state) to avoid stale closure
+      const { data } = await supabase
+        .from('saved_posts')
+        .select('posts(*, profiles!posts_author_id_fkey(full_name, username, is_verified), content_categories(key, label))')
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: false })
+        .limit(50)
+      setPosts((data || []).map((s: any) => s.posts).filter(Boolean))
       setLoading(false)
     }
     load()
-  }, [supabase, router, loadPosts])
+  }, [supabase, router])
 
   return (
     <Layout user={user} profile={profile}>
