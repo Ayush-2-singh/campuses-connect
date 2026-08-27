@@ -164,51 +164,61 @@ function CommentItem({
             {comment.body}
           </p>
 
-          {/* Actions (YouTube style: 👍 count · Reply · Delete) */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-            {/* Like button */}
+          {/* Actions — YouTube style stroke icons */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 4, marginTop: 4 }}>
+            {/* Like */}
             <button
               onClick={() => { haptic.tap(); onLike(comment.id) }}
               style={{
-                display: 'flex', alignItems: 'center', gap: 4,
+                display: 'inline-flex', alignItems: 'center', gap: 4,
                 padding: '4px 8px', borderRadius: 16,
-                border: 'none', background: comment.liked_by_me ? 'var(--accent-light)' : 'transparent',
+                border: 'none', background: 'transparent',
                 color: comment.liked_by_me ? 'var(--accent)' : 'var(--text-muted)',
                 fontSize: 12, fontWeight: 500, cursor: 'pointer', fontFamily: 'inherit',
               }}
             >
-              {comment.liked_by_me ? '👍' : '👍'} {comment.like_count > 0 ? comment.like_count : ''}
+              <svg width="16" height="16" viewBox="0 0 24 24" fill={comment.liked_by_me ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M14 9V5a3 3 0 0 0-3-3l-4 9v11h11.28a2 2 0 0 0 2-1.7l1.38-9a2 2 0 0 0-2-2.3zM7 22H4a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2h3"/>
+              </svg>
+              {comment.like_count > 0 && comment.like_count}
             </button>
 
-            {/* Reply button */}
+            {/* Reply */}
             {currentUserId && depth === 0 && (
               <button
                 onClick={() => { haptic.tap(); setShowReplyInput(!showReplyInput) }}
                 style={{
-                  display: 'flex', alignItems: 'center', gap: 4,
+                  display: 'inline-flex', alignItems: 'center', gap: 4,
                   padding: '4px 8px', borderRadius: 16,
                   border: 'none', background: 'transparent',
                   color: 'var(--text-muted)', fontSize: 12, fontWeight: 500,
                   cursor: 'pointer', fontFamily: 'inherit',
                 }}
               >
-                💬 Reply
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <polyline points="9 17 4 12 9 7"/>
+                  <path d="M20 18v-2a4 4 0 0 0-4-4H4"/>
+                </svg>
+                Reply
               </button>
             )}
 
-            {/* Delete button (own comments only) */}
+            {/* Delete (own comments) */}
             {currentUserId === comment.author_id && (
               <button
                 onClick={() => { haptic.tap(); onDelete(comment.id) }}
                 style={{
-                  display: 'flex', alignItems: 'center', gap: 4,
+                  display: 'inline-flex', alignItems: 'center', gap: 4,
                   padding: '4px 8px', borderRadius: 16,
                   border: 'none', background: 'transparent',
                   color: 'var(--text-muted)', fontSize: 12, fontWeight: 500,
                   cursor: 'pointer', fontFamily: 'inherit',
                 }}
               >
-                🗑️
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <polyline points="3 6 5 6 21 6"/>
+                  <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+                </svg>
               </button>
             )}
           </div>
@@ -539,24 +549,61 @@ export default function BlogPostPage() {
           {post.body}
         </div>
 
-        {/* Action Bar */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 16, padding: '16px 0', borderTop: '1px solid var(--border)', borderBottom: '1px solid var(--border)', marginBottom: 32 }}>
+        {/* Action Bar — YouTube style: stroke icons, no backgrounds */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 4, padding: '12px 0', marginBottom: 24 }}>
+          {/* Like */}
           <button onClick={toggleLike} style={{
-            display: 'flex', alignItems: 'center', gap: 6, padding: '10px 16px', borderRadius: 20,
-            border: liked ? 'none' : '1px solid var(--border)',
-            background: liked ? 'var(--accent)' : 'var(--bg)',
-            color: liked ? 'var(--on-accent)' : 'var(--text-secondary)',
-            fontSize: 14, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit',
+            display: 'inline-flex', alignItems: 'center', gap: 6, padding: '8px 12px', borderRadius: 20,
+            border: 'none', background: 'transparent',
+            color: liked ? 'var(--accent)' : 'var(--text-secondary)',
+            fontSize: 14, fontWeight: 500, cursor: 'pointer', fontFamily: 'inherit',
           }}>
-            {liked ? '❤️' : '🤍'} {post.like_count}
+            <svg width="20" height="20" viewBox="0 0 24 24" fill={liked ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M14 9V5a3 3 0 0 0-3-3l-4 9v11h11.28a2 2 0 0 0 2-1.7l1.38-9a2 2 0 0 0-2-2.3zM7 22H4a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2h3"/>
+            </svg>
+            {post.like_count > 0 && post.like_count}
           </button>
-          <span style={{ fontSize: 14, color: 'var(--text-muted)' }}>💬 {post.comment_count}</span>
-          <div style={{ flex: 1 }} />
+
+          {/* Comment count */}
+          <button style={{
+            display: 'inline-flex', alignItems: 'center', gap: 6, padding: '8px 12px', borderRadius: 20,
+            border: 'none', background: 'transparent',
+            color: 'var(--text-secondary)', fontSize: 14, fontWeight: 500,
+            cursor: 'default', fontFamily: 'inherit',
+          }}>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+            </svg>
+            {post.comment_count > 0 && post.comment_count}
+          </button>
+
+          {/* Share */}
           <button onClick={() => navigator.clipboard?.writeText(window.location.href)} style={{
-            display: 'flex', alignItems: 'center', gap: 6, padding: '8px 14px', borderRadius: 20,
-            border: '1px solid var(--border)', background: 'var(--bg)',
-            color: 'var(--text-muted)', fontSize: 13, cursor: 'pointer', fontFamily: 'inherit',
-          }}>↗ Share</button>
+            display: 'inline-flex', alignItems: 'center', gap: 6, padding: '8px 12px', borderRadius: 20,
+            border: 'none', background: 'transparent',
+            color: 'var(--text-secondary)', fontSize: 14, fontWeight: 500,
+            cursor: 'pointer', fontFamily: 'inherit',
+          }}>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <circle cx="18" cy="5" r="3"/>
+              <circle cx="6" cy="12" r="3"/>
+              <circle cx="18" cy="19" r="3"/>
+              <line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/>
+              <line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/>
+            </svg>
+          </button>
+
+          {/* Bookmark */}
+          <button style={{
+            display: 'inline-flex', alignItems: 'center', gap: 6, padding: '8px 12px', borderRadius: 20,
+            border: 'none', background: 'transparent',
+            color: 'var(--text-secondary)', fontSize: 14, fontWeight: 500,
+            cursor: 'pointer', fontFamily: 'inherit', marginLeft: 'auto',
+          }}>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/>
+            </svg>
+          </button>
         </div>
 
         {/* ═══════════════════════════════════════════════════════════════════
