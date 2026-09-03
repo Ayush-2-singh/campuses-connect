@@ -4,19 +4,19 @@
 
 export const MOBILE_NAV = [
   { label: 'Home', href: '/feed', icon: 'home' },
-  { label: 'Blog', href: '/blog', icon: 'notebook' },
-  { label: 'Events', href: '/events', icon: 'calendar' },
+  { label: 'Classroom', href: '/college', icon: 'book' },
+  { label: 'Library', href: '/notes', icon: 'notebook' },
   { label: 'Compete', href: '/compete', icon: 'zap' },
+  { label: 'More', href: '/more', icon: 'more' },
 ]
 
 export const MOBILE_MENU_NAV = [
   { label: 'Global', href: '/global', icon: 'globe' },
-  { label: 'Classroom', href: '/college', icon: 'book' },
+  { label: 'Blog', href: '/blog', icon: 'notebook' },
+  { label: 'Events', href: '/events', icon: 'calendar' },
   { label: 'Connections', href: '/connections', icon: 'link' },
   { label: 'Opportunities', href: '/opportunities', icon: 'briefcase' },
-  { label: 'Notes', href: '/notes', icon: 'notebook' },
   { label: 'Talent', href: '/talent', icon: 'star' },
   { label: 'Communities', href: '/communities', icon: 'users' },
-  { label: 'More', href: '/more', icon: 'more' },
   { label: 'Profile', href: '/profile', icon: 'user' },
 ]
