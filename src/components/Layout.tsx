@@ -4,6 +4,7 @@ import React from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { useRouter, usePathname } from 'next/navigation'
 import ThemeToggle from '@/components/ThemeToggle'
+import SplashScreen from '@/components/SplashScreen'
 import CommandPalette from '@/components/CommandPalette'
 import MobileBottomNav from '@/components/MobileBottomNav'
 import MobileMenu from '@/components/MobileMenu'
@@ -113,6 +114,7 @@ export default function Layout({ children, user, profile }: { children: React.Re
 
   return (
     <div data-accent={sectionAccent} style={{ minHeight: '100vh', background: 'var(--bg-secondary)', display: 'flex' }}>
+      <SplashScreen />
 
       {/* ── Desktop Sidebar ── */}
       <aside
