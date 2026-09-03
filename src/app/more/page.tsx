@@ -6,30 +6,30 @@ import { useRouter } from 'next/navigation'
 import Layout from '@/components/Layout'
 
 const SECTIONS = [
-  // Classroom
-  { icon: '📚', label: 'Classroom', desc: 'Schedule, syllabus & academics', href: '/college' },
-  { icon: '🎪', label: 'Events', desc: 'Campus events, hackathons & memories', href: '/events' },
+  // Classroom — academics & campus life
+  { icon: '📚', label: 'Classroom', desc: 'Schedule, events, clubs & academics', href: '/college' },
+  { icon: '🎪', label: 'Events', desc: 'Campus events, cultural fests & memories', href: '/events' },
   { icon: '❓', label: 'Ask a Senior', desc: 'Doubt-solving with your college seniors', href: '/ask' },
   { icon: '📊', label: 'Campus Polls', desc: 'Vote on what matters — live results', href: '/polls' },
   { icon: '⏰', label: 'Smart Reminders', desc: 'Never miss a deadline or event', href: '/reminders' },
-  // Library
+  // Library — study resources
   { icon: '📝', label: 'Notes Library', desc: 'Subject-wise notes, PYQs and resources', href: '/notes' },
   { icon: '🧠', label: 'AI Brain', desc: 'Your personal academic memory — ask your notes anything', href: '/brain' },
   { icon: '🔖', label: 'Saved', desc: 'Posts you bookmarked', href: '/saved' },
-  // Compete
+  // Compete — DSA & rankings
   { icon: '⚔️', label: 'Compete', desc: 'Daily DSA challenges, Campus Clash & Aura rankings', href: '/compete' },
   { icon: '⭐', label: 'Talent', desc: 'Discover students by skill', href: '/talent' },
   { icon: '🏆', label: 'Leaderboard', desc: 'Top contributors on your campus', href: '/leaderboard' },
-  { icon: '🏆', label: 'Badges & Streaks', desc: 'Earn badges, maintain streaks, unlock features', href: '/badges' },
-  // Opportunities
-  { icon: '💼', label: 'Opportunities', desc: 'Internships, hackathons & jobs', href: '/opportunities' },
+  { icon: '🏅', label: 'Badges & Streaks', desc: 'Earn badges, maintain streaks, unlock features', href: '/badges' },
+  // Opportunities — career & growth
+  { icon: '💼', label: 'Opportunities', desc: 'Internships, hackathons, jobs & scholarships', href: '/opportunities' },
   { icon: '🏢', label: 'Companies & Jobs', desc: 'Explore companies, openings & interview exp', href: '/companies' },
   { icon: '🤝', label: 'Find Teammates', desc: 'Post or join hackathon teams', href: '/teams' },
   { icon: '🚂', label: 'Travel Buddies', desc: 'Find campus mates on the same route', href: '/travel' },
-  // Connect
+  // Connect — social & networking
   { icon: '🌐', label: 'Global', desc: 'Post & connect with students everywhere', href: '/global' },
   { icon: '🤝', label: 'Connections', desc: 'Chats, requests & DMs — like LinkedIn', href: '/connections' },
-  { icon: '🌐', label: 'Communities', desc: 'DSA, Web Development & Startups', href: '/communities' },
+  { icon: '👥', label: 'Communities', desc: 'DSA, Web Development & Startups', href: '/communities' },
   { icon: '📰', label: 'Blog', desc: 'Interview experiences, tech blogs & campus stories', href: '/blog' },
   // Account
   { icon: '👤', label: 'My Profile', desc: 'Your identity, links and activity', href: '/profile' },
