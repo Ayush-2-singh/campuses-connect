@@ -13,11 +13,16 @@ import { accentForPath } from '@/theme/colors'
 
 const NAV_ITEMS = [
   { label: 'Home', href: '/feed', icon: 'home' },
+  { label: 'Global', href: '/global', icon: 'globe' },
+  { label: 'Blog', href: '/blog', icon: 'notebook' },
+  { label: 'Connections', href: '/connections', icon: 'link' },
   { label: 'Classroom', href: '/college', icon: 'book' },
-  { label: 'Library', href: '/notes', icon: 'notebook' },
+  { label: 'Events', href: '/events', icon: 'calendar' },
   { label: 'Compete', href: '/compete', icon: 'zap' },
   { label: 'Opportunities', href: '/opportunities', icon: 'briefcase' },
-  { label: 'Connect', href: '/connections', icon: 'link' },
+  { label: 'Notes', href: '/notes', icon: 'notebook' },
+  { label: 'Talent', href: '/talent', icon: 'star' },
+  { label: 'Communities', href: '/communities', icon: 'users' },
 ]
 
 const SECONDARY_NAV = [
@@ -26,7 +31,7 @@ const SECONDARY_NAV = [
 ]
 
 const FAB_ACTIONS = [
-  { label: 'Ask Connect My Campus', desc: 'Search, shortcuts & questions', icon: 'sparkles', action: 'cmd' as const },
+  { label: 'Ask Campus Connect', desc: 'Search, shortcuts & questions', icon: 'sparkles', action: 'cmd' as const },
   { label: 'Upload Note', desc: 'Add a resource to the library', icon: 'notebook', href: '/notes' },
   { label: 'Post Opportunity', desc: 'Internships, hackathons & more', icon: 'briefcase', href: '/opportunities' },
   { label: 'Explore More', desc: 'All features in one place', icon: 'more', href: '/more' },
@@ -114,7 +119,6 @@ export default function Layout({ children, user, profile }: { children: React.Re
   return (
     <div data-accent={sectionAccent} style={{ minHeight: '100vh', background: 'var(--bg-secondary)', display: 'flex' }}>
 
-
       {/* ── Desktop Sidebar ── */}
       <aside
         style={{ width: 240, position: 'fixed', top: 0, left: 0, bottom: 0, background: 'var(--bg)', borderRight: '1px solid var(--border)', padding: '20px 12px', display: 'flex', flexDirection: 'column', zIndex: 40 }}
@@ -126,7 +130,7 @@ export default function Layout({ children, user, profile }: { children: React.Re
           </div>
           <div>
             <h1 style={{ fontSize: 16, fontWeight: 800, color: 'var(--text-primary)', margin: 0, lineHeight: 1.2, letterSpacing: '-0.02em' }}>
-              Connect<span className="text-gradient">MyCampus</span>
+              Campus<span className="text-gradient">Connect</span>
             </h1>
             <p style={{ fontSize: 10.5, color: 'var(--text-muted)', margin: 0 }}>Your campus, connected.</p>
           </div>
@@ -240,7 +244,7 @@ export default function Layout({ children, user, profile }: { children: React.Re
               aria-label="Open search"
             >
               <Icon name="search" size={15} />
-              <span style={{ flex: 1, textAlign: 'left' }}>Ask Connect My Campus…</span>
+              <span style={{ flex: 1, textAlign: 'left' }}>Ask Campus Connect…</span>
               <kbd style={{ background: 'var(--bg)', border: '1px solid var(--border-strong)', borderRadius: 6, padding: '2px 6px', fontSize: 11, color: 'var(--text-muted)', fontFamily: 'inherit' }}>⌘K</kbd>
             </button>
             <div style={{ flex: 1 }} />
@@ -278,7 +282,7 @@ export default function Layout({ children, user, profile }: { children: React.Re
                 <Icon name="grad" size={17} />
               </div>
               <h1 style={{ fontSize: 17, fontWeight: 800, color: 'var(--text-primary)', margin: 0 }}>
-                Connect<span style={{ color: 'var(--accent)' }}>MyCampus</span>
+                Campus<span style={{ color: 'var(--accent)' }}>Connect</span>
               </h1>
             </div>
             <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>

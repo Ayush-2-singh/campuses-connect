@@ -11,14 +11,14 @@ import { ListSkeleton } from '@/components/Skeleton'
 import { useAdminContext } from '@/lib/permissions'
 
 const SECTIONS = [
-  { icon: '📅', label: 'Events', href: '/events' },
-  { icon: '📢', label: 'Announcements', href: '/feed?filter=announcement' },
   { icon: '🎭', label: 'Clubs', href: '/college/clubs' },
-  { icon: '👥', label: 'Study Groups', href: '/college/study-groups' },
-  { icon: '❓', label: 'Ask a Senior', href: '/ask' },
-  { icon: '📊', label: 'Campus Polls', href: '/polls' },
-  { icon: '⏰', label: 'Reminders', href: '/reminders' },
+  { icon: '📅', label: 'Events', href: '/events' },
+  { icon: '⚡', label: 'Hackathons', href: '/opportunities?type=hackathon' },
+  { icon: '💼', label: 'Internships', href: '/opportunities?type=internship' },
+  { icon: '📢', label: 'Announcements', href: '/feed?filter=announcement' },
+  { icon: '📊', label: 'Campus Insights', href: '/college/insights' },
   { icon: '🔍', label: 'Lost & Found', href: '/lost-found' },
+  { icon: '👥', label: 'Study Groups', href: '/college/study-groups' },
 ]
 
 export default function CollegePage() {
@@ -63,7 +63,7 @@ export default function CollegePage() {
           <h2 style={{ fontSize: 22, fontWeight: 700, color: 'var(--text-primary)', margin: '0 0 4px' }}>
             {profile?.colleges?.name || 'Your College'}
           </h2>
-          <p style={{ fontSize: 13, color: 'var(--text-muted)', margin: 0 }}>{profile?.campuses?.name || 'College space'} — events, clubs, polls & academics</p>
+          <p style={{ fontSize: 13, color: 'var(--text-muted)', margin: 0 }}>{profile?.campuses?.name || 'College space'} — clubs, events, hackathons, internships and more</p>
         </div>
 
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: 10, marginBottom: 20 }}>

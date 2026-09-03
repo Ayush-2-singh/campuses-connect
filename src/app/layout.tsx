@@ -9,8 +9,8 @@ const APP_URL = process.env.NEXT_PUBLIC_APP_URL || "https://campus-connect-zeta-
 export const metadata: Metadata = {
   metadataBase: new URL(APP_URL),
   title: {
-    default: "ConnectMyCampus — Your campus, connected",
-    template: "%s · ConnectMyCampus",
+    default: "CampusConnect — Your campus, connected",
+    template: "%s · CampusConnect",
   },
   description:
     "The community platform for Computer Science students in Indian colleges — campus feed, notes, events, DSA contests, hackathons and opportunities.",
@@ -22,12 +22,12 @@ export const metadata: Metadata = {
     "hackathons",
     "internships",
     "college events",
-    "ConnectMyCampus",
+    "CampusConnect",
   ],
   openGraph: {
     type: "website",
-    siteName: "ConnectMyCampus",
-    title: "ConnectMyCampus — Your campus, connected",
+    siteName: "CampusConnect",
+    title: "CampusConnect — Your campus, connected",
     description:
       "The community platform for Computer Science students in Indian colleges — campus feed, notes, events, DSA contests, hackathons and opportunities.",
     url: APP_URL,
@@ -36,13 +36,13 @@ export const metadata: Metadata = {
         url: "/og.png",
         width: 1200,
         height: 630,
-        alt: "ConnectMyCampus — Your campus, connected",
+        alt: "CampusConnect — Your campus, connected",
       },
     ],
   },
   twitter: {
     card: "summary_large_image",
-    title: "ConnectMyCampus — Your campus, connected",
+    title: "CampusConnect — Your campus, connected",
     description:
       "The community platform for Computer Science students in Indian colleges.",
     images: ["/og.png"],
@@ -60,7 +60,7 @@ export const metadata: Metadata = {
   appleWebApp: {
     capable: true,
     statusBarStyle: "black-translucent",
-    title: "ConnectMyCampus",
+    title: "CampusConnect",
   },
   robots: {
     index: true,
@@ -69,7 +69,7 @@ export const metadata: Metadata = {
 };
 
 // Apply the saved theme before first paint to avoid a flash.
-// Connect My Campus is dark-first: the dark palette is the foundation and the
+// Campus Connect is dark-first: the dark palette is the foundation and the
 // default; only an explicit saved 'light' preference opts into light mode.
 // Note: the 'cc-theme' key must stay in sync with THEME_KEY in ThemeToggle.tsx.
 const themeScript = `(function(){try{var t=localStorage.getItem('cc-theme');document.documentElement.setAttribute('data-theme',t==='light'?'light':'dark');}catch(e){}})();`;

@@ -9,25 +9,24 @@ interface CmdItem {
   label: string
   hint?: string
   href: string
-  group: 'Navigate' | 'Classroom' | 'Library'
+  group: 'Navigate' | 'Ask Campus Connect'
 }
 
 const COMMANDS: CmdItem[] = [
-  // Classroom
-  { icon: 'book', label: 'Classroom — schedule & academics', href: '/college', group: 'Classroom' },
-  { icon: 'calendar', label: 'Events — campus happenings', href: '/events', group: 'Classroom' },
-  { icon: 'message', label: 'Ask a Senior', href: '/ask', group: 'Classroom' },
-  { icon: 'sparkles', label: 'Campus Polls', href: '/polls', group: 'Classroom' },
-  // Library
-  { icon: 'notebook', label: 'Notes — subject-wise resources', href: '/notes', group: 'Library' },
-  { icon: 'grad', label: 'AI Brain — ask your notes anything', href: '/brain', group: 'Library' },
-  { icon: 'bookmark', label: 'Saved posts', href: '/saved', group: 'Library' },
+  // AI-style quick actions — every one lands on a real page with a real feature.
+  { icon: 'briefcase', label: 'Find internships for me', hint: 'Opportunities', href: '/opportunities?type=internship', group: 'Ask Campus Connect' },
+  { icon: 'zap', label: 'Find hackathons closing soon', hint: 'Opportunities', href: '/opportunities?type=hackathon', group: 'Ask Campus Connect' },
+  { icon: 'notebook', label: 'Find notes about a subject', hint: 'Notes library', href: '/notes', group: 'Ask Campus Connect' },
+  { icon: 'users', label: 'Find DSA students', hint: 'Talent', href: '/talent', group: 'Ask Campus Connect' },
+  { icon: 'calendar', label: 'What is due this week?', hint: 'Classroom', href: '/college', group: 'Ask Campus Connect' },
+  { icon: 'grad', label: 'Talk to your AI Brain', hint: 'AI Brain', href: '/brain', group: 'Ask Campus Connect' },
   // Navigation
   { icon: 'home', label: 'Home — Campus Pulse', href: '/feed', group: 'Navigate' },
   { icon: 'globe', label: 'Global — connect everywhere', href: '/global', group: 'Navigate' },
-  { icon: 'link', label: 'Connect — chats, requests & network', href: '/connections', group: 'Navigate' },
-  { icon: 'zap', label: 'Compete — DSA challenges', href: '/compete', group: 'Navigate' },
+  { icon: 'link', label: 'Connections — chats, requests & network', href: '/connections', group: 'Navigate' },
+  { icon: 'book', label: 'Classroom', href: '/college', group: 'Navigate' },
   { icon: 'briefcase', label: 'Opportunities', href: '/opportunities', group: 'Navigate' },
+  { icon: 'notebook', label: 'Notes', href: '/notes', group: 'Navigate' },
   { icon: 'users', label: 'Communities', href: '/communities', group: 'Navigate' },
   { icon: 'star', label: 'Talent', href: '/talent', group: 'Navigate' },
   { icon: 'bell', label: 'Notifications', href: '/notifications', group: 'Navigate' },
@@ -103,7 +102,7 @@ export default function CommandPalette({ open, onClose }: { open: boolean; onClo
         className="cmd-panel"
         role="dialog"
         aria-modal="true"
-        aria-label="Ask Connect My Campus"
+        aria-label="Ask Campus Connect"
         onClick={e => e.stopPropagation()}
         onKeyDown={onKeyDown}
       >
@@ -115,8 +114,8 @@ export default function CommandPalette({ open, onClose }: { open: boolean; onClo
             ref={inputRef}
             value={query}
             onChange={e => setQuery(e.target.value)}
-            placeholder="Ask Connect My Campus..."
-            aria-label="Ask Connect My Campus"
+            placeholder="Ask Campus Connect..."
+            aria-label="Ask Campus Connect"
             style={{
               flex: 1,
               border: 'none',
