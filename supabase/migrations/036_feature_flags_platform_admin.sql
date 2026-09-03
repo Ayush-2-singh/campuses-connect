@@ -84,7 +84,7 @@ CREATE TRIGGER trg_platform_settings_updated BEFORE UPDATE ON public.platform_se
 
 -- Seed default platform settings
 INSERT INTO public.platform_settings (key, value, description, category) VALUES
-  ('platform_name',           'ConnectMyCampus',        'Display name of the platform',                'general'),
+  ('platform_name',           'CampusConnect',        'Display name of the platform',                'general'),
   ('platform_tagline',        'Your campus, connected','Tagline shown on landing page',               'general'),
   ('maintenance_mode',        'false',                 'When true, shows maintenance banner',         'general'),
   ('maintenance_message',     'We are undergoing scheduled maintenance. Please check back soon.', 'Maintenance banner text', 'general'),

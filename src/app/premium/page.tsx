@@ -80,10 +80,10 @@ export default function PremiumPage() {
             👑
           </div>
           <h1 style={{ fontSize: 28, fontWeight: 800, color: 'var(--text-primary)', margin: '0 0 8px' }}>
-            ConnectMyCampus Pro
+            CampusConnect Pro
           </h1>
           <p style={{ fontSize: 14, color: 'var(--text-muted)', margin: 0, lineHeight: 1.6 }}>
-            Unlock the full power of ConnectMyCampus with AI, analytics, and premium features
+            Unlock the full power of CampusConnect with AI, analytics, and premium features
           </p>
           {isPremium && (
             <div style={{

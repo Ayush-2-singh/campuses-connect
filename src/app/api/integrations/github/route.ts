@@ -25,7 +25,7 @@ async function fetchGitHubStats(username: string) {
   const ghToken = process.env.GITHUB_TOKEN
   // Fetch GitHub user profile
   const userRes = await fetch(`https://api.github.com/users/${encodeURIComponent(username)}`, {
-      headers: { 'Accept': 'application/vnd.github.v3+json', 'User-Agent': 'ConnectMyCampus/1.0', ...(ghToken ? { 'Authorization': `token ${ghToken}` } : {}) },
+      headers: { 'Accept': 'application/vnd.github.v3+json', 'User-Agent': 'CampusConnect/1.0', ...(ghToken ? { 'Authorization': `token ${ghToken}` } : {}) },
     })
   if (!userRes.ok) {
     throw new Error('GitHub user not found. Please check your username.')
@@ -35,14 +35,14 @@ async function fetchGitHubStats(username: string) {
   // Fetch top repos (sorted by stars)
   const reposRes = await fetch(
       `https://api.github.com/users/${encodeURIComponent(username)}/repos?sort=stars&per_page=10`,
-      { headers: { 'Accept': 'application/vnd.github.v3+json', 'User-Agent': 'ConnectMyCampus/1.0', ...(ghToken ? { 'Authorization': `token ${ghToken}` } : {}) } }
+      { headers: { 'Accept': 'application/vnd.github.v3+json', 'User-Agent': 'CampusConnect/1.0', ...(ghToken ? { 'Authorization': `token ${ghToken}` } : {}) } }
     )
   const repos: GitHubRepo[] = reposRes.ok ? await reposRes.json() : []  // Fetch contribution count from public events
   let totalContributions = 0
   try {
       const calRes = await fetch(
         `https://api.github.com/users/${encodeURIComponent(username)}/events/public?per_page=100`,
-        { headers: { 'Accept': 'application/vnd.github.v3+json', 'User-Agent': 'ConnectMyCampus/1.0', ...(ghToken ? { 'Authorization': `token ${ghToken}` } : {}) } }
+        { headers: { 'Accept': 'application/vnd.github.v3+json', 'User-Agent': 'CampusConnect/1.0', ...(ghToken ? { 'Authorization': `token ${ghToken}` } : {}) } }
       )
       if (calRes.ok) {
       const events = await calRes.json()

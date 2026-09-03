@@ -1,4 +1,4 @@
-/* ConnectMyCampus enhanced service worker — offline-first for static pages,
+/* CampusConnect enhanced service worker — offline-first for static pages,
    network-first for dynamic content. Caches key pages for offline access. */
 
 const CACHE_NAME = 'campus-connect-v2'
@@ -104,7 +104,7 @@ self.addEventListener('push', event => {
       { action: 'dismiss', title: 'Dismiss' },
     ],
   }
-  event.waitUntil(self.registration.showNotification(data.title || 'ConnectMyCampus', options))
+  event.waitUntil(self.registration.showNotification(data.title || 'CampusConnect', options))
 })
 
 // Notification click handler
@@ -124,11 +124,11 @@ self.addEventListener('notificationclick', event => {
 
 function offlineHTML() {
   return `<!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>ConnectMyCampus — Offline</title>
+<title>CampusConnect — Offline</title>
 <style>body{font-family:system-ui,-apple-system,sans-serif;display:flex;align-items:center;justify-content:center;min-height:100vh;margin:0;background:#0F1115;color:#fff;text-align:center;padding:20px}
 .box{max-width:400px}.emoji{font-size:64px;margin-bottom:16px}h1{font-size:24px;margin:0 0 8px}p{color:#888;font-size:14px;line-height:1.6}
 a{color:#F59E0B;text-decoration:none;font-weight:600}</style></head>
 <body><div class="box"><div class="emoji">📡</div><h1>You're offline</h1>
-<p>ConnectMyCampus needs internet for most features.<br>Check your connection and try again.</p>
+<p>CampusConnect needs internet for most features.<br>Check your connection and try again.</p>
 <p style="margin-top:20px"><a href="/">Retry</a></p></div></body></html>`
 }

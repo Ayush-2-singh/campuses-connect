@@ -77,7 +77,7 @@ export default function SignupPage() {
       <div style={{ width: '100%', maxWidth: 400 }}>
         <div style={{ textAlign: 'center', marginBottom: 32 }}>
           <h1 style={{ fontSize: 28, fontWeight: 800, color: 'var(--text-primary)', margin: '0 0 6px' }}>
-            Connect<span style={{ color: 'var(--accent)' }}>MyCampus</span>
+            Campus<span style={{ color: 'var(--accent)' }}>Connect</span>
           </h1>
           <p style={{ fontSize: 14, color: 'var(--text-muted)', margin: 0 }}>Your campus. Your community.</p>
         </div>
@@ -146,7 +146,7 @@ export default function SignupPage() {
         </div>
 
         <p style={{ textAlign: 'center', fontSize: 11, color: 'var(--text-muted)', marginTop: 20 }}>
-          ConnectMyCampus is an independent student platform, not affiliated with any institution.
+          CampusConnect is an independent student platform, not affiliated with any institution.
         </p>
       </div>
     </div>

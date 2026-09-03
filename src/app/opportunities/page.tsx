@@ -1,7 +1,6 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import Layout from '@/components/Layout'
 import { useAdminContext } from '@/lib/permissions'
@@ -61,7 +60,6 @@ export default function OpportunitiesPage() {
   const [form, setForm]               = useState({ ...emptyForm })
   const [error, setError]             = useState<string | null>(null)
   const supabase = createClient()
-  const router = useRouter()
   const admin = useAdminContext(user?.id)
 
   /** True if the signed-in user is an admin (V3: admin grants, not the dropped role column) */
@@ -250,8 +248,7 @@ export default function OpportunitiesPage() {
           <div style={{ position: 'absolute', top: -30, right: -20, width: 160, height: 160, borderRadius: '50%', background: 'radial-gradient(circle, var(--accent-glow), transparent 70%)', opacity: 0.5, pointerEvents: 'none' }} />
           <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12, position: 'relative' }}>
             <div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 6 }}>
-                <button onClick={() => router.push('/more')} aria-label="Back" style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 20, color: 'var(--text-muted)', width: 44, height: 44, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', borderRadius: 10, margin: '-10px 0 -10px -12px', flexShrink: 0 }}>←</button>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
                 <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5, fontSize: 11, fontWeight: 800, textTransform: 'uppercase', letterSpacing: 0.8, color: 'var(--accent-text)', background: 'var(--accent-light)', padding: '4px 10px', borderRadius: 20 }}>
                   <Icon name="sparkles" size={12} /> AI-Matched
                 </span>

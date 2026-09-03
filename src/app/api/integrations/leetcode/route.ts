@@ -46,7 +46,7 @@ async function fetchLeetCodeStats(username: string) {
       'Content-Type': 'application/json',
       'Referer': 'https://leetcode.com',
       'Origin': 'https://leetcode.com',
-      'User-Agent': 'ConnectMyCampus/1.0',
+      'User-Agent': 'CampusConnect/1.0',
     },
     body: JSON.stringify(profileQuery),
   })
@@ -98,7 +98,7 @@ async function fetchLeetCodeStats(username: string) {
         'Content-Type': 'application/json',
         'Referer': 'https://leetcode.com',
         'Origin': 'https://leetcode.com',
-        'User-Agent': 'ConnectMyCampus/1.0',
+        'User-Agent': 'CampusConnect/1.0',
       },
       body: JSON.stringify(contestQuery),
     })

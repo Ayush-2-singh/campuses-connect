@@ -48,7 +48,7 @@ export async function requirePremium(userId: string): Promise<{ ok: boolean; err
   const { data, error } = await supabase.rpc('is_user_premium', { p_user_id: userId })
   if (error) return { ok: false, error: 'Could not verify premium status.' }
   if (data === true) return { ok: true }
-  return { ok: false, error: 'This feature requires ConnectMyCampus Pro.' }
+  return { ok: false, error: 'This feature requires CampusConnect Pro.' }
 }
 
 /**

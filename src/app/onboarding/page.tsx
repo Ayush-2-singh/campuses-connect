@@ -113,7 +113,7 @@ export default function OnboardingPage() {
       <div style={{ width: '100%', maxWidth: 440 }}>
         <div style={{ textAlign: 'center', marginBottom: 28 }}>
           <h1 style={{ fontSize: 26, fontWeight: 800, color: 'var(--text-primary)', margin: '0 0 4px' }}>
-            Connect<span style={{ color: 'var(--accent)' }}>MyCampus</span>
+            Campus<span style={{ color: 'var(--accent)' }}>Connect</span>
           </h1>
           <p style={{ fontSize: 13, color: 'var(--text-muted)', margin: 0 }}>Let&apos;s set up your profile</p>
         </div>

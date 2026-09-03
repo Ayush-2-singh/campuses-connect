@@ -1,5 +1,5 @@
 /**
- * CONNECT MY CAMPUS — CENTRAL COLOR SYSTEM
+ * CAMPUS CONNECT — CENTRAL COLOR SYSTEM
  *
  * Single source of truth for the palette used in JS (CSS variables in
  * `app/globals.css` remain the runtime source for styles). Components that

@@ -57,7 +57,7 @@ export default function CompaniesPage() {
       <div style={{ maxWidth: 720, margin: '0 auto', padding: '24px 20px' }}>
         {/* Header */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 4 }}>
-          <button onClick={() => router.push('/opportunities')} aria-label="Back"
+          <button onClick={() => router.push('/more')} aria-label="Back"
             style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 20, color: 'var(--text-muted)', width: 44, height: 44, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', borderRadius: 10, margin: '-10px 0 -10px -12px', flexShrink: 0 }}>←</button>
           <h2 style={{ fontSize: 22, fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>🏢 Companies</h2>
         </div>

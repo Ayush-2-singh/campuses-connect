@@ -1,4 +1,4 @@
-# ConnectMyCampus V3 — Architecture
+# CampusConnect V3 — Architecture
 
 > AI-powered community platform for **Computer Science students in Indian colleges**.
 > No faculty. No school students. No exam-prep communities. CSE college students only.
