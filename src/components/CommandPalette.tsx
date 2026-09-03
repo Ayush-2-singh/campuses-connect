@@ -16,8 +16,8 @@ const COMMANDS: CmdItem[] = [
   // Classroom
   { icon: 'book', label: 'Classroom — schedule & academics', href: '/college', group: 'Classroom' },
   { icon: 'calendar', label: 'Events — campus happenings', href: '/events', group: 'Classroom' },
-  { icon: 'question', label: 'Ask a Senior', href: '/ask', group: 'Classroom' },
-  { icon: 'bar-chart', label: 'Campus Polls', href: '/polls', group: 'Classroom' },
+  { icon: 'message', label: 'Ask a Senior', href: '/ask', group: 'Classroom' },
+  { icon: 'sparkles', label: 'Campus Polls', href: '/polls', group: 'Classroom' },
   // Library
   { icon: 'notebook', label: 'Notes — subject-wise resources', href: '/notes', group: 'Library' },
   { icon: 'grad', label: 'AI Brain — ask your notes anything', href: '/brain', group: 'Library' },
