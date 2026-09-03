@@ -9,17 +9,17 @@ interface CmdItem {
   label: string
   hint?: string
   href: string
-  group: 'Navigate' | 'Ask Campus Connect'
+  group: 'Navigate' | 'Ask Connect My Campus'
 }
 
 const COMMANDS: CmdItem[] = [
   // AI-style quick actions — every one lands on a real page with a real feature.
-  { icon: 'briefcase', label: 'Find internships for me', hint: 'Opportunities', href: '/opportunities?type=internship', group: 'Ask Campus Connect' },
-  { icon: 'zap', label: 'Find hackathons closing soon', hint: 'Opportunities', href: '/opportunities?type=hackathon', group: 'Ask Campus Connect' },
-  { icon: 'notebook', label: 'Find notes about a subject', hint: 'Notes library', href: '/notes', group: 'Ask Campus Connect' },
-  { icon: 'users', label: 'Find DSA students', hint: 'Talent', href: '/talent', group: 'Ask Campus Connect' },
-  { icon: 'calendar', label: 'What is due this week?', hint: 'Classroom', href: '/college', group: 'Ask Campus Connect' },
-  { icon: 'grad', label: 'Talk to your AI Brain', hint: 'AI Brain', href: '/brain', group: 'Ask Campus Connect' },
+  { icon: 'briefcase', label: 'Find internships for me', hint: 'Opportunities', href: '/opportunities?type=internship', group: 'Ask Connect My Campus' },
+  { icon: 'zap', label: 'Find hackathons closing soon', hint: 'Opportunities', href: '/opportunities?type=hackathon', group: 'Ask Connect My Campus' },
+  { icon: 'notebook', label: 'Find notes about a subject', hint: 'Notes library', href: '/notes', group: 'Ask Connect My Campus' },
+  { icon: 'users', label: 'Find DSA students', hint: 'Talent', href: '/talent', group: 'Ask Connect My Campus' },
+  { icon: 'calendar', label: 'What is due this week?', hint: 'Classroom', href: '/college', group: 'Ask Connect My Campus' },
+  { icon: 'grad', label: 'Talk to your AI Brain', hint: 'AI Brain', href: '/brain', group: 'Ask Connect My Campus' },
   // Navigation
   { icon: 'home', label: 'Home — Campus Pulse', href: '/feed', group: 'Navigate' },
   { icon: 'globe', label: 'Global — connect everywhere', href: '/global', group: 'Navigate' },

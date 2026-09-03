@@ -11,14 +11,14 @@ import { ListSkeleton } from '@/components/Skeleton'
 import { useAdminContext } from '@/lib/permissions'
 
 const SECTIONS = [
-  { icon: '🎭', label: 'Clubs', href: '/college/clubs' },
   { icon: '📅', label: 'Events', href: '/events' },
-  { icon: '⚡', label: 'Hackathons', href: '/opportunities?type=hackathon' },
-  { icon: '💼', label: 'Internships', href: '/opportunities?type=internship' },
   { icon: '📢', label: 'Announcements', href: '/feed?filter=announcement' },
-  { icon: '📊', label: 'Campus Insights', href: '/college/insights' },
-  { icon: '🔍', label: 'Lost & Found', href: '/lost-found' },
+  { icon: '🎭', label: 'Clubs', href: '/college/clubs' },
   { icon: '👥', label: 'Study Groups', href: '/college/study-groups' },
+  { icon: '❓', label: 'Ask a Senior', href: '/ask' },
+  { icon: '📊', label: 'Campus Polls', href: '/polls' },
+  { icon: '⏰', label: 'Reminders', href: '/reminders' },
+  { icon: '🔍', label: 'Lost & Found', href: '/lost-found' },
 ]
 
 export default function CollegePage() {

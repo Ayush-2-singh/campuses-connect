@@ -1,6 +1,6 @@
 #!/bin/bash
 # ============================================================
-# CampusConnect — Database backup to files (no Docker needed)
+# ConnectMyCampus — Database backup to files (no Docker needed)
 # Dumps every public table as JSON + a schema manifest via the
 # Supabase Management API SQL endpoint (runs as postgres).
 #

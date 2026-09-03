@@ -47,13 +47,11 @@ export default function LandingPage() {
   }, [])
 
   const features = [
-    { icon: 'home', title: 'College Feed', desc: 'Announcements, events and discussions for your campus.' },
-    { icon: 'globe', title: 'Global Feed', desc: 'Post and connect with students everywhere — no campus needed.' },
-    { icon: 'users', title: 'Global Communities', desc: 'DSA, Web Development and Startups — nationwide, open to all.' },
-    { icon: 'notebook', title: 'Notes & Resources', desc: 'Semester notes, PYQs and roadmaps from your peers.' },
-    { icon: 'briefcase', title: 'Hackathons & Internships', desc: 'Opportunities posted by campus & community admins.' },
-    { icon: 'star', title: 'Clubs & Study Groups', desc: 'Find your crew and build together.' },
-    { icon: 'flame', title: 'Karma & Streaks', desc: 'Earn points and build daily habits.' },
+    { icon: 'home', title: 'Campus Feed', desc: 'Announcements, events and discussions for your campus.' },
+    { icon: 'book', title: 'Classroom', desc: 'Schedule, events, polls & ask seniors — all in one place.' },
+    { icon: 'notebook', title: 'Library', desc: 'Notes, PYQs, resources & AI Brain to ask anything.' },
+    { icon: 'zap', title: 'Compete', desc: 'DSA challenges, talent discovery & leaderboard rankings.' },
+    { icon: 'briefcase', title: 'Opportunities', desc: 'Hackathons, internships, jobs & find teammates.' },
   ]
 
   const totalCampuses = liveColleges.reduce((sum, c) => sum + c.campuses.length, 0)
@@ -76,7 +74,7 @@ export default function LandingPage() {
               <Icon name="grad" size={18} />
             </div>
             <h1 style={{ fontSize: 19, fontWeight: 800, margin: 0, color: 'var(--text-primary)' }}>
-              Campus<span style={{ color: 'var(--accent)' }}>Connect</span>
+              Connect<span style={{ color: 'var(--accent)' }}>MyCampus</span>
             </h1>
           </div>
           <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
@@ -257,7 +255,7 @@ export default function LandingPage() {
       {/* Footer */}
       <div style={{ borderTop: '1px solid var(--border)', padding: '20px', textAlign: 'center' }}>
         <p style={{ fontSize: 12, color: 'var(--text-muted)', margin: 0 }}>
-          CampusConnect is an independent student networking platform. Not affiliated with or endorsed by any educational institution.
+          ConnectMyCampus is an independent student networking platform. Not affiliated with or endorsed by any educational institution.
         </p>
       </div>
     </div>
