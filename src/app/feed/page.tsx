@@ -174,7 +174,7 @@ export default function FeedPage() {
 
         {!user && (
           <div style={{ background: 'var(--bg)', border: '1px solid var(--border)', borderRadius: 'var(--radius)', padding: '14px 16px', marginBottom: 16 }}>
-            <p style={{ fontWeight: 600, fontSize: 14, color: 'var(--text-primary)', margin: '0 0 4px' }}>Browse CampusConnect</p>
+            <p style={{ fontWeight: 600, fontSize: 14, color: 'var(--text-primary)', margin: '0 0 4px' }}>Browse ConnectMyCampus</p>
             <p style={{ fontSize: 13, color: 'var(--text-secondary)', margin: 0 }}>Join your campus community to like, comment and save — or browse the <span style={{ color: 'var(--accent)', fontWeight: 600, cursor: 'pointer' }} onClick={() => router.push('/global')}>Global</span> feed.</p>
           </div>
         )}

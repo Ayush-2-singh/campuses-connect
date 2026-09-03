@@ -146,7 +146,7 @@ export default function SignupPage() {
         </div>
 
         <p style={{ textAlign: 'center', fontSize: 11, color: 'var(--text-muted)', marginTop: 20 }}>
-          CampusConnect is an independent student platform, not affiliated with any institution.
+          ConnectMyCampus is an independent student platform, not affiliated with any institution.
         </p>
       </div>
     </div>

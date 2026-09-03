@@ -114,7 +114,7 @@ AS $fn$
       WHEN NOT public.is_feature_enabled(p_feature_key) THEN 'Feature is currently disabled'
       WHEN NOT public.is_feature_premium(p_feature_key) THEN ''
       WHEN public.is_user_premium(p_user_id) THEN ''
-      ELSE 'This feature requires CampusConnect Pro'
+      ELSE 'This feature requires ConnectMyCampus Pro'
     END,
     public.is_feature_premium(p_feature_key);
 $fn$;

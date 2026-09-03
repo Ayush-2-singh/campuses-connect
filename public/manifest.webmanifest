@@ -1,6 +1,6 @@
 {
-  "name": "CampusConnect — Your campus, connected",
-  "short_name": "CampusConnect",
+  "name": "ConnectMyCampus — Your campus, connected",
+  "short_name": "ConnectMyCampus",
   "description": "The community platform for Computer Science students in Indian colleges.",
   "start_url": "/feed",
   "display": "standalone",

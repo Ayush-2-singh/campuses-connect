@@ -29,7 +29,7 @@ export const ALLOW_VERDICT: AiVerdict = {
   action: 'allow',
 }
 
-const SYSTEM_PROMPT = `You are CampusConnect's AI content moderator for a college student community.
+const SYSTEM_PROMPT = `You are ConnectMyCampus's AI content moderator for a college student community.
 Review the content and decide whether it violates campus community rules.
 
 RULES — content is NOT allowed when it contains:

@@ -61,7 +61,7 @@ export default function PremiumGate({ featureKey, children, showPreview = false 
           fontSize: 18, fontWeight: 700, color: showPreview ? '#fff' : 'var(--text-primary)',
           margin: '0 0 8px', textAlign: 'center',
         }}>
-          CampusConnect Pro
+          ConnectMyCampus Pro
         </h3>
         <p style={{
           fontSize: 13, color: showPreview ? 'rgba(255,255,255,0.8)' : 'var(--text-muted)',
