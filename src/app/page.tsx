@@ -47,13 +47,11 @@ export default function LandingPage() {
   }, [])
 
   const features = [
-    { icon: 'home', title: 'College Feed', desc: 'Announcements, events and discussions for your campus.' },
-    { icon: 'globe', title: 'Global Feed', desc: 'Post and connect with students everywhere — no campus needed.' },
-    { icon: 'users', title: 'Global Communities', desc: 'DSA, Web Development and Startups — nationwide, open to all.' },
-    { icon: 'notebook', title: 'Notes & Resources', desc: 'Semester notes, PYQs and roadmaps from your peers.' },
-    { icon: 'briefcase', title: 'Hackathons & Internships', desc: 'Opportunities posted by campus & community admins.' },
-    { icon: 'star', title: 'Clubs & Study Groups', desc: 'Find your crew and build together.' },
-    { icon: 'flame', title: 'Karma & Streaks', desc: 'Earn points and build daily habits.' },
+    { icon: 'home', title: 'Campus Feed', desc: 'Announcements, events and discussions for your campus.' },
+    { icon: 'book', title: 'Classroom', desc: 'Schedule, events, polls & ask seniors — all in one place.' },
+    { icon: 'notebook', title: 'Library', desc: 'Notes, PYQs, resources & AI Brain to ask anything.' },
+    { icon: 'zap', title: 'Compete', desc: 'DSA challenges, talent discovery & leaderboard rankings.' },
+    { icon: 'briefcase', title: 'Opportunities', desc: 'Hackathons, internships, jobs & find teammates.' },
   ]
 
   const totalCampuses = liveColleges.reduce((sum, c) => sum + c.campuses.length, 0)

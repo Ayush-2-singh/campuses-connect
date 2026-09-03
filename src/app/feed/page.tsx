@@ -12,19 +12,14 @@ import ErrorBoundary from '@/components/ErrorBoundary'
 import { Icon } from '@/components/icons'
 import type { Post } from '@/types'
 
-const FILTERS = ['all', 'discussion', 'resource', 'notes', 'hackathon', 'internship', 'event', 'announcement', 'project', 'opportunity']
+const FILTERS = ['all', 'discussion', 'resource', 'opportunity', 'event']
 
 const FILTER_LABELS: Record<string, string> = {
   all: 'All',
   discussion: 'Discussion',
-  resource: 'Resource',
-  notes: 'Notes',
-  hackathon: 'Hackathon',
-  internship: 'Internship',
-  event: 'Event',
-  announcement: 'Announcement',
-  project: 'Project',
-  opportunity: 'Opportunity',
+  resource: 'Notes & Resources',
+  opportunity: 'Opportunities',
+  event: 'Events',
 }
 
 function greeting() {
