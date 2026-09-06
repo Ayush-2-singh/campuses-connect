@@ -26,7 +26,7 @@ const SECONDARY_NAV = [
 ]
 
 const FAB_ACTIONS = [
-  { label: 'Ask Connect My Campus', desc: 'Search, shortcuts & questions', icon: 'sparkles', action: 'cmd' as const },
+  { label: 'Ask Connect to Campus', desc: 'Search, shortcuts & questions', icon: 'sparkles', action: 'cmd' as const },
   { label: 'Upload Note', desc: 'Add a resource to the library', icon: 'notebook', href: '/notes' },
   { label: 'Post Opportunity', desc: 'Internships, hackathons & more', icon: 'briefcase', href: '/opportunities' },
   { label: 'Explore More', desc: 'All features in one place', icon: 'more', href: '/more' },
@@ -125,7 +125,7 @@ export default function Layout({ children, user, profile }: { children: React.Re
           </div>
           <div>
             <h1 style={{ fontSize: 16, fontWeight: 800, color: 'var(--text-primary)', margin: 0, lineHeight: 1.2, letterSpacing: '-0.02em' }}>
-              Connect<span className="text-gradient">MyCampus</span>
+              Connect<span className="text-gradient"> to Campus</span>
             </h1>
             <p style={{ fontSize: 10.5, color: 'var(--text-muted)', margin: 0 }}>Your campus, connected.</p>
           </div>
@@ -239,7 +239,7 @@ export default function Layout({ children, user, profile }: { children: React.Re
               aria-label="Open search"
             >
               <Icon name="search" size={15} />
-              <span style={{ flex: 1, textAlign: 'left' }}>Ask Connect My Campus…</span>
+              <span style={{ flex: 1, textAlign: 'left' }}>Ask Connect to Campus…</span>
               <kbd style={{ background: 'var(--bg)', border: '1px solid var(--border-strong)', borderRadius: 6, padding: '2px 6px', fontSize: 11, color: 'var(--text-muted)', fontFamily: 'inherit' }}>⌘K</kbd>
             </button>
             <div style={{ flex: 1 }} />
@@ -277,7 +277,7 @@ export default function Layout({ children, user, profile }: { children: React.Re
                 <Icon name="grad" size={17} />
               </div>
               <h1 style={{ fontSize: 17, fontWeight: 800, color: 'var(--text-primary)', margin: 0 }}>
-                Connect<span style={{ color: 'var(--accent)' }}>MyCampus</span>
+                Connect<span style={{ color: 'var(--accent)' }}> to Campus</span>
               </h1>
             </div>
             <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
