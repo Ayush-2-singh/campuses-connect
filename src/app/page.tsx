@@ -74,7 +74,7 @@ export default function LandingPage() {
               <Icon name="grad" size={18} />
             </div>
             <h1 style={{ fontSize: 19, fontWeight: 800, margin: 0, color: 'var(--text-primary)' }}>
-              Connect<span style={{ color: 'var(--accent)' }}>MyCampus</span>
+              Connect<span style={{ color: 'var(--accent)' }}> to Campus</span>
             </h1>
           </div>
           <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
@@ -209,32 +209,92 @@ export default function LandingPage() {
         </div>
       </div>
 
-      {/* Colleges — the optional campus layer, live today */}
+      {/* Colleges — campus cards */}
       <div style={{ background: 'var(--bg-secondary)', padding: '60px 20px', textAlign: 'center' }}>
         <h3 style={{ fontSize: 28, fontWeight: 700, color: 'var(--text-primary)', margin: '0 0 8px', letterSpacing: '-0.02em' }}>Built for every Indian college</h3>
-        <p style={{ fontSize: 14, color: 'var(--text-muted)', margin: '0 0 28px' }}>
-          {totalCampuses > 0 ? `${totalCampuses} campuses are live for their students today — more join every week.` : 'Campuses go live every week — stay tuned for yours.'}
+        <p style={{ fontSize: 14, color: 'var(--text-muted)', margin: '0 0 32px' }}>
+          {totalCampuses > 0 ? `${totalCampuses} campus${totalCampuses !== 1 ? 'es' : ''} live across ${liveColleges.length} college${liveColleges.length !== 1 ? 's' : ''} — more join every week.` : 'Campuses go live every week — stay tuned for yours.'}
         </p>
-        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10, justifyContent: 'center', maxWidth: 720, margin: '0 auto 24px' }}>
-          {liveColleges.length === 0 ? (
-            <div className="skeleton" style={{ width: 260, height: 36, borderRadius: 20 }} />
-          ) : liveColleges.map(col => (
-            <div key={col.name} style={{
-              display: 'inline-flex', alignItems: 'center', gap: 8,
-              padding: '8px 16px', borderRadius: 20, fontSize: 13, fontWeight: 500,
-              background: 'var(--accent-light)',
-              border: '1px solid var(--accent-border)',
-              color: 'var(--accent)'
-            }}>
-              <span style={{ width: 7, height: 7, borderRadius: '50%', flexShrink: 0, background: 'var(--accent)' }} />
-              <span style={{ fontWeight: 700 }}>{col.name}</span>
-              {col.campuses.length > 0 && (
-                <span style={{ color: 'var(--accent-text)', fontSize: 12 }}>· {col.campuses.join(' · ')}</span>
-              )}
-              <span style={{ fontSize: 11, color: 'var(--accent)', fontWeight: 700 }}>Live</span>
-            </div>
-          ))}
-        </div>
+
+        {liveColleges.length === 0 ? (
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 14, justifyContent: 'center', maxWidth: 800, margin: '0 auto' }}>
+            {[1,2,3].map(i => <div key={i} className="skeleton" style={{ width: 240, height: 140, borderRadius: 16 }} />)}
+          </div>
+        ) : (
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: 16, maxWidth: 800, margin: '0 auto 32px', textAlign: 'left' }}>
+            {liveColleges.map((col, idx) => (
+              <div key={col.name} style={{
+                background: 'var(--bg)',
+                border: '1px solid var(--border)',
+                borderRadius: 16,
+                overflow: 'hidden',
+                transition: 'box-shadow 0.2s, transform 0.2s',
+                cursor: 'pointer',
+              }}
+              className="card-hover"
+              onClick={() => router.push('/auth/signup')}
+              >
+                {/* College header */}
+                <div style={{
+                  padding: '16px 18px 14px',
+                  borderBottom: col.campuses.length > 1 ? '1px solid var(--border)' : 'none',
+                  background: idx % 3 === 0 ? 'var(--accent-light)' : idx % 3 === 1 ? 'var(--purple-light)' : 'var(--cyan-light)',
+                }}>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                      <div style={{
+                        width: 36, height: 36, borderRadius: 10,
+                        background: idx % 3 === 0 ? 'var(--accent)' : idx % 3 === 1 ? 'var(--purple)' : 'var(--cyan)',
+                        color: 'var(--on-accent)',
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        fontSize: 16, fontWeight: 800,
+                        flexShrink: 0,
+                      }}>
+                        {col.name.charAt(0)}
+                      </div>
+                      <div>
+                        <h4 style={{ fontSize: 15, fontWeight: 700, color: 'var(--text-primary)', margin: 0, lineHeight: 1.3 }}>{col.name}</h4>
+                        <p style={{ fontSize: 11.5, color: 'var(--text-muted)', margin: '2px 0 0' }}>{col.campuses.length} campus{col.campuses.length !== 1 ? 'es' : ''}</p>
+                      </div>
+                    </div>
+                    <span style={{
+                      fontSize: 10, fontWeight: 700,
+                      background: 'rgba(16,185,129,0.12)',
+                      color: '#10b981',
+                      padding: '3px 8px',
+                      borderRadius: 10,
+                      display: 'flex', alignItems: 'center', gap: 4,
+                    }}>
+                      <span style={{ width: 5, height: 5, borderRadius: '50%', background: '#10b981' }} />
+                      Live
+                    </span>
+                  </div>
+                </div>
+
+                {/* Campus list */}
+                {col.campuses.length > 0 && (
+                  <div style={{ padding: '10px 18px 14px' }}>
+                    {col.campuses.map((campus, ci) => (
+                      <div key={campus} style={{
+                        display: 'flex', alignItems: 'center', gap: 8,
+                        padding: '7px 0',
+                        borderBottom: ci < col.campuses.length - 1 ? '1px solid var(--border)' : 'none',
+                      }}>
+                        <div style={{
+                          width: 6, height: 6, borderRadius: '50%',
+                          background: idx % 3 === 0 ? 'var(--accent)' : idx % 3 === 1 ? 'var(--purple)' : 'var(--cyan)',
+                          flexShrink: 0,
+                        }} />
+                        <span style={{ fontSize: 13, fontWeight: 500, color: 'var(--text-secondary)' }}>{campus}</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        )}
+
         <p style={{ fontSize: 13, color: 'var(--text-muted)', margin: 0 }}>
           Your college missing? <span style={{ color: 'var(--accent)', fontWeight: 600, cursor: 'pointer' }} onClick={() => router.push('/auth/signup')}>Request it</span> — we&apos;ll bring it live for your campus.
         </p>
