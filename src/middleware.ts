@@ -3,10 +3,6 @@ import { NextResponse, type NextRequest } from 'next/server'
 
 /**
  * Routes that absolutely need a verified Supabase session.
- * Everything else (feed, notes, leaderboard, etc.) works fine
- * without an auth check in middleware — the client fetches
- * user data on mount. Skipping getUser() here saves one
- * RPC round-trip per page load on public/semi-public pages.
  */
 const AUTH_REQUIRED_PREFIXES = ['/admin', '/onboarding', '/auth']
 
@@ -23,11 +19,8 @@ export async function middleware(request: NextRequest) {
     return supabaseResponse
   }
 
-  // Only create Supabase client + call getUser() when the route needs it
-  if (!needsAuthCheck(path)) {
-    return supabaseResponse
-  }
-
+  // Always create Supabase client to refresh session cookies on every request.
+  // Without this, the session expires and users get logged out randomly.
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
@@ -44,6 +37,7 @@ export async function middleware(request: NextRequest) {
     }
   )
 
+  // Refresh session — this keeps the auth cookie alive so users stay logged in.
   const { data: { user } } = await supabase.auth.getUser()
 
   // Admin panel: platform_admin or campus_admin grant only
