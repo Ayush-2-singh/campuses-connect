@@ -16,6 +16,7 @@ const SECTIONS = [
   { icon: '🧠', label: 'AI Brain', desc: 'Your personal academic memory — ask your notes anything', href: '/brain' },
   { icon: '👤', label: 'My Profile', desc: 'Your identity, links and activity', href: '/profile' },
   { icon: '❓', label: 'Ask a Senior', desc: 'Doubt-solving with your college seniors', href: '/ask' },
+  { icon: '📝', label: 'Blog', desc: 'Read & write campus stories, guides & experiences', href: '/blog' },
   { icon: '📊', label: 'Campus Polls', desc: 'Vote on what matters — live results', href: '/polls' },
   { icon: '🌐', label: 'Global Communities', desc: 'DSA, Web Development & Startups', href: '/communities' },
   { icon: '🔖', label: 'Saved', desc: 'Posts you bookmarked', href: '/saved' },
