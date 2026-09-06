@@ -255,7 +255,7 @@ export default function LandingPage() {
       {/* Footer */}
       <div style={{ borderTop: '1px solid var(--border)', padding: '20px', textAlign: 'center' }}>
         <p style={{ fontSize: 12, color: 'var(--text-muted)', margin: 0 }}>
-          ConnectMyCampus is an independent student networking platform. Not affiliated with or endorsed by any educational institution.
+          Connect to Campus is an independent student networking platform. Not affiliated with or endorsed by any educational institution.
         </p>
       </div>
     </div>

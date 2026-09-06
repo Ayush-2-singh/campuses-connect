@@ -14,6 +14,7 @@ export const BRAIN_EMBED_MODEL = 'gemini-embedding-001'
 export const BRAIN_OCR_MODEL = 'gemini-2.5-flash'
 export const BRAIN_ANSWER_MODEL = 'gemini-2.5-flash'
 export const BRAIN_GROQ_MODEL = 'llama-3.3-70b-versatile' // optional fallback
+export const BRAIN_OPENROUTER_MODEL = 'x-ai/grok-3-mini:free' // Grok free via OpenRouter
 
 export const EMBED_DIMS = 768
 
@@ -26,6 +27,12 @@ function geminiKey(): string {
 function groqKey(): string {
   const key = process.env.GROQ_API_KEY
   if (!key) throw new Error('GROQ_API_KEY is not set. Add it to .env.local')
+  return key
+}
+
+function openrouterKey(): string {
+  const key = process.env.OPENROUTER_API_KEY
+  if (!key) throw new Error('OPENROUTER_API_KEY is not set. Add it to .env.local')
   return key
 }
 
@@ -96,11 +103,44 @@ export async function ocrImageViaGemini(buffer: Buffer, mimeType: string): Promi
 }
 
 /**
- * Chat completion. Uses Gemini by default (Gemini 2.5 Flash shares the same
- * key as the embeddings — verified working). Groq is an OPT-IN alternative:
- * set BRAIN_LLM=groq AND a valid GROQ_API_KEY to use it.
+ * Chat completion. Priority order:
+ *   1. OpenRouter / Grok (free model) — when OPENROUTER_API_KEY is set
+ *   2. Groq — when GROQ_API_KEY is set AND BRAIN_LLM=groq
+ *   3. Gemini — default fallback
  */
 export async function completeText(systemPrompt: string, userMessage: string, opts: { temperature?: number; maxTokens?: number; jsonMode?: boolean } = {}): Promise<string> {
+  // ── 1. OpenRouter / Grok (free) ──
+  if (process.env.OPENROUTER_API_KEY) {
+    const body: Record<string, unknown> = {
+      model: BRAIN_OPENROUTER_MODEL,
+      messages: [
+        { role: 'system', content: systemPrompt },
+        { role: 'user', content: userMessage },
+      ],
+      temperature: opts.temperature ?? 0.3,
+      max_tokens: opts.maxTokens ?? 800,
+    }
+    if (opts.jsonMode) body.response_format = { type: 'json_object' }
+
+    const res = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${openrouterKey()}`,
+        'HTTP-Referer': 'https://connecttocampus.com',
+        'X-Title': 'Connect to Campus',
+      },
+      body: JSON.stringify(body),
+    })
+    if (!res.ok) {
+      const err = await res.text().catch(() => '')
+      throw new Error(`OpenRouter/Grok failed (${res.status}): ${err.slice(0, 300)}`)
+    }
+    const json = await res.json()
+    return json?.choices?.[0]?.message?.content ?? ''
+  }
+
+  // ── 2. Groq (opt-in) ──
   if (process.env.GROQ_API_KEY && process.env.BRAIN_LLM === 'groq') {
     const body: Record<string, unknown> = {
       model: BRAIN_GROQ_MODEL,
@@ -126,7 +166,7 @@ export async function completeText(systemPrompt: string, userMessage: string, op
     return json?.choices?.[0]?.message?.content ?? ''
   }
 
-  // Gemini path
+  // ── 3. Gemini (default fallback) ──
   const generationConfig: Record<string, unknown> = {
     temperature: opts.temperature ?? 0.3,
     maxOutputTokens: opts.maxTokens ?? 800,

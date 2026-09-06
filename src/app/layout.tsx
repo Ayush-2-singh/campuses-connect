@@ -4,13 +4,13 @@ import { ToastProvider } from "@/components/Toast";
 import OfflineIndicator from "@/components/OfflineIndicator";
 import LoadingBar from "@/components/LoadingBar";
 
-const APP_URL = process.env.NEXT_PUBLIC_APP_URL || "https://campus-connect-zeta-two.vercel.app";
+const APP_URL = process.env.NEXT_PUBLIC_APP_URL || "https://connecttocampus.com";
 
 export const metadata: Metadata = {
   metadataBase: new URL(APP_URL),
   title: {
-    default: "ConnectMyCampus — Your campus, connected",
-    template: "%s · ConnectMyCampus",
+    default: "Connect to Campus — Your campus, connected",
+    template: "%s · Connect to Campus",
   },
   description:
     "The community platform for Computer Science students in Indian colleges — campus feed, notes, events, DSA contests, hackathons and opportunities.",
@@ -22,12 +22,12 @@ export const metadata: Metadata = {
     "hackathons",
     "internships",
     "college events",
-    "ConnectMyCampus",
+    "Connect to Campus",
   ],
   openGraph: {
     type: "website",
-    siteName: "ConnectMyCampus",
-    title: "ConnectMyCampus — Your campus, connected",
+    siteName: "Connect to Campus",
+    title: "Connect to Campus — Your campus, connected",
     description:
       "The community platform for Computer Science students in Indian colleges — campus feed, notes, events, DSA contests, hackathons and opportunities.",
     url: APP_URL,
@@ -36,13 +36,13 @@ export const metadata: Metadata = {
         url: "/og.png",
         width: 1200,
         height: 630,
-        alt: "ConnectMyCampus — Your campus, connected",
+        alt: "Connect to Campus — Your campus, connected",
       },
     ],
   },
   twitter: {
     card: "summary_large_image",
-    title: "ConnectMyCampus — Your campus, connected",
+    title: "Connect to Campus — Your campus, connected",
     description:
       "The community platform for Computer Science students in Indian colleges.",
     images: ["/og.png"],
@@ -60,7 +60,7 @@ export const metadata: Metadata = {
   appleWebApp: {
     capable: true,
     statusBarStyle: "black-translucent",
-    title: "ConnectMyCampus",
+    title: "Connect to Campus",
   },
   robots: {
     index: true,

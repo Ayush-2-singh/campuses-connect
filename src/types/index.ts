@@ -1,4 +1,4 @@
-// ─── ConnectMyCampus V3 types ─────────────────────────────────
+// ─── Connect to Campus V3 types ─────────────────────────────────
 
 export type PostScope = 'campus' | 'college_network' | 'global'
 
