@@ -1463,6 +1463,10 @@ export default function AdminPage() {
         ═══════════════════════════════════════════════════ */}
         {activeTab === 'Colleges' && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+            <button onClick={() => router.push('/admin/campuses')}
+              style={{ width: '100%', padding: '14px', borderRadius: 12, fontSize: 14, fontWeight: 700, border: '2px dashed var(--accent)', background: 'var(--accent-light)', color: 'var(--accent)', cursor: 'pointer', fontFamily: 'inherit', marginBottom: 8 }}>
+              🏫 Manage Campuses — Create, edit & activate colleges, campuses & departments
+            </button>
             {colleges.length === 0 ? (
               <p style={{ color: 'var(--text-muted)', textAlign: 'center', padding: '40px 0' }}>Loading colleges…</p>
             ) : colleges.map(c => (
