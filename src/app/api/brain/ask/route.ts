@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
-import { requireAuthLite, requirePremium } from '@/lib/api/middleware'
+import { requireAuthLite } from '@/lib/api/middleware'
 import { buildBrainPrompt, completeText, embedGemini } from '@/lib/brain'
 import { checkRateLimit } from '@/lib/rateLimit'
 
@@ -19,13 +19,7 @@ export async function POST(request: NextRequest) {
   if (!authResult.ok) return authResult.response
   const { userId } = authResult.auth
 
-  // Premium gate — AI Brain is a Pro feature
-  const premium = await requirePremium(userId)
-  if (!premium.ok) {
-    return NextResponse.json({ error: premium.error }, { status: 403 })
-  }
-
-  // Paid-AI protection: max 20 questions/hour per user
+  // Rate limit: max 20 questions/hour per user
   const rl = checkRateLimit(`ask:${userId}`, 20, 60 * 60 * 1000)
   if (!rl.ok) {
     return NextResponse.json({ error: `Question limit reached. Try again in ~${rl.retryAfterSec}s.` }, { status: 429 })
