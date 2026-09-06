@@ -22,7 +22,7 @@ export default function GoogleSignInButton({ label = 'Continue with Google' }: {
     const supabase = createClient()
     const { error: err } = await supabase.auth.signInWithOAuth({
       provider: 'google',
-      options: { redirectTo: `${window.location.origin}/auth/callback` },
+      options: { redirectTo: `https://connecttocampus.com/auth/callback` },
     })
     if (err) {
       setError(err.message || 'Google sign-in is not enabled yet. Use email instead.')

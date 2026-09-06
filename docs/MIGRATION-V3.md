@@ -1,4 +1,4 @@
-# Connect to Campus V3 — Migration Plan
+# ConnectToCampus V3 — Migration Plan
 
 How to move the current codebase + database to the V3 architecture.
 

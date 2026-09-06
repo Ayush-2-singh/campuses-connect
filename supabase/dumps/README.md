@@ -1,4 +1,4 @@
-# Connect to Campus — Database Backups
+# ConnectToCampus — Database Backups
 
 Full backup of the **live Supabase database** (project ref `tnlbqirrrjrkxkxlkpat`),
 taken via the Management API SQL endpoint (runs as postgres — captures ALL rows,

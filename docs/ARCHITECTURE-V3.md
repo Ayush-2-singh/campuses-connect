@@ -1,4 +1,4 @@
-# Connect to Campus V3 — Architecture
+# ConnectToCampus V3 — Architecture
 
 > AI-powered community platform for **Computer Science students in Indian colleges**.
 > No faculty. No school students. No exam-prep communities. CSE college students only.

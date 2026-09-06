@@ -52,7 +52,7 @@ export default function PremiumPage() {
             Everything is Free!
           </h1>
           <p style={{ fontSize: 14, color: 'var(--text-muted)', margin: 0, lineHeight: 1.6 }}>
-            All features on Connect to Campus are completely free. No subscriptions, no paywalls — ever.
+            All features on ConnectToCampus are completely free. No subscriptions, no paywalls — ever.
           </p>
           <div style={{
             marginTop: 12, padding: '8px 16px', borderRadius: 20,

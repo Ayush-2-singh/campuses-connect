@@ -26,7 +26,7 @@ const SECONDARY_NAV = [
 ]
 
 const FAB_ACTIONS = [
-  { label: 'Ask Connect to Campus', desc: 'Search, shortcuts & questions', icon: 'sparkles', action: 'cmd' as const },
+  { label: 'Ask ConnectToCampus', desc: 'Search, shortcuts & questions', icon: 'sparkles', action: 'cmd' as const },
   { label: 'Upload Note', desc: 'Add a resource to the library', icon: 'notebook', href: '/notes' },
   { label: 'Post Opportunity', desc: 'Internships, hackathons & more', icon: 'briefcase', href: '/opportunities' },
   { label: 'Explore More', desc: 'All features in one place', icon: 'more', href: '/more' },
@@ -239,7 +239,7 @@ export default function Layout({ children, user, profile }: { children: React.Re
               aria-label="Open search"
             >
               <Icon name="search" size={15} />
-              <span style={{ flex: 1, textAlign: 'left' }}>Ask Connect to Campus…</span>
+              <span style={{ flex: 1, textAlign: 'left' }}>Ask ConnectToCampus…</span>
               <kbd style={{ background: 'var(--bg)', border: '1px solid var(--border-strong)', borderRadius: 6, padding: '2px 6px', fontSize: 11, color: 'var(--text-muted)', fontFamily: 'inherit' }}>⌘K</kbd>
             </button>
             <div style={{ flex: 1 }} />

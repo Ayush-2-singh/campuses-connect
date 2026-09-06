@@ -128,7 +128,7 @@ export async function completeText(systemPrompt: string, userMessage: string, op
         'Content-Type': 'application/json',
         Authorization: `Bearer ${openrouterKey()}`,
         'HTTP-Referer': 'https://connecttocampus.com',
-        'X-Title': 'Connect to Campus',
+        'X-Title': 'ConnectToCampus',
       },
       body: JSON.stringify(body),
     })

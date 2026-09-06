@@ -1,4 +1,4 @@
-# 🎓 Connect to Campus
+# 🎓 ConnectToCampus
 
 **The all-in-one campus platform** — [connecttocampus.com](https://connecttocampus.com) — where students connect, compete, collaborate, and grow together.
 
@@ -45,9 +45,9 @@
 
 ---
 
-## 🌟 What is Connect to Campus?
+## 🌟 What is ConnectToCampus?
 
-Connect to Campus is a **full-featured campus management and social platform** that brings together everything a student needs — from academic tools to social networking, from job hunting to AI-powered learning. Think of it as your college's own LinkedIn + Discord + LeetCode + Course Hero — all in one place.
+ConnectToCampus is a **full-featured campus management and social platform** that brings together everything a student needs — from academic tools to social networking, from job hunting to AI-powered learning. Think of it as your college's own LinkedIn + Discord + LeetCode + Course Hero — all in one place.
 
 ---
 
