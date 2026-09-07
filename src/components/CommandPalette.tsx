@@ -114,7 +114,7 @@ export default function CommandPalette({ open, onClose }: { open: boolean; onClo
             ref={inputRef}
             value={query}
             onChange={e => setQuery(e.target.value)}
-            placeholder="Ask Campus Connect..."
+            placeholder="Ask ConnectToCampus..."
             aria-label="Ask Campus Connect"
             style={{
               flex: 1,

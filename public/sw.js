@@ -1,7 +1,7 @@
 /* ConnectToCampus enhanced service worker — offline-first for static pages,
    network-first for dynamic content. Caches key pages for offline access. */
 
-const CACHE_NAME = 'campus-connect-v2'
+const CACHE_NAME = 'connecttocampus-v2'
 const STATIC_CACHE = 'campus-static-v2'
 const DYNAMIC_CACHE = 'campus-dynamic-v2'
 

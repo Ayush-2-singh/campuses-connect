@@ -125,7 +125,7 @@ export default function Layout({ children, user, profile }: { children: React.Re
           </div>
           <div>
             <h1 style={{ fontSize: 16, fontWeight: 800, color: 'var(--text-primary)', margin: 0, lineHeight: 1.2, letterSpacing: '-0.02em' }}>
-              Connect<span className="text-gradient"> to Campus</span>
+              ConnectTo<span className="text-gradient">Campus</span>
             </h1>
             <p style={{ fontSize: 10.5, color: 'var(--text-muted)', margin: 0 }}>Your campus, connected.</p>
           </div>
@@ -277,7 +277,7 @@ export default function Layout({ children, user, profile }: { children: React.Re
                 <Icon name="grad" size={17} />
               </div>
               <h1 style={{ fontSize: 17, fontWeight: 800, color: 'var(--text-primary)', margin: 0 }}>
-                Connect<span style={{ color: 'var(--accent)' }}> to Campus</span>
+                ConnectTo<span style={{ color: 'var(--accent)' }}>Campus</span>
               </h1>
             </div>
             <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>

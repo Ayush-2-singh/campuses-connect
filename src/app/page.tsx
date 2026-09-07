@@ -74,7 +74,7 @@ export default function LandingPage() {
               <Icon name="grad" size={18} />
             </div>
             <h1 style={{ fontSize: 19, fontWeight: 800, margin: 0, color: 'var(--text-primary)' }}>
-              Connect<span style={{ color: 'var(--accent)' }}> to Campus</span>
+              ConnectTo<span style={{ color: 'var(--accent)' }}>Campus</span>
             </h1>
           </div>
           <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
