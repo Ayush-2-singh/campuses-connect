@@ -172,7 +172,10 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <head>
         {/* Preconnect for performance */}
         <link rel="preconnect" href="https://fonts.googleapis.com" />
-        <link rel="preconnect" href="https://tnlbqirrrjrkxkxlkpat.supabase.co" />
+        <link
+          rel="preconnect"
+          href={process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://tnlbqirrrjrkxkxlkpat.supabase.co'}
+        />
         <link rel="preconnect" href="https://openrouter.ai" />
 
         {/* JSON-LD Structured Data */}
