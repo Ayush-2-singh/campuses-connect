@@ -21,13 +21,12 @@ const nextConfig: NextConfig = {
   // Headers for caching and security
   async headers() {
     return [
-      // API routes — short cache with stale-while-revalidate
-      {
-        source: '/api/:path*',
-        headers: [
-          { key: 'Cache-Control', value: 'public, s-maxage=60, stale-while-revalidate=300' },
-        ],
-      },
+      // API routes — NO shared/public caching. Most endpoints are
+      // authenticated and return user-specific data (brain, applications,
+      // admin analytics…); `public, s-maxage` would let a shared/CDN cache
+      // serve one user's private response to the next requester. The service
+      // worker already does network-first for /api, so nothing is cached here.
+      // (Restore a scoped rule only for genuinely public, idempotent GETs.)
       // Static assets — immutable long cache
       {
         source: '/_next/static/:path*',

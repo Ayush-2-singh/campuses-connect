@@ -2,19 +2,21 @@
    network-first for dynamic content. Caches key pages for offline access. */
 
 const CACHE_NAME = 'connecttocampus-v2'
-const STATIC_CACHE = 'campus-static-v2'
-const DYNAMIC_CACHE = 'campus-dynamic-v2'
+// Cache version bumped to v3 so the activate handler purges any v2 entries
+// that were (incorrectly) cached error/redirect responses.
+const STATIC_CACHE = 'campus-static-v3'
+const DYNAMIC_CACHE = 'campus-dynamic-v3'
 
-// Pages to pre-cache for offline access
+// Pages to pre-cache for offline access. NOTE: auth/personal pages (e.g.
+// /feed, /notifications) are intentionally NOT precached — their content is
+// user-specific and must not be served from a shared cache to other sessions.
 const PRECACHE_URLS = [
   '/',
-  '/feed',
   '/more',
   '/badges',
   '/companies',
   '/integrations',
   '/leaderboard',
-  '/notifications',
   '/manifest.webmanifest',
   '/favicon.ico',
 ]
@@ -59,8 +61,11 @@ self.addEventListener('fetch', event => {
       caches.match(req).then(cached => {
         if (cached) return cached
         return fetch(req).then(response => {
-          const clone = response.clone()
-          caches.open(STATIC_CACHE).then(cache => cache.put(req, clone))
+          // Only cache successful responses — never errors (500/429 etc.).
+          if (response.ok) {
+            const clone = response.clone()
+            caches.open(STATIC_CACHE).then(cache => cache.put(req, clone))
+          }
           return response
         })
       })
@@ -72,8 +77,12 @@ self.addEventListener('fetch', event => {
   event.respondWith(
     caches.match(req).then(cached => {
       const fetchPromise = fetch(req).then(response => {
-        const clone = response.clone()
-        caches.open(DYNAMIC_CACHE).then(cache => cache.put(req, clone))
+        // Only cache successful, non-redirected pages — never error responses
+        // or auth redirects (a cached 500/307 would be served stale later).
+        if (response.ok && !response.redirected) {
+          const clone = response.clone()
+          caches.open(DYNAMIC_CACHE).then(cache => cache.put(req, clone))
+        }
         return response
       }).catch(() => {
         // If both cache and network fail, show offline page for navigation
