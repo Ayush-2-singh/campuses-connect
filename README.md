@@ -42,6 +42,7 @@
 | Aug 2026 | **Blog creation** | Rich editor with preview, tags, company/role fields |
 | Aug 2026 | **Blog SEO** | Full-text search, meta tags, slug URLs for ranking |
 | Aug 2026 | **Blog engagement** | Like, comment, bookmark, share on every post |
+| Sep 2026 | **Google OAuth docs** | Full setup guide: Google Console + Supabase provider config |
 
 ---
 
@@ -318,6 +319,72 @@ GOOGLE_AI_API_KEY=your_gemini_key
 1. Go to Supabase Dashboard → SQL Editor
 2. Run all migration files from `supabase/migrations/` in order
 3. The latest migration (040) includes all tables and functions
+
+### Google OAuth Setup (Login with Google)
+
+To enable "Sign in with Google" on login/signup pages, follow these steps:
+
+#### Step 1: Create Google Cloud OAuth Credentials
+
+1. Go to [Google Cloud Console](https://console.cloud.google.com/)
+2. **APIs & Services** → **Credentials** → **Create Credentials** → **OAuth 2.0 Client ID**
+3. Application type: **Web application**
+4. Add **Authorized redirect URIs**:
+   ```
+   https://<YOUR_SUPABASE_PROJECT_REF>.supabase.co/auth/v1/callback
+   ```
+   > Replace `<YOUR_SUPABASE_PROJECT_REF>` with your Supabase project reference (found in Supabase Dashboard → Settings → General → Project ID)
+5. Copy the **Client ID** and **Client Secret**
+
+#### Step 2: Configure Google Provider in Supabase
+
+1. Go to [Supabase Dashboard](https://supabase.com/dashboard) → Select your project
+2. **Authentication** → **Providers** → **Google**
+3. Toggle **Enable** to ON
+4. Enter:
+   - **Client ID** = The Client ID from Google Cloud Console
+   - **Client Secret** = The Client Secret from Google Cloud Console
+5. Set **Redirect URL** to:
+   ```
+   https://www.connecttocampus.com/auth/callback
+   ```
+   > For local development: `http://localhost:3000/auth/callback`
+
+#### Step 3: Verify Site URL in Supabase
+
+1. Go to **Supabase Dashboard** → **Authentication** → **URL Configuration**
+2. Set **Site URL** to:
+   ```
+   https://www.connecttocampus.com
+   ```
+3. Add to **Redirect URLs**:
+   ```
+   https://www.connecttocampus.com/auth/callback
+   https://connecttocampus.com/auth/callback
+   http://localhost:3000/auth/callback
+   ```
+
+#### Common Errors & Fixes
+
+| Error | Cause | Fix |
+|-------|-------|-----|
+| `redirect_uri_mismatch` | Google Console redirect URI missing | Add `https://<project-ref>.supabase.co/auth/v1/callback` to Google Console |
+| `invalid_client` | Wrong Client ID/Secret in Supabase | Re-copy credentials from Google Console |
+| Login loops back to login page | Callback URL mismatch | Ensure Supabase Redirect URL matches `https://www.connecttocampus.com/auth/callback` |
+| `provider_disabled` | Google provider not enabled in Supabase | Enable it in Authentication → Providers → Google |
+
+#### How the OAuth Flow Works
+
+```
+1. User clicks "Continue with Google"
+2. Browser → Supabase (signInWithOAuth)
+3. Supabase → Google (OAuth consent screen)
+4. Google → Supabase callback (/auth/v1/callback)
+5. Supabase → App callback (/auth/callback)
+6. App checks profile → redirects to /feed or /onboarding
+```
+
+> **Note:** The code in `GoogleSignInButton.tsx` uses `window.location.origin` dynamically, so it works on localhost, preview URLs, and production without code changes.
 
 ---
 
