@@ -2,10 +2,10 @@
    network-first for dynamic content. Caches key pages for offline access. */
 
 const CACHE_NAME = 'connecttocampus-v2'
-// Cache version bumped to v3 so the activate handler purges any v2 entries
-// that were (incorrectly) cached error/redirect responses.
-const STATIC_CACHE = 'campus-static-v3'
-const DYNAMIC_CACHE = 'campus-dynamic-v3'
+// Cache version bumped to v4 so the activate handler purges stale v3 CSS/SVG
+// entries (e.g. after adding the chat doodle background assets).
+const STATIC_CACHE = 'campus-static-v4'
+const DYNAMIC_CACHE = 'campus-dynamic-v4'
 
 // Pages to pre-cache for offline access. NOTE: auth/personal pages (e.g.
 // /feed, /notifications) are intentionally NOT precached — their content is

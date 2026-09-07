@@ -354,6 +354,20 @@ button:disabled {
   color: var(--text-muted) !important;
 }
 
+/* ── WhatsApp-style doodle chat background ──
+   Faint hand-drawn doodles tile behind the chat thread, like WhatsApp's
+   default wallpaper. Stroke color flips with the theme so it stays subtle
+   on both surfaces. */
+.chat-doodle-bg {
+  background-color: var(--bg-secondary);
+  background-image: url('/chat-doodles-light.svg');
+  background-size: 360px 360px;
+  background-repeat: repeat;
+}
+[data-theme='light'] .chat-doodle-bg {
+  background-image: url('/chat-doodles-dark.svg');
+}
+
 /* Card hover — border + shadow pick up the section accent */
 .card-hover {
   transition:
