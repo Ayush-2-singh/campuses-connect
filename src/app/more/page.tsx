@@ -17,12 +17,18 @@ const SECTIONS = [
   { icon: '👤', label: 'My Profile', desc: 'Your identity, links and activity', href: '/profile' },
   { icon: '❓', label: 'Ask a Senior', desc: 'Doubt-solving with your college seniors', href: '/ask' },
   { icon: '📝', label: 'Blog', desc: 'Read & write campus stories, guides & experiences', href: '/blog' },
+  { icon: '✏️', label: 'Doodle', desc: 'Sketch, draw & express yourself — WhatsApp style', href: '/doodle' },
   { icon: '📊', label: 'Campus Polls', desc: 'Vote on what matters — live results', href: '/polls' },
   { icon: '🌐', label: 'Global Communities', desc: 'DSA, Web Development & Startups', href: '/communities' },
   { icon: '🔖', label: 'Saved', desc: 'Posts you bookmarked', href: '/saved' },
   { icon: '🔍', label: 'Lost & Found', desc: 'Report lost items or return found ones', href: '/lost-found' },
   { icon: '🚂', label: 'Travel Buddies', desc: 'Find campus mates on the same route', href: '/travel' },
-  { icon: '🏫', label: 'Change Campus', desc: 'Switch to a different campus (ID verification required)', href: '/campus-change' },
+  {
+    icon: '🏫',
+    label: 'Change Campus',
+    desc: 'Switch to a different campus (ID verification required)',
+    href: '/campus-change',
+  },
   { icon: '🏢', label: 'Companies & Jobs', desc: 'Explore companies, openings & interview exp', href: '/companies' },
   { icon: '🔗', label: 'Integrations', desc: 'Connect GitHub & LeetCode for the leaderboard', href: '/integrations' },
   { icon: '🏆', label: 'Leaderboard', desc: 'Top contributors on your campus', href: '/leaderboard' },
@@ -40,7 +46,9 @@ export default function MorePage() {
 
   useEffect(() => {
     const load = async () => {
-      const { data: { user } } = await supabase.auth.getUser()
+      const {
+        data: { user },
+      } = await supabase.auth.getUser()
       if (user) {
         setUser(user)
         const { data } = await supabase.from('profiles').select('*').eq('id', user.id).single()
@@ -60,31 +68,69 @@ export default function MorePage() {
 
         {/* Stats Card */}
         {profile && (
-          <div style={{ background: 'var(--bg)', border: '1px solid var(--border)', borderRadius: 16, padding: '20px', marginBottom: 20, boxShadow: 'var(--shadow-sm)' }}>
-            <h3 style={{ fontSize: 14, fontWeight: 700, color: 'var(--text-primary)', margin: '0 0 16px' }}>Your Stats</h3>
+          <div
+            style={{
+              background: 'var(--bg)',
+              border: '1px solid var(--border)',
+              borderRadius: 16,
+              padding: '20px',
+              marginBottom: 20,
+              boxShadow: 'var(--shadow-sm)',
+            }}
+          >
+            <h3 style={{ fontSize: 14, fontWeight: 700, color: 'var(--text-primary)', margin: '0 0 16px' }}>
+              Your Stats
+            </h3>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 14 }}>
-              <div style={{ background: 'var(--bg-secondary)', borderRadius: 12, padding: '14px', textAlign: 'center' }}>
-                <p style={{ fontSize: 28, fontWeight: 800, color: 'var(--accent-text)', margin: '0 0 4px' }}>{profile.aura_points || 0}</p>
+              <div
+                style={{ background: 'var(--bg-secondary)', borderRadius: 12, padding: '14px', textAlign: 'center' }}
+              >
+                <p style={{ fontSize: 28, fontWeight: 800, color: 'var(--accent-text)', margin: '0 0 4px' }}>
+                  {profile.aura_points || 0}
+                </p>
                 <p style={{ fontSize: 12, color: 'var(--text-muted)', margin: 0 }}>Aura ⚡ (season)</p>
               </div>
-              <div style={{ background: 'var(--bg-secondary)', borderRadius: 12, padding: '14px', textAlign: 'center' }}>
-                <p style={{ fontSize: 28, fontWeight: 800, color: 'var(--yellow-text)', margin: '0 0 4px' }}>{profile.karma_points || 0}</p>
+              <div
+                style={{ background: 'var(--bg-secondary)', borderRadius: 12, padding: '14px', textAlign: 'center' }}
+              >
+                <p style={{ fontSize: 28, fontWeight: 800, color: 'var(--yellow-text)', margin: '0 0 4px' }}>
+                  {profile.karma_points || 0}
+                </p>
                 <p style={{ fontSize: 12, color: 'var(--text-muted)', margin: 0 }}>Karma ⭐ (lifetime)</p>
               </div>
             </div>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 14 }}>
-              <div style={{ background: 'var(--bg-secondary)', borderRadius: 12, padding: '14px', textAlign: 'center' }}>
-                <p style={{ fontSize: 28, fontWeight: 800, color: 'var(--orange-text)', margin: '0 0 4px' }}>{profile.streak_days || 0}</p>
+              <div
+                style={{ background: 'var(--bg-secondary)', borderRadius: 12, padding: '14px', textAlign: 'center' }}
+              >
+                <p style={{ fontSize: 28, fontWeight: 800, color: 'var(--orange-text)', margin: '0 0 4px' }}>
+                  {profile.streak_days || 0}
+                </p>
                 <p style={{ fontSize: 12, color: 'var(--text-muted)', margin: 0 }}>Day Streak 🔥</p>
               </div>
-              <div style={{ background: 'var(--bg-secondary)', borderRadius: 12, padding: '14px', textAlign: 'center' }}>
-                <p style={{ fontSize: 28, fontWeight: 800, color: 'var(--purple-text)', margin: '0 0 4px' }}>{profile.streak_freezes || 0}</p>
+              <div
+                style={{ background: 'var(--bg-secondary)', borderRadius: 12, padding: '14px', textAlign: 'center' }}
+              >
+                <p style={{ fontSize: 28, fontWeight: 800, color: 'var(--purple-text)', margin: '0 0 4px' }}>
+                  {profile.streak_freezes || 0}
+                </p>
                 <p style={{ fontSize: 12, color: 'var(--text-muted)', margin: 0 }}>Freezes ❄️</p>
               </div>
             </div>
             <button
               onClick={() => router.push('/leaderboard')}
-              style={{ width: '100%', background: 'var(--accent-light)', color: 'var(--accent)', border: 'none', borderRadius: 10, padding: '10px', fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}
+              style={{
+                width: '100%',
+                background: 'var(--accent-light)',
+                color: 'var(--accent)',
+                border: 'none',
+                borderRadius: 10,
+                padding: '10px',
+                fontSize: 13,
+                fontWeight: 600,
+                cursor: 'pointer',
+                fontFamily: 'inherit',
+              }}
             >
               View Campus Leaderboard →
             </button>
@@ -93,15 +139,29 @@ export default function MorePage() {
 
         {/* Sections */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-          {SECTIONS.map(s => (
+          {SECTIONS.map((s) => (
             <button
               key={s.href}
               onClick={() => router.push(s.href)}
-              style={{ background: 'var(--bg)', border: '1px solid var(--border)', borderRadius: 14, padding: '16px 18px', textAlign: 'left', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 14, boxShadow: 'var(--shadow-sm)', fontFamily: 'inherit' }}
+              style={{
+                background: 'var(--bg)',
+                border: '1px solid var(--border)',
+                borderRadius: 14,
+                padding: '16px 18px',
+                textAlign: 'left',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: 14,
+                boxShadow: 'var(--shadow-sm)',
+                fontFamily: 'inherit',
+              }}
             >
               <span style={{ fontSize: 28, flexShrink: 0 }}>{s.icon}</span>
               <div style={{ flex: 1 }}>
-                <p style={{ fontSize: 14, fontWeight: 600, color: 'var(--text-primary)', margin: '0 0 3px' }}>{s.label}</p>
+                <p style={{ fontSize: 14, fontWeight: 600, color: 'var(--text-primary)', margin: '0 0 3px' }}>
+                  {s.label}
+                </p>
                 <p style={{ fontSize: 12, color: 'var(--text-muted)', margin: 0 }}>{s.desc}</p>
               </div>
               <span style={{ fontSize: 16, color: 'var(--text-muted)' }}>→</span>
