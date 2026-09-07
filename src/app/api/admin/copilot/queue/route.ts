@@ -15,8 +15,8 @@ export async function GET() {
     return NextResponse.json({ error: 'Admins only.' }, { status: 403 })
   }
 
-  const rl = checkRateLimit(`copilot:queue:${userId}`, 60, 60 * 60 * 1000)
-  if (!rl.ok) {
+  const allowed = await checkRateLimit(userId, 'copilot:queue', 60, 60)
+  if (!allowed) {
     return NextResponse.json({ error: 'Too many requests.' }, { status: 429 })
   }
 

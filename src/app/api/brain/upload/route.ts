@@ -18,9 +18,9 @@ export async function POST(request: NextRequest) {
   const { userId } = authResult.auth
 
   // Rate limit: max 5 uploads/hour per user
-  const rl = checkRateLimit(`upload:${userId}`, 5, 60 * 60 * 1000)
-  if (!rl.ok) {
-    return NextResponse.json({ error: `Upload limit reached. Try again in ~${rl.retryAfterSec}s.` }, { status: 429 })
+  const allowed = await checkRateLimit(userId, 'brain:upload', 5, 60)
+  if (!allowed) {
+    return NextResponse.json({ error: 'Upload limit reached. Please try again later.' }, { status: 429 })
   }
 
   const form = await request.formData().catch(() => null)
@@ -87,7 +87,7 @@ export async function POST(request: NextRequest) {
   try {
     for (let i = 0; i < chunks.length; i += EMBED_BATCH_SIZE) {
       const batch = chunks.slice(i, i + EMBED_BATCH_SIZE)
-      const embeddings = await Promise.all(batch.map(c => embedGemini(c, 'RETRIEVAL_DOCUMENT')))
+      const embeddings = await Promise.all(batch.map((c) => embedGemini(c, 'RETRIEVAL_DOCUMENT')))
       const rows = batch.map((c, j) => ({
         document_id: doc.id,
         user_id: userId,
@@ -103,8 +103,11 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: `Embedding failed: ${e.message}` }, { status: 502 })
   }
 
-  return NextResponse.json({
-    document: { id: doc.id, title: doc.title },
-    chunkCount: inserted.length,
-  }, { status: 201 })
+  return NextResponse.json(
+    {
+      document: { id: doc.id, title: doc.title },
+      chunkCount: inserted.length,
+    },
+    { status: 201 }
+  )
 }

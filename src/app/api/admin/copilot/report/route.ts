@@ -12,8 +12,8 @@ export async function POST(request: NextRequest) {
   if (!authResult.ok) return authResult.response
   const { userId } = authResult.auth
 
-  const rl = checkRateLimit(`copilot:report:${userId}`, 30, 60 * 60 * 1000)
-  if (!rl.ok) {
+  const allowed = await checkRateLimit(userId, 'copilot:report', 30, 60)
+  if (!allowed) {
     return NextResponse.json({ error: 'Too many reports.' }, { status: 429 })
   }
 

@@ -20,9 +20,9 @@ export async function POST(request: NextRequest) {
   const { userId } = authResult.auth
 
   // Rate limit: max 20 questions/hour per user
-  const rl = checkRateLimit(`ask:${userId}`, 20, 60 * 60 * 1000)
-  if (!rl.ok) {
-    return NextResponse.json({ error: `Question limit reached. Try again in ~${rl.retryAfterSec}s.` }, { status: 429 })
+  const allowed = await checkRateLimit(userId, 'brain:ask', 20, 60)
+  if (!allowed) {
+    return NextResponse.json({ error: 'Too many requests. Please try again later.' }, { status: 429 })
   }
 
   let body: { question?: string; history?: { role: string; content: string }[] }
@@ -59,11 +59,13 @@ export async function POST(request: NextRequest) {
     supabase.rpc('match_brain_memories', { query_embedding: queryEmbedding, match_count: 2, filter_user_id: userId }),
   ])
 
-  const sources = ((chunkMatches as any[]) || []).filter(m => (m.similarity ?? 0) > 0.3).map((m: any) => ({
-    source: m.source,
-    content: m.content,
-    similarity: m.similarity,
-  }))
+  const sources = ((chunkMatches as any[]) || [])
+    .filter((m) => (m.similarity ?? 0) > 0.3)
+    .map((m: any) => ({
+      source: m.source,
+      content: m.content,
+      similarity: m.similarity,
+    }))
   const memories = (memoryMatches as any[]) || []
 
   // 3. Build the RAG prompt and answer
@@ -75,7 +77,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: `Answer failed: ${e.message}` }, { status: 502 })
   }
 
-  const sourceList = sources.map(s => ({ source: s.source, similarity: s.similarity }))
+  const sourceList = sources.map((s) => ({ source: s.source, similarity: s.similarity }))
 
   // Cache the answer for future identical questions
   answerCache.set(ck, { answer, sources: sourceList, ts: Date.now() })

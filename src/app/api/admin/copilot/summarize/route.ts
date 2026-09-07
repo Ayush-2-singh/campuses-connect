@@ -15,8 +15,8 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Admins only.' }, { status: 403 })
   }
 
-  const rl = checkRateLimit(`copilot:summarize:${userId}`, 20, 60 * 60 * 1000)
-  if (!rl.ok) {
+  const allowed = await checkRateLimit(userId, 'copilot:summarize', 20, 60)
+  if (!allowed) {
     return NextResponse.json({ error: 'Too many summaries.' }, { status: 429 })
   }
 

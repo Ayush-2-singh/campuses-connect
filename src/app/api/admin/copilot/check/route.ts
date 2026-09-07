@@ -11,9 +11,9 @@ export async function POST(request: NextRequest) {
   if (!authResult.ok) return authResult.response
   const { userId } = authResult.auth
 
-  const rl = checkRateLimit(`copilot:check:${userId}`, 30, 60 * 60 * 1000)
-  if (!rl.ok) {
-    return NextResponse.json({ error: `Review limit reached. Try again in ~${rl.retryAfterSec}s.` }, { status: 429 })
+  const allowed = await checkRateLimit(userId, 'copilot:check', 30, 60)
+  if (!allowed) {
+    return NextResponse.json({ error: 'Too many requests. Please try again later.' }, { status: 429 })
   }
 
   let body: { text?: string; contentType?: string }

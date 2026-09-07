@@ -21,9 +21,9 @@ export async function POST(request: NextRequest) {
   if (!authResult.ok) return authResult.response
   const { userId } = authResult.auth
 
-  const rl = checkRateLimit(`notes-ask:${userId}`, 15, 60 * 60 * 1000)
-  if (!rl.ok) {
-    return NextResponse.json({ error: `Ask limit reached. Try again in ~${rl.retryAfterSec}s.` }, { status: 429 })
+  const allowed = await checkRateLimit(userId, 'notes:ask', 15, 60)
+  if (!allowed) {
+    return NextResponse.json({ error: 'Too many requests. Please try again later.' }, { status: 429 })
   }
 
   let body: { question?: string }
@@ -45,7 +45,7 @@ export async function POST(request: NextRequest) {
     .limit(200)
 
   const catalog = (notes || [])
-    .map(n => {
+    .map((n) => {
       const parts = [`"${n.title}"`, n.subject || 'General']
       if (n.semester) parts.push(`Sem ${n.semester}`)
       if (n.description) parts.push(String(n.description).slice(0, 120))
@@ -71,10 +71,17 @@ export async function POST(request: NextRequest) {
   }
 
   if (!answer) {
-    const terms = question.toLowerCase().split(/\s+/).filter(w => w.length > 3).slice(0, 6)
-    const hits = (notes || []).filter(n => terms.some(t => `${n.title} ${n.subject}`.toLowerCase().includes(t))).slice(0, 5)
-    answer = 'I could not pull a full AI answer right now. Here are the closest notes from the library — try one of the sources below, or rephrase your question.'
-    sources = hits.map(n => n.title)
+    const terms = question
+      .toLowerCase()
+      .split(/\s+/)
+      .filter((w) => w.length > 3)
+      .slice(0, 6)
+    const hits = (notes || [])
+      .filter((n) => terms.some((t) => `${n.title} ${n.subject}`.toLowerCase().includes(t)))
+      .slice(0, 5)
+    answer =
+      'I could not pull a full AI answer right now. Here are the closest notes from the library — try one of the sources below, or rephrase your question.'
+    sources = hits.map((n) => n.title)
   }
 
   return NextResponse.json({ answer, sources })

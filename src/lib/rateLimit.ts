@@ -1,22 +1,30 @@
-// Lightweight in-memory sliding-window rate limiter.
-// Sufficient for a single-instance Next.js deployment at campus scale.
-// NOTE: on multi-instance deploys (e.g. horizontal Vercel scaling), switch to
-// a shared store (Redis/Postgres) — see /api/brain routes.
-
-const buckets = new Map<string, number[]>()
+import { createClient } from '@/lib/supabase/server'
 
 /**
- * Returns true if the caller is within the limit, false otherwise.
- * Window is a sliding window of `limit` calls per `windowMs`.
+ * Postgres-backed rate limiter using the `check_rate_limit` RPC
+ * (rate_limits table — migration 043). Consistent across every Vercel
+ * instance, so a 10k-user load can't bypass limits by hitting different
+ * servers (the old in-memory Map reset per instance and was bypassable).
+ *
+ * Fail-open: if the RPC/DB errors, we allow the request and log, so a
+ * transient DB issue never locks users out of uploads/submissions.
  */
-export function checkRateLimit(key: string, limit: number, windowMs: number): { ok: boolean; retryAfterSec?: number } {
-  const now = Date.now()
-  const bucket = (buckets.get(key) || []).filter(t => now - t < windowMs)
-  if (bucket.length >= limit) {
-    buckets.set(key, bucket)
-    return { ok: false, retryAfterSec: Math.max(1, Math.ceil((windowMs - (now - bucket[0])) / 1000)) }
+export async function checkRateLimit(
+  userId: string,
+  endpoint: string,
+  limit: number,
+  windowMinutes: number = 60
+): Promise<boolean> {
+  const supabase = await createClient()
+  const { data, error } = await supabase.rpc('check_rate_limit', {
+    p_user_id: userId,
+    p_endpoint: endpoint,
+    p_limit: limit,
+    p_window_minutes: windowMinutes,
+  })
+  if (error) {
+    console.error(`rate-limit error (${endpoint}):`, error.message)
+    return true
   }
-  bucket.push(now)
-  buckets.set(key, bucket)
-  return { ok: true }
+  return data !== false
 }

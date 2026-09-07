@@ -12,9 +12,9 @@ export async function POST(request: NextRequest) {
   const { userId } = authResult.auth
 
   // Rate limit: max 20 saves/hour per user
-  const rl = checkRateLimit(`memorize:${userId}`, 20, 60 * 60 * 1000)
-  if (!rl.ok) {
-    return NextResponse.json({ error: `Save limit reached. Try again in ~${rl.retryAfterSec}s.` }, { status: 429 })
+  const allowed = await checkRateLimit(userId, 'brain:memorize', 20, 60)
+  if (!allowed) {
+    return NextResponse.json({ error: 'Too many requests. Please try again later.' }, { status: 429 })
   }
 
   let body: { question?: string; answer?: string }
@@ -32,12 +32,9 @@ export async function POST(request: NextRequest) {
 
   // 1. Extract structured memory via Groq (port of memory_engine.py)
   const memory = await extractMemoryViaGroq(question, answer)
-  const combined = [
-    memory.knowledge_gained,
-    memory.struggles_faced,
-    memory.behavioral_lifestyle,
-    memory.core_facts,
-  ].filter(Boolean).join('\n')
+  const combined = [memory.knowledge_gained, memory.struggles_faced, memory.behavioral_lifestyle, memory.core_facts]
+    .filter(Boolean)
+    .join('\n')
 
   if (!combined) {
     return NextResponse.json({ error: 'Nothing meaningful to remember.' }, { status: 422 })
