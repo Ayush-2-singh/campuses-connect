@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { requireAuthLite } from '@/lib/api/middleware'
+import { clearUserBrainCache } from '@/lib/brainCache'
 
 export const runtime = 'nodejs'
 
@@ -46,5 +47,7 @@ export async function DELETE(request: NextRequest) {
   if (error) {
     return NextResponse.json({ error: 'Failed to delete document.' }, { status: 500 })
   }
+  // Deleted knowledge could leave stale cached answers — invalidate them
+  clearUserBrainCache(userId)
   return NextResponse.json({ ok: true })
 }

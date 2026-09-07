@@ -11,6 +11,7 @@ interface Msg {
   content: string
   sources?: { source: string; similarity?: number }[]
   usedMemory?: boolean
+  streaming?: boolean
   saved?: boolean
   saving?: boolean
 }
@@ -35,18 +36,31 @@ export default function BrainPage() {
 
   const loadDocs = async () => {
     const res = await fetch('/api/brain/documents', { credentials: 'include' })
-    if (res.ok) { const json = await res.json(); setDocs(json.data || []) }
+    if (res.ok) {
+      const json = await res.json()
+      setDocs(json.data || [])
+    }
   }
 
   const loadMemories = async () => {
     const res = await fetch('/api/brain/memories', { credentials: 'include' })
-    if (res.ok) { const json = await res.json(); setMemories(json.data || []) }
+    if (res.ok) {
+      const json = await res.json()
+      setMemories(json.data || [])
+    }
   }
 
   useEffect(() => {
     const load = async () => {
-      const { data: { user } } = await supabase.auth.getUser()
-      if (!user) { router.replace('/auth/login?redirect=' + encodeURIComponent(typeof window !== 'undefined' ? window.location.pathname : '')); return }
+      const {
+        data: { user },
+      } = await supabase.auth.getUser()
+      if (!user) {
+        router.replace(
+          '/auth/login?redirect=' + encodeURIComponent(typeof window !== 'undefined' ? window.location.pathname : '')
+        )
+        return
+      }
       setUser(user)
       const { data } = await supabase.from('profiles').select('*').eq('id', user.id).single()
       setProfile(data)
@@ -65,27 +79,75 @@ export default function BrainPage() {
     if (!question || asking) return
     setInput('')
     setError('')
-    setMessages(m => [...m, { role: 'user', content: question }])
+    // Stable base so we can patch the exact assistant bubble while streaming
+    const baseLen = messages.length
+    const assistantIdx = baseLen + 1
+    setMessages((m) => [...m, { role: 'user', content: question }, { role: 'assistant', content: '', streaming: true }])
     setAsking(true)
     try {
-      const history = messages.slice(-6).map(m => ({ role: m.role, content: m.content }))
+      const history = messages.slice(-6).map((m) => ({ role: m.role, content: m.content }))
       const res = await fetch('/api/brain/ask', {
         method: 'POST',
         credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ question, history }),
       })
-      const json = await res.json()
-      if (!res.ok) throw new Error(json.error || 'Failed to get an answer.')
-      setMessages(m => [...m, {
-        role: 'assistant',
-        content: json.answer,
-        sources: json.sources,
-        usedMemory: json.usedMemory,
-      }])
+      if (!res.ok) {
+        const j = await res.json().catch(() => ({}))
+        throw new Error(j.error || 'Failed to get an answer.')
+      }
+      if (!res.body) throw new Error('No response stream.')
+
+      // Consume the NDJSON stream: {type:'delta',text} … {type:'meta',sources,usedMemory|answer} | {type:'error',error}
+      const reader = res.body.getReader()
+      const decoder = new TextDecoder()
+      let buffer = ''
+      let full = ''
+      let sources: Msg['sources']
+      let usedMemory: boolean | undefined
+      while (true) {
+        const { done, value } = await reader.read()
+        if (done) break
+        buffer += decoder.decode(value, { stream: true })
+        let nl: number
+        while ((nl = buffer.indexOf('\n')) !== -1) {
+          const line = buffer.slice(0, nl).trim()
+          buffer = buffer.slice(nl + 1)
+          if (!line) continue
+          let msg: any
+          try {
+            msg = JSON.parse(line)
+          } catch {
+            continue
+          }
+          if (msg.type === 'delta' && typeof msg.text === 'string') {
+            full += msg.text
+            setMessages((m) => m.map((mm, i) => (i === assistantIdx ? { ...mm, content: mm.content + msg.text } : mm)))
+          } else if (msg.type === 'meta') {
+            sources = msg.sources
+            usedMemory = msg.usedMemory
+            // Cache hits carry the full answer (no delta events) — render it directly
+            if (typeof msg.answer === 'string' && msg.answer && !full) {
+              full = msg.answer
+              setMessages((m) => m.map((mm, i) => (i === assistantIdx ? { ...mm, content: msg.answer } : mm)))
+            }
+          } else if (msg.type === 'error') {
+            throw new Error(msg.error || 'Answer generation failed.')
+          }
+        }
+      }
+      setMessages((m) =>
+        m.map((mm, i) =>
+          i === assistantIdx ? { ...mm, content: full || mm.content, sources, usedMemory, streaming: false } : mm
+        )
+      )
     } catch (e: any) {
       setError(e.message)
-      setMessages(m => [...m, { role: 'assistant', content: `⚠️ ${e.message}` }])
+      setMessages((m) =>
+        m.map((mm, i) =>
+          i === assistantIdx ? { ...mm, content: mm.content || `⚠️ ${e.message}`, streaming: false } : mm
+        )
+      )
     } finally {
       setAsking(false)
     }
@@ -96,7 +158,7 @@ export default function BrainPage() {
     if (!target || target.role !== 'assistant') return
     const prev = messages[index - 1]
     if (!prev || prev.role !== 'user') return
-    setMessages(msgs => msgs.map((m, i) => i === index ? { ...m, saving: true } : m))
+    setMessages((msgs) => msgs.map((m, i) => (i === index ? { ...m, saving: true } : m)))
     setError('')
     try {
       const res = await fetch('/api/brain/memorize', {
@@ -107,11 +169,11 @@ export default function BrainPage() {
       })
       const json = await res.json()
       if (!res.ok) throw new Error(json.error || 'Could not save memory.')
-      setMessages(msgs => msgs.map((m, i) => i === index ? { ...m, saved: true, saving: false } : m))
+      setMessages((msgs) => msgs.map((m, i) => (i === index ? { ...m, saved: true, saving: false } : m)))
       loadMemories()
     } catch (e: any) {
       setError(e.message)
-      setMessages(msgs => msgs.map((m, i) => i === index ? { ...m, saving: false } : m))
+      setMessages((msgs) => msgs.map((m, i) => (i === index ? { ...m, saving: false } : m)))
     }
   }
 
@@ -150,182 +212,414 @@ export default function BrainPage() {
   }
 
   const inputStyle = {
-    width: '100%', border: '1px solid var(--border)', borderRadius: 10,
-    padding: '10px 14px', fontSize: 14, outline: 'none', fontFamily: 'inherit',
-    color: 'var(--text-primary)', background: 'var(--bg)', boxSizing: 'border-box' as const,
+    width: '100%',
+    border: '1px solid var(--border)',
+    borderRadius: 10,
+    padding: '10px 14px',
+    fontSize: 14,
+    outline: 'none',
+    fontFamily: 'inherit',
+    color: 'var(--text-primary)',
+    background: 'var(--bg)',
+    boxSizing: 'border-box' as const,
   }
 
   return (
     <Layout user={user} profile={profile}>
       <PremiumGate featureKey="brain" showPreview={true}>
-      <div className="ambient" style={{ maxWidth: 720, margin: '0 auto', padding: '24px 20px' }}>
-        <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 20 }}>
-          <div>
-            <h2 style={{ fontSize: 22, fontWeight: 700, color: 'var(--text-primary)', margin: '0 0 4px' }}>🧠 AI Brain</h2>
-            <p style={{ fontSize: 13, color: 'var(--text-muted)', margin: 0 }}>
-              Your personal academic memory — upload notes, ask anything, never forget
-            </p>
-          </div>
-          {user && (
-            <button onClick={() => setShowUpload(s => !s)}
-              style={{ background: 'var(--accent)', color: 'var(--on-accent)', border: 'none', padding: '9px 18px', borderRadius: 10, fontSize: 14, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>
-              + Upload
-            </button>
-          )}
-        </div>
-
-        {/* Tabs */}
-        <div style={{ display: 'flex', gap: 4, borderBottom: '1px solid var(--border)', marginBottom: 16 }}>
-          {[{ key: 'chat', label: 'Ask your Brain' }, { key: 'files', label: `My Files (${docs.length})` }].map(t => (
-            <button key={t.key} onClick={() => setTab(t.key as any)}
-              style={{ padding: '10px 18px', fontSize: 14, fontWeight: 500, border: 'none', background: 'none', cursor: 'pointer', fontFamily: 'inherit',
-                color: tab === t.key ? 'var(--accent)' : 'var(--text-secondary)',
-                borderBottom: tab === t.key ? '2px solid var(--accent)' : '2px solid transparent', marginBottom: -1 }}>
-              {t.label}
-            </button>
-          ))}
-        </div>
-
-        {error && (
-          <div style={{ background: 'var(--danger-light)', border: '1px solid var(--danger-border)', borderRadius: 10, padding: '10px 14px', marginBottom: 14, fontSize: 13, color: 'var(--danger)' }}>
-            {error}
-          </div>
-        )}
-
-        {/* Upload */}
-        {showUpload && (
-          <div style={{ background: 'var(--bg)', border: '1px solid var(--border)', borderRadius: 14, padding: 20, marginBottom: 20, boxShadow: 'var(--shadow-sm)' }}>
-            <h3 style={{ fontSize: 15, fontWeight: 700, color: 'var(--text-primary)', margin: '0 0 12px' }}>Add to your brain</h3>
-            <p style={{ fontSize: 12, color: 'var(--text-muted)', margin: '0 0 12px' }}>
-              PDF, TXT, MD, or photos of notes (PNG/JPG). Text is embedded and becomes searchable.
-            </p>
-            <div style={{ display: 'flex', gap: 8 }}>
-              <input ref={fileRef} type="file" accept=".pdf,.txt,.md,.png,.jpg,.jpeg"
-                onChange={e => { const f = e.target.files?.[0]; if (f) handleUpload(f) }}
-                style={{ flex: 1, border: '1px solid var(--border)', borderRadius: 10, padding: '9px 12px', fontSize: 13, background: 'var(--bg)', fontFamily: 'inherit' }} />
-              {uploading && <span style={{ alignSelf: 'center', fontSize: 13, color: 'var(--text-muted)' }}>⏳ {uploadStatus}</span>}
-            </div>
-            {uploadStatus && !uploading && <p style={{ fontSize: 13, color: 'var(--success-text)', margin: '10px 0 0', fontWeight: 600 }}>{uploadStatus}</p>}
-          </div>
-        )}
-
-        {tab === 'chat' && (
-          <div>
-            {/* Chat */}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 12, marginBottom: 16 }}>
-              {messages.length === 0 && (
-                <div style={{ textAlign: 'center', padding: '30px 0', color: 'var(--text-muted)' }}>
-                  <div style={{ fontSize: 40, marginBottom: 8 }}>🧠</div>
-                  <p style={{ fontSize: 14, margin: '0 0 4px' }}>Ask anything about your notes.</p>
-                  <p style={{ fontSize: 12, margin: 0 }}>Try: {'"Summarize everything I know about Binary Trees"'}</p>
-                </div>
-              )}
-              {messages.map((m, i) => (
-                <div key={i} style={{
-                  alignSelf: m.role === 'user' ? 'flex-end' : 'flex-start',
-                  maxWidth: '92%', background: m.role === 'user' ? 'var(--accent)' : 'var(--bg)',
-                  color: m.role === 'user' ? 'var(--on-accent)' : 'var(--text-primary)',
-                  border: m.role === 'user' ? 'none' : '1px solid var(--border)',
-                  borderRadius: 14, padding: '12px 16px', boxShadow: 'var(--shadow-sm)',
-                  whiteSpace: 'pre-wrap', lineHeight: 1.6, fontSize: 14,
-                }}>
-                  {m.content}
-                  {m.role === 'assistant' && m.sources && m.sources.length > 0 && (
-                    <div style={{ marginTop: 10, display: 'flex', flexWrap: 'wrap', gap: 6 }}>
-                      {m.sources.map((s, j) => (
-                        <span key={j} style={{ fontSize: 11, background: 'var(--purple-light)', color: 'var(--purple-text)', padding: '3px 10px', borderRadius: 20, fontWeight: 600 }}>
-                          📄 {s.source}
-                        </span>
-                      ))}
-                    </div>
-                  )}
-                  {m.role === 'assistant' && m.usedMemory && (
-                    <p style={{ fontSize: 11, color: 'var(--text-muted)', margin: '8px 0 0' }}>🧠 used your saved memories</p>
-                  )}
-                  {m.role === 'assistant' && !m.saved && (
-                    <button onClick={() => handleSaveMemory(i)} disabled={m.saving}
-                      style={{ marginTop: 10, fontSize: 12, background: 'var(--accent-light)', color: 'var(--accent)', border: '1px solid var(--accent-border)', padding: '5px 12px', borderRadius: 20, fontWeight: 600, cursor: m.saving ? 'default' : 'pointer', fontFamily: 'inherit' }}>
-                      {m.saving ? 'Saving...' : '💾 Save to memory'}
-                    </button>
-                  )}
-                  {m.role === 'assistant' && m.saved && (
-                    <p style={{ fontSize: 11, color: 'var(--success-text)', margin: '8px 0 0', fontWeight: 600 }}>✓ Saved to your memory</p>
-                  )}
-                </div>
-              ))}
-              <div ref={bottomRef} />
-            </div>
-
-            {/* Input */}
-            <div style={{ display: 'flex', gap: 8 }}>
-              <input type="text" value={input} onChange={e => setInput(e.target.value)}
-                onKeyDown={e => e.key === 'Enter' && handleAsk()}
-                placeholder="Ask your brain..." style={{ ...inputStyle, flex: 1 }} />
-              <button onClick={handleAsk} disabled={!input.trim() || asking}
-                style={{ padding: '10px 20px', borderRadius: 10, border: 'none', background: !input.trim() || asking ? 'var(--disabled)' : 'var(--accent)', color: 'var(--on-accent)', fontSize: 14, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }} className={!input.trim() || asking ? '' : 'grad-ai'}>
-                {asking ? '…' : 'Ask'}
-              </button>
-            </div>
-          </div>
-        )}
-
-        {tab === 'files' && (
-          <div>
-            {/* Documents */}
-            <h3 style={{ fontSize: 15, fontWeight: 700, color: 'var(--text-primary)', margin: '0 0 10px' }}>📚 Your documents</h3>
-            {docs.length === 0 ? (
-              <p style={{ fontSize: 13, color: 'var(--text-muted)', textAlign: 'center', padding: '30px 0' }}>
-                No documents yet. Upload your notes to start building your brain.
+        <div className="ambient" style={{ maxWidth: 720, margin: '0 auto', padding: '24px 20px' }}>
+          <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 20 }}>
+            <div>
+              <h2 style={{ fontSize: 22, fontWeight: 700, color: 'var(--text-primary)', margin: '0 0 4px' }}>
+                🧠 AI Brain
+              </h2>
+              <p style={{ fontSize: 13, color: 'var(--text-muted)', margin: 0 }}>
+                Your personal academic memory — upload notes, ask anything, never forget
               </p>
-            ) : (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 24 }}>
-                {docs.map(d => (
-                  <div key={d.id} style={{ background: 'var(--bg)', border: '1px solid var(--border)', borderRadius: 12, padding: '13px 16px', display: 'flex', alignItems: 'center', gap: 12, boxShadow: 'var(--shadow-sm)' }}>
-                    <span style={{ fontSize: 24, flexShrink: 0 }}>{d.file_type === 'pdf' ? '📕' : d.file_type === 'png' || d.file_type === 'jpg' || d.file_type === 'jpeg' ? '📸' : '📄'}</span>
-                    <div style={{ flex: 1, minWidth: 0 }}>
-                      <p style={{ fontSize: 14, fontWeight: 600, color: 'var(--text-primary)', margin: '0 0 2px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{d.title}</p>
-                      <p style={{ fontSize: 12, color: 'var(--text-muted)', margin: 0 }}>
-                        {d.chunkCount} chunks · {Math.round(d.char_count / 1000)}k chars · {new Date(d.created_at).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}
+            </div>
+            {user && (
+              <button
+                onClick={() => setShowUpload((s) => !s)}
+                style={{
+                  background: 'var(--accent)',
+                  color: 'var(--on-accent)',
+                  border: 'none',
+                  padding: '9px 18px',
+                  borderRadius: 10,
+                  fontSize: 14,
+                  fontWeight: 600,
+                  cursor: 'pointer',
+                  fontFamily: 'inherit',
+                }}
+              >
+                + Upload
+              </button>
+            )}
+          </div>
+
+          {/* Tabs */}
+          <div style={{ display: 'flex', gap: 4, borderBottom: '1px solid var(--border)', marginBottom: 16 }}>
+            {[
+              { key: 'chat', label: 'Ask your Brain' },
+              { key: 'files', label: `My Files (${docs.length})` },
+            ].map((t) => (
+              <button
+                key={t.key}
+                onClick={() => setTab(t.key as any)}
+                style={{
+                  padding: '10px 18px',
+                  fontSize: 14,
+                  fontWeight: 500,
+                  border: 'none',
+                  background: 'none',
+                  cursor: 'pointer',
+                  fontFamily: 'inherit',
+                  color: tab === t.key ? 'var(--accent)' : 'var(--text-secondary)',
+                  borderBottom: tab === t.key ? '2px solid var(--accent)' : '2px solid transparent',
+                  marginBottom: -1,
+                }}
+              >
+                {t.label}
+              </button>
+            ))}
+          </div>
+
+          {error && (
+            <div
+              style={{
+                background: 'var(--danger-light)',
+                border: '1px solid var(--danger-border)',
+                borderRadius: 10,
+                padding: '10px 14px',
+                marginBottom: 14,
+                fontSize: 13,
+                color: 'var(--danger)',
+              }}
+            >
+              {error}
+            </div>
+          )}
+
+          {/* Upload */}
+          {showUpload && (
+            <div
+              style={{
+                background: 'var(--bg)',
+                border: '1px solid var(--border)',
+                borderRadius: 14,
+                padding: 20,
+                marginBottom: 20,
+                boxShadow: 'var(--shadow-sm)',
+              }}
+            >
+              <h3 style={{ fontSize: 15, fontWeight: 700, color: 'var(--text-primary)', margin: '0 0 12px' }}>
+                Add to your brain
+              </h3>
+              <p style={{ fontSize: 12, color: 'var(--text-muted)', margin: '0 0 12px' }}>
+                PDF, TXT, MD, or photos of notes (PNG/JPG). Text is embedded and becomes searchable.
+              </p>
+              <div style={{ display: 'flex', gap: 8 }}>
+                <input
+                  ref={fileRef}
+                  type="file"
+                  accept=".pdf,.txt,.md,.png,.jpg,.jpeg"
+                  onChange={(e) => {
+                    const f = e.target.files?.[0]
+                    if (f) handleUpload(f)
+                  }}
+                  style={{
+                    flex: 1,
+                    border: '1px solid var(--border)',
+                    borderRadius: 10,
+                    padding: '9px 12px',
+                    fontSize: 13,
+                    background: 'var(--bg)',
+                    fontFamily: 'inherit',
+                  }}
+                />
+                {uploading && (
+                  <span style={{ alignSelf: 'center', fontSize: 13, color: 'var(--text-muted)' }}>
+                    ⏳ {uploadStatus}
+                  </span>
+                )}
+              </div>
+              {uploadStatus && !uploading && (
+                <p style={{ fontSize: 13, color: 'var(--success-text)', margin: '10px 0 0', fontWeight: 600 }}>
+                  {uploadStatus}
+                </p>
+              )}
+            </div>
+          )}
+
+          {tab === 'chat' && (
+            <div>
+              {/* Chat */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 12, marginBottom: 16 }}>
+                {messages.length === 0 && (
+                  <div style={{ textAlign: 'center', padding: '30px 0', color: 'var(--text-muted)' }}>
+                    <div style={{ fontSize: 40, marginBottom: 8 }}>🧠</div>
+                    <p style={{ fontSize: 14, margin: '0 0 4px' }}>Ask anything about your notes.</p>
+                    <p style={{ fontSize: 12, margin: 0 }}>Try: {'"Summarize everything I know about Binary Trees"'}</p>
+                  </div>
+                )}
+                {messages.map((m, i) => (
+                  <div
+                    key={i}
+                    style={{
+                      alignSelf: m.role === 'user' ? 'flex-end' : 'flex-start',
+                      maxWidth: '92%',
+                      background: m.role === 'user' ? 'var(--accent)' : 'var(--bg)',
+                      color: m.role === 'user' ? 'var(--on-accent)' : 'var(--text-primary)',
+                      border: m.role === 'user' ? 'none' : '1px solid var(--border)',
+                      borderRadius: 14,
+                      padding: '12px 16px',
+                      boxShadow: 'var(--shadow-sm)',
+                      whiteSpace: 'pre-wrap',
+                      lineHeight: 1.6,
+                      fontSize: 14,
+                    }}
+                  >
+                    {m.content}
+                    {m.role === 'assistant' && m.streaming && (
+                      <span style={{ display: 'inline-block', opacity: 0.6, marginLeft: 2, color: 'var(--accent)' }}>
+                        ▍
+                      </span>
+                    )}
+                    {m.role === 'assistant' && m.sources && m.sources.length > 0 && (
+                      <div style={{ marginTop: 10, display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+                        {m.sources.map((s, j) => (
+                          <span
+                            key={j}
+                            style={{
+                              fontSize: 11,
+                              background: 'var(--purple-light)',
+                              color: 'var(--purple-text)',
+                              padding: '3px 10px',
+                              borderRadius: 20,
+                              fontWeight: 600,
+                            }}
+                          >
+                            📄 {s.source}
+                          </span>
+                        ))}
+                      </div>
+                    )}
+                    {m.role === 'assistant' && m.usedMemory && (
+                      <p style={{ fontSize: 11, color: 'var(--text-muted)', margin: '8px 0 0' }}>
+                        🧠 used your saved memories
                       </p>
-                    </div>
-                    <button onClick={() => handleDeleteDoc(d.id)}
-                      style={{ fontSize: 12, background: 'var(--danger-light)', color: 'var(--danger)', border: '1px solid var(--danger-border)', borderRadius: 8, padding: '5px 12px', cursor: 'pointer', fontFamily: 'inherit' }}>
-                      Delete
-                    </button>
+                    )}
+                    {m.role === 'assistant' && !m.saved && !m.streaming && (
+                      <button
+                        onClick={() => handleSaveMemory(i)}
+                        disabled={m.saving}
+                        style={{
+                          marginTop: 10,
+                          fontSize: 12,
+                          background: 'var(--accent-light)',
+                          color: 'var(--accent)',
+                          border: '1px solid var(--accent-border)',
+                          padding: '5px 12px',
+                          borderRadius: 20,
+                          fontWeight: 600,
+                          cursor: m.saving ? 'default' : 'pointer',
+                          fontFamily: 'inherit',
+                        }}
+                      >
+                        {m.saving ? 'Saving...' : '💾 Save to memory'}
+                      </button>
+                    )}
+                    {m.role === 'assistant' && m.saved && (
+                      <p style={{ fontSize: 11, color: 'var(--success-text)', margin: '8px 0 0', fontWeight: 600 }}>
+                        ✓ Saved to your memory
+                      </p>
+                    )}
                   </div>
                 ))}
+                <div ref={bottomRef} />
               </div>
-            )}
 
-            {/* Memories */}
-            <h3 style={{ fontSize: 15, fontWeight: 700, color: 'var(--text-primary)', margin: '0 0 10px' }}>💾 Your memories ({memories.length})</h3>
-            {memories.length === 0 ? (
-              <p style={{ fontSize: 13, color: 'var(--text-muted)', textAlign: 'center', padding: '20px 0' }}>
-                Save a chat exchange to build your long-term memory.
-              </p>
-            ) : (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                {memories.map(m => (
-                  <div key={m.id} style={{ background: 'var(--bg)', border: '1px solid var(--border)', borderRadius: 12, padding: '13px 16px', boxShadow: 'var(--shadow-sm)' }}>
-                    <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 10 }}>
+              {/* Input */}
+              <div style={{ display: 'flex', gap: 8 }}>
+                <input
+                  type="text"
+                  value={input}
+                  onChange={(e) => setInput(e.target.value)}
+                  onKeyDown={(e) => e.key === 'Enter' && handleAsk()}
+                  placeholder="Ask your brain..."
+                  style={{ ...inputStyle, flex: 1 }}
+                />
+                <button
+                  onClick={handleAsk}
+                  disabled={!input.trim() || asking}
+                  style={{
+                    padding: '10px 20px',
+                    borderRadius: 10,
+                    border: 'none',
+                    background: !input.trim() || asking ? 'var(--disabled)' : 'var(--accent)',
+                    color: 'var(--on-accent)',
+                    fontSize: 14,
+                    fontWeight: 600,
+                    cursor: 'pointer',
+                    fontFamily: 'inherit',
+                  }}
+                  className={!input.trim() || asking ? '' : 'grad-ai'}
+                >
+                  {asking ? '…' : 'Ask'}
+                </button>
+              </div>
+            </div>
+          )}
+
+          {tab === 'files' && (
+            <div>
+              {/* Documents */}
+              <h3 style={{ fontSize: 15, fontWeight: 700, color: 'var(--text-primary)', margin: '0 0 10px' }}>
+                📚 Your documents
+              </h3>
+              {docs.length === 0 ? (
+                <p style={{ fontSize: 13, color: 'var(--text-muted)', textAlign: 'center', padding: '30px 0' }}>
+                  No documents yet. Upload your notes to start building your brain.
+                </p>
+              ) : (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 24 }}>
+                  {docs.map((d) => (
+                    <div
+                      key={d.id}
+                      style={{
+                        background: 'var(--bg)',
+                        border: '1px solid var(--border)',
+                        borderRadius: 12,
+                        padding: '13px 16px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 12,
+                        boxShadow: 'var(--shadow-sm)',
+                      }}
+                    >
+                      <span style={{ fontSize: 24, flexShrink: 0 }}>
+                        {d.file_type === 'pdf'
+                          ? '📕'
+                          : d.file_type === 'png' || d.file_type === 'jpg' || d.file_type === 'jpeg'
+                            ? '📸'
+                            : '📄'}
+                      </span>
                       <div style={{ flex: 1, minWidth: 0 }}>
-                        {m.knowledge_gained && <p style={{ fontSize: 13, color: 'var(--text-primary)', margin: '0 0 4px' }}><strong>Learned:</strong> {m.knowledge_gained}</p>}
-                        {m.struggles_faced && <p style={{ fontSize: 12, color: 'var(--text-secondary)', margin: '0 0 4px' }}><strong>Struggles:</strong> {m.struggles_faced}</p>}
-                        {m.core_facts && <p style={{ fontSize: 12, color: 'var(--text-secondary)', margin: '0 0 4px' }}><strong>Facts:</strong> {m.core_facts}</p>}
-                        {m.is_core_memory && <span style={{ fontSize: 11, background: 'var(--yellow-light)', color: 'var(--yellow-text)', padding: '2px 8px', borderRadius: 20, fontWeight: 600 }}>⭐ Core memory</span>}
+                        <p
+                          style={{
+                            fontSize: 14,
+                            fontWeight: 600,
+                            color: 'var(--text-primary)',
+                            margin: '0 0 2px',
+                            overflow: 'hidden',
+                            textOverflow: 'ellipsis',
+                            whiteSpace: 'nowrap',
+                          }}
+                        >
+                          {d.title}
+                        </p>
+                        <p style={{ fontSize: 12, color: 'var(--text-muted)', margin: 0 }}>
+                          {d.chunkCount} chunks · {Math.round(d.char_count / 1000)}k chars ·{' '}
+                          {new Date(d.created_at).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}
+                        </p>
                       </div>
-                      <button onClick={() => handleDeleteMemory(m.id)}
-                        style={{ fontSize: 12, background: 'none', color: 'var(--text-muted)', border: 'none', cursor: 'pointer', fontFamily: 'inherit', flexShrink: 0 }}>
-                        Forget
+                      <button
+                        onClick={() => handleDeleteDoc(d.id)}
+                        style={{
+                          fontSize: 12,
+                          background: 'var(--danger-light)',
+                          color: 'var(--danger)',
+                          border: '1px solid var(--danger-border)',
+                          borderRadius: 8,
+                          padding: '5px 12px',
+                          cursor: 'pointer',
+                          fontFamily: 'inherit',
+                        }}
+                      >
+                        Delete
                       </button>
                     </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-        )}
-      </div>
+                  ))}
+                </div>
+              )}
+
+              {/* Memories */}
+              <h3 style={{ fontSize: 15, fontWeight: 700, color: 'var(--text-primary)', margin: '0 0 10px' }}>
+                💾 Your memories ({memories.length})
+              </h3>
+              {memories.length === 0 ? (
+                <p style={{ fontSize: 13, color: 'var(--text-muted)', textAlign: 'center', padding: '20px 0' }}>
+                  Save a chat exchange to build your long-term memory.
+                </p>
+              ) : (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                  {memories.map((m) => (
+                    <div
+                      key={m.id}
+                      style={{
+                        background: 'var(--bg)',
+                        border: '1px solid var(--border)',
+                        borderRadius: 12,
+                        padding: '13px 16px',
+                        boxShadow: 'var(--shadow-sm)',
+                      }}
+                    >
+                      <div
+                        style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 10 }}
+                      >
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          {m.knowledge_gained && (
+                            <p style={{ fontSize: 13, color: 'var(--text-primary)', margin: '0 0 4px' }}>
+                              <strong>Learned:</strong> {m.knowledge_gained}
+                            </p>
+                          )}
+                          {m.struggles_faced && (
+                            <p style={{ fontSize: 12, color: 'var(--text-secondary)', margin: '0 0 4px' }}>
+                              <strong>Struggles:</strong> {m.struggles_faced}
+                            </p>
+                          )}
+                          {m.core_facts && (
+                            <p style={{ fontSize: 12, color: 'var(--text-secondary)', margin: '0 0 4px' }}>
+                              <strong>Facts:</strong> {m.core_facts}
+                            </p>
+                          )}
+                          {m.is_core_memory && (
+                            <span
+                              style={{
+                                fontSize: 11,
+                                background: 'var(--yellow-light)',
+                                color: 'var(--yellow-text)',
+                                padding: '2px 8px',
+                                borderRadius: 20,
+                                fontWeight: 600,
+                              }}
+                            >
+                              ⭐ Core memory
+                            </span>
+                          )}
+                        </div>
+                        <button
+                          onClick={() => handleDeleteMemory(m.id)}
+                          style={{
+                            fontSize: 12,
+                            background: 'none',
+                            color: 'var(--text-muted)',
+                            border: 'none',
+                            cursor: 'pointer',
+                            fontFamily: 'inherit',
+                            flexShrink: 0,
+                          }}
+                        >
+                          Forget
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+        </div>
       </PremiumGate>
     </Layout>
   )

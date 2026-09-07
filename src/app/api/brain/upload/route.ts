@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { requireAuthLite } from '@/lib/api/middleware'
 import { chunkText, embedGemini, ocrImageViaGemini } from '@/lib/brain'
+import { clearUserBrainCache } from '@/lib/brainCache'
 import { checkRateLimit } from '@/lib/rateLimit'
 
 export const runtime = 'nodejs'
@@ -98,7 +99,10 @@ export async function POST(request: NextRequest) {
       if (error) throw new Error(`Chunk insert failed: ${error.message}`)
       inserted.push(...(data || []))
     }
+    // New knowledge landed — invalidate this user's cached answers
+    clearUserBrainCache(userId)
   } catch (e: any) {
+    clearUserBrainCache(userId)
     await supabase.from('brain_documents').delete().eq('id', doc.id)
     return NextResponse.json({ error: `Embedding failed: ${e.message}` }, { status: 502 })
   }

@@ -1,17 +1,21 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { requireAuthLite } from '@/lib/api/middleware'
-import { buildBrainPrompt, completeText, embedGemini } from '@/lib/brain'
+import { buildBrainPrompt, embedGemini, streamCompleteText } from '@/lib/brain'
+import { brainCacheGet, brainCacheKey, brainCacheSet } from '@/lib/brainCache'
 import { checkRateLimit } from '@/lib/rateLimit'
 
 export const runtime = 'nodejs'
+export const maxDuration = 60
 
-// ── In-memory answer cache (resets on cold start, good enough for campus scale) ──
-const answerCache = new Map<string, { answer: string; sources: any[]; ts: number }>()
-const CACHE_TTL = 24 * 60 * 60 * 1000 // 24 hours
-
-function cacheKey(userId: string, question: string): string {
-  return `${userId}:${question.toLowerCase().trim().replace(/\s+/g, ' ').slice(0, 200)}`
+function ndjson(lines: unknown[]): Response {
+  const encoder = new TextEncoder()
+  return new Response(encoder.encode(lines.map((l) => JSON.stringify(l) + '\n').join('')), {
+    headers: {
+      'Content-Type': 'application/x-ndjson; charset=utf-8',
+      'Cache-Control': 'no-cache, no-transform',
+    },
+  })
 }
 
 export async function POST(request: NextRequest) {
@@ -36,11 +40,13 @@ export async function POST(request: NextRequest) {
   if (!question) return NextResponse.json({ error: 'question is required.' }, { status: 422 })
   if (question.length > 2000) return NextResponse.json({ error: 'Question is too long.' }, { status: 422 })
 
-  // Check answer cache first — saves Gemini API calls
-  const ck = cacheKey(userId, question)
-  const cached = answerCache.get(ck)
-  if (cached && Date.now() - cached.ts < CACHE_TTL) {
-    return NextResponse.json({ answer: cached.answer, sources: cached.sources, usedMemory: false, cached: true })
+  const history = body.history || []
+
+  // Check answer cache first — saves API calls (key now includes conversation history)
+  const ck = brainCacheKey(userId, question, history)
+  const cached = brainCacheGet(ck)
+  if (cached) {
+    return ndjson([{ type: 'meta', sources: cached.sources, usedMemory: false, cached: true, answer: cached.answer }])
   }
 
   const supabase = await createClient()
@@ -66,32 +72,40 @@ export async function POST(request: NextRequest) {
       content: m.content,
       similarity: m.similarity,
     }))
-  const memories = (memoryMatches as any[]) || []
+  // Same similarity threshold as chunks so irrelevant memories don't pollute the prompt
+  const memories = ((memoryMatches as any[]) || []).filter((m) => (m.similarity ?? 0) > 0.3)
+  const usedMemory = memories.length > 0
 
-  // 3. Build the RAG prompt and answer
-  const systemPrompt = buildBrainPrompt(sources, memories, body.history || [])
-  let answer = ''
-  try {
-    answer = await completeText(systemPrompt, question)
-  } catch (e: any) {
-    return NextResponse.json({ error: `Answer failed: ${e.message}` }, { status: 502 })
-  }
-
+  // 3. Build the RAG prompt and stream the answer
+  const systemPrompt = buildBrainPrompt(sources, memories, history)
   const sourceList = sources.map((s) => ({ source: s.source, similarity: s.similarity }))
+  const encoder = new TextEncoder()
+  let full = ''
 
-  // Cache the answer for future identical questions
-  answerCache.set(ck, { answer, sources: sourceList, ts: Date.now() })
-  // Prune stale entries (keep cache under 500)
-  if (answerCache.size > 500) {
-    const now = Date.now()
-    for (const [k, v] of answerCache) {
-      if (now - v.ts > CACHE_TTL) answerCache.delete(k)
-    }
-  }
+  const stream = new ReadableStream<Uint8Array>({
+    async start(controller) {
+      const send = (obj: unknown) => controller.enqueue(encoder.encode(JSON.stringify(obj) + '\n'))
+      try {
+        for await (const delta of streamCompleteText(systemPrompt, question, { maxTokens: 1200 })) {
+          full += delta
+          send({ type: 'delta', text: delta })
+        }
+        brainCacheSet(ck, { answer: full, sources: sourceList })
+        send({ type: 'meta', sources: sourceList, usedMemory })
+      } catch (e: any) {
+        send({ type: 'error', error: (e && e.message) || 'Answer generation failed.' })
+      } finally {
+        controller.close()
+      }
+    },
+    cancel() {},
+  })
 
-  return NextResponse.json({
-    answer,
-    sources: sourceList,
-    usedMemory: memories.length > 0,
+  return new Response(stream, {
+    headers: {
+      'Content-Type': 'application/x-ndjson; charset=utf-8',
+      'Cache-Control': 'no-cache, no-transform',
+      'X-Accel-Buffering': 'no',
+    },
   })
 }

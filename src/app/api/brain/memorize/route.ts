@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { requireAuthLite } from '@/lib/api/middleware'
-import { embedGemini, extractMemoryViaGroq } from '@/lib/brain'
+import { embedGemini, extractMemory } from '@/lib/brain'
+import { clearUserBrainCache } from '@/lib/brainCache'
 import { checkRateLimit } from '@/lib/rateLimit'
 
 export const runtime = 'nodejs'
@@ -30,8 +31,8 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'question and answer are required.' }, { status: 422 })
   }
 
-  // 1. Extract structured memory via Groq (port of memory_engine.py)
-  const memory = await extractMemoryViaGroq(question, answer)
+  // 1. Extract structured memory (port of memory_engine.py)
+  const memory = await extractMemory(question, answer)
   const combined = [memory.knowledge_gained, memory.struggles_faced, memory.behavioral_lifestyle, memory.core_facts]
     .filter(Boolean)
     .join('\n')
@@ -66,5 +67,8 @@ export async function POST(request: NextRequest) {
   if (error) {
     return NextResponse.json({ error: 'Could not save the memory.' }, { status: 500 })
   }
+
+  // A new memory changes what the brain knows about this student — invalidate answers
+  clearUserBrainCache(userId)
   return NextResponse.json({ memory: data }, { status: 201 })
 }
