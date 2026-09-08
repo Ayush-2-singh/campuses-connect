@@ -1199,3 +1199,10 @@ html.nav-hidden .fab-wrap {
 .fab-wrap {
   overscroll-behavior: contain;
 }
+
+/* ── Compete / Rankings: collapse secondary leaderboard column on narrow screens ── */
+@media (max-width: 480px) {
+  .hide-mobile-soft {
+    display: none;
+  }
+}

@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useMemo, useState, useCallback, useRef } from 'react'
+import { useEffect, useMemo, useState, useCallback, Suspense } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import Layout from '@/components/Layout'
 import Avatar from '@/components/Avatar'
@@ -48,6 +48,31 @@ type LeaderEntry = {
   leetcode_rating: number
 }
 
+type SeasonInfo = {
+  id: string
+  name: string
+  starts_at: string
+  ends_at: string
+  is_active: boolean
+}
+
+type RankScope = 'global' | 'campus' | 'friends'
+
+/**
+ * Weeks elapsed since the season started → "Week 2 of 13".
+ * Returns null for seasons without usable dates (nothing invented).
+ */
+function seasonWeek(season: SeasonInfo | null): string | null {
+  if (!season?.starts_at || !season?.ends_at) return null
+  const start = new Date(season.starts_at).getTime()
+  const end = new Date(season.ends_at).getTime()
+  if (!Number.isFinite(start) || !Number.isFinite(end) || end <= start) return null
+  const totalDays = Math.ceil((end - start) / 86400000)
+  const elapsed = Math.min(Math.max(Math.floor((Date.now() - start) / 86400000) + 1, 1), totalDays)
+  const totalWeeks = Math.ceil(totalDays / 7)
+  return `Week ${Math.ceil(elapsed / 7)} of ${totalWeeks}`
+}
+
 // ══════════════════════════════════════════════════════════════
 // CONSTANTS
 // ══════════════════════════════════════════════════════════════
@@ -84,6 +109,12 @@ const TAB_URL: Record<Tab, string> = {
   challenge: 'daily',
   clash: 'clash',
 }
+
+/** Aura is the season score — the default ranking metric. */
+const RANK_SORTS = ['aura', 'karma'] as const
+
+/** Rank-window size shown as rows below the podium. */
+const LEADERBOARD_LIMIT = 50
 
 // ══════════════════════════════════════════════════════════════
 // HELPERS
@@ -130,7 +161,7 @@ function computeScore(l: any) {
 // MAIN PAGE
 // ══════════════════════════════════════════════════════════════
 
-export default function CompetePage() {
+function CompetePageInner() {
   const supabase = createClient()
   const router = useRouter()
   const searchParams = useSearchParams()
@@ -153,6 +184,7 @@ export default function CompetePage() {
   const [result, setResult] = useState<Submission | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [karma, setKarma] = useState<{ lifetime: number; aura: number; daily: number; season: string } | null>(null)
+  const [season, setSeason] = useState<SeasonInfo | null>(null)
 
   // clash state
   const [contest, setContest] = useState<any>(null)
@@ -183,6 +215,14 @@ export default function CompetePage() {
         setProfile(prof)
         const { data: sum } = await supabase.rpc('my_karma_summary')
         if (sum && sum[0]) setKarma(sum[0])
+
+        // Season record with real dates for the Rankings header
+        const { data: seasonRow } = await supabase
+          .from('seasons')
+          .select('id, name, starts_at, ends_at, is_active')
+          .eq('is_active', true)
+          .maybeSingle()
+        setSeason((seasonRow as SeasonInfo) || null)
 
         // daily challenge
         const dcRes = await supabase
@@ -388,7 +428,7 @@ export default function CompetePage() {
           </div>
 
           {/* ═══════════ RANKINGS (PRIMARY) ═══════════ */}
-          {tab === 'rankings' && <RankingsTab user={user} profile={profile} />}
+          {tab === 'rankings' && <RankingsTab user={user} profile={profile} season={season} karma={karma} />}
 
           {/* ═══════════ DAILY CHALLENGE ═══════════ */}
           {tab === 'challenge' && (
@@ -787,45 +827,80 @@ export default function CompetePage() {
   )
 }
 
+// useSearchParams() in a client component requires a Suspense
+// boundary for prerendering — otherwise `next build` fails on /compete.
+export default function CompetePage() {
+  return (
+    <Suspense fallback={<div style={{ minHeight: '100vh' }} />}>
+      <CompetePageInner />
+    </Suspense>
+  )
+}
+
 // ══════════════════════════════════════════════════════════════
 // RANKINGS TAB — The primary experience
 // ══════════════════════════════════════════════════════════════
 
-function RankingsTab({ user, profile }: { user: any; profile: any }) {
+function RankingsTab({
+  user,
+  profile,
+  season,
+  karma,
+}: {
+  user: any
+  profile: any
+  season: SeasonInfo | null
+  karma: { lifetime: number; aura: number; daily: number; season: string } | null
+}) {
   const supabase = createClient()
   const router = useRouter()
 
   const [leaders, setLeaders] = useState<LeaderEntry[]>([])
   const [loading, setLoading] = useState(true)
   const [sortBy, setSortBy] = useState<'aura' | 'karma'>('aura')
-  const [filterScope, setFilterScope] = useState<'global' | 'campus'>('global')
-  const myPosRef = useRef<HTMLDivElement>(null)
+  const [filterScope, setFilterScope] = useState<RankScope>('global')
+  const [totalRanked, setTotalRanked] = useState(0)
+  const [myRank, setMyRank] = useState<number | null>(null)
 
+  // ═════════ DATA — one ranking definition, computed in the DB ═════════
   const loadRankings = useCallback(async () => {
     setLoading(true)
     try {
-      // Try enhanced leaderboard first
+      // RPC keeps its is_public + status='active' guards and returns
+      // aura_points now; ordering happens server-side (indexed columns).
+      const campusId = filterScope === 'campus' ? profile?.campus_id || null : null
       const { data, error } = await supabase.rpc('get_enhanced_leaderboard', {
-        p_campus_id: filterScope === 'campus' ? profile?.campus_id || null : null,
-        p_limit: 50,
+        p_campus_id: campusId,
+        p_limit: LEADERBOARD_LIMIT,
+        p_sort: sortBy,
       })
 
       if (error || !data || (data as any[]).length === 0) {
-        // Fallback: direct query
+        // Fallback: direct query honoring the same guards. Ordering is
+        // still done by Postgres — never fetched-then-sorted client-side.
         let query = supabase
           .from('profiles')
           .select(
             'id, full_name, username, avatar_url, karma_points, aura_points, streak_days, departments(short_name)'
           )
           .eq('is_public', true)
+          .eq('status', 'active')
 
-        if (filterScope === 'campus' && profile?.campus_id) {
-          query = query.eq('campus_id', profile.campus_id)
+        if (filterScope === 'campus' && profile?.campus_id) query = query.eq('campus_id', profile.campus_id)
+        if (filterScope === 'friends' && user) {
+          // Friends = accepted connections. RLS limits this query to
+          // connections where the current user is either party.
+          const { data: conns } = await supabase
+            .from('connections')
+            .select('requester_id, receiver_id')
+            .or(`requester_id.eq.${user.id},receiver_id.eq.${user.id}`)
+            .eq('status', 'accepted')
+          const friendIds = (conns || []).map((c: any) => (c.requester_id === user.id ? c.receiver_id : c.requester_id))
+          query = friendIds.length > 0 ? query.in('id', friendIds) : query.in('id', [user.id])
         }
 
         const col = sortBy === 'aura' ? 'aura_points' : 'karma_points'
-        const { data: rows } = await query.order(col, { ascending: false }).limit(50)
-
+        const { data: rows } = await query.order(col, { ascending: false }).limit(LEADERBOARD_LIMIT)
         setLeaders(
           (rows || []).map((r: any) => ({
             user_id: r.id,
@@ -843,54 +918,56 @@ function RankingsTab({ user, profile }: { user: any; profile: any }) {
           }))
         )
       } else {
-        setLeaders(
-          (data as any[]).map((r: any) => ({
-            ...r,
-            combined_score: r.combined_score || computeScore(r),
-            aura_points: r.aura_points || 0,
-          }))
-        )
+        setLeaders(data as any[])
       }
     } catch {
-      // Last resort fallback
-      const { data } = await supabase
-        .from('profiles')
-        .select('id, full_name, username, avatar_url, karma_points, aura_points, streak_days')
-        .eq('is_public', true)
-        .order(sortBy === 'aura' ? 'aura_points' : 'karma_points', { ascending: false })
-        .limit(50)
-      setLeaders(
-        (data || []).map((r: any) => ({
-          user_id: r.id,
-          full_name: r.full_name,
-          username: r.username,
-          avatar_url: r.avatar_url,
-          karma_points: r.karma_points || 0,
-          aura_points: r.aura_points || 0,
-          streak_days: r.streak_days || 0,
-          combined_score: computeScore(r),
-          github_contributions: 0,
-          leetcode_solved: 0,
-          leetcode_rating: 0,
-        }))
-      )
+      setLeaders([])
     }
     setLoading(false)
-  }, [sortBy, filterScope, profile?.campus_id, supabase])
+  }, [sortBy, filterScope, profile?.campus_id, user, supabase])
 
   useEffect(() => {
     loadRankings()
   }, [loadRankings])
 
-  // Sort leaders
-  const sorted = useMemo(() => {
-    return [...leaders].sort((a, b) => {
-      if (sortBy === 'aura') return (b.aura_points || 0) - (a.aura_points || 0)
-      return (b.karma_points || 0) - (a.karma_points || 0)
-    })
-  }, [leaders, sortBy])
+  // ═════ COUNTS + MY RANK — server-side, even outside the 50-row window ═════
+  useEffect(() => {
+    if (!user) return
+    const loadMeta = async () => {
+      try {
+        const { count } = await supabase
+          .from('profiles')
+          .select('id', { count: 'exact', head: true })
+          .eq('is_public', true)
+          .eq('status', 'active')
+        setTotalRanked(count || 0)
 
-  // Find current user position
+        const meCol = sortBy === 'aura' ? 'aura_points' : 'karma_points'
+        const { data: me } = await supabase.from('profiles').select(meCol).eq('id', user.id).single()
+        if (!me) return
+        const myVal = (me as any)[meCol] || 0
+
+        // One ranking definition: under Aura the rank shown IS the season
+        // rank (Aura resets with the season); under Karma it's lifetime.
+        // Counted in the DB so it works far outside the top 50.
+        const { count: ahead } = await supabase
+          .from('profiles')
+          .select('id', { count: 'exact', head: true })
+          .eq('is_public', true)
+          .eq('status', 'active')
+          .gt(meCol, myVal)
+        setMyRank((ahead || 0) + 1)
+      } catch {
+        /* best-effort metadata */
+      }
+    }
+    loadMeta()
+  }, [user, sortBy, supabase])
+
+  // DB returns the window already ordered — no client-side re-sort.
+  const sorted = leaders
+
+  // Current-user position inside the loaded window
   const myPosition = useMemo(() => {
     if (!user) return null
     return sorted.findIndex((l) => l.user_id === user.id)
@@ -900,7 +977,6 @@ function RankingsTab({ user, profile }: { user: any; profile: any }) {
   const top3 = sorted.slice(0, 3)
   const rest = sorted.slice(3)
 
-  // Medal helpers
   const medal = (i: number) => (i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : null)
 
   if (loading) {
@@ -913,6 +989,12 @@ function RankingsTab({ user, profile }: { user: any; profile: any }) {
   }
 
   if (sorted.length === 0) {
+    const scopeMsg =
+      filterScope === 'friends'
+        ? 'Add connections to see where you stand against your friends.'
+        : filterScope === 'campus'
+          ? 'No ranked students from your campus yet — be the first!'
+          : 'Be the first to solve challenges, earn Aura, and climb the leaderboard!'
     return (
       <div
         style={{
@@ -928,16 +1010,115 @@ function RankingsTab({ user, profile }: { user: any; profile: any }) {
         <p style={{ fontSize: 16, fontWeight: 700, color: 'var(--text-primary)', margin: '0 0 6px' }}>
           Rankings are getting ready
         </p>
-        <p style={{ fontSize: 13, color: 'var(--text-muted)', margin: 0, lineHeight: 1.6 }}>
-          Be the first to solve challenges, earn Aura, and climb the leaderboard!
-        </p>
+        <p style={{ fontSize: 13, color: 'var(--text-muted)', margin: 0, lineHeight: 1.6 }}>{scopeMsg}</p>
       </div>
     )
   }
 
+  const scopeLabel =
+    filterScope === 'campus' ? 'Your campus' : filterScope === 'friends' ? 'Your connections' : 'All of ConnectToCampus'
+
   return (
     <div>
-      {/* Season + Filters */}
+      {/* Season banner — real name/dates from the seasons table */}
+      <div
+        style={{
+          background: 'linear-gradient(135deg, var(--accent-light), var(--bg))',
+          border: '1px solid var(--border)',
+          borderRadius: 14,
+          padding: '14px 18px',
+          marginBottom: 16,
+          display: 'flex',
+          alignItems: 'center',
+          gap: 12,
+          flexWrap: 'wrap',
+        }}
+      >
+        <div style={{ fontSize: 24 }}>🗓️</div>
+        <div style={{ flex: 1, minWidth: 160 }}>
+          <p style={{ fontSize: 13, fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>
+            {season?.name || 'Season 1'} · {scopeLabel}
+          </p>
+          <p style={{ fontSize: 11, color: 'var(--text-muted)', margin: 0 }}>
+            {seasonWeek(season) ? `${seasonWeek(season)} · ` : ''}
+            {sortBy === 'aura'
+              ? 'Aura = season points from karma-earning activities'
+              : 'Karma = lifetime earned points'}
+          </p>
+        </div>
+        {myRank !== null && (
+          <div style={{ textAlign: 'right' }}>
+            <p style={{ fontSize: 18, fontWeight: 800, color: 'var(--accent)', margin: 0 }}>#{myRank}</p>
+            <p style={{ fontSize: 10, color: 'var(--text-muted)', margin: 0 }}>your rank</p>
+          </div>
+        )}
+      </div>
+
+      {/* ═══════ YOUR POSITION — hero card, always visible ═══════ */}
+      {user && (myEntry || myRank !== null) && (
+        <div
+          style={{
+            background: 'linear-gradient(135deg, var(--accent-light), var(--bg))',
+            border: '2px solid var(--accent)',
+            borderRadius: 14,
+            padding: '14px 18px',
+            marginBottom: 16,
+            display: 'flex',
+            alignItems: 'center',
+            gap: 14,
+            flexWrap: 'wrap',
+          }}
+        >
+          <div
+            style={{
+              width: 48,
+              height: 48,
+              borderRadius: '50%',
+              background: 'var(--accent)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              fontSize: 17,
+              fontWeight: 800,
+              color: 'var(--on-accent)',
+              flexShrink: 0,
+            }}
+          >
+            #{myEntry ? myPosition! + 1 : (myRank ?? '—')}
+          </div>
+          <Avatar name={profile?.full_name || 'You'} avatarUrl={profile?.avatar_url} size={40} />
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <p style={{ fontSize: 14, fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>
+              {profile?.full_name || 'You'}
+            </p>
+            {/* Rank context: Aura view = season rank, Karma view = lifetime */}
+            <p style={{ fontSize: 11, color: 'var(--text-muted)', margin: 0 }}>
+              {sortBy === 'aura' ? `Season rank · ${season?.name || 'Season 1'}` : 'Lifetime rank · all-time Karma'}
+            </p>
+            <p style={{ fontSize: 12, color: 'var(--text-muted)', margin: 0 }}>
+              @{profile?.username || 'you'}
+              {myEntry?.department ? ` · ${myEntry.department}` : ''}
+            </p>
+          </div>
+          {/* Aura + Karma together — "Where do I stand?" at a glance */}
+          <div style={{ display: 'flex', gap: 16, alignItems: 'center' }}>
+            <div style={{ textAlign: 'center' }}>
+              <p style={{ fontSize: 16, fontWeight: 800, color: 'var(--accent-text)', margin: 0 }}>
+                ⚡ {myEntry ? myEntry.aura_points : (karma?.aura ?? 0)}
+              </p>
+              <p style={{ fontSize: 10, color: 'var(--text-muted)', margin: 0 }}>Aura</p>
+            </div>
+            <div style={{ textAlign: 'center' }}>
+              <p style={{ fontSize: 16, fontWeight: 800, color: '#eab308', margin: 0 }}>
+                ⭐ {myEntry ? myEntry.karma_points : (karma?.lifetime ?? 0)}
+              </p>
+              <p style={{ fontSize: 10, color: 'var(--text-muted)', margin: 0 }}>Karma</p>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ═══════ FILTERS — metric + scope ═══════ */}
       <div
         style={{
           display: 'flex',
@@ -948,11 +1129,12 @@ function RankingsTab({ user, profile }: { user: any; profile: any }) {
           flexWrap: 'wrap',
         }}
       >
-        <div style={{ display: 'flex', gap: 4 }}>
-          {(['aura', 'karma'] as const).map((m) => (
+        <div style={{ display: 'flex', gap: 4 }} role="group" aria-label="Ranking metric">
+          {RANK_SORTS.map((m) => (
             <button
               key={m}
               onClick={() => setSortBy(m)}
+              aria-pressed={sortBy === m}
               style={{
                 padding: '7px 16px',
                 borderRadius: 20,
@@ -969,12 +1151,17 @@ function RankingsTab({ user, profile }: { user: any; profile: any }) {
             </button>
           ))}
         </div>
-        {profile?.campus_id && (
-          <div style={{ display: 'flex', gap: 4 }}>
-            {(['global', 'campus'] as const).map((s) => (
+        <div style={{ display: 'flex', gap: 4 }} role="group" aria-label="Leaderboard scope">
+          {(['global', 'campus', 'friends'] as const).map((s) => {
+            // Campus needs a campus; Friends needs a session (connections
+            // are RLS-scoped to the signed-in user).
+            if (s === 'campus' && !profile?.campus_id) return null
+            if (s === 'friends' && !user) return null
+            return (
               <button
                 key={s}
                 onClick={() => setFilterScope(s)}
+                aria-pressed={filterScope === s}
                 style={{
                   padding: '5px 12px',
                   borderRadius: 20,
@@ -987,38 +1174,10 @@ function RankingsTab({ user, profile }: { user: any; profile: any }) {
                   color: filterScope === s ? 'var(--on-accent)' : 'var(--text-secondary)',
                 }}
               >
-                {s === 'global' ? '🌐 Global' : '🏫 Campus'}
+                {s === 'global' ? '🌐 Global' : s === 'campus' ? '🏫 Campus' : '🤝 Friends'}
               </button>
-            ))}
-          </div>
-        )}
-      </div>
-
-      {/* Season Info */}
-      <div
-        style={{
-          background: 'var(--bg)',
-          border: '1px solid var(--border)',
-          borderRadius: 14,
-          padding: '14px 18px',
-          marginBottom: 16,
-          display: 'flex',
-          alignItems: 'center',
-          gap: 12,
-        }}
-      >
-        <div style={{ fontSize: 24 }}>🗓️</div>
-        <div style={{ flex: 1 }}>
-          <p style={{ fontSize: 13, fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>Season 1</p>
-          <p style={{ fontSize: 11, color: 'var(--text-muted)', margin: 0 }}>
-            {sortBy === 'aura'
-              ? 'Aura = season points from karma-earning activities'
-              : 'Karma = lifetime earned points'}
-          </p>
-        </div>
-        <div style={{ textAlign: 'right' }}>
-          <p style={{ fontSize: 18, fontWeight: 800, color: 'var(--accent)', margin: 0 }}>{sorted.length}</p>
-          <p style={{ fontSize: 10, color: 'var(--text-muted)', margin: 0 }}>ranked</p>
+            )
+          })}
         </div>
       </div>
 
@@ -1034,168 +1193,70 @@ function RankingsTab({ user, profile }: { user: any; profile: any }) {
             padding: '0 8px',
           }}
         >
-          {/* 2nd */}
-          <div
-            onClick={() => router.push(`/profile/${top3[1].username}`)}
-            style={{ flex: 1, textAlign: 'center', cursor: 'pointer' }}
-          >
-            <Avatar name={top3[1].full_name} avatarUrl={top3[1].avatar_url} size={44} />
-            <p style={{ fontSize: 24, margin: '4px 0 2px' }}>🥈</p>
-            <p
-              style={{
-                fontSize: 12,
-                fontWeight: 600,
-                color: 'var(--text-primary)',
-                margin: '0 0 2px',
-                overflow: 'hidden',
-                textOverflow: 'ellipsis',
-                whiteSpace: 'nowrap',
-              }}
-            >
-              {top3[1].full_name?.split(' ')[0] || 'Anon'}
-            </p>
-            <p style={{ fontSize: 10, color: 'var(--text-muted)', margin: 0 }}>@{top3[1].username}</p>
-            <p style={{ fontSize: 13, fontWeight: 800, color: 'var(--accent)', margin: '2px 0 0' }}>
-              {sortBy === 'aura' ? `⚡ ${top3[1].aura_points}` : `⭐ ${top3[1].karma_points}`}
-            </p>
-            <div
-              style={{
-                height: 56,
-                background: 'linear-gradient(180deg, #d1d5db, #9ca3af)',
-                borderRadius: '8px 8px 0 0',
-                marginTop: 4,
-              }}
-            />
-          </div>
-          {/* 1st */}
-          <div
-            onClick={() => router.push(`/profile/${top3[0].username}`)}
-            style={{ flex: 1, textAlign: 'center', cursor: 'pointer' }}
-          >
-            <Avatar name={top3[0].full_name} avatarUrl={top3[0].avatar_url} size={52} />
-            <p style={{ fontSize: 32, margin: '4px 0 2px' }}>🥇</p>
-            <p
-              style={{
-                fontSize: 13,
-                fontWeight: 700,
-                color: 'var(--text-primary)',
-                margin: '0 0 2px',
-                overflow: 'hidden',
-                textOverflow: 'ellipsis',
-                whiteSpace: 'nowrap',
-              }}
-            >
-              {top3[0].full_name?.split(' ')[0] || 'Anon'}
-            </p>
-            <p style={{ fontSize: 10, color: 'var(--text-muted)', margin: 0 }}>@{top3[0].username}</p>
-            <p style={{ fontSize: 14, fontWeight: 800, color: 'var(--accent)', margin: '2px 0 0' }}>
-              {sortBy === 'aura' ? `⚡ ${top3[0].aura_points}` : `⭐ ${top3[0].karma_points}`}
-            </p>
-            <div
-              style={{
-                height: 76,
-                background: 'linear-gradient(180deg, #fde68a, #f59e0b)',
-                borderRadius: '8px 8px 0 0',
-                marginTop: 4,
-              }}
-            />
-          </div>
-          {/* 3rd */}
-          <div
-            onClick={() => router.push(`/profile/${top3[2].username}`)}
-            style={{ flex: 1, textAlign: 'center', cursor: 'pointer' }}
-          >
-            <Avatar name={top3[2].full_name} avatarUrl={top3[2].avatar_url} size={40} />
-            <p style={{ fontSize: 22, margin: '4px 0 2px' }}>🥉</p>
-            <p
-              style={{
-                fontSize: 12,
-                fontWeight: 600,
-                color: 'var(--text-primary)',
-                margin: '0 0 2px',
-                overflow: 'hidden',
-                textOverflow: 'ellipsis',
-                whiteSpace: 'nowrap',
-              }}
-            >
-              {top3[2].full_name?.split(' ')[0] || 'Anon'}
-            </p>
-            <p style={{ fontSize: 10, color: 'var(--text-muted)', margin: 0 }}>@{top3[2].username}</p>
-            <p style={{ fontSize: 13, fontWeight: 800, color: 'var(--accent)', margin: '2px 0 0' }}>
-              {sortBy === 'aura' ? `⚡ ${top3[2].aura_points}` : `⭐ ${top3[2].karma_points}`}
-            </p>
-            <div
-              style={{
-                height: 40,
-                background: 'linear-gradient(180deg, #fed7aa, #ea580c)',
-                borderRadius: '8px 8px 0 0',
-                marginTop: 4,
-              }}
-            />
-          </div>
+          {[1, 0, 2].map((pos) => {
+            const p = top3[pos]
+            const h = pos === 0 ? 76 : pos === 1 ? 56 : 40
+            const grad =
+              pos === 0
+                ? 'linear-gradient(180deg, #fde68a, #f59e0b)'
+                : pos === 1
+                  ? 'linear-gradient(180deg, #d1d5db, #9ca3af)'
+                  : 'linear-gradient(180deg, #fed7aa, #ea580c)'
+            return (
+              <div
+                key={p.user_id}
+                onClick={() => router.push(`/profile/${p.username}`)}
+                role="link"
+                tabIndex={0}
+                aria-label={`Rank ${pos + 1}: ${p.full_name}, ${sortBy === 'aura' ? p.aura_points : p.karma_points} ${sortBy}`}
+                onKeyDown={(e) => (e.key === 'Enter' || e.key === ' ') && router.push(`/profile/${p.username}`)}
+                style={{ flex: 1, textAlign: 'center', cursor: 'pointer' }}
+              >
+                <Avatar name={p.full_name} avatarUrl={p.avatar_url} size={pos === 0 ? 52 : 44} />
+                <p style={{ fontSize: pos === 0 ? 32 : 24, margin: '4px 0 2px' }}>{medal(pos)}</p>
+                <p
+                  style={{
+                    fontSize: pos === 0 ? 13 : 12,
+                    fontWeight: pos === 0 ? 700 : 600,
+                    color: 'var(--text-primary)',
+                    margin: '0 0 2px',
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
+                    whiteSpace: 'nowrap',
+                  }}
+                >
+                  {p.full_name?.split(' ')[0] || 'Anon'}
+                </p>
+                <p style={{ fontSize: 10, color: 'var(--text-muted)', margin: 0 }}>@{p.username}</p>
+                <p
+                  style={{ fontSize: pos === 0 ? 14 : 13, fontWeight: 800, color: 'var(--accent)', margin: '2px 0 0' }}
+                >
+                  {sortBy === 'aura' ? `⚡ ${p.aura_points}` : `⭐ ${p.karma_points}`}
+                </p>
+                <div
+                  style={{
+                    height: h,
+                    background: grad,
+                    borderRadius: '8px 8px 0 0',
+                    marginTop: 4,
+                  }}
+                />
+              </div>
+            )
+          })}
         </div>
       )}
 
-      {/* ═══════ YOUR POSITION (sticky card) ═══════ */}
-      {user && myEntry && (
-        <div
-          ref={myPosRef}
-          style={{
-            background: 'linear-gradient(135deg, var(--accent-light), var(--bg))',
-            border: '2px solid var(--accent)',
-            borderRadius: 14,
-            padding: '14px 18px',
-            marginBottom: 16,
-            display: 'flex',
-            alignItems: 'center',
-            gap: 14,
-          }}
-        >
-          <div
-            style={{
-              width: 44,
-              height: 44,
-              borderRadius: '50%',
-              background: 'var(--accent)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              fontSize: 18,
-              fontWeight: 800,
-              color: 'var(--on-accent)',
-              flexShrink: 0,
-            }}
-          >
-            #{myPosition! + 1}
-          </div>
-          <div style={{ flex: 1, minWidth: 0 }}>
-            <p style={{ fontSize: 14, fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>You</p>
-            <p style={{ fontSize: 12, color: 'var(--text-muted)', margin: 0 }}>
-              @{myEntry.username} ·{' '}
-              {sortBy === 'aura' ? `⚡ ${myEntry.aura_points} Aura` : `⭐ ${myEntry.karma_points} Karma`}
-            </p>
-          </div>
-          <div style={{ textAlign: 'right', flexShrink: 0 }}>
-            <p style={{ fontSize: 16, fontWeight: 800, color: 'var(--accent)', margin: 0 }}>
-              {sortBy === 'aura' ? myEntry.aura_points : myEntry.karma_points}
-            </p>
-            <p style={{ fontSize: 10, color: 'var(--text-muted)', margin: 0 }}>
-              {sortBy === 'aura' ? 'aura' : 'karma'}
-            </p>
-          </div>
-        </div>
-      )}
-
-      {/* ═══════ LEADERBOARD ═══════ */}
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+      {/* ═══════ LEADERBOARD ROWS ═══════ */}
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }} role="list" aria-label="Leaderboard">
         {rest.map((entry, idx) => {
-          const rank = idx + 3 // top3 already shown
-          const val = sortBy === 'aura' ? entry.aura_points : entry.karma_points
+          const rank = idx + 4 // rows after the 3 podium spots; 1-based
           const isMe = user && entry.user_id === user.id
 
           return (
             <div
               key={entry.user_id}
+              role="listitem"
               onClick={() => router.push(`/profile/${entry.username}`)}
               style={{
                 background: isMe ? 'var(--accent-light)' : 'var(--bg)',
@@ -1211,7 +1272,7 @@ function RankingsTab({ user, profile }: { user: any; profile: any }) {
             >
               {/* Rank */}
               <div style={{ width: 28, textAlign: 'center', flexShrink: 0 }}>
-                <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--text-muted)' }}>{rank + 1}</span>
+                <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--text-muted)' }}>{rank}</span>
               </div>
               {/* Avatar */}
               <Avatar name={entry.full_name} avatarUrl={entry.avatar_url} size={36} />
@@ -1238,23 +1299,26 @@ function RankingsTab({ user, profile }: { user: any; profile: any }) {
                   {entry.department ? ` · ${entry.department}` : ''}
                 </p>
               </div>
-              {/* Score */}
-              <div style={{ textAlign: 'right', flexShrink: 0 }}>
-                <p
-                  style={{
-                    fontSize: 15,
-                    fontWeight: 800,
-                    color: sortBy === 'aura' ? 'var(--accent-text)' : '#eab308',
-                    margin: 0,
-                  }}
-                >
-                  {sortBy === 'aura' ? '⚡' : '⭐'} {val}
+              {/* Aura + Karma — Karma collapses on narrow screens */}
+              <div style={{ display: 'flex', alignItems: 'baseline', gap: 12, flexShrink: 0 }}>
+                <p style={{ fontSize: 15, fontWeight: 800, color: 'var(--accent-text)', margin: 0 }}>
+                  ⚡ {entry.aura_points}
+                </p>
+                <p className="hide-mobile-soft" style={{ fontSize: 12, fontWeight: 600, color: '#eab308', margin: 0 }}>
+                  ⭐ {entry.karma_points}
                 </p>
               </div>
             </div>
           )
         })}
       </div>
+
+      {/* Truncation note when more players exist beyond the window */}
+      {!loading && filterScope === 'global' && totalRanked > sorted.length && sorted.length > 0 && (
+        <p style={{ textAlign: 'center', fontSize: 11.5, color: 'var(--text-muted)', marginTop: 14 }}>
+          Top {sorted.length} of {totalRanked} ranked students
+        </p>
+      )}
 
       {/* Bottom CTA */}
       {!user && (
