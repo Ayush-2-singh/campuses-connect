@@ -301,7 +301,7 @@ html {
 
 body {
   background: var(--bg-secondary);
-  background-image: url('/study-doodles-light.svg');
+  background-image: url('/whatsapp-doodles-light.svg');
   background-repeat: repeat;
   background-size: 360px 360px;
   color: var(--text-primary);
@@ -315,7 +315,7 @@ body {
     color 0.25s ease;
 }
 [data-theme='light'] body {
-  background-image: url('/study-doodles-dark.svg');
+  background-image: url('/whatsapp-doodles-dark.svg');
 }
 
 h1,

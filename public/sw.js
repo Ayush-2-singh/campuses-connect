@@ -4,8 +4,8 @@
 const CACHE_NAME = 'connecttocampus-v2'
 // Cache version bumped to v5 so the activate handler purges stale v4 CSS/SVG
 // entries (e.g. after adding the study doodle background on all pages).
-const STATIC_CACHE = 'campus-static-v5'
-const DYNAMIC_CACHE = 'campus-dynamic-v5'
+const STATIC_CACHE = 'campus-static-v6'
+const DYNAMIC_CACHE = 'campus-dynamic-v6'
 
 // Pages to pre-cache for offline access. NOTE: auth/personal pages (e.g.
 // /feed, /notifications) are intentionally NOT precached — their content is
@@ -19,8 +19,8 @@ const PRECACHE_URLS = [
   '/leaderboard',
   '/manifest.webmanifest',
   '/favicon.ico',
-  '/study-doodles-light.svg',
-  '/study-doodles-dark.svg',
+  '/whatsapp-doodles-light.svg',
+  '/whatsapp-doodles-dark.svg',
 ]
 
 // Install: pre-cache essential pages
