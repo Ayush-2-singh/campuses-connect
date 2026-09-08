@@ -5,12 +5,32 @@ import { useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { Icon } from '@/components/icons'
 
+const DOODLE_LIGHT =
+  'url(\'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="360" height="360" viewBox="0 0 360 360"%3E%3Cg fill="none" stroke="%23ffffff" stroke-opacity="0.35" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"%3E%3Cg transform="translate(48 55) rotate(-8) scale(1.1)"%3E%3Cpath d="M0 7 C-8 -1 -13 -5 -13 -10 C-13 -15 -8 -17 -5 -14 L0 -9 L5 -14 C8 -17 13 -15 13 -10 C13 -5 8 -1 0 7 Z"/%3E%3C/g%3E%3Cg transform="translate(140 45) rotate(6)"%3E%3Cpath d="M-14 -5 H-6 L-4 -10 H4 L6 -5 H14 V9 Q14 12 11 12 H-11 Q-14 12 -14 9 Z"/%3E%3Ccircle cx="0" cy="2" r="4.5"/%3E%3C/g%3E%3Cg transform="translate(232 58) rotate(-5)"%3E%3Ccircle cx="0" cy="0" r="11"/%3E%3Cpath d="M-4 -4 L-4 -3.4 M4 -4 L4 -3.4"/%3E%3Cpath d="M-5 3 Q0 8 5 3"/%3E%3C/g%3E%3Cg transform="translate(320 42) rotate(10)"%3E%3Cpath d="M0 -12 L2.9 -4 L11.4 -3.7 L4.8 1.6 L7.1 9.7 L0 5 L-7.1 9.7 L-4.8 1.6 L-11.4 -3.7 L-2.9 -4 Z"/%3E%3C/g%3E%3Cg transform="translate(95 132) rotate(-6)"%3E%3Cpath d="M-10 -3 H10 V5 Q10 13 0 13 Q-10 13 -10 5 Z"/%3E%3Cpath d="M10 0 Q17 1 16 6 Q15 10 10 9"/%3E%3Cpath d="M-4 -8 Q-2 -12 -4 -16 M4 -8 Q6 -12 4 -16"/%3E%3C/g%3E%3Cg transform="translate(188 142) rotate(5) scale(0.85)"%3E%3Cellipse cx="0" cy="-5" rx="8" ry="10"/%3E%3Cpath d="M-2 5 L0 8 L2 5"/%3E%3Cpath d="M0 8 Q5 14 0 20 Q-5 25 0 30"/%3E%3C/g%3E%3Cg transform="translate(276 130) rotate(-10)"%3E%3Cellipse cx="-3" cy="9" rx="4.5" ry="3.5" transform="rotate(-20 -3 9)"/%3E%3Cpath d="M1.5 9 V-10"/%3E%3Cpath d="M1.5 -10 Q11 -7 7 1"/%3E%3C/g%3E%3Cg transform="translate(340 142) rotate(4)"%3E%3Cpath d="M-14 5 Q-18 5 -18 0 Q-18 -5 -12 -5 Q-11 -11 -4 -11 Q3 -11 4 -5 Q10 -6 10 -1 Q10 5 5 5 Z"/%3E%3C/g%3E%3Cg transform="translate(48 225)"%3E%3Cpath d="M-2 -13 A13 13 0 1 0 -2 13 A16 16 0 0 1 -2 -13 Z"/%3E%3C/g%3E%3Cg transform="translate(140 235) rotate(-12)"%3E%3Cpath d="M-14 6 L14 -10 L3 15 L-2 6 Z"/%3E%3Cpath d="M14 -10 L-2 6"/%3E%3C/g%3E%3Cg transform="translate(232 220) scale(0.9)"%3E%3Ccircle cx="0" cy="0" r="6"/%3E%3Cpath d="M0 -11 V-7 M0 7 V11 M-11 0 H-7 M7 0 H11 M-8 -8 L-5 -5 M5 5 L8 8 M-8 8 L-5 5 M5 -5 L8 -8"/%3E%3C/g%3E%3Cg transform="translate(320 232) rotate(6)"%3E%3Cpath d="M-13 -8 H13 V8 H-13 Z"/%3E%3Cpath d="M-13 -8 L0 2 L13 -8"/%3E%3C/g%3E%3Cg transform="translate(95 315) rotate(-6)"%3E%3Cpath d="M-11 -2 H11 V12 H-11 Z"/%3E%3Cpath d="M-13 -9 H13 V-2 H-13 Z"/%3E%3Cpath d="M0 -9 V12"/%3E%3Cpath d="M0 -9 C-2 -13 -7 -13 -6 -10 C-5 -8 -2 -9 0 -9 M0 -9 C2 -13 7 -13 6 -10 C5 -8 2 -9 0 -9"/%3E%3C/g%3E%3Cg transform="translate(185 322) rotate(4)"%3E%3Cpath d="M-15 -3 L0 -10 L15 -3 L0 4 Z"/%3E%3Cpath d="M-7 0 V6 Q0 10 7 6 V0"/%3E%3Cpath d="M15 -3 V6"/%3E%3Ccircle cx="15" cy="8" r="1.5"/%3E%3C/g%3E%3Cg transform="translate(276 312) rotate(8)"%3E%3Cpath d="M-3 -14 L-11 2 H-3 L-5 14 L9 -3 H1 Z"/%3E%3C/g%3E%3Cg transform="translate(340 322) rotate(-5)"%3E%3Cpath d="M0 -8 Q-7 -12 -14 -9 V9 Q-7 6 0 10 Q7 6 14 9 V-9 Q7 -12 0 -8 Z"/%3E%3Cpath d="M0 -8 V10"/%3E%3C/g%3E%3Cg transform="translate(85 88) rotate(15)"%3E%3Cpath d="M0 -5 V5 M-5 0 H5"/%3E%3C/g%3E%3Cg transform="translate(230 178) rotate(-10)"%3E%3Cpath d="M0 -5 V5 M-5 0 H5"/%3E%3C/g%3E%3Cg transform="translate(200 268) rotate(20)"%3E%3Cpath d="M0 -5 V5 M-5 0 H5"/%3E%3C/g%3E%3C/g%3E%3C/svg%3E\')'
+const DOODLE_DARK =
+  'url(\'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="360" height="360" viewBox="0 0 360 360"%3E%3Cg fill="none" stroke="%231f2430" stroke-opacity="0.28" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"%3E%3Cg transform="translate(48 55) rotate(-8) scale(1.1)"%3E%3Cpath d="M0 7 C-8 -1 -13 -5 -13 -10 C-13 -15 -8 -17 -5 -14 L0 -9 L5 -14 C8 -17 13 -15 13 -10 C13 -5 8 -1 0 7 Z"/%3E%3C/g%3E%3Cg transform="translate(140 45) rotate(6)"%3E%3Cpath d="M-14 -5 H-6 L-4 -10 H4 L6 -5 H14 V9 Q14 12 11 12 H-11 Q-14 12 -14 9 Z"/%3E%3Ccircle cx="0" cy="2" r="4.5"/%3E%3C/g%3E%3Cg transform="translate(232 58) rotate(-5)"%3E%3Ccircle cx="0" cy="0" r="11"/%3E%3Cpath d="M-4 -4 L-4 -3.4 M4 -4 L4 -3.4"/%3E%3Cpath d="M-5 3 Q0 8 5 3"/%3E%3C/g%3E%3Cg transform="translate(320 42) rotate(10)"%3E%3Cpath d="M0 -12 L2.9 -4 L11.4 -3.7 L4.8 1.6 L7.1 9.7 L0 5 L-7.1 9.7 L-4.8 1.6 L-11.4 -3.7 L-2.9 -4 Z"/%3E%3C/g%3E%3Cg transform="translate(95 132) rotate(-6)"%3E%3Cpath d="M-10 -3 H10 V5 Q10 13 0 13 Q-10 13 -10 5 Z"/%3E%3Cpath d="M10 0 Q17 1 16 6 Q15 10 10 9"/%3E%3Cpath d="M-4 -8 Q-2 -12 -4 -16 M4 -8 Q6 -12 4 -16"/%3E%3C/g%3E%3Cg transform="translate(188 142) rotate(5) scale(0.85)"%3E%3Cellipse cx="0" cy="-5" rx="8" ry="10"/%3E%3Cpath d="M-2 5 L0 8 L2 5"/%3E%3Cpath d="M0 8 Q5 14 0 20 Q-5 25 0 30"/%3E%3C/g%3E%3Cg transform="translate(276 130) rotate(-10)"%3E%3Cellipse cx="-3" cy="9" rx="4.5" ry="3.5" transform="rotate(-20 -3 9)"/%3E%3Cpath d="M1.5 9 V-10"/%3E%3Cpath d="M1.5 -10 Q11 -7 7 1"/%3E%3C/g%3E%3Cg transform="translate(340 142) rotate(4)"%3E%3Cpath d="M-14 5 Q-18 5 -18 0 Q-18 -5 -12 -5 Q-11 -11 -4 -11 Q3 -11 4 -5 Q10 -6 10 -1 Q10 5 5 5 Z"/%3E%3C/g%3E%3Cg transform="translate(48 225)"%3E%3Cpath d="M-2 -13 A13 13 0 1 0 -2 13 A16 16 0 0 1 -2 -13 Z"/%3E%3C/g%3E%3Cg transform="translate(140 235) rotate(-12)"%3E%3Cpath d="M-14 6 L14 -10 L3 15 L-2 6 Z"/%3E%3Cpath d="M14 -10 L-2 6"/%3E%3C/g%3E%3Cg transform="translate(232 220) scale(0.9)"%3E%3Ccircle cx="0" cy="0" r="6"/%3E%3Cpath d="M0 -11 V-7 M0 7 V11 M-11 0 H-7 M7 0 H11 M-8 -8 L-5 -5 M5 5 L8 8 M-8 8 L-5 5 M5 -5 L8 -8"/%3E%3C/g%3E%3Cg transform="translate(320 232) rotate(6)"%3E%3Cpath d="M-13 -8 H13 V8 H-13 Z"/%3E%3Cpath d="M-13 -8 L0 2 L13 -8"/%3E%3C/g%3E%3Cg transform="translate(95 315) rotate(-6)"%3E%3Cpath d="M-11 -2 H11 V12 H-11 Z"/%3E%3Cpath d="M-13 -9 H13 V-2 H-13 Z"/%3E%3Cpath d="M0 -9 V12"/%3E%3Cpath d="M0 -9 C-2 -13 -7 -13 -6 -10 C-5 -8 -2 -9 0 -9 M0 -9 C2 -13 7 -13 6 -10 C5 -8 2 -9 0 -9"/%3E%3C/g%3E%3Cg transform="translate(185 322) rotate(4)"%3E%3Cpath d="M-15 -3 L0 -10 L15 -3 L0 4 Z"/%3E%3Cpath d="M-7 0 V6 Q0 10 7 6 V0"/%3E%3Cpath d="M15 -3 V6"/%3E%3Ccircle cx="15" cy="8" r="1.5"/%3E%3C/g%3E%3Cg transform="translate(276 312) rotate(8)"%3E%3Cpath d="M-3 -14 L-11 2 H-3 L-5 14 L9 -3 H1 Z"/%3E%3C/g%3E%3Cg transform="translate(340 322) rotate(-5)"%3E%3Cpath d="M0 -8 Q-7 -12 -14 -9 V9 Q-7 6 0 10 Q7 6 14 9 V-9 Q7 -12 0 -8 Z"/%3E%3Cpath d="M0 -8 V10"/%3E%3C/g%3E%3Cg transform="translate(85 88) rotate(15)"%3E%3Cpath d="M0 -5 V5 M-5 0 H5"/%3E%3C/g%3E%3Cg transform="translate(230 178) rotate(-10)"%3E%3Cpath d="M0 -5 V5 M-5 0 H5"/%3E%3C/g%3E%3Cg transform="translate(200 268) rotate(20)"%3E%3Cpath d="M0 -5 V5 M-5 0 H5"/%3E%3C/g%3E%3C/g%3E%3C/svg%3E\')'
+
 export default function LandingPage() {
   const [user, setUser] = useState<any>(null)
   const [pulse, setPulse] = useState({ notes: 0, opportunities: 0, discussions: 0, hackathons: 0 })
   const [liveColleges, setLiveColleges] = useState<{ name: string; campuses: string[] }[]>([])
+  const [isLight, setIsLight] = useState(false)
   const router = useRouter()
   const supabase = createClient()
+
+  useEffect(() => {
+    // Read current theme
+    const theme = document.documentElement.getAttribute('data-theme')
+    setIsLight(theme === 'light')
+
+    // Watch for theme changes
+    const observer = new MutationObserver(() => {
+      const t = document.documentElement.getAttribute('data-theme')
+      setIsLight(t === 'light')
+    })
+    observer.observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] })
+    return () => observer.disconnect()
+  }, [])
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data: { user } }) => {
@@ -80,10 +100,12 @@ export default function LandingPage() {
   return (
     <div
       data-accent="gold"
-      className="landing-doodle"
       style={{
         minHeight: '100vh',
         backgroundColor: 'var(--bg)',
+        backgroundImage: isLight ? DOODLE_DARK : DOODLE_LIGHT,
+        backgroundSize: '360px 360px',
+        backgroundRepeat: 'repeat',
         fontFamily: '-apple-system, BlinkMacSystemFont, Segoe UI, sans-serif',
       }}
     >
