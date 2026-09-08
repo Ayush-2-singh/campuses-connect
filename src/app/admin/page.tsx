@@ -41,11 +41,10 @@ const TABS = [
   'Users',
   'Verify',
   'Premium',
-  'Posts',
+  'Content',
   'Messages',
   'Moderation',
   'Colleges',
-  'Content',
   'Campus Changes',
   'Audit Log',
 ] as const
@@ -88,7 +87,17 @@ export default function AdminPage() {
   // ── Colleges ────────────────────────────────────────────
   const [colleges, setColleges] = useState<any[]>([])
 
-  // ── Content ─────────────────────────────────────────────
+  // ── Content Manager (NEW) ──────────────────────────────
+  const [contentMgrType, setContentMgrType] = useState<'notes' | 'posts' | 'comments' | 'events' | 'polls'>('notes')
+  const [contentMgrItems, setContentMgrItems] = useState<any[]>([])
+  const [contentMgrTotal, setContentMgrTotal] = useState(0)
+  const [contentMgrLoading, setContentMgrLoading] = useState(false)
+  const [contentMgrSearch, setContentMgrSearch] = useState('')
+  const [contentMgrSelected, setContentMgrSelected] = useState<Set<string>>(new Set())
+  const [contentMgrBusy, setContentMgrBusy] = useState(false)
+  const [contentMgrSummary, setContentMgrSummary] = useState<Record<string, number>>({})
+
+  // ── Content (old toggle) ────────────────────────────────
   const [campusToGlobal, setCampusToGlobal] = useState(false)
   const [contentSaving, setContentSaving] = useState(false)
 
@@ -557,6 +566,60 @@ export default function AdminPage() {
     setCampusChangeBusy(null)
   }
 
+  // ── Content Manager loaders ──────────────────────────────
+  const loadContentMgr = useCallback(
+    async (type?: string, search?: string) => {
+      const t = type || contentMgrType
+      const q = search !== undefined ? search : contentMgrSearch
+      setContentMgrLoading(true)
+      try {
+        const res = await fetch(`/api/admin/content?type=${t}&search=${encodeURIComponent(q)}`)
+        if (res.ok) {
+          const data = await res.json()
+          setContentMgrItems(data.items || [])
+          setContentMgrTotal(data.total || 0)
+        }
+      } catch {
+        /* ignore */
+      }
+      setContentMgrLoading(false)
+    },
+    [contentMgrType, contentMgrSearch]
+  )
+
+  const loadContentSummary = useCallback(async () => {
+    try {
+      const res = await fetch('/api/admin/content?type=summary')
+      if (res.ok) {
+        const data = await res.json()
+        setContentMgrSummary(data.summary || {})
+      }
+    } catch {
+      /* ignore */
+    }
+  }, [])
+
+  const deleteContentItems = async (type: string, ids: string[]) => {
+    if (!confirm(`Permanently delete ${ids.length} ${type}? This cannot be undone!`)) return
+    setContentMgrBusy(true)
+    try {
+      const res = await fetch('/api/admin/content', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ type, ids }),
+        credentials: 'include',
+      })
+      if (res.ok) {
+        setContentMgrSelected(new Set())
+        loadContentMgr()
+        loadContentSummary()
+      }
+    } catch {
+      /* ignore */
+    }
+    setContentMgrBusy(false)
+  }
+
   // ── Tab data loading ────────────────────────────────────
   useEffect(() => {
     if (activeTab === 'Analytics') {
@@ -564,13 +627,16 @@ export default function AdminPage() {
       return
     }
     if (activeTab === 'Users') loadUsers()
-    if (activeTab === 'Posts') loadPosts()
     if (activeTab === 'Colleges') loadColleges()
     if (activeTab === 'Moderation') loadModeration()
     if (activeTab === 'Features') loadFeatures()
     if (activeTab === 'Settings') loadSettings()
     if (activeTab === 'Verify') loadVerifyUsers()
     if (activeTab === 'Premium') loadPremiumUsers()
+    if (activeTab === 'Content') {
+      loadContentMgr()
+      loadContentSummary()
+    }
     if (activeTab === 'Messages') loadAdminConversations()
     if (activeTab === 'Campus Changes') loadCampusChanges()
     if (activeTab === 'Audit Log') loadAuditLog()
@@ -2396,206 +2462,6 @@ export default function AdminPage() {
         )}
 
         {/* ═══════════════════════════════════════════════════
-            POSTS
-        ═══════════════════════════════════════════════════ */}
-        {activeTab === 'Posts' && (
-          <div>
-            <div style={{ marginBottom: 16 }}>
-              {!showAnnouncement ? (
-                <button
-                  onClick={() => setShowAnnouncement(true)}
-                  style={{
-                    background: 'var(--accent)',
-                    color: 'var(--on-accent)',
-                    border: 'none',
-                    padding: '10px 20px',
-                    borderRadius: 10,
-                    fontSize: 14,
-                    fontWeight: 600,
-                    cursor: 'pointer',
-                    fontFamily: 'inherit',
-                  }}
-                >
-                  🌐 Post Global Announcement
-                </button>
-              ) : (
-                <div
-                  style={{
-                    background: 'var(--bg)',
-                    border: '2px solid var(--accent-text)',
-                    borderRadius: 14,
-                    padding: 20,
-                    marginBottom: 16,
-                  }}
-                >
-                  <h3 style={{ fontSize: 15, fontWeight: 700, color: 'var(--text-primary)', margin: '0 0 12px' }}>
-                    🌐 Post Official Announcement
-                  </h3>
-                  <div style={{ display: 'flex', gap: 8, marginBottom: 12, flexWrap: 'wrap' }}>
-                    <button
-                      onClick={() => setAnnouncementScope('global')}
-                      style={{
-                        padding: '6px 16px',
-                        borderRadius: 20,
-                        border: 'none',
-                        background: announcementScope === 'global' ? 'var(--accent)' : 'var(--border-strong)',
-                        color: announcementScope === 'global' ? 'var(--on-accent)' : 'var(--text-secondary)',
-                        fontWeight: 600,
-                        cursor: 'pointer',
-                        fontFamily: 'inherit',
-                        fontSize: 13,
-                      }}
-                    >
-                      🌐 All Campuses
-                    </button>
-                    {campuses.map((c) => (
-                      <button
-                        key={c.id}
-                        onClick={() => setAnnouncementScope(c.id)}
-                        style={{
-                          padding: '6px 16px',
-                          borderRadius: 20,
-                          border: 'none',
-                          background: announcementScope === c.id ? 'var(--success)' : 'var(--border-strong)',
-                          color: announcementScope === c.id ? 'var(--on-accent)' : 'var(--text-secondary)',
-                          fontWeight: 600,
-                          cursor: 'pointer',
-                          fontFamily: 'inherit',
-                          fontSize: 13,
-                        }}
-                      >
-                        🏫 {c.name}
-                      </button>
-                    ))}
-                  </div>
-                  <textarea
-                    value={announcementText}
-                    onChange={(e) => setAnnouncementText(e.target.value)}
-                    placeholder="Write your official announcement..."
-                    rows={4}
-                    style={{
-                      width: '100%',
-                      border: '1px solid var(--border)',
-                      borderRadius: 10,
-                      padding: '10px 14px',
-                      fontSize: 14,
-                      outline: 'none',
-                      fontFamily: 'inherit',
-                      resize: 'none',
-                      boxSizing: 'border-box',
-                    }}
-                  />
-                  <div style={{ display: 'flex', gap: 8, marginTop: 10 }}>
-                    <button
-                      onClick={() => setShowAnnouncement(false)}
-                      style={{
-                        flex: 1,
-                        background: 'var(--bg)',
-                        color: 'var(--text-secondary)',
-                        border: '1px solid var(--border)',
-                        borderRadius: 10,
-                        padding: '9px',
-                        fontSize: 14,
-                        cursor: 'pointer',
-                        fontFamily: 'inherit',
-                      }}
-                    >
-                      Cancel
-                    </button>
-                    <button
-                      onClick={postAnnouncement}
-                      disabled={!announcementText.trim() || postingAnnouncement}
-                      style={{
-                        flex: 2,
-                        background: postingAnnouncement ? 'var(--disabled)' : 'var(--accent)',
-                        color: 'var(--on-accent)',
-                        border: 'none',
-                        borderRadius: 10,
-                        padding: '9px',
-                        fontSize: 14,
-                        fontWeight: 600,
-                        cursor: 'pointer',
-                        fontFamily: 'inherit',
-                      }}
-                    >
-                      {postingAnnouncement
-                        ? 'Posting...'
-                        : announcementScope === 'global'
-                          ? '🌐 Post Global Announcement'
-                          : '🏫 Post Campus Announcement'}
-                    </button>
-                  </div>
-                </div>
-              )}
-            </div>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-              {posts.length === 0 ? (
-                <p style={{ color: 'var(--text-muted)', textAlign: 'center', padding: '40px 0' }}>Loading posts…</p>
-              ) : (
-                posts.map((p) => (
-                  <div
-                    key={p.id}
-                    style={{
-                      background: 'var(--bg)',
-                      border: '1px solid var(--border)',
-                      borderRadius: 12,
-                      padding: '14px 16px',
-                      boxShadow: 'var(--shadow-sm)',
-                    }}
-                  >
-                    <div
-                      style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12 }}
-                    >
-                      <div style={{ flex: 1, minWidth: 0 }}>
-                        <p style={{ fontSize: 13, color: 'var(--text-secondary)', margin: '0 0 6px', lineHeight: 1.5 }}>
-                          {p.body?.slice(0, 160)}
-                          {p.body?.length > 160 ? '…' : ''}
-                        </p>
-                        <p style={{ fontSize: 11, color: 'var(--text-muted)', margin: 0 }}>
-                          @{p.profiles?.username} · {p.post_type} {p.is_pinned ? '· 📌 Pinned' : ''}
-                        </p>
-                      </div>
-                      <div style={{ display: 'flex', gap: 6, flexShrink: 0 }}>
-                        <button
-                          onClick={() => togglePin(p.id, p.is_pinned)}
-                          style={{
-                            padding: '5px 10px',
-                            borderRadius: 6,
-                            border: '1px solid var(--border)',
-                            background: p.is_pinned ? 'var(--orange-light)' : 'var(--bg)',
-                            color: p.is_pinned ? 'var(--orange-text)' : 'var(--text-secondary)',
-                            fontSize: 12,
-                            cursor: 'pointer',
-                            fontFamily: 'inherit',
-                          }}
-                        >
-                          {p.is_pinned ? 'Unpin' : 'Pin'}
-                        </button>
-                        <button
-                          onClick={() => deletePost(p.id)}
-                          style={{
-                            padding: '5px 10px',
-                            borderRadius: 6,
-                            border: '1px solid var(--danger-border)',
-                            background: 'var(--danger-light)',
-                            color: 'var(--danger)',
-                            fontSize: 12,
-                            cursor: 'pointer',
-                            fontFamily: 'inherit',
-                          }}
-                        >
-                          Delete
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                ))
-              )}
-            </div>
-          </div>
-        )}
-
-        {/* ═══════════════════════════════════════════════════
             MESSAGES (NEW)
         ═══════════════════════════════════════════════════ */}
         {activeTab === 'Messages' && (
@@ -3474,104 +3340,283 @@ export default function AdminPage() {
         )}
 
         {/* ═══════════════════════════════════════════════════
-            CONTENT
+            CONTENT MANAGER (NEW)
         ═══════════════════════════════════════════════════ */}
         {activeTab === 'Content' && (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+          <div>
+            <div style={{ marginBottom: 16 }}>
+              <h3 style={{ fontSize: 16, fontWeight: 700, color: 'var(--text-primary)', margin: '0 0 4px' }}>
+                🗑️ Content Manager
+              </h3>
+              <p style={{ fontSize: 13, color: 'var(--text-muted)', margin: 0 }}>
+                View & delete any content on the platform — notes, posts, comments, events, polls
+              </p>
+            </div>
+
+            {/* Summary cards */}
             <div
               style={{
-                background: 'var(--bg)',
-                border: '1px solid var(--border)',
-                borderRadius: 14,
-                padding: 20,
-                boxShadow: 'var(--shadow-sm)',
+                display: 'grid',
+                gridTemplateColumns: 'repeat(auto-fit, minmax(120px, 1fr))',
+                gap: 8,
+                marginBottom: 16,
               }}
             >
-              <h3 style={{ fontSize: 15, fontWeight: 700, color: 'var(--text-primary)', margin: '0 0 4px' }}>
-                🌐 Global vs Campus content
-              </h3>
-              <p style={{ fontSize: 13, color: 'var(--text-secondary)', lineHeight: 1.6, margin: '0 0 16px' }}>
-                Global students (no college yet) only see content marked <strong>Global</strong>. Anything marked
-                <strong> Campus</strong> stays inside its own branch. Use the switch below to open campus content to
-                everyone.
-              </p>
-
-              {adminError && (
-                <div
+              {(
+                [
+                  { key: 'notes', label: 'Notes', emoji: '📝' },
+                  { key: 'posts', label: 'Posts', emoji: '💬' },
+                  { key: 'comments', label: 'Comments', emoji: '💭' },
+                  { key: 'events', label: 'Events', emoji: '📅' },
+                  { key: 'polls', label: 'Polls', emoji: '🗳️' },
+                ] as const
+              ).map((t) => (
+                <button
+                  key={t.key}
+                  onClick={() => {
+                    setContentMgrType(t.key)
+                    setContentMgrSelected(new Set())
+                    setContentMgrSearch('')
+                    loadContentMgr(t.key, '')
+                  }}
                   style={{
-                    background: 'var(--danger-light)',
-                    border: '1px solid var(--danger-border)',
-                    borderRadius: 10,
-                    padding: '10px 14px',
-                    marginBottom: 14,
-                    fontSize: 13,
-                    color: 'var(--danger)',
+                    background: contentMgrType === t.key ? 'var(--accent)' : 'var(--bg)',
+                    border: contentMgrType === t.key ? 'none' : '1px solid var(--border)',
+                    borderRadius: 12,
+                    padding: '12px 8px',
+                    textAlign: 'center',
+                    cursor: 'pointer',
+                    fontFamily: 'inherit',
+                    boxShadow: 'var(--shadow-sm)',
                   }}
                 >
-                  {adminError}
-                </div>
-              )}
+                  <p style={{ fontSize: 22, margin: '0 0 2px' }}>{t.emoji}</p>
+                  <p
+                    style={{
+                      fontSize: 13,
+                      fontWeight: 700,
+                      color: contentMgrType === t.key ? 'var(--on-accent)' : 'var(--text-primary)',
+                      margin: '0 0 2px',
+                    }}
+                  >
+                    {t.label}
+                  </p>
+                  <p
+                    style={{
+                      fontSize: 11,
+                      color: contentMgrType === t.key ? 'rgba(255,255,255,0.8)' : 'var(--text-muted)',
+                      margin: 0,
+                    }}
+                  >
+                    {contentMgrSummary[t.key] || 0}
+                  </p>
+                </button>
+              ))}
+            </div>
 
-              <div
+            {/* Search + bulk delete */}
+            <div style={{ display: 'flex', gap: 8, marginBottom: 16 }}>
+              <input
+                value={contentMgrSearch}
+                onChange={(e) => setContentMgrSearch(e.target.value)}
+                onKeyDown={(e) => e.key === 'Enter' && loadContentMgr(undefined, contentMgrSearch)}
+                placeholder={`🔍 Search ${contentMgrType}...`}
                 style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'space-between',
-                  gap: 12,
-                  background: 'var(--bg-secondary)',
-                  borderRadius: 12,
-                  padding: '14px 16px',
+                  flex: 1,
+                  border: '1px solid var(--border)',
+                  borderRadius: 10,
+                  padding: '10px 14px',
+                  fontSize: 13,
+                  outline: 'none',
+                  fontFamily: 'inherit',
+                  background: 'var(--bg)',
+                  color: 'var(--text-primary)',
+                }}
+              />
+              <button
+                onClick={() => loadContentMgr(undefined, contentMgrSearch)}
+                style={{
+                  padding: '10px 16px',
+                  borderRadius: 10,
+                  border: 'none',
+                  background: 'var(--accent)',
+                  color: 'var(--on-accent)',
+                  fontSize: 13,
+                  fontWeight: 600,
+                  cursor: 'pointer',
+                  fontFamily: 'inherit',
                 }}
               >
-                <div>
-                  <p style={{ fontSize: 13.5, fontWeight: 700, color: 'var(--text-primary)', margin: '0 0 2px' }}>
-                    Campus content visible to Global users
-                  </p>
-                  <p style={{ fontSize: 12, color: 'var(--text-muted)', margin: 0 }}>
-                    {campusToGlobal
-                      ? 'ON — global students can see campus opportunities, notes & posts.'
-                      : 'OFF — global students only see global content. (recommended)'}
-                  </p>
-                </div>
+                Search
+              </button>
+              {contentMgrSelected.size > 0 && (
                 <button
-                  onClick={toggleCampusToGlobal}
-                  disabled={contentSaving}
-                  aria-pressed={campusToGlobal}
+                  onClick={() => deleteContentItems(contentMgrType, Array.from(contentMgrSelected))}
+                  disabled={contentMgrBusy}
                   style={{
-                    flexShrink: 0,
-                    width: 52,
-                    height: 30,
-                    borderRadius: 20,
+                    padding: '10px 16px',
+                    borderRadius: 10,
                     border: 'none',
-                    cursor: contentSaving ? 'default' : 'pointer',
-                    position: 'relative',
-                    background: campusToGlobal ? 'var(--accent)' : 'var(--border-strong)',
-                    transition: 'background 0.2s',
+                    background: 'var(--danger)',
+                    color: '#fff',
+                    fontSize: 13,
+                    fontWeight: 600,
+                    cursor: 'pointer',
+                    fontFamily: 'inherit',
                   }}
                 >
-                  <span
-                    style={{
-                      position: 'absolute',
-                      top: 3,
-                      left: campusToGlobal ? 25 : 3,
-                      width: 24,
-                      height: 24,
-                      borderRadius: '50%',
-                      background: '#fff',
-                      transition: 'left 0.2s',
-                      boxShadow: '0 1px 3px rgba(0,0,0,0.25)',
-                    }}
-                  />
+                  🗑️ Delete {contentMgrSelected.size}
                 </button>
-              </div>
+              )}
+            </div>
 
-              <div style={{ background: 'var(--accent-light)', borderRadius: 10, padding: '12px 14px', marginTop: 14 }}>
-                <p style={{ fontSize: 12.5, color: 'var(--accent-text)', margin: 0, lineHeight: 1.6 }}>
-                  💡 When posting opportunities or notes, choose <strong>Global</strong> (every student) or
-                  <strong> Campus</strong> (your branch only) — the same choice you see for posts in the composer.
+            {/* Select all */}
+            {contentMgrItems.length > 0 && (
+              <div style={{ display: 'flex', gap: 8, marginBottom: 8 }}>
+                <button
+                  onClick={() => {
+                    if (contentMgrSelected.size === contentMgrItems.length) setContentMgrSelected(new Set())
+                    else setContentMgrSelected(new Set(contentMgrItems.map((i: any) => i.id)))
+                  }}
+                  style={{
+                    padding: '5px 12px',
+                    borderRadius: 8,
+                    border: '1px solid var(--border)',
+                    background: 'var(--bg)',
+                    color: 'var(--text-secondary)',
+                    fontSize: 12,
+                    cursor: 'pointer',
+                    fontFamily: 'inherit',
+                  }}
+                >
+                  {contentMgrSelected.size === contentMgrItems.length ? 'Deselect All' : 'Select All'}
+                </button>
+                <span style={{ fontSize: 12, color: 'var(--text-muted)', alignSelf: 'center' }}>
+                  {contentMgrItems.length} of {contentMgrTotal} shown
+                  {contentMgrSelected.size > 0 ? ` · ${contentMgrSelected.size} selected` : ''}
+                </span>
+              </div>
+            )}
+
+            {/* Items list */}
+            {contentMgrLoading ? (
+              <p style={{ color: 'var(--text-muted)', textAlign: 'center', padding: '40px 0' }}>
+                Loading {contentMgrType}…
+              </p>
+            ) : contentMgrItems.length === 0 ? (
+              <div
+                style={{
+                  background: 'var(--bg)',
+                  border: '1px solid var(--border)',
+                  borderRadius: 16,
+                  padding: '40px 20px',
+                  textAlign: 'center',
+                  boxShadow: 'var(--shadow-sm)',
+                }}
+              >
+                <p style={{ fontSize: 32, margin: '0 0 8px' }}>📭</p>
+                <p style={{ fontSize: 15, fontWeight: 600, color: 'var(--text-primary)', margin: '0 0 4px' }}>
+                  No {contentMgrType} found
+                </p>
+                <p style={{ fontSize: 13, color: 'var(--text-muted)', margin: 0 }}>
+                  {contentMgrSearch ? 'Try a different search' : 'Nothing here yet'}
                 </p>
               </div>
-            </div>
+            ) : (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                {contentMgrItems.map((item: any) => {
+                  const isSelected = contentMgrSelected.has(item.id)
+                  const author = item.profiles
+                  // Render based on type
+                  const title = item.title || item.body || item.question || ''
+                  const preview = (item.description || item.body || item.content || '').slice(0, 120)
+                  return (
+                    <div
+                      key={item.id}
+                      style={{
+                        background: isSelected ? 'var(--danger-light)' : 'var(--bg)',
+                        border: isSelected ? '2px solid var(--danger)' : '1px solid var(--border)',
+                        borderRadius: 12,
+                        padding: '12px 14px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 10,
+                        boxShadow: 'var(--shadow-sm)',
+                      }}
+                    >
+                      <input
+                        type="checkbox"
+                        checked={isSelected}
+                        onChange={() => {
+                          setContentMgrSelected((prev) => {
+                            const n = new Set(prev)
+                            if (n.has(item.id)) n.delete(item.id)
+                            else n.add(item.id)
+                            return n
+                          })
+                        }}
+                        style={{ width: 18, height: 18, flexShrink: 0, cursor: 'pointer' }}
+                      />
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <p
+                          style={{
+                            fontSize: 13,
+                            fontWeight: 600,
+                            color: 'var(--text-primary)',
+                            margin: '0 0 2px',
+                            overflow: 'hidden',
+                            textOverflow: 'ellipsis',
+                            whiteSpace: 'nowrap',
+                          }}
+                        >
+                          {title.slice(0, 80)}
+                          {title.length > 80 ? '…' : ''}
+                        </p>
+                        {preview && (
+                          <p
+                            style={{
+                              fontSize: 12,
+                              color: 'var(--text-muted)',
+                              margin: '0 0 3px',
+                              overflow: 'hidden',
+                              textOverflow: 'ellipsis',
+                              whiteSpace: 'nowrap',
+                            }}
+                          >
+                            {preview}
+                            {preview.length >= 120 ? '…' : ''}
+                          </p>
+                        )}
+                        <p style={{ fontSize: 11, color: 'var(--text-muted)', margin: 0 }}>
+                          @{author?.username || '—'} · {new Date(item.created_at).toLocaleDateString()}
+                          {item.subject ? ` · ${item.subject}` : ''}
+                          {item.is_pinned ? ' · 📌' : ''}
+                          {item.is_verified === false ? ' · ⏳ Pending' : ''}
+                        </p>
+                      </div>
+                      <button
+                        onClick={() => deleteContentItems(contentMgrType, [item.id])}
+                        disabled={contentMgrBusy}
+                        style={{
+                          padding: '6px 12px',
+                          borderRadius: 8,
+                          border: '1px solid var(--danger-border)',
+                          background: 'var(--danger-light)',
+                          color: 'var(--danger)',
+                          fontSize: 12,
+                          fontWeight: 600,
+                          cursor: 'pointer',
+                          fontFamily: 'inherit',
+                          flexShrink: 0,
+                        }}
+                      >
+                        🗑️ Delete
+                      </button>
+                    </div>
+                  )
+                })}
+              </div>
+            )}
           </div>
         )}
 

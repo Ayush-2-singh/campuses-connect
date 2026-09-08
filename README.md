@@ -259,6 +259,14 @@ A comprehensive platform management dashboard:
 - **Role management** — assign/remove platform_admin
 - **User details** — karma, posts, connections, activity
 
+#### 🗑️ Content Manager
+- **All content types** — manage notes, posts, comments, events, polls in one place
+- **Type summary cards** — see total count for each content type
+- **Search & filter** — find any content by title, body, or subject
+- **Multi-select bulk delete** — select multiple items and delete at once
+- **Single delete** — delete any individual item with one click
+- **Full admin control** — delete anything, anywhere, no restrictions
+
 #### 📝 Content Moderation
 - **Report queue** — review flagged content
 - **Auto-moderation** — spam detection
