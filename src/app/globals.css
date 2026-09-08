@@ -368,6 +368,17 @@ button:disabled {
   background-image: url('/chat-doodles-dark.svg');
 }
 
+/* Landing page doodle background — same WhatsApp-style wallpaper but on
+   the landing page root so it tiles across the full viewport. */
+.landing-doodle {
+  background-image: url('/chat-doodles-light.svg');
+  background-size: 400px 400px;
+  background-repeat: repeat;
+}
+[data-theme='light'] .landing-doodle {
+  background-image: url('/chat-doodles-dark.svg');
+}
+
 /* Card hover — border + shadow pick up the section accent */
 .card-hover {
   transition:
