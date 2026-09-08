@@ -131,6 +131,7 @@ export default function AdminPage() {
   const [adminConvMsgTotal, setAdminConvMsgTotal] = useState(0)
   const [adminConvMsgLoading, setAdminConvMsgLoading] = useState(false)
   const [adminSelectedMsgs, setAdminSelectedMsgs] = useState<Set<string>>(new Set())
+  const [adminSelectedConvIds, setAdminSelectedConvIds] = useState<Set<string>>(new Set())
   const [adminMsgBusy, setAdminMsgBusy] = useState(false)
   const [adminMsgTab, setAdminMsgTab] = useState<'list' | 'detail'>('list')
 
@@ -501,11 +502,38 @@ export default function AdminPage() {
         setAdminSelectedConv(null)
         setAdminConvMessages([])
         setAdminMsgTab('list')
+        setAdminSelectedConvIds((prev) => {
+          const n = new Set(prev)
+          n.delete(convId)
+          return n
+        })
         loadAdminConversations()
       }
     } catch {
       /* ignore */
     }
+    setAdminMsgBusy(false)
+  }
+
+  const deleteSelectedConversations = async () => {
+    const ids = Array.from(adminSelectedConvIds)
+    if (!ids.length) return
+    if (!confirm(`Delete ${ids.length} conversation(s) and all their messages?`)) return
+    setAdminMsgBusy(true)
+    for (const id of ids) {
+      try {
+        await fetch('/api/admin/messages', {
+          method: 'DELETE',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ conversation_id: id, action: 'delete_conversation' }),
+          credentials: 'include',
+        })
+      } catch {
+        /* ignore */
+      }
+    }
+    setAdminSelectedConvIds(new Set())
+    loadAdminConversations()
     setAdminMsgBusy(false)
   }
 
@@ -2590,6 +2618,29 @@ export default function AdminPage() {
                   {adminConvTotal} total conversations · View, search & delete messages
                 </p>
               </div>
+              {adminMsgTab === 'list' && (
+                <div style={{ display: 'flex', gap: 8, flexShrink: 0 }}>
+                  {adminSelectedConvIds.size > 0 && (
+                    <button
+                      onClick={deleteSelectedConversations}
+                      disabled={adminMsgBusy}
+                      style={{
+                        padding: '7px 14px',
+                        borderRadius: 8,
+                        border: 'none',
+                        background: 'var(--danger)',
+                        color: '#fff',
+                        fontSize: 12,
+                        fontWeight: 600,
+                        cursor: 'pointer',
+                        fontFamily: 'inherit',
+                      }}
+                    >
+                      🗑️ Delete {adminSelectedConvIds.size} Selected
+                    </button>
+                  )}
+                </div>
+              )}
               {adminMsgTab === 'detail' && (
                 <button
                   onClick={() => {
@@ -2693,8 +2744,16 @@ export default function AdminPage() {
                             setAdminSelectedMsgs(new Set())
                           }}
                           style={{
-                            background: isActive ? 'var(--accent-light)' : 'var(--bg)',
-                            border: isActive ? '2px solid var(--accent)' : '1px solid var(--border)',
+                            background: adminSelectedConvIds.has(conv.id)
+                              ? 'var(--danger-light)'
+                              : isActive
+                                ? 'var(--accent-light)'
+                                : 'var(--bg)',
+                            border: adminSelectedConvIds.has(conv.id)
+                              ? '2px solid var(--danger)'
+                              : isActive
+                                ? '2px solid var(--accent)'
+                                : '1px solid var(--border)',
                             borderRadius: 12,
                             padding: '14px 16px',
                             display: 'flex',
@@ -2704,6 +2763,20 @@ export default function AdminPage() {
                             boxShadow: 'var(--shadow-sm)',
                           }}
                         >
+                          <input
+                            type="checkbox"
+                            checked={adminSelectedConvIds.has(conv.id)}
+                            onClick={(e) => e.stopPropagation()}
+                            onChange={() => {
+                              setAdminSelectedConvIds((prev) => {
+                                const n = new Set(prev)
+                                if (n.has(conv.id)) n.delete(conv.id)
+                                else n.add(conv.id)
+                                return n
+                              })
+                            }}
+                            style={{ width: 18, height: 18, flexShrink: 0, cursor: 'pointer' }}
+                          />
                           <div
                             style={{
                               width: 42,
@@ -2768,7 +2841,32 @@ export default function AdminPage() {
                               {new Date(conv.updated_at || conv.created_at).toLocaleString()}
                             </p>
                           </div>
-                          <span style={{ color: 'var(--text-muted)', fontSize: 14, flexShrink: 0 }}>→</span>
+                          <div style={{ display: 'flex', gap: 6, alignItems: 'center', flexShrink: 0 }}>
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation()
+                                deleteAdminConversation(conv.id, false)
+                              }}
+                              disabled={adminMsgBusy}
+                              title="Delete conversation"
+                              style={{
+                                width: 30,
+                                height: 30,
+                                borderRadius: 8,
+                                border: '1px solid var(--danger-border)',
+                                background: 'var(--danger-light)',
+                                color: 'var(--danger)',
+                                fontSize: 14,
+                                cursor: 'pointer',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                              }}
+                            >
+                              🗑️
+                            </button>
+                            <span style={{ color: 'var(--text-muted)', fontSize: 14 }}>→</span>
+                          </div>
                         </div>
                       )
                     })}
