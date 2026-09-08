@@ -196,7 +196,7 @@ export async function DELETE(request: NextRequest) {
     }
 
     // Log the action
-    await supabaseAdmin.from('admin_audit_log').insert({
+    await supabaseAdmin.from('audit_log').insert({
       actor_id: admin.id,
       action: 'messages.delete',
       entity_type: 'message',
@@ -230,7 +230,7 @@ export async function DELETE(request: NextRequest) {
     await supabaseAdmin.from('conversations').delete().eq('id', conversation_id)
 
     // Log
-    await supabaseAdmin.from('admin_audit_log').insert({
+    await supabaseAdmin.from('audit_log').insert({
       actor_id: admin.id,
       action: 'messages.delete_conversation',
       entity_type: 'conversation',
@@ -250,7 +250,7 @@ export async function DELETE(request: NextRequest) {
 
     await supabaseAdmin.from('conversations').delete().eq('id', conversation_id)
 
-    await supabaseAdmin.from('admin_audit_log').insert({
+    await supabaseAdmin.from('audit_log').insert({
       actor_id: admin.id,
       action: 'messages.hard_delete_conversation',
       entity_type: 'conversation',

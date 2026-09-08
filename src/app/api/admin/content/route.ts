@@ -162,7 +162,7 @@ export async function DELETE(request: NextRequest) {
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
 
   // Log
-  await supabaseAdmin.from('admin_audit_log').insert({
+  await supabaseAdmin.from('audit_log').insert({
     actor_id: admin.id,
     action: `content.delete_${type}`,
     entity_type: type,
