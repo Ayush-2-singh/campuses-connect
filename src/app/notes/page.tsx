@@ -118,28 +118,27 @@ export default function NotesPage() {
   const handlePost = async () => {
     if (!form.title.trim() || !form.subject.trim()) return
     setPosting(true)
-    const { data: noteRow } = await supabase
-      .from('notes')
-      .insert({
-        uploaded_by: user.id,
-        campus_id: profile?.campus_id,
-        college_id: profile?.college_id,
-        department_id: profile?.department_id,
-        title: form.title,
-        subject: form.subject,
-        resource_type: form.resource_type,
-        description: form.description,
-        drive_link: form.drive_link || null,
-        external_link: form.external_link || null,
-        visibility: profile?.campus_id ? form.visibility : 'global',
-        // Admin uploads are auto-verified; user submissions need review
-        is_verified: canUpload,
-      })
-      .select('id')
-      .single()
     try {
-      await supabase.rpc('reward_note_upload', { p_note_id: noteRow?.id })
-    } catch {}
+      const res = await fetch('/api/notes/submit', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          title: form.title,
+          subject: form.subject,
+          resource_type: form.resource_type,
+          description: form.description,
+          drive_link: form.drive_link || null,
+          external_link: form.external_link || null,
+          visibility: profile?.campus_id ? form.visibility : 'global',
+        }),
+        credentials: 'include',
+      })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data?.error || 'Failed to submit')
+      alert(data?.message || 'Submitted!')
+    } catch (err: any) {
+      alert(err?.message || 'Failed to submit note')
+    }
     setForm({
       title: '',
       subject: '',
