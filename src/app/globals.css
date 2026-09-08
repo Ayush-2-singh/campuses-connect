@@ -301,9 +301,9 @@ html {
 
 body {
   background: var(--bg-secondary);
-  background-image: url('/doodle-study.svg');
+  background-image: url('/study-doodles-light.svg');
   background-repeat: repeat;
-  background-size: 400px 400px;
+  background-size: 360px 360px;
   color: var(--text-primary);
   font-family: var(--font-sans);
   margin: 0;
@@ -313,6 +313,9 @@ body {
   transition:
     background-color 0.25s ease,
     color 0.25s ease;
+}
+[data-theme='light'] body {
+  background-image: url('/study-doodles-dark.svg');
 }
 
 h1,
@@ -365,17 +368,6 @@ button:disabled {
   background-repeat: repeat;
 }
 [data-theme='light'] .chat-doodle-bg {
-  background-image: url('/chat-doodles-dark.svg');
-}
-
-/* Landing page doodle background — same WhatsApp-style wallpaper but on
-   the landing page root so it tiles across the full viewport. */
-.landing-doodle {
-  background-image: url('/chat-doodles-light.svg');
-  background-size: 400px 400px;
-  background-repeat: repeat;
-}
-[data-theme='light'] .landing-doodle {
   background-image: url('/chat-doodles-dark.svg');
 }
 
