@@ -22,7 +22,11 @@ CREATE INDEX IF NOT EXISTS idx_profiles_karma_public
   WHERE is_public = TRUE AND status = 'active';
 
 -- ── 2. Leaderboard RPC: aura_points in output + server-side sort ──
-CREATE OR REPLACE FUNCTION public.get_enhanced_leaderboard(
+-- DROP first: CREATE OR REPLACE cannot change a function's return type.
+DROP FUNCTION IF EXISTS public.get_enhanced_leaderboard(UUID, INT);
+DROP FUNCTION IF EXISTS public.get_enhanced_leaderboard(UUID, INT, TEXT);
+
+CREATE FUNCTION public.get_enhanced_leaderboard(
   p_campus_id UUID DEFAULT NULL,
   p_limit INT DEFAULT 50,
   p_sort TEXT DEFAULT 'aura'
@@ -32,7 +36,7 @@ RETURNS TABLE (
   full_name text,
   username text,
   avatar_url text,
-  department short_name text,
+  department text,
   karma_points int,
   aura_points int,
   streak_days int,

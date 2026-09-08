@@ -4,11 +4,13 @@ import { useRouter } from 'next/navigation'
 import { useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { Icon } from '@/components/icons'
+import GuestEntry from '@/components/GuestEntry'
 
 export default function LandingPage() {
   const [user, setUser] = useState<any>(null)
   const [pulse, setPulse] = useState({ notes: 0, opportunities: 0, discussions: 0, hackathons: 0 })
   const [liveColleges, setLiveColleges] = useState<{ name: string; campuses: string[] }[]>([])
+  const [guestOpen, setGuestOpen] = useState(false)
   const router = useRouter()
   const supabase = createClient()
 
@@ -159,6 +161,20 @@ export default function LandingPage() {
               </button>
             ) : (
               <>
+                <button
+                  onClick={() => setGuestOpen(true)}
+                  style={{
+                    background: 'none',
+                    color: 'var(--accent)',
+                    border: 'none',
+                    padding: '8px 14px',
+                    fontSize: 14,
+                    fontWeight: 700,
+                    cursor: 'pointer',
+                  }}
+                >
+                  Enter as Guest
+                </button>
                 <button
                   onClick={() => router.push('/auth/login')}
                   style={{
@@ -760,6 +776,22 @@ export default function LandingPage() {
           >
             Create your account →
           </button>
+          <button
+            onClick={() => setGuestOpen(true)}
+            style={{
+              display: 'block',
+              margin: '14px auto 0',
+              background: 'none',
+              color: 'rgba(29,21,3,0.72)',
+              border: 'none',
+              fontSize: 13,
+              fontWeight: 600,
+              cursor: 'pointer',
+              textDecoration: 'underline',
+            }}
+          >
+            or just enter with your name — no signup →
+          </button>
         </div>
       </div>
 
@@ -770,6 +802,8 @@ export default function LandingPage() {
           educational institution.
         </p>
       </div>
+
+      {guestOpen && <GuestEntry onClose={() => setGuestOpen(false)} />}
     </div>
   )
 }

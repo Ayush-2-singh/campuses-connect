@@ -58,6 +58,37 @@ export default function OnboardingPage() {
         .then(({ data }) => setDepartments(data || []))
   }, [selected.campus_id])
 
+  // Guest entry (?guest=1): the profile was just created with the name
+  // and campus picked on the landing modal. Prefill from it and skip
+  // straight to the Profile step — no repeating College/Campus steps.
+  useEffect(() => {
+    if (typeof window === 'undefined' || !window.location.search.includes('guest=1')) return
+    ;(async () => {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser()
+      if (!user) return
+      const { data: prof } = await supabase
+        .from('profiles')
+        .select('college_id, campus_id, department_id, username, bio')
+        .eq('id', user.id)
+        .single()
+      if (prof) {
+        setSelected((s) => ({
+          ...s,
+          college_id: prof.college_id || '',
+          campus_id: prof.campus_id || '',
+          department_id: prof.department_id || '',
+          // Placeholder usernames (g-xxxxxx) from anonymous sign-in get
+          // replaced — the guest types a fresh one.
+          username: prof.username && !/^g-[0-9a-f]{6}$/.test(prof.username) ? prof.username : '',
+          bio: prof.bio || '',
+        }))
+      }
+      setStep(3)
+    })()
+  }, [supabase])
+
   const next = () => setStep((s) => s + 1)
   const back = () => setStep((s) => s - 1)
 
@@ -104,17 +135,20 @@ export default function OnboardingPage() {
       )
       return
     }
+    // Keys set to undefined are dropped by supabase-js — that keeps the
+    // existing column value. This matters for guests, whose name/campus
+    // was already saved during entry: untouched steps must not erase it.
     const { error } = await supabase
       .from('profiles')
       .update({
-        college_id: selected.college_id || null,
-        campus_id: selected.campus_id || null,
-        department_id: selected.department_id || null,
+        college_id: selected.college_id || undefined,
+        campus_id: selected.campus_id || undefined,
+        department_id: selected.department_id || undefined,
         username: selected.username.trim(),
-        bio: selected.bio.trim() || null,
-        college_email: selected.college_email.trim() || null,
-        current_year: selected.current_year ? parseInt(selected.current_year) : null,
-        batch_year: selected.batch_year ? parseInt(selected.batch_year) : null,
+        bio: selected.bio.trim() || undefined,
+        college_email: selected.college_email.trim() || undefined,
+        current_year: selected.current_year ? parseInt(selected.current_year) : undefined,
+        batch_year: selected.batch_year ? parseInt(selected.batch_year) : undefined,
       })
       .eq('id', user.id)
     if (error) {
