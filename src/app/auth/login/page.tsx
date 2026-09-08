@@ -61,7 +61,6 @@ export default function LoginPage() {
       data-accent="gold"
       style={{
         minHeight: '100vh',
-        background: 'var(--bg-secondary)',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',

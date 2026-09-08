@@ -11,7 +11,7 @@ export default function MessagesRedirect() {
   }, [router])
 
   return (
-    <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--bg-secondary)' }}>
+    <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
       <p style={{ color: 'var(--text-muted)', fontSize: 14 }}>Opening your chats…</p>
     </div>
   )

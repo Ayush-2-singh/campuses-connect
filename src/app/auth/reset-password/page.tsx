@@ -26,19 +26,24 @@ export default function ResetPasswordPage() {
       setState('invalid')
       return
     }
-    supabase.auth.setSession({ access_token: accessToken, refresh_token: refreshToken })
-      .then(({ error: err }) => {
-        if (err) setState('invalid')
-        else {
-          setState('ready')
-          window.history.replaceState({}, '', '/auth/reset-password')
-        }
-      })
+    supabase.auth.setSession({ access_token: accessToken, refresh_token: refreshToken }).then(({ error: err }) => {
+      if (err) setState('invalid')
+      else {
+        setState('ready')
+        window.history.replaceState({}, '', '/auth/reset-password')
+      }
+    })
   }, [])
 
   const handleSave = async () => {
-    if (password.length < 6) { setError('Password must be at least 6 characters'); return }
-    if (password !== confirm) { setError('Passwords do not match'); return }
+    if (password.length < 6) {
+      setError('Password must be at least 6 characters')
+      return
+    }
+    if (password !== confirm) {
+      setError('Passwords do not match')
+      return
+    }
     setSaving(true)
     setError('')
     const { error: err } = await supabase.auth.updateUser({ password })
@@ -53,8 +58,21 @@ export default function ResetPasswordPage() {
   }
 
   const shell = (children: React.ReactNode) => (
-    <div data-accent="gold" style={{ minHeight: '100vh', background: 'var(--bg-secondary)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 }}>
-      <div style={{ width: '100%', maxWidth: 400, background: 'var(--bg)', borderRadius: 16, border: '1px solid var(--border)', padding: 32, boxShadow: 'var(--shadow)' }}>
+    <div
+      data-accent="gold"
+      style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 }}
+    >
+      <div
+        style={{
+          width: '100%',
+          maxWidth: 400,
+          background: 'var(--bg)',
+          borderRadius: 16,
+          border: '1px solid var(--border)',
+          padding: 32,
+          boxShadow: 'var(--shadow)',
+        }}
+      >
         {children}
       </div>
     </div>
@@ -73,11 +91,25 @@ export default function ResetPasswordPage() {
     return shell(
       <div style={{ textAlign: 'center' }}>
         <div style={{ fontSize: 52, marginBottom: 12 }}>🔗</div>
-        <h2 style={{ fontSize: 20, fontWeight: 700, color: 'var(--text-primary)', margin: '0 0 8px' }}>Link invalid or expired</h2>
+        <h2 style={{ fontSize: 20, fontWeight: 700, color: 'var(--text-primary)', margin: '0 0 8px' }}>
+          Link invalid or expired
+        </h2>
         <p style={{ fontSize: 14, color: 'var(--text-muted)', margin: '0 0 20px', lineHeight: 1.6 }}>
           This password-reset link isn&apos;t valid anymore. Request a fresh one and try again.
         </p>
-        <Link href="/auth/forgot-password" style={{ display: 'inline-block', background: 'var(--accent)', color: 'var(--on-accent)', borderRadius: 10, padding: '11px 22px', fontSize: 14, fontWeight: 600, textDecoration: 'none' }}>
+        <Link
+          href="/auth/forgot-password"
+          style={{
+            display: 'inline-block',
+            background: 'var(--accent)',
+            color: 'var(--on-accent)',
+            borderRadius: 10,
+            padding: '11px 22px',
+            fontSize: 14,
+            fontWeight: 600,
+            textDecoration: 'none',
+          }}
+        >
           Get a new link
         </Link>
       </div>
@@ -87,13 +119,42 @@ export default function ResetPasswordPage() {
   return shell(
     <div>
       <div style={{ textAlign: 'center', marginBottom: 20 }}>
-        <div style={{ width: 56, height: 56, borderRadius: 16, background: 'var(--accent-light)', color: 'var(--accent-text)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 14px', fontSize: 26 }}>🔐</div>
-        <h2 style={{ fontSize: 20, fontWeight: 700, color: 'var(--text-primary)', margin: '0 0 4px' }}>Set a new password</h2>
-        <p style={{ fontSize: 13, color: 'var(--text-muted)', margin: 0 }}>Choose a strong password you haven&apos;t used before.</p>
+        <div
+          style={{
+            width: 56,
+            height: 56,
+            borderRadius: 16,
+            background: 'var(--accent-light)',
+            color: 'var(--accent-text)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            margin: '0 auto 14px',
+            fontSize: 26,
+          }}
+        >
+          🔐
+        </div>
+        <h2 style={{ fontSize: 20, fontWeight: 700, color: 'var(--text-primary)', margin: '0 0 4px' }}>
+          Set a new password
+        </h2>
+        <p style={{ fontSize: 13, color: 'var(--text-muted)', margin: 0 }}>
+          Choose a strong password you haven&apos;t used before.
+        </p>
       </div>
 
       {error && (
-        <div style={{ background: 'var(--danger-light)', border: '1px solid var(--danger-border)', borderRadius: 8, padding: '10px 14px', marginBottom: 16, fontSize: 13, color: 'var(--danger)' }}>
+        <div
+          style={{
+            background: 'var(--danger-light)',
+            border: '1px solid var(--danger-border)',
+            borderRadius: 8,
+            padding: '10px 14px',
+            marginBottom: 16,
+            fontSize: 13,
+            color: 'var(--danger)',
+          }}
+        >
           {error}
         </div>
       )}
@@ -112,14 +173,26 @@ export default function ResetPasswordPage() {
           onChange={setConfirm}
           placeholder="Re-enter your password"
           autoComplete="new-password"
-          onKeyDown={e => e.key === 'Enter' && handleSave()}
+          onKeyDown={(e) => e.key === 'Enter' && handleSave()}
         />
       </div>
 
       <button
         onClick={handleSave}
         disabled={saving}
-        style={{ width: '100%', background: saving ? 'var(--disabled)' : 'var(--accent)', color: 'var(--on-accent)', border: 'none', borderRadius: 10, padding: '12px', fontSize: 15, fontWeight: 700, cursor: saving ? 'not-allowed' : 'pointer', marginTop: 20, fontFamily: 'inherit' }}
+        style={{
+          width: '100%',
+          background: saving ? 'var(--disabled)' : 'var(--accent)',
+          color: 'var(--on-accent)',
+          border: 'none',
+          borderRadius: 10,
+          padding: '12px',
+          fontSize: 15,
+          fontWeight: 700,
+          cursor: saving ? 'not-allowed' : 'pointer',
+          marginTop: 20,
+          fontFamily: 'inherit',
+        }}
       >
         {saving ? 'Updating…' : 'Update password'}
       </button>

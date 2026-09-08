@@ -76,7 +76,6 @@ export default function SignupPage() {
         data-accent="gold"
         style={{
           minHeight: '100vh',
-          background: 'var(--bg-secondary)',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
@@ -116,7 +115,6 @@ export default function SignupPage() {
       data-accent="gold"
       style={{
         minHeight: '100vh',
-        background: 'var(--bg-secondary)',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
