@@ -42,6 +42,7 @@ const TABS = [
   'Verify',
   'Premium',
   'Posts',
+  'Messages',
   'Moderation',
   'Colleges',
   'Content',
@@ -119,6 +120,19 @@ export default function AdminPage() {
   const [campusChangesLoading, setCampusChangesLoading] = useState(false)
   const [campusChangeFilter, setCampusChangeFilter] = useState('pending')
   const [campusChangeBusy, setCampusChangeBusy] = useState<string | null>(null)
+
+  // ── Messages (NEW) ──────────────────────────────────────
+  const [adminConversations, setAdminConversations] = useState<any[]>([])
+  const [adminConvTotal, setAdminConvTotal] = useState(0)
+  const [adminConvLoading, setAdminConvLoading] = useState(false)
+  const [adminConvSearch, setAdminConvSearch] = useState('')
+  const [adminSelectedConv, setAdminSelectedConv] = useState<any>(null)
+  const [adminConvMessages, setAdminConvMessages] = useState<any[]>([])
+  const [adminConvMsgTotal, setAdminConvMsgTotal] = useState(0)
+  const [adminConvMsgLoading, setAdminConvMsgLoading] = useState(false)
+  const [adminSelectedMsgs, setAdminSelectedMsgs] = useState<Set<string>>(new Set())
+  const [adminMsgBusy, setAdminMsgBusy] = useState(false)
+  const [adminMsgTab, setAdminMsgTab] = useState<'list' | 'detail'>('list')
 
   // ── Verifications (NEW) ─────────────────────────────────
   const [verifyUsers, setVerifyUsers] = useState<any[]>([])
@@ -407,6 +421,94 @@ export default function AdminPage() {
     [campusChangeFilter]
   )
 
+  // ── Messages load ─────────────────────────────────────────
+  const loadAdminConversations = useCallback(
+    async (search?: string) => {
+      setAdminConvLoading(true)
+      try {
+        const q = search !== undefined ? search : adminConvSearch
+        const res = await fetch(`/api/admin/messages?search=${encodeURIComponent(q)}`)
+        if (res.ok) {
+          const data = await res.json()
+          setAdminConversations(data.conversations || [])
+          setAdminConvTotal(data.total || 0)
+        }
+      } catch {
+        /* ignore */
+      }
+      setAdminConvLoading(false)
+    },
+    [adminConvSearch]
+  )
+
+  const loadAdminConvMessages = useCallback(async (convId: string) => {
+    setAdminConvMsgLoading(true)
+    try {
+      const res = await fetch(`/api/admin/messages?conversation_id=${convId}`)
+      if (res.ok) {
+        const data = await res.json()
+        setAdminConvMessages(data.messages || [])
+        setAdminConvMsgTotal(data.total || 0)
+      }
+    } catch {
+      /* ignore */
+    }
+    setAdminConvMsgLoading(false)
+  }, [])
+
+  const deleteAdminMessages = async (messageIds: string[]) => {
+    if (!confirm(`Delete ${messageIds.length} message(s)? This can be undone by restoring from DB.`)) return
+    setAdminMsgBusy(true)
+    try {
+      const res = await fetch('/api/admin/messages', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ message_ids: messageIds }),
+        credentials: 'include',
+      })
+      if (res.ok) {
+        setAdminSelectedMsgs(new Set())
+        if (adminSelectedConv) loadAdminConvMessages(adminSelectedConv.id)
+        loadAdminConversations()
+      }
+    } catch {
+      /* ignore */
+    }
+    setAdminMsgBusy(false)
+  }
+
+  const deleteAdminConversation = async (convId: string, hard = false) => {
+    if (
+      !confirm(
+        hard
+          ? 'PERMANENTLY delete this conversation and all messages? This cannot be undone!'
+          : 'Delete this conversation and all messages?'
+      )
+    )
+      return
+    setAdminMsgBusy(true)
+    try {
+      const res = await fetch('/api/admin/messages', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          conversation_id: convId,
+          action: hard ? 'hard_delete_conversation' : 'delete_conversation',
+        }),
+        credentials: 'include',
+      })
+      if (res.ok) {
+        setAdminSelectedConv(null)
+        setAdminConvMessages([])
+        setAdminMsgTab('list')
+        loadAdminConversations()
+      }
+    } catch {
+      /* ignore */
+    }
+    setAdminMsgBusy(false)
+  }
+
   const reviewCampusChange = async (requestId: string, action: 'approve' | 'reject', reason?: string) => {
     setCampusChangeBusy(requestId)
     try {
@@ -441,6 +543,7 @@ export default function AdminPage() {
     if (activeTab === 'Settings') loadSettings()
     if (activeTab === 'Verify') loadVerifyUsers()
     if (activeTab === 'Premium') loadPremiumUsers()
+    if (activeTab === 'Messages') loadAdminConversations()
     if (activeTab === 'Campus Changes') loadCampusChanges()
     if (activeTab === 'Audit Log') loadAuditLog()
   }, [activeTab])
@@ -2461,6 +2564,459 @@ export default function AdminPage() {
                 ))
               )}
             </div>
+          </div>
+        )}
+
+        {/* ═══════════════════════════════════════════════════
+            MESSAGES (NEW)
+        ═══════════════════════════════════════════════════ */}
+        {activeTab === 'Messages' && (
+          <div>
+            <div
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                gap: 12,
+                marginBottom: 16,
+                flexWrap: 'wrap',
+              }}
+            >
+              <div>
+                <h3 style={{ fontSize: 16, fontWeight: 700, color: 'var(--text-primary)', margin: '0 0 4px' }}>
+                  💬 Message Management
+                </h3>
+                <p style={{ fontSize: 13, color: 'var(--text-muted)', margin: 0 }}>
+                  {adminConvTotal} total conversations · View, search & delete messages
+                </p>
+              </div>
+              {adminMsgTab === 'detail' && (
+                <button
+                  onClick={() => {
+                    setAdminMsgTab('list')
+                    setAdminSelectedConv(null)
+                    setAdminConvMessages([])
+                    setAdminSelectedMsgs(new Set())
+                    loadAdminConversations()
+                  }}
+                  style={{
+                    padding: '7px 14px',
+                    borderRadius: 8,
+                    border: '1px solid var(--border)',
+                    background: 'var(--bg)',
+                    color: 'var(--text-secondary)',
+                    fontSize: 13,
+                    cursor: 'pointer',
+                    fontFamily: 'inherit',
+                  }}
+                >
+                  ← Back to Conversations
+                </button>
+              )}
+            </div>
+
+            {/* ── Conversation List ──────────────────────── */}
+            {adminMsgTab === 'list' && (
+              <>
+                {/* Search */}
+                <div style={{ display: 'flex', gap: 8, marginBottom: 16 }}>
+                  <input
+                    value={adminConvSearch}
+                    onChange={(e) => setAdminConvSearch(e.target.value)}
+                    onKeyDown={(e) => e.key === 'Enter' && loadAdminConversations(adminConvSearch)}
+                    placeholder="🔍 Search conversations by name or message content..."
+                    style={{
+                      flex: 1,
+                      border: '1px solid var(--border)',
+                      borderRadius: 10,
+                      padding: '10px 14px',
+                      fontSize: 13,
+                      outline: 'none',
+                      fontFamily: 'inherit',
+                      background: 'var(--bg)',
+                      color: 'var(--text-primary)',
+                    }}
+                  />
+                  <button
+                    onClick={() => loadAdminConversations(adminConvSearch)}
+                    style={{
+                      padding: '10px 16px',
+                      borderRadius: 10,
+                      border: 'none',
+                      background: 'var(--accent)',
+                      color: 'var(--on-accent)',
+                      fontSize: 13,
+                      fontWeight: 600,
+                      cursor: 'pointer',
+                      fontFamily: 'inherit',
+                    }}
+                  >
+                    Search
+                  </button>
+                </div>
+
+                {adminConvLoading ? (
+                  <p style={{ color: 'var(--text-muted)', textAlign: 'center', padding: '40px 0' }}>
+                    Loading conversations…
+                  </p>
+                ) : adminConversations.length === 0 ? (
+                  <div
+                    style={{
+                      background: 'var(--bg)',
+                      border: '1px solid var(--border)',
+                      borderRadius: 16,
+                      padding: '40px 20px',
+                      textAlign: 'center',
+                      boxShadow: 'var(--shadow-sm)',
+                    }}
+                  >
+                    <p style={{ fontSize: 32, margin: '0 0 8px' }}>💬</p>
+                    <p style={{ fontSize: 15, fontWeight: 600, color: 'var(--text-primary)', margin: '0 0 4px' }}>
+                      No conversations found
+                    </p>
+                    <p style={{ fontSize: 13, color: 'var(--text-muted)', margin: 0 }}>
+                      {adminConvSearch ? 'Try a different search' : 'No conversations on the platform yet'}
+                    </p>
+                  </div>
+                ) : (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                    {adminConversations.map((conv: any) => {
+                      const lastMsg = conv.last_message
+                      const isActive = adminSelectedConv?.id === conv.id
+                      return (
+                        <div
+                          key={conv.id}
+                          onClick={() => {
+                            setAdminSelectedConv(conv)
+                            setAdminMsgTab('detail')
+                            loadAdminConvMessages(conv.id)
+                            setAdminSelectedMsgs(new Set())
+                          }}
+                          style={{
+                            background: isActive ? 'var(--accent-light)' : 'var(--bg)',
+                            border: isActive ? '2px solid var(--accent)' : '1px solid var(--border)',
+                            borderRadius: 12,
+                            padding: '14px 16px',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: 12,
+                            cursor: 'pointer',
+                            boxShadow: 'var(--shadow-sm)',
+                          }}
+                        >
+                          <div
+                            style={{
+                              width: 42,
+                              height: 42,
+                              borderRadius: '50%',
+                              background: 'var(--accent-light)',
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              fontSize: 18,
+                              flexShrink: 0,
+                            }}
+                          >
+                            💬
+                          </div>
+                          <div style={{ flex: 1, minWidth: 0 }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 3 }}>
+                              <p
+                                style={{
+                                  fontSize: 14,
+                                  fontWeight: 600,
+                                  color: 'var(--text-primary)',
+                                  margin: 0,
+                                  overflow: 'hidden',
+                                  textOverflow: 'ellipsis',
+                                  whiteSpace: 'nowrap',
+                                }}
+                              >
+                                {conv.participant_names || 'Unknown'}
+                              </p>
+                              <span
+                                style={{
+                                  fontSize: 11,
+                                  padding: '2px 8px',
+                                  borderRadius: 12,
+                                  background: 'var(--bg-secondary)',
+                                  color: 'var(--text-muted)',
+                                  fontWeight: 600,
+                                  flexShrink: 0,
+                                }}
+                              >
+                                {conv.message_count} msg{conv.message_count !== 1 ? 's' : ''}
+                              </span>
+                            </div>
+                            {lastMsg && (
+                              <p
+                                style={{
+                                  fontSize: 12,
+                                  color: lastMsg.is_deleted ? 'var(--text-muted)' : 'var(--text-secondary)',
+                                  margin: 0,
+                                  overflow: 'hidden',
+                                  textOverflow: 'ellipsis',
+                                  whiteSpace: 'nowrap',
+                                  fontStyle: lastMsg.is_deleted ? 'italic' : 'normal',
+                                }}
+                              >
+                                {lastMsg.is_deleted ? '🗑️ Message deleted' : (lastMsg.content || '').slice(0, 80)}
+                                {(lastMsg.content || '').length > 80 ? '…' : ''}
+                              </p>
+                            )}
+                            <p style={{ fontSize: 11, color: 'var(--text-muted)', margin: '3px 0 0' }}>
+                              {new Date(conv.updated_at || conv.created_at).toLocaleString()}
+                            </p>
+                          </div>
+                          <span style={{ color: 'var(--text-muted)', fontSize: 14, flexShrink: 0 }}>→</span>
+                        </div>
+                      )
+                    })}
+                  </div>
+                )}
+              </>
+            )}
+
+            {/* ── Conversation Detail / Messages ─────────── */}
+            {adminMsgTab === 'detail' && adminSelectedConv && (
+              <>
+                {/* Conversation header */}
+                <div
+                  style={{
+                    background: 'var(--bg)',
+                    border: '1px solid var(--border)',
+                    borderRadius: 14,
+                    padding: '14px 18px',
+                    marginBottom: 16,
+                    boxShadow: 'var(--shadow-sm)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    flexWrap: 'wrap',
+                    gap: 10,
+                  }}
+                >
+                  <div>
+                    <p style={{ fontSize: 14, fontWeight: 700, color: 'var(--text-primary)', margin: '0 0 2px' }}>
+                      {adminSelectedConv.participant_names}
+                    </p>
+                    <p style={{ fontSize: 12, color: 'var(--text-muted)', margin: 0 }}>
+                      {adminConvMsgTotal} messages · Created {new Date(adminSelectedConv.created_at).toLocaleString()}
+                    </p>
+                  </div>
+                  <div style={{ display: 'flex', gap: 8, flexShrink: 0 }}>
+                    {adminSelectedMsgs.size > 0 && (
+                      <button
+                        onClick={() => deleteAdminMessages(Array.from(adminSelectedMsgs))}
+                        disabled={adminMsgBusy}
+                        style={{
+                          padding: '7px 14px',
+                          borderRadius: 8,
+                          border: 'none',
+                          background: 'var(--danger)',
+                          color: '#fff',
+                          fontSize: 12,
+                          fontWeight: 600,
+                          cursor: 'pointer',
+                          fontFamily: 'inherit',
+                        }}
+                      >
+                        🗑️ Delete {adminSelectedMsgs.size} Selected
+                      </button>
+                    )}
+                    <button
+                      onClick={() => deleteAdminConversation(adminSelectedConv.id, false)}
+                      disabled={adminMsgBusy}
+                      style={{
+                        padding: '7px 14px',
+                        borderRadius: 8,
+                        border: '1px solid var(--danger-border)',
+                        background: 'var(--danger-light)',
+                        color: 'var(--danger)',
+                        fontSize: 12,
+                        fontWeight: 600,
+                        cursor: 'pointer',
+                        fontFamily: 'inherit',
+                      }}
+                    >
+                      🗑️ Delete Conversation
+                    </button>
+                    <button
+                      onClick={() => {
+                        if (confirm('⚠️ PERMANENTLY delete this conversation? This cannot be undone!'))
+                          deleteAdminConversation(adminSelectedConv.id, true)
+                      }}
+                      disabled={adminMsgBusy}
+                      style={{
+                        padding: '7px 14px',
+                        borderRadius: 8,
+                        border: '2px solid var(--danger)',
+                        background: 'var(--danger)',
+                        color: '#fff',
+                        fontSize: 12,
+                        fontWeight: 700,
+                        cursor: 'pointer',
+                        fontFamily: 'inherit',
+                      }}
+                    >
+                      ⚠️ Hard Delete
+                    </button>
+                  </div>
+                </div>
+
+                {/* Messages list */}
+                {adminConvMsgLoading ? (
+                  <p style={{ color: 'var(--text-muted)', textAlign: 'center', padding: '40px 0' }}>
+                    Loading messages…
+                  </p>
+                ) : adminConvMessages.length === 0 ? (
+                  <div
+                    style={{
+                      background: 'var(--bg)',
+                      border: '1px solid var(--border)',
+                      borderRadius: 16,
+                      padding: '40px 20px',
+                      textAlign: 'center',
+                    }}
+                  >
+                    <p style={{ fontSize: 32, margin: '0 0 8px' }}>📭</p>
+                    <p style={{ fontSize: 15, fontWeight: 600, color: 'var(--text-primary)', margin: '0 0 4px' }}>
+                      No messages in this conversation
+                    </p>
+                  </div>
+                ) : (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                    {/* Select all button */}
+                    <div style={{ display: 'flex', gap: 8, marginBottom: 8 }}>
+                      <button
+                        onClick={() => {
+                          if (adminSelectedMsgs.size === adminConvMessages.filter((m: any) => !m.is_deleted).length) {
+                            setAdminSelectedMsgs(new Set())
+                          } else {
+                            setAdminSelectedMsgs(
+                              new Set(adminConvMessages.filter((m: any) => !m.is_deleted).map((m: any) => m.id))
+                            )
+                          }
+                        }}
+                        style={{
+                          padding: '5px 12px',
+                          borderRadius: 8,
+                          border: '1px solid var(--border)',
+                          background: 'var(--bg)',
+                          color: 'var(--text-secondary)',
+                          fontSize: 12,
+                          cursor: 'pointer',
+                          fontFamily: 'inherit',
+                        }}
+                      >
+                        {adminSelectedMsgs.size === adminConvMessages.filter((m: any) => !m.is_deleted).length
+                          ? 'Deselect All'
+                          : 'Select All'}
+                      </button>
+                      {adminSelectedMsgs.size > 0 && (
+                        <span style={{ fontSize: 12, color: 'var(--text-muted)', alignSelf: 'center' }}>
+                          {adminSelectedMsgs.size} selected
+                        </span>
+                      )}
+                    </div>
+
+                    {adminConvMessages.map((msg: any) => {
+                      const sender = msg.profiles
+                      const isSelected = adminSelectedMsgs.has(msg.id)
+                      return (
+                        <div
+                          key={msg.id}
+                          style={{
+                            background: msg.is_deleted ? 'var(--danger-light)' : 'var(--bg)',
+                            border: isSelected
+                              ? '2px solid var(--accent)'
+                              : msg.is_deleted
+                                ? '1px solid var(--danger-border)'
+                                : '1px solid var(--border)',
+                            borderRadius: 12,
+                            padding: '12px 14px',
+                            display: 'flex',
+                            alignItems: 'flex-start',
+                            gap: 10,
+                            opacity: msg.is_deleted ? 0.6 : 1,
+                            boxShadow: 'var(--shadow-sm)',
+                          }}
+                        >
+                          {!msg.is_deleted && (
+                            <input
+                              type="checkbox"
+                              checked={isSelected}
+                              onChange={() => {
+                                setAdminSelectedMsgs((prev) => {
+                                  const next = new Set(prev)
+                                  if (next.has(msg.id)) next.delete(msg.id)
+                                  else next.add(msg.id)
+                                  return next
+                                })
+                              }}
+                              style={{ marginTop: 3, flexShrink: 0, cursor: 'pointer' }}
+                            />
+                          )}
+                          <div style={{ flex: 1, minWidth: 0 }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 4 }}>
+                              <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-primary)' }}>
+                                {sender?.full_name || sender?.username || 'Unknown'}
+                              </span>
+                              <span style={{ fontSize: 11, color: 'var(--text-muted)' }}>
+                                @{sender?.username || '—'}
+                              </span>
+                              <span style={{ fontSize: 11, color: 'var(--text-muted)', marginLeft: 'auto' }}>
+                                {new Date(msg.created_at).toLocaleString()}
+                              </span>
+                            </div>
+                            <p
+                              style={{
+                                fontSize: 13,
+                                color: msg.is_deleted ? 'var(--danger)' : 'var(--text-secondary)',
+                                margin: 0,
+                                lineHeight: 1.5,
+                                whiteSpace: 'pre-wrap',
+                                wordBreak: 'break-word',
+                                fontStyle: msg.is_deleted ? 'italic' : 'normal',
+                              }}
+                            >
+                              {msg.content || '(empty)'}
+                            </p>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 6 }}>
+                              <span
+                                style={{
+                                  fontSize: 10,
+                                  padding: '2px 6px',
+                                  borderRadius: 6,
+                                  background: 'var(--bg-secondary)',
+                                  color: 'var(--text-muted)',
+                                }}
+                              >
+                                {msg.message_type || 'text'}
+                              </span>
+                              {msg.is_deleted && (
+                                <span
+                                  style={{
+                                    fontSize: 10,
+                                    padding: '2px 6px',
+                                    borderRadius: 6,
+                                    background: 'var(--danger-light)',
+                                    color: 'var(--danger)',
+                                    fontWeight: 600,
+                                  }}
+                                >
+                                  🗑️ Deleted
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      )
+                    })}
+                  </div>
+                )}
+              </>
+            )}
           </div>
         )}
 

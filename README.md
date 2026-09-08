@@ -42,6 +42,8 @@
 | Aug 2026 | **Blog creation** | Rich editor with preview, tags, company/role fields |
 | Aug 2026 | **Blog SEO** | Full-text search, meta tags, slug URLs for ranking |
 | Aug 2026 | **Blog engagement** | Like, comment, bookmark, share on every post |
+| Sep 2026 | **Admin Message Management** | View, search, delete all messages & conversations from admin panel |
+| Sep 2026 | **Notes Link Submission** | Everyone can submit notes via link; admin verifies before publishing |
 | Sep 2026 | **Google OAuth docs** | Full setup guide: Google Console + Supabase provider config |
 
 ---
@@ -73,7 +75,9 @@ ConnectToCampus is a **full-featured campus management and social platform** tha
 - **PYQs (Previous Year Questions)** — browse and download
 - **Study materials** — share resources with your batch
 - **Ratings & reviews** — students rate notes quality
-- **Upload & share** — contribute to the community
+- **Link submissions** — everyone can submit Google Drive / external links
+- **Admin verification** — submissions reviewed & approved by admin before going live
+- **Upload & share** — admin-only file uploads, auto-verified
 
 ### 🏆 4. Compete (DSA Arena)
 - **Daily DSA challenges** — solve problems, climb the leaderboard
@@ -259,6 +263,16 @@ A comprehensive platform management dashboard:
 - **Report queue** — review flagged content
 - **Auto-moderation** — spam detection
 - **Action buttons** — dismiss, warn, remove, ban
+
+#### 💬 Message Management
+- **View all conversations** — browse every chat on the platform
+- **Search messages** — find conversations by participant name or message content
+- **Delete individual messages** — select & remove specific messages
+- **Bulk delete** — select multiple messages and delete at once
+- **Delete conversations** — soft delete (restore-able) or hard delete (permanent)
+- **Message detail view** — full conversation history with timestamps & sender info
+- **Soft delete safety** — deleted messages are marked, not permanently removed
+- **Admin audit logging** — every delete action is logged for traceability
 
 ---
 
