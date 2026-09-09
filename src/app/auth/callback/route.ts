@@ -35,7 +35,13 @@ export async function GET(request: NextRequest) {
 
   if (oauthError) {
     console.error('[auth/callback] provider error:', oauthError, oauthErrorDescription || '')
-    return NextResponse.redirect(loginErrorUrl(oauthError))
+    // Forward the raw description (truncated, non-sensitive) so the login
+    // page can show exactly WHY the provider blocked the flow.
+    const errUrl = loginErrorUrl(oauthError)
+    if (oauthErrorDescription) {
+      errUrl.searchParams.set('ed', oauthErrorDescription.slice(0, 200))
+    }
+    return NextResponse.redirect(errUrl)
   }
 
   if (!code) {
@@ -70,7 +76,9 @@ export async function GET(request: NextRequest) {
   const { error } = await supabase.auth.exchangeCodeForSession(code)
   if (error) {
     console.error('[auth/callback] exchangeCodeForSession failed:', error.message)
-    const response = NextResponse.redirect(loginErrorUrl('oauth_failed'))
+    const errUrl = loginErrorUrl('oauth_failed')
+    errUrl.searchParams.set('ed', error.message.slice(0, 200))
+    const response = NextResponse.redirect(errUrl)
     sessionCookies.forEach(({ name, value, options }) => response.cookies.set(name, value, options))
     return response
   }
