@@ -1,7 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@supabase/supabase-js'
+import { createClient, type SupabaseClient } from '@supabase/supabase-js'
 
-const supabaseAdmin = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!)
+let _supabaseAdmin: SupabaseClient | null = null
+/** Lazy, request-time init — module-scope createClient() throws at build when
+ *  SUPABASE_SERVICE_ROLE_KEY is absent, and a shared client risks cross-user
+ *  state. One instance per server process is safe for service-role use. */
+function getSupabaseAdmin(): SupabaseClient {
+  if (!_supabaseAdmin) {
+    _supabaseAdmin = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!)
+  }
+  return _supabaseAdmin!
+}
 
 // ── Verify admin ──────────────────────────────────────────────
 async function verifyAdmin(request: NextRequest) {
@@ -22,7 +31,7 @@ async function verifyAdmin(request: NextRequest) {
     } = await supabase.auth.getUser(accessToken)
     if (error || !user) return null
 
-    const { data: grants } = await supabaseAdmin.rpc('my_admin_grants')
+    const { data: grants } = await getSupabaseAdmin().rpc('my_admin_grants')
     const grantsArr = (grants as any[]) || []
     const isAdmin = grantsArr.some((g: any) => g.admin_type === 'platform_admin')
     if (!isAdmin) return null
@@ -50,7 +59,7 @@ export async function GET(request: NextRequest) {
 
   // ── Get specific conversation messages ────────────────────
   if (conversationId) {
-    const { data: messages, error } = await supabaseAdmin
+    const { data: messages, error } = await getSupabaseAdmin()
       .from('messages')
       .select('*, profiles!messages_sender_id_fkey(full_name, username, avatar_url)')
       .eq('conversation_id', conversationId)
@@ -62,13 +71,13 @@ export async function GET(request: NextRequest) {
     }
 
     // Get participants
-    const { data: participants } = await supabaseAdmin
+    const { data: participants } = await getSupabaseAdmin()
       .from('conversation_participants')
       .select('profile_id, profiles(full_name, username, avatar_url)')
       .eq('conversation_id', conversationId)
 
     // Get total count
-    const { count } = await supabaseAdmin
+    const { count } = await getSupabaseAdmin()
       .from('messages')
       .select('*', { count: 'exact', head: true })
       .eq('conversation_id', conversationId)
@@ -81,7 +90,7 @@ export async function GET(request: NextRequest) {
   }
 
   // ── List all conversations ────────────────────────────────
-  const query = supabaseAdmin
+  const query = getSupabaseAdmin()
     .from('conversations')
     .select(
       `
@@ -107,7 +116,7 @@ export async function GET(request: NextRequest) {
   let lastMessages: any[] = []
   if (convIds.length > 0) {
     // Use raw query via RPC or subquery for last message per conversation
-    const { data: msgs } = await supabaseAdmin
+    const { data: msgs } = await getSupabaseAdmin()
       .from('messages')
       .select('conversation_id, content, sender_id, created_at, message_type, is_deleted')
       .in('conversation_id', convIds)
@@ -127,7 +136,7 @@ export async function GET(request: NextRequest) {
   const convCounts: Record<string, number> = {}
   if (convIds.length > 0) {
     for (const cid of convIds) {
-      const { count } = await supabaseAdmin
+      const { count } = await getSupabaseAdmin()
         .from('messages')
         .select('*', { count: 'exact', head: true })
         .eq('conversation_id', cid)
@@ -154,7 +163,9 @@ export async function GET(request: NextRequest) {
   })
 
   // Total conversation count
-  const { count: totalConvs } = await supabaseAdmin.from('conversations').select('*', { count: 'exact', head: true })
+  const { count: totalConvs } = await getSupabaseAdmin()
+    .from('conversations')
+    .select('*', { count: 'exact', head: true })
 
   // Search filter (client-side for now since conversations don't have text)
   let filtered = enriched
@@ -186,7 +197,7 @@ export async function DELETE(request: NextRequest) {
   // ── Delete single messages ────────────────────────────────
   if (message_ids && Array.isArray(message_ids)) {
     // Soft delete: mark as deleted
-    const { error } = await supabaseAdmin
+    const { error } = await getSupabaseAdmin()
       .from('messages')
       .update({ is_deleted: true, content: '[Message deleted by admin]' })
       .in('id', message_ids)
@@ -196,25 +207,27 @@ export async function DELETE(request: NextRequest) {
     }
 
     // Log the action
-    await supabaseAdmin.from('audit_log').insert({
-      actor_id: admin.id,
-      action: 'messages.delete',
-      entity_type: 'message',
-      metadata: { message_ids, count: message_ids.length },
-    })
+    await getSupabaseAdmin()
+      .from('audit_log')
+      .insert({
+        actor_id: admin.id,
+        action: 'messages.delete',
+        entity_type: 'message',
+        metadata: { message_ids, count: message_ids.length },
+      })
 
     return NextResponse.json({ success: true, deleted: message_ids.length })
   }
 
   // ── Delete all messages in a conversation ──────────────────
   if (conversation_id && action === 'delete_conversation') {
-    const { count } = await supabaseAdmin
+    const { count } = await getSupabaseAdmin()
       .from('messages')
       .select('*', { count: 'exact', head: true })
       .eq('conversation_id', conversation_id)
 
     // Soft delete all messages
-    const { error } = await supabaseAdmin
+    const { error } = await getSupabaseAdmin()
       .from('messages')
       .update({ is_deleted: true, content: '[Message deleted by admin]' })
       .eq('conversation_id', conversation_id)
@@ -224,19 +237,21 @@ export async function DELETE(request: NextRequest) {
     }
 
     // Also delete conversation participants
-    await supabaseAdmin.from('conversation_participants').delete().eq('conversation_id', conversation_id)
+    await getSupabaseAdmin().from('conversation_participants').delete().eq('conversation_id', conversation_id)
 
     // Delete the conversation itself
-    await supabaseAdmin.from('conversations').delete().eq('id', conversation_id)
+    await getSupabaseAdmin().from('conversations').delete().eq('id', conversation_id)
 
     // Log
-    await supabaseAdmin.from('audit_log').insert({
-      actor_id: admin.id,
-      action: 'messages.delete_conversation',
-      entity_type: 'conversation',
-      entity_id: conversation_id,
-      metadata: { message_count: count || 0 },
-    })
+    await getSupabaseAdmin()
+      .from('audit_log')
+      .insert({
+        actor_id: admin.id,
+        action: 'messages.delete_conversation',
+        entity_type: 'conversation',
+        entity_id: conversation_id,
+        metadata: { message_count: count || 0 },
+      })
 
     return NextResponse.json({ success: true, deleted: count || 0 })
   }
@@ -244,19 +259,21 @@ export async function DELETE(request: NextRequest) {
   // ── Hard delete (permanent) ───────────────────────────────
   if (conversation_id && action === 'hard_delete_conversation') {
     // Delete all messages permanently
-    await supabaseAdmin.from('messages').delete().eq('conversation_id', conversation_id)
+    await getSupabaseAdmin().from('messages').delete().eq('conversation_id', conversation_id)
 
-    await supabaseAdmin.from('conversation_participants').delete().eq('conversation_id', conversation_id)
+    await getSupabaseAdmin().from('conversation_participants').delete().eq('conversation_id', conversation_id)
 
-    await supabaseAdmin.from('conversations').delete().eq('id', conversation_id)
+    await getSupabaseAdmin().from('conversations').delete().eq('id', conversation_id)
 
-    await supabaseAdmin.from('audit_log').insert({
-      actor_id: admin.id,
-      action: 'messages.hard_delete_conversation',
-      entity_type: 'conversation',
-      entity_id: conversation_id,
-      metadata: { permanent: true },
-    })
+    await getSupabaseAdmin()
+      .from('audit_log')
+      .insert({
+        actor_id: admin.id,
+        action: 'messages.hard_delete_conversation',
+        entity_type: 'conversation',
+        entity_id: conversation_id,
+        metadata: { permanent: true },
+      })
 
     return NextResponse.json({ success: true })
   }
