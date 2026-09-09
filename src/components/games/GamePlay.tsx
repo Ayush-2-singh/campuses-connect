@@ -98,52 +98,19 @@ export default function GamePlay({
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-      {/* Round + Timer bar */}
+      {/* Round indicator */}
       <div
         style={{
           background: 'var(--bg)',
           border: '1px solid var(--border)',
           borderRadius: 14,
-          padding: '12px 16px',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
+          padding: '10px 16px',
+          textAlign: 'center',
         }}
       >
         <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--text-primary)' }}>
           Round {room.current_round}/{room.total_rounds}
         </span>
-        <span
-          style={{
-            fontSize: 22,
-            fontWeight: 800,
-            color: timerColor,
-            fontVariantNumeric: 'tabular-nums',
-            fontFamily: '"SF Mono", "JetBrains Mono", monospace',
-          }}
-        >
-          {formatCountdown(timeLeft)}
-        </span>
-      </div>
-
-      {/* Timer progress */}
-      <div
-        style={{
-          height: 4,
-          background: 'var(--bg-tertiary)',
-          borderRadius: 4,
-          overflow: 'hidden',
-        }}
-      >
-        <div
-          style={{
-            height: '100%',
-            width: `${timerPercent}%`,
-            background: timerColor,
-            borderRadius: 4,
-            transition: 'width 50ms linear, background 0.3s ease',
-          }}
-        />
       </div>
 
       {/* Question */}
@@ -273,9 +240,7 @@ export default function GamePlay({
               color: lastResult.correct ? 'var(--success-text)' : 'var(--danger-text)',
             }}
           >
-            {lastResult.correct
-              ? `✓ Correct! +${lastResult.points} points`
-              : `✗ Wrong — the answer was ${room.round_question?.answer}`}
+            {lastResult.correct ? `✓ Correct! +${lastResult.points} points` : `✗ Wrong!`}
           </span>
         </div>
       )}
