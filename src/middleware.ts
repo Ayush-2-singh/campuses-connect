@@ -1,66 +1,54 @@
 import { createServerClient } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
 
-/**
- * Routes that absolutely need a verified Supabase session.
- */
-const AUTH_REQUIRED_PREFIXES = ['/admin', '/onboarding', '/auth']
-
-function needsAuthCheck(path: string): boolean {
-  return AUTH_REQUIRED_PREFIXES.some(p => path.startsWith(p))
+function loginRedirect(request: NextRequest) {
+  const url = new URL('/auth/login', request.url)
+  url.searchParams.set('redirect', request.nextUrl.pathname + request.nextUrl.search)
+  return NextResponse.redirect(url)
 }
 
 export async function middleware(request: NextRequest) {
   let supabaseResponse = NextResponse.next({ request })
   const path = request.nextUrl.pathname
 
-  // Skip Supabase client creation entirely for static assets
-  if (path.startsWith('/_next') || path.includes('.')) {
-    return supabaseResponse
-  }
+  if (path.startsWith('/_next') || path.includes('.')) return supabaseResponse
 
-  // Always create Supabase client to refresh session cookies on every request.
-  // Without this, the session expires and users get logged out randomly.
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
     {
       cookies: {
-        getAll() { return request.cookies.getAll() },
+        getAll() {
+          return request.cookies.getAll()
+        },
         setAll(cookiesToSet) {
           cookiesToSet.forEach(({ name, value }) => request.cookies.set(name, value))
           supabaseResponse = NextResponse.next({ request })
-          cookiesToSet.forEach(({ name, value, options }) =>
-            supabaseResponse.cookies.set(name, value, options))
+          cookiesToSet.forEach(({ name, value, options }) => supabaseResponse.cookies.set(name, value, options))
         },
       },
     }
   )
 
-  // Refresh session — this keeps the auth cookie alive so users stay logged in.
   const { data: { user } } = await supabase.auth.getUser()
 
-  // Admin panel: platform_admin or campus_admin grant only
   if (path.startsWith('/admin')) {
-    if (!user) return NextResponse.redirect(new URL('/auth/login', request.url))
-    const { data: grants } = await supabase
-      .rpc('my_admin_grants')
+    if (!user) return loginRedirect(request)
+    const { data: grants } = await supabase.rpc('my_admin_grants')
     const isAdmin = (grants as any[])?.some(
-      (g: any) => g.admin_type === 'platform_admin' || g.admin_type === 'campus_admin'
+      (grant: any) => grant.admin_type === 'platform_admin' || grant.admin_type === 'campus_admin'
     )
     if (!isAdmin) return NextResponse.redirect(new URL('/feed', request.url))
   }
 
-  // Auth pages redirect to feed if logged in — except the password-recovery
-  // pages, which must load even for signed-in users clicking an email link.
-  if (user && path.startsWith('/auth') && !path.startsWith('/auth/reset-password') && !path.startsWith('/auth/forgot-password') && !path.startsWith('/auth/callback')) {
+  if (user && path.startsWith('/auth') &&
+      !path.startsWith('/auth/reset-password') &&
+      !path.startsWith('/auth/forgot-password') &&
+      !path.startsWith('/auth/callback')) {
     return NextResponse.redirect(new URL('/feed', request.url))
   }
 
-  // Onboarding protection
-  if (!user && path.startsWith('/onboarding')) {
-    return NextResponse.redirect(new URL('/auth/login', request.url))
-  }
+  if (!user && path.startsWith('/onboarding')) return loginRedirect(request)
 
   return supabaseResponse
 }
