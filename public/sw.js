@@ -1,14 +1,16 @@
-/* ConnectToCampus enhanced service worker — offline-first for static pages,
-   network-first for dynamic content. Caches key pages for offline access. */
+/* ConnectToCampus service worker — network-first pages with offline
+   fallback, cache-first static assets, auth pages always network. */
 
-const CACHE_NAME = 'connecttocampus-v2'
-// Cache version bumped to v5 so the activate handler purges stale v4 CSS/SVG
-// entries (e.g. after adding the study doodle background on all pages).
-const STATIC_CACHE = 'campus-static-v6'
-const DYNAMIC_CACHE = 'campus-dynamic-v6'
+const CACHE_NAME = 'connecttocampus-v3'
+// Cache version bumped to v7: auth pages (/auth/*) are now NEVER cached and
+// navigations are network-first, so users always get the current login UI
+// and the newest app bundles after a deploy (no stale-offline code).
+const STATIC_CACHE = 'campus-static-v7'
+const DYNAMIC_CACHE = 'campus-dynamic-v7'
 
-// Pages to pre-cache for offline access. NOTE: auth/personal pages (e.g.
-// /feed, /notifications) are intentionally NOT precached — their content is
+// Pages to pre-cache for offline access. NOTE: auth pages (/auth/*) are
+// NEVER cached (see fetch handler) and personal pages (e.g. /feed,
+// /notifications) are intentionally NOT precached — their content is
 // user-specific and must not be served from a shared cache to other sessions.
 const PRECACHE_URLS = [
   '/',
@@ -39,12 +41,17 @@ self.addEventListener('activate', event => {
   )
 })
 
-// Fetch: stale-while-revalidate for pages, network-first for API
+// Fetch: network-only for auth, network-first for API + pages, cache-first assets
 self.addEventListener('fetch', event => {
   const req = event.request
   if (req.method !== 'GET') return
 
   const url = new URL(req.url)
+
+  // Auth pages and the OAuth callback: network ONLY — never cached, never
+  // served from cache. A stale /auth/callback or /auth/login would break
+  // sign-in (old bundles, eaten query params) and lock users out.
+  if (url.pathname.startsWith('/auth/')) return
 
   // API calls: network-first, no cache
   if (url.pathname.startsWith('/api/')) {
@@ -75,28 +82,24 @@ self.addEventListener('fetch', event => {
     return
   }
 
-  // Pages: stale-while-revalidate (show cached, update in background)
+  // Pages: network-first with offline fallback (was stale-while-revalidate —
+  // that served outdated HTML/bundles right after each deploy).
   event.respondWith(
-    caches.match(req).then(cached => {
-      const fetchPromise = fetch(req).then(response => {
-        // Only cache successful, non-redirected pages — never error responses
-        // or auth redirects (a cached 500/307 would be served stale later).
-        if (response.ok && !response.redirected) {
-          const clone = response.clone()
-          caches.open(DYNAMIC_CACHE).then(cache => cache.put(req, clone))
-        }
-        return response
-      }).catch(() => {
-        // If both cache and network fail, show offline page for navigation
-        if (req.mode === 'navigate') {
-          return caches.match('/') || new Response(offlineHTML(), {
-            headers: { 'Content-Type': 'text/html' }
-          })
-        }
-        return cached
-      })
-      return cached || fetchPromise
-    })
+    fetch(req).then(response => {
+      // Only cache successful, non-redirected pages — never error responses
+      // or auth redirects (a cached 500/307 would be served stale later).
+      if (response.ok && !response.redirected && req.mode === 'navigate') {
+        const clone = response.clone()
+        caches.open(DYNAMIC_CACHE).then(cache => cache.put(req, clone))
+      }
+      return response
+    }).catch(() =>
+      caches.match(req).then(cached => cached || (
+        req.mode === 'navigate'
+          ? (caches.match('/') || new Response(offlineHTML(), { headers: { 'Content-Type': 'text/html' } }))
+          : (cached || Response.error())
+      ))
+    )
   )
 })
 

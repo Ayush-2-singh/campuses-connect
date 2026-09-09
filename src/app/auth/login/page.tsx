@@ -3,6 +3,7 @@
 import { useEffect, useState, type FormEvent } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { getAuthErrorMessage, getSafeRedirect } from '@/lib/auth'
+import { redirectToCanonicalOrigin } from '@/lib/canonical-origin'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import PasswordField from '@/components/PasswordField'
@@ -31,6 +32,10 @@ export default function LoginPage() {
   const supabase = createClient()
 
   useEffect(() => {
+    // If this page is running on a non-canonical origin (e.g. apex
+    // connecttocampus.com from a cached page), move to www first — auth
+    // cookies are origin-scoped and the callback runs on www.
+    if (redirectToCanonicalOrigin()) return
     const callbackError = new URLSearchParams(window.location.search).get('error')
     if (!callbackError) return
     const messages: Record<string, string> = {
