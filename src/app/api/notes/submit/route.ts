@@ -1,8 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@supabase/supabase-js'
+import { createClient, type SupabaseClient } from '@supabase/supabase-js'
 
-// Server-side client with service role — bypasses RLS
-const supabaseAdmin = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!)
+// Server-side client with service role — bypasses RLS.
+// Lazy, request-time init — module-scope createClient() throws at build when
+// SUPABASE_SERVICE_ROLE_KEY is absent, and a shared client risks cross-user state.
+let _supabaseAdmin: SupabaseClient | null = null
+function getSupabaseAdmin(): SupabaseClient {
+  if (!_supabaseAdmin) {
+    _supabaseAdmin = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!)
+  }
+  return _supabaseAdmin!
+}
 
 export async function POST(request: NextRequest) {
   // ── Verify caller is authenticated ──────────────────────
@@ -50,19 +58,19 @@ export async function POST(request: NextRequest) {
   }
 
   // ── Get user profile for campus/college context ─────────
-  const { data: profile } = await supabaseAdmin
+  const { data: profile } = await getSupabaseAdmin()
     .from('profiles')
     .select('campus_id, college_id, department_id')
     .eq('id', user.id)
     .single()
 
   // ── Check if user is admin (auto-verify) ────────────────
-  const { data: grants } = await supabaseAdmin.rpc('my_admin_grants')
+  const { data: grants } = await getSupabaseAdmin().rpc('my_admin_grants')
   const grantsArr = (grants as any[]) || []
   const isAdmin = grantsArr.some((g: any) => g.admin_type === 'platform_admin' || g.admin_type === 'campus_admin')
 
   // ── Insert note using service role (bypasses RLS) ───────
-  const { data: noteRow, error: insertError } = await supabaseAdmin
+  const { data: noteRow, error: insertError } = await getSupabaseAdmin()
     .from('notes')
     .insert({
       uploaded_by: user.id,
@@ -88,7 +96,7 @@ export async function POST(request: NextRequest) {
 
   // ── Reward upload (best-effort) ─────────────────────────
   try {
-    await supabaseAdmin.rpc('reward_note_upload', { p_note_id: noteRow?.id })
+    await getSupabaseAdmin().rpc('reward_note_upload', { p_note_id: noteRow?.id })
   } catch {
     // ignore — reward is optional
   }
