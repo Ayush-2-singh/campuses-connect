@@ -73,32 +73,41 @@ ALTER TABLE game_players ENABLE ROW LEVEL SECURITY;
 ALTER TABLE game_answers ENABLE ROW LEVEL SECURITY;
 
 -- Rooms: readable by anyone (for Realtime subscriptions), writable only via RPC
+DROP POLICY IF EXISTS "game_rooms_select" ON game_rooms;
 CREATE POLICY "game_rooms_select" ON game_rooms
   FOR SELECT USING (true);
 
+DROP POLICY IF EXISTS "game_rooms_insert" ON game_rooms;
 CREATE POLICY "game_rooms_insert" ON game_rooms
   FOR INSERT WITH CHECK (true);
 
+DROP POLICY IF EXISTS "game_rooms_update" ON game_rooms;
 CREATE POLICY "game_rooms_update" ON game_rooms
   FOR UPDATE USING (true);
 
 -- Players: readable by anyone in the same room, writable only via RPC
+DROP POLICY IF EXISTS "game_players_select" ON game_players;
 CREATE POLICY "game_players_select" ON game_players
   FOR SELECT USING (true);
 
+DROP POLICY IF EXISTS "game_players_insert" ON game_players;
 CREATE POLICY "game_players_insert" ON game_players
   FOR INSERT WITH CHECK (true);
 
+DROP POLICY IF EXISTS "game_players_update" ON game_players;
 CREATE POLICY "game_players_update" ON game_players
   FOR UPDATE USING (true);
 
+DROP POLICY IF EXISTS "game_players_delete" ON game_players;
 CREATE POLICY "game_players_delete" ON game_players
   FOR DELETE USING (true);
 
 -- Answers: readable by anyone in the same room, writable only via RPC
+DROP POLICY IF EXISTS "game_answers_select" ON game_answers;
 CREATE POLICY "game_answers_select" ON game_answers
   FOR SELECT USING (true);
 
+DROP POLICY IF EXISTS "game_answers_insert" ON game_answers;
 CREATE POLICY "game_answers_insert" ON game_answers
   FOR INSERT WITH CHECK (true);
 
@@ -370,7 +379,7 @@ BEGIN
   -- All must be ready (host is auto-ready)
   SELECT COUNT(*) INTO v_ready_count FROM game_players
   WHERE room_id = p_room_id AND is_ready = true;
-  IF v_ready_count < v_total THEN RAISE EXCEPTION('Not all players are ready'); END IF;
+  IF v_ready_count < v_total THEN RAISE EXCEPTION 'Not all players are ready'; END IF;
 
   -- Generate first question
   v_question := generate_math_question(v_room.difficulty, 1);
@@ -379,7 +388,7 @@ BEGIN
   v_start_time := now() + INTERVAL '3 seconds'; -- 3s countdown
 
   UPDATE game_rooms SET
-    status = 'starting',
+    status = 'active',
     current_round = 1,
     round_question = v_question,
     round_started_at = v_start_time,
@@ -387,7 +396,7 @@ BEGIN
   WHERE id = p_room_id;
 
   RETURN jsonb_build_object(
-    'status', 'starting',
+    'status', 'active',
     'question', v_question,
     'round', 1,
     'starts_at', v_start_time,
@@ -414,7 +423,7 @@ DECLARE
 BEGIN
   -- Get room + current question
   SELECT * INTO v_room FROM game_rooms WHERE id = p_room_id AND status = 'active';
-  IF NOT FOUND THEN RAISE EXCEPTION('Game not active'); END IF;
+  IF NOT FOUND THEN RAISE EXCEPTION 'Game not active'; END IF;
 
   -- Verify player is in room and connected
   IF NOT EXISTS (
@@ -667,6 +676,15 @@ $$ LANGUAGE plpgsql SECURITY DEFINER;
 
 -- ── Enable Realtime on game tables ──────────────────────────────────────────
 
-ALTER PUBLICATION supabase_realtime ADD TABLE game_rooms;
-ALTER PUBLICATION supabase_realtime ADD TABLE game_players;
-ALTER PUBLICATION supabase_realtime ADD TABLE game_answers;
+DO $$
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_publication_tables WHERE pubname = 'supabase_realtime' AND tablename = 'game_rooms') THEN
+    ALTER PUBLICATION supabase_realtime ADD TABLE game_rooms;
+  END IF;
+  IF NOT EXISTS (SELECT 1 FROM pg_publication_tables WHERE pubname = 'supabase_realtime' AND tablename = 'game_players') THEN
+    ALTER PUBLICATION supabase_realtime ADD TABLE game_players;
+  END IF;
+  IF NOT EXISTS (SELECT 1 FROM pg_publication_tables WHERE pubname = 'supabase_realtime' AND tablename = 'game_answers') THEN
+    ALTER PUBLICATION supabase_realtime ADD TABLE game_answers;
+  END IF;
+END $$;
