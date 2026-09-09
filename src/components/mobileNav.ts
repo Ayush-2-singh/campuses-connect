@@ -11,6 +11,7 @@ export const MOBILE_NAV = [
 ]
 
 export const MOBILE_MENU_NAV = [
+  { label: 'Games', href: '/games', icon: 'zap' },
   { label: 'Global', href: '/global', icon: 'globe' },
   { label: 'Blog', href: '/blog', icon: 'notebook' },
   { label: 'Events', href: '/events', icon: 'calendar' },
