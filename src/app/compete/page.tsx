@@ -1,11 +1,14 @@
 'use client'
 
 import { useEffect, useMemo, useState, useCallback, Suspense } from 'react'
+import dynamic from 'next/dynamic'
 import { createClient } from '@/lib/supabase/client'
 import Layout from '@/components/Layout'
 import Avatar from '@/components/Avatar'
 import ErrorBoundary from '@/components/ErrorBoundary'
 import { useRouter, useSearchParams } from 'next/navigation'
+
+const QuickMath = dynamic(() => import('@/components/games/QuickMath'), { ssr: false })
 
 // ══════════════════════════════════════════════════════════════
 // TYPES
@@ -717,7 +720,44 @@ function CompetePageInner() {
 
           {/* ═══════════ CAMPUS CLASH ═══════════ */}
           {tab === 'clash' && (
-            <div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+              {/* Quick Math Game */}
+              <div
+                style={{
+                  background: 'var(--bg)',
+                  border: '1px solid var(--accent-border)',
+                  borderRadius: 16,
+                  padding: '20px',
+                }}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 16 }}>
+                  <div
+                    style={{
+                      width: 40,
+                      height: 40,
+                      borderRadius: 12,
+                      background: 'var(--accent-light)',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      fontSize: 20,
+                    }}
+                  >
+                    ⚡
+                  </div>
+                  <div>
+                    <h3 style={{ fontSize: 16, fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>
+                      Quick Math
+                    </h3>
+                    <p style={{ fontSize: 12, color: 'var(--text-muted)', margin: 0 }}>
+                      Real-time mental math battles — no login needed!
+                    </p>
+                  </div>
+                </div>
+                <QuickMath />
+              </div>
+
+              {/* Campus Clash Contest */}
               {!contest ? (
                 <div
                   style={{

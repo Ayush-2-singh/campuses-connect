@@ -28,9 +28,11 @@ export default function QuickMath({ initialRoomCode }: { initialRoomCode?: strin
   const [nickname, setNickname] = useState(getSavedNickname())
   const [roomCodeInput, setRoomCodeInput] = useState(initialRoomCode || '')
   const [difficulty, setDifficulty] = useState<Difficulty>('medium')
+  const [totalRounds, setTotalRounds] = useState(10)
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
   const [countdown, setCountdown] = useState(0)
+  const ROUNDS_OPTIONS = [5, 10, 20, 30, 50]
 
   // ── Realtime subscription ──────────────────────────────────────────────
   const subscribeToRoom = useCallback(
@@ -162,7 +164,7 @@ export default function QuickMath({ initialRoomCode }: { initialRoomCode?: strin
       p_player_id: guestId,
       p_nickname: nickname.trim(),
       p_difficulty: difficulty,
-      p_total_rounds: GAME_CONFIG.TOTAL_ROUNDS,
+      p_total_rounds: totalRounds,
       p_max_players: GAME_CONFIG.MAX_PLAYERS,
     })
 
@@ -243,11 +245,23 @@ export default function QuickMath({ initialRoomCode }: { initialRoomCode?: strin
       p_answer_time_ms: timeMs,
     })
     if (rpcError) throw rpcError
-    return data as unknown as { correct: boolean; points: number }
+    const result = data as unknown as { correct: boolean; points: number }
+
+    // If correct answer, auto-advance immediately (host only)
+    if (result.correct && myPlayerId === room?.host_id) {
+      setTimeout(async () => {
+        await supabase.rpc('advance_round', {
+          p_room_id: room!.id,
+          p_player_id: guestId,
+        })
+      }, 1200) // Brief delay so player sees "Correct!"
+    }
+
+    return result
   }
 
   const handleRoundComplete = async () => {
-    // Only host advances the round
+    // Only host advances the round (for timer expiry)
     if (myPlayerId !== room?.host_id) return
 
     const { data, error: rpcError } = await supabase.rpc('advance_round', {
@@ -255,7 +269,6 @@ export default function QuickMath({ initialRoomCode }: { initialRoomCode?: strin
       p_player_id: guestId,
     })
     if (rpcError) return
-    const result = data as unknown as { finished: boolean }
     // Realtime will update room state
   }
 
@@ -271,15 +284,7 @@ export default function QuickMath({ initialRoomCode }: { initialRoomCode?: strin
     setPhase('entry')
   }
 
-  const handleRematch = () => {
-    // Reset to lobby state with same room
-    setPhase('lobby')
-    setAnswers([])
-  }
-
-  const handleNewGame = () => {
-    handleLeave()
-  }
+  // No rematch — game ends with exit only
 
   // ── Render ─────────────────────────────────────────────────────────────
 
@@ -354,6 +359,35 @@ export default function QuickMath({ initialRoomCode }: { initialRoomCode?: strin
                   </button>
                 )
               })}
+            </div>
+          </div>
+
+          {/* Rounds */}
+          <div>
+            <p style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-secondary)', margin: '0 0 8px' }}>Rounds</p>
+            <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+              {ROUNDS_OPTIONS.map((r) => (
+                <button
+                  key={r}
+                  onClick={() => setTotalRounds(r)}
+                  style={{
+                    flex: '1 1 0',
+                    minWidth: 50,
+                    padding: '10px 4px',
+                    borderRadius: 12,
+                    border: totalRounds === r ? '2px solid var(--accent)' : '1px solid var(--border)',
+                    background: totalRounds === r ? 'var(--accent-light)' : 'var(--bg)',
+                    color: totalRounds === r ? 'var(--accent-text)' : 'var(--text-secondary)',
+                    fontSize: 13,
+                    fontWeight: 700,
+                    cursor: 'pointer',
+                    fontFamily: 'inherit',
+                    textAlign: 'center',
+                  }}
+                >
+                  {r}
+                </button>
+              ))}
             </div>
           </div>
 
@@ -516,15 +550,7 @@ export default function QuickMath({ initialRoomCode }: { initialRoomCode?: strin
       )}
 
       {/* ═══ RESULTS PHASE ═══ */}
-      {phase === 'finished' && (
-        <GameResults
-          players={players}
-          myPlayerId={myPlayerId}
-          onRematch={handleRematch}
-          onNewGame={handleNewGame}
-          onExit={handleLeave}
-        />
-      )}
+      {phase === 'finished' && <GameResults players={players} myPlayerId={myPlayerId} onExit={handleLeave} />}
     </div>
   )
 }
