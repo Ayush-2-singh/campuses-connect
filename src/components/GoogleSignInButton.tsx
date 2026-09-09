@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { getAuthErrorMessage, getSafeRedirect } from '@/lib/auth'
+import { redirectToCanonicalOrigin } from '@/lib/canonical-origin'
 
 function GoogleG() {
   return (
@@ -42,6 +43,12 @@ export default function GoogleSignInButton({ label = 'Continue with Google' }: {
     setLoading(true)
     setError('')
 
+    // OAuth + PKCE cookies are origin-scoped: if the user opened the site on
+    // the apex domain (or any non-canonical origin), bounce to www first so
+    // start → Google → callback all happen on ONE origin. The PKCE verifier
+    // cookie would otherwise be unreachable by the callback (TEST 1/2 fix).
+    if (redirectToCanonicalOrigin()) return
+
     const supabase = createClient()
     // Preserve the original destination (?redirect=/protected-page) through
     // the OAuth round-trip; validated again server-side in the callback.
@@ -49,6 +56,8 @@ export default function GoogleSignInButton({ label = 'Continue with Google' }: {
     const callbackUrl = new URL('/auth/callback', window.location.origin)
     if (next !== '/feed') callbackUrl.searchParams.set('next', next)
 
+    // PKCE flow: @supabase/ssr's browser client defaults flowType to 'pkce',
+    // storing the code verifier in an origin-scoped cookie (see guard above).
     const { error: err } = await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: { redirectTo: callbackUrl.toString() },
