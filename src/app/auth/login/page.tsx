@@ -36,8 +36,10 @@ export default function LoginPage() {
     // connecttocampus.com from a cached page), move to www first — auth
     // cookies are origin-scoped and the callback runs on www.
     if (redirectToCanonicalOrigin()) return
-    const callbackError = new URLSearchParams(window.location.search).get('error')
+    const params = new URLSearchParams(window.location.search)
+    const callbackError = params.get('error')
     if (!callbackError) return
+    const rawDetail = params.get('ed') || ''
     const messages: Record<string, string> = {
       redirect_url_mismatch:
         'Google blocked the sign-in: this site\u2019s URL is not whitelisted in the OAuth settings. Try email instead.',
@@ -45,8 +47,11 @@ export default function LoginPage() {
       access_denied: 'Google sign-in was cancelled or denied. Please try again.',
       oauth_failed: 'We could not complete Google sign-in. Please try again or use email.',
     }
-    setError(messages[callbackError] || 'We could not complete Google sign-in. Please try again or use email.')
-    // Clean the URL so refreshing doesn't re-show the error
+    let msg = messages[callbackError] || 'We could not complete Google sign-in. Please try again or use email.'
+    // Debug aid while sign-in is being stabilised: show the provider's raw
+    // reason so failures are diagnosable (no secrets are in these strings).
+    if (rawDetail) msg += ` — Detail: ${rawDetail}`
+    setError(msg)
     window.history.replaceState(null, '', window.location.pathname)
   }, [])
 
