@@ -68,6 +68,7 @@ export default function LandingPage() {
     { icon: 'notebook', title: 'Library', desc: 'Notes, PYQs, resources & AI Brain to ask anything.' },
     { icon: 'zap', title: 'Compete', desc: 'DSA challenges, talent discovery & leaderboard rankings.' },
     { icon: 'briefcase', title: 'Opportunities', desc: 'Hackathons, internships, jobs & find teammates.' },
+    { icon: 'zap', title: 'Games', desc: 'Real-time math battles — challenge friends live. No login needed!' },
   ]
 
   const totalCampuses = liveColleges.reduce((sum, c) => sum + c.campuses.length, 0)
@@ -128,6 +129,21 @@ export default function LandingPage() {
             </h1>
           </div>
           <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
+            <button
+              onClick={() => router.push('/games')}
+              style={{
+                background: 'none',
+                color: 'var(--cyan)',
+                border: '1px solid var(--cyan-border)',
+                padding: '8px 14px',
+                borderRadius: 10,
+                fontSize: 14,
+                fontWeight: 700,
+                cursor: 'pointer',
+              }}
+            >
+              🎮 Games
+            </button>
             <button
               onClick={() => router.push('/global')}
               style={{
@@ -273,6 +289,21 @@ export default function LandingPage() {
                 }}
               >
                 Join free — from any college →
+              </button>
+              <button
+                onClick={() => router.push('/games')}
+                style={{
+                  background: 'var(--bg)',
+                  color: 'var(--cyan)',
+                  border: '1px solid var(--cyan-border)',
+                  padding: '14px 28px',
+                  borderRadius: 12,
+                  fontSize: 16,
+                  fontWeight: 700,
+                  cursor: 'pointer',
+                }}
+              >
+                🎮 Play Games — no login
               </button>
               <button
                 onClick={() => router.push('/global')}
