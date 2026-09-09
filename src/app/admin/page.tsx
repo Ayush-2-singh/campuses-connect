@@ -837,6 +837,25 @@ export default function AdminPage() {
   }
 
   // ── Platform settings actions (NEW) ─────────────────────
+  const deleteSetting = async (key: string) => {
+    if (!confirm(`Delete setting "${key}"? This cannot be undone.`)) return
+    try {
+      const res = await fetch('/api/admin/platform-settings', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ key }),
+      })
+      if (res.ok) {
+        setPlatformSettings((settings) => settings.filter((s) => s.key !== key))
+      } else {
+        const data = await res.json()
+        alert(data.error || 'Failed to delete setting')
+      }
+    } catch {
+      /* ignore */
+    }
+  }
+
   const saveSetting = async (key: string) => {
     setSettingsSaving(key)
     try {
@@ -1666,6 +1685,24 @@ export default function AdminPage() {
                             }}
                           >
                             {settingsSaving === s.key ? 'Saving...' : 'Save'}
+                          </button>
+                        )}
+                        {isPlatformAdmin && (
+                          <button
+                            onClick={() => deleteSetting(s.key)}
+                            style={{
+                              padding: '8px 16px',
+                              borderRadius: 8,
+                              border: '1px solid var(--danger-border)',
+                              fontSize: 12,
+                              fontWeight: 600,
+                              cursor: 'pointer',
+                              fontFamily: 'inherit',
+                              background: 'var(--danger-light)',
+                              color: 'var(--danger)',
+                            }}
+                          >
+                            🗑️ Delete
                           </button>
                         )}
                       </div>
