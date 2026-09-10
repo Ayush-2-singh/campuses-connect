@@ -1,0 +1,210 @@
+[
+    {
+        "table_name": "admin_grants",
+        "rls_enabled": true
+    },
+    {
+        "table_name": "admin_types",
+        "rls_enabled": true
+    },
+    {
+        "table_name": "ai_agents",
+        "rls_enabled": true
+    },
+    {
+        "table_name": "assignment_questions",
+        "rls_enabled": true
+    },
+    {
+        "table_name": "assignment_seen",
+        "rls_enabled": true
+    },
+    {
+        "table_name": "assignment_submissions",
+        "rls_enabled": true
+    },
+    {
+        "table_name": "assignments",
+        "rls_enabled": true
+    },
+    {
+        "table_name": "audit_log",
+        "rls_enabled": true
+    },
+    {
+        "table_name": "campus_ai_agents",
+        "rls_enabled": true
+    },
+    {
+        "table_name": "campus_insights",
+        "rls_enabled": true
+    },
+    {
+        "table_name": "campuses",
+        "rls_enabled": true
+    },
+    {
+        "table_name": "club_members",
+        "rls_enabled": true
+    },
+    {
+        "table_name": "clubs",
+        "rls_enabled": true
+    },
+    {
+        "table_name": "college_email_verifications",
+        "rls_enabled": true
+    },
+    {
+        "table_name": "college_features",
+        "rls_enabled": true
+    },
+    {
+        "table_name": "colleges",
+        "rls_enabled": true
+    },
+    {
+        "table_name": "communities",
+        "rls_enabled": true
+    },
+    {
+        "table_name": "community_members",
+        "rls_enabled": true
+    },
+    {
+        "table_name": "connections",
+        "rls_enabled": true
+    },
+    {
+        "table_name": "content_categories",
+        "rls_enabled": true
+    },
+    {
+        "table_name": "content_permissions",
+        "rls_enabled": true
+    },
+    {
+        "table_name": "content_reports",
+        "rls_enabled": true
+    },
+    {
+        "table_name": "conversation_participants",
+        "rls_enabled": true
+    },
+    {
+        "table_name": "conversations",
+        "rls_enabled": true
+    },
+    {
+        "table_name": "departments",
+        "rls_enabled": true
+    },
+    {
+        "table_name": "event_registrations",
+        "rls_enabled": true
+    },
+    {
+        "table_name": "events",
+        "rls_enabled": true
+    },
+    {
+        "table_name": "group_members",
+        "rls_enabled": true
+    },
+    {
+        "table_name": "interests",
+        "rls_enabled": true
+    },
+    {
+        "table_name": "lost_found",
+        "rls_enabled": true
+    },
+    {
+        "table_name": "messages",
+        "rls_enabled": true
+    },
+    {
+        "table_name": "moderation_permissions",
+        "rls_enabled": true
+    },
+    {
+        "table_name": "moderation_queue",
+        "rls_enabled": true
+    },
+    {
+        "table_name": "notes",
+        "rls_enabled": true
+    },
+    {
+        "table_name": "notifications",
+        "rls_enabled": true
+    },
+    {
+        "table_name": "official_groups",
+        "rls_enabled": true
+    },
+    {
+        "table_name": "opportunities",
+        "rls_enabled": true
+    },
+    {
+        "table_name": "platform_settings",
+        "rls_enabled": true
+    },
+    {
+        "table_name": "post_comments",
+        "rls_enabled": true
+    },
+    {
+        "table_name": "post_reactions",
+        "rls_enabled": true
+    },
+    {
+        "table_name": "posts",
+        "rls_enabled": true
+    },
+    {
+        "table_name": "profile_interests",
+        "rls_enabled": true
+    },
+    {
+        "table_name": "profile_skills",
+        "rls_enabled": true
+    },
+    {
+        "table_name": "profiles",
+        "rls_enabled": true
+    },
+    {
+        "table_name": "programs",
+        "rls_enabled": true
+    },
+    {
+        "table_name": "reports",
+        "rls_enabled": true
+    },
+    {
+        "table_name": "saved_posts",
+        "rls_enabled": true
+    },
+    {
+        "table_name": "skills",
+        "rls_enabled": true
+    },
+    {
+        "table_name": "study_group_members",
+        "rls_enabled": true
+    },
+    {
+        "table_name": "study_groups",
+        "rls_enabled": true
+    },
+    {
+        "table_name": "team_requests",
+        "rls_enabled": true
+    },
+    {
+        "table_name": "travel_buddies",
+        "rls_enabled": true
+    }
+]

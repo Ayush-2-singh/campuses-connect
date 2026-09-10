@@ -1,0 +1,794 @@
+[
+    {
+        "tablename": "admin_grants",
+        "policyname": "grants_select",
+        "cmd": "SELECT",
+        "permissive": "PERMISSIVE",
+        "roles": "{public}",
+        "qual": "((user_id = auth.uid()) OR has_mod_permission(auth.uid(), 'users.manage'::text) OR has_mod_permission(auth.uid(), 'agent.manage'::text))",
+        "with_check": null
+    },
+    {
+        "tablename": "admin_grants",
+        "policyname": "grants_write",
+        "cmd": "ALL",
+        "permissive": "PERMISSIVE",
+        "roles": "{public}",
+        "qual": "has_mod_permission(auth.uid(), 'users.manage'::text)",
+        "with_check": "has_mod_permission(auth.uid(), 'users.manage'::text)"
+    },
+    {
+        "tablename": "admin_types",
+        "policyname": "atypes_select",
+        "cmd": "SELECT",
+        "permissive": "PERMISSIVE",
+        "roles": "{public}",
+        "qual": "true",
+        "with_check": null
+    },
+    {
+        "tablename": "ai_agents",
+        "policyname": "ai_select",
+        "cmd": "SELECT",
+        "permissive": "PERMISSIVE",
+        "roles": "{public}",
+        "qual": "true",
+        "with_check": null
+    },
+    {
+        "tablename": "ai_agents",
+        "policyname": "ai_write",
+        "cmd": "ALL",
+        "permissive": "PERMISSIVE",
+        "roles": "{public}",
+        "qual": "has_mod_permission(auth.uid(), 'ai_agent.configure'::text)",
+        "with_check": "has_mod_permission(auth.uid(), 'ai_agent.configure'::text)"
+    },
+    {
+        "tablename": "audit_log",
+        "policyname": "audit_select",
+        "cmd": "SELECT",
+        "permissive": "PERMISSIVE",
+        "roles": "{public}",
+        "qual": "has_mod_permission(auth.uid(), 'analytics.view'::text)",
+        "with_check": null
+    },
+    {
+        "tablename": "campus_ai_agents",
+        "policyname": "cai_select",
+        "cmd": "SELECT",
+        "permissive": "PERMISSIVE",
+        "roles": "{public}",
+        "qual": "true",
+        "with_check": null
+    },
+    {
+        "tablename": "campus_ai_agents",
+        "policyname": "cai_write",
+        "cmd": "ALL",
+        "permissive": "PERMISSIVE",
+        "roles": "{public}",
+        "qual": "has_mod_permission(auth.uid(), 'ai_agent.configure'::text)",
+        "with_check": "has_mod_permission(auth.uid(), 'ai_agent.configure'::text)"
+    },
+    {
+        "tablename": "campus_insights",
+        "policyname": "insights_insert",
+        "cmd": "INSERT",
+        "permissive": "PERMISSIVE",
+        "roles": "{public}",
+        "qual": null,
+        "with_check": "((created_by = auth.uid()) AND has_mod_permission(auth.uid(), 'campus.settings'::text))"
+    },
+    {
+        "tablename": "campus_insights",
+        "policyname": "insights_select",
+        "cmd": "SELECT",
+        "permissive": "PERMISSIVE",
+        "roles": "{public}",
+        "qual": "true",
+        "with_check": null
+    },
+    {
+        "tablename": "campuses",
+        "policyname": "public read campuses",
+        "cmd": "SELECT",
+        "permissive": "PERMISSIVE",
+        "roles": "{public}",
+        "qual": "true",
+        "with_check": null
+    },
+    {
+        "tablename": "club_members",
+        "policyname": "clubm_all",
+        "cmd": "ALL",
+        "permissive": "PERMISSIVE",
+        "roles": "{public}",
+        "qual": "(user_id = auth.uid())",
+        "with_check": "(user_id = auth.uid())"
+    },
+    {
+        "tablename": "clubs",
+        "policyname": "clubs_insert",
+        "cmd": "INSERT",
+        "permissive": "PERMISSIVE",
+        "roles": "{public}",
+        "qual": null,
+        "with_check": "((created_by = auth.uid()) AND has_mod_permission(auth.uid(), 'campus.settings'::text))"
+    },
+    {
+        "tablename": "clubs",
+        "policyname": "clubs_select",
+        "cmd": "SELECT",
+        "permissive": "PERMISSIVE",
+        "roles": "{public}",
+        "qual": "true",
+        "with_check": null
+    },
+    {
+        "tablename": "college_email_verifications",
+        "policyname": "cever_insert",
+        "cmd": "INSERT",
+        "permissive": "PERMISSIVE",
+        "roles": "{public}",
+        "qual": null,
+        "with_check": "(user_id = auth.uid())"
+    },
+    {
+        "tablename": "college_email_verifications",
+        "policyname": "cever_select",
+        "cmd": "SELECT",
+        "permissive": "PERMISSIVE",
+        "roles": "{public}",
+        "qual": "((user_id = auth.uid()) OR has_mod_permission(auth.uid(), 'users.manage'::text))",
+        "with_check": null
+    },
+    {
+        "tablename": "colleges",
+        "policyname": "public read colleges",
+        "cmd": "SELECT",
+        "permissive": "PERMISSIVE",
+        "roles": "{public}",
+        "qual": "true",
+        "with_check": null
+    },
+    {
+        "tablename": "communities",
+        "policyname": "communities_select",
+        "cmd": "SELECT",
+        "permissive": "PERMISSIVE",
+        "roles": "{public}",
+        "qual": "is_active",
+        "with_check": null
+    },
+    {
+        "tablename": "communities",
+        "policyname": "communities_write",
+        "cmd": "ALL",
+        "permissive": "PERMISSIVE",
+        "roles": "{public}",
+        "qual": "has_mod_permission(auth.uid(), 'users.manage'::text)",
+        "with_check": "has_mod_permission(auth.uid(), 'users.manage'::text)"
+    },
+    {
+        "tablename": "community_members",
+        "policyname": "cmembers_delete",
+        "cmd": "DELETE",
+        "permissive": "PERMISSIVE",
+        "roles": "{public}",
+        "qual": "((user_id = auth.uid()) OR has_mod_permission(auth.uid(), 'users.manage'::text))",
+        "with_check": null
+    },
+    {
+        "tablename": "community_members",
+        "policyname": "cmembers_insert",
+        "cmd": "INSERT",
+        "permissive": "PERMISSIVE",
+        "roles": "{public}",
+        "qual": null,
+        "with_check": "(user_id = auth.uid())"
+    },
+    {
+        "tablename": "community_members",
+        "policyname": "cmembers_select",
+        "cmd": "SELECT",
+        "permissive": "PERMISSIVE",
+        "roles": "{public}",
+        "qual": "true",
+        "with_check": null
+    },
+    {
+        "tablename": "connections",
+        "policyname": "connections_delete",
+        "cmd": "DELETE",
+        "permissive": "PERMISSIVE",
+        "roles": "{public}",
+        "qual": "((requester_id = auth.uid()) OR (receiver_id = auth.uid()))",
+        "with_check": null
+    },
+    {
+        "tablename": "connections",
+        "policyname": "connections_insert",
+        "cmd": "INSERT",
+        "permissive": "PERMISSIVE",
+        "roles": "{public}",
+        "qual": null,
+        "with_check": "(requester_id = auth.uid())"
+    },
+    {
+        "tablename": "connections",
+        "policyname": "connections_select",
+        "cmd": "SELECT",
+        "permissive": "PERMISSIVE",
+        "roles": "{public}",
+        "qual": "((requester_id = auth.uid()) OR (receiver_id = auth.uid()))",
+        "with_check": null
+    },
+    {
+        "tablename": "connections",
+        "policyname": "connections_update",
+        "cmd": "UPDATE",
+        "permissive": "PERMISSIVE",
+        "roles": "{public}",
+        "qual": "((requester_id = auth.uid()) OR (receiver_id = auth.uid()))",
+        "with_check": "((requester_id = auth.uid()) OR (receiver_id = auth.uid()))"
+    },
+    {
+        "tablename": "content_categories",
+        "policyname": "cat_select",
+        "cmd": "SELECT",
+        "permissive": "PERMISSIVE",
+        "roles": "{public}",
+        "qual": "true",
+        "with_check": null
+    },
+    {
+        "tablename": "content_categories",
+        "policyname": "cat_write",
+        "cmd": "ALL",
+        "permissive": "PERMISSIVE",
+        "roles": "{public}",
+        "qual": "has_mod_permission(auth.uid(), 'users.manage'::text)",
+        "with_check": "has_mod_permission(auth.uid(), 'users.manage'::text)"
+    },
+    {
+        "tablename": "content_permissions",
+        "policyname": "matrix_select",
+        "cmd": "SELECT",
+        "permissive": "PERMISSIVE",
+        "roles": "{public}",
+        "qual": "true",
+        "with_check": null
+    },
+    {
+        "tablename": "content_permissions",
+        "policyname": "matrix_write",
+        "cmd": "ALL",
+        "permissive": "PERMISSIVE",
+        "roles": "{public}",
+        "qual": "has_mod_permission(auth.uid(), 'users.manage'::text)",
+        "with_check": "has_mod_permission(auth.uid(), 'users.manage'::text)"
+    },
+    {
+        "tablename": "content_reports",
+        "policyname": "reports_insert",
+        "cmd": "INSERT",
+        "permissive": "PERMISSIVE",
+        "roles": "{public}",
+        "qual": null,
+        "with_check": "(reported_by = auth.uid())"
+    },
+    {
+        "tablename": "content_reports",
+        "policyname": "reports_select",
+        "cmd": "SELECT",
+        "permissive": "PERMISSIVE",
+        "roles": "{public}",
+        "qual": "has_mod_permission(auth.uid(), 'report.manage'::text)",
+        "with_check": null
+    },
+    {
+        "tablename": "content_reports",
+        "policyname": "reports_update",
+        "cmd": "UPDATE",
+        "permissive": "PERMISSIVE",
+        "roles": "{public}",
+        "qual": "has_mod_permission(auth.uid(), 'report.manage'::text)",
+        "with_check": null
+    },
+    {
+        "tablename": "conversation_participants",
+        "policyname": "participants_select",
+        "cmd": "SELECT",
+        "permissive": "PERMISSIVE",
+        "roles": "{public}",
+        "qual": "(profile_id = auth.uid())",
+        "with_check": null
+    },
+    {
+        "tablename": "conversations",
+        "policyname": "conversations_select",
+        "cmd": "SELECT",
+        "permissive": "PERMISSIVE",
+        "roles": "{public}",
+        "qual": "(EXISTS ( SELECT 1\n   FROM conversation_participants cp\n  WHERE ((cp.conversation_id = conversations.id) AND (cp.profile_id = auth.uid()))))",
+        "with_check": null
+    },
+    {
+        "tablename": "departments",
+        "policyname": "public read departments",
+        "cmd": "SELECT",
+        "permissive": "PERMISSIVE",
+        "roles": "{public}",
+        "qual": "true",
+        "with_check": null
+    },
+    {
+        "tablename": "events",
+        "policyname": "events_admin_write",
+        "cmd": "ALL",
+        "permissive": "PERMISSIVE",
+        "roles": "{public}",
+        "qual": "has_mod_permission(auth.uid(), 'campus.settings'::text)",
+        "with_check": "has_mod_permission(auth.uid(), 'campus.settings'::text)"
+    },
+    {
+        "tablename": "events",
+        "policyname": "events_select",
+        "cmd": "SELECT",
+        "permissive": "PERMISSIVE",
+        "roles": "{public}",
+        "qual": "(is_published AND ((visibility IS NULL) OR (visibility = 'public'::text) OR (campus_id IN ( SELECT profiles.campus_id\n   FROM profiles\n  WHERE (profiles.id = auth.uid()))) OR (college_id IN ( SELECT profiles.college_id\n   FROM profiles\n  WHERE (profiles.id = auth.uid())))))",
+        "with_check": null
+    },
+    {
+        "tablename": "lost_found",
+        "policyname": "lf_insert",
+        "cmd": "INSERT",
+        "permissive": "PERMISSIVE",
+        "roles": "{public}",
+        "qual": null,
+        "with_check": "((posted_by = auth.uid()) AND (EXISTS ( SELECT 1\n   FROM admin_grants\n  WHERE (admin_grants.user_id = auth.uid()))))"
+    },
+    {
+        "tablename": "messages",
+        "policyname": "messages_insert",
+        "cmd": "INSERT",
+        "permissive": "PERMISSIVE",
+        "roles": "{public}",
+        "qual": null,
+        "with_check": "((sender_id = auth.uid()) AND (EXISTS ( SELECT 1\n   FROM conversation_participants cp\n  WHERE ((cp.conversation_id = messages.conversation_id) AND (cp.profile_id = auth.uid())))))"
+    },
+    {
+        "tablename": "messages",
+        "policyname": "messages_select",
+        "cmd": "SELECT",
+        "permissive": "PERMISSIVE",
+        "roles": "{public}",
+        "qual": "((sender_id = auth.uid()) OR (EXISTS ( SELECT 1\n   FROM conversation_participants cp\n  WHERE ((cp.conversation_id = messages.conversation_id) AND (cp.profile_id = auth.uid())))))",
+        "with_check": null
+    },
+    {
+        "tablename": "messages",
+        "policyname": "messages_update",
+        "cmd": "UPDATE",
+        "permissive": "PERMISSIVE",
+        "roles": "{public}",
+        "qual": "(sender_id = auth.uid())",
+        "with_check": "(sender_id = auth.uid())"
+    },
+    {
+        "tablename": "moderation_permissions",
+        "policyname": "mperm_select",
+        "cmd": "SELECT",
+        "permissive": "PERMISSIVE",
+        "roles": "{public}",
+        "qual": "((user_id = auth.uid()) OR has_mod_permission(auth.uid(), 'users.manage'::text) OR has_mod_permission(auth.uid(), 'agent.manage'::text))",
+        "with_check": null
+    },
+    {
+        "tablename": "moderation_permissions",
+        "policyname": "mperm_write",
+        "cmd": "ALL",
+        "permissive": "PERMISSIVE",
+        "roles": "{public}",
+        "qual": "has_mod_permission(auth.uid(), 'users.manage'::text)",
+        "with_check": "has_mod_permission(auth.uid(), 'users.manage'::text)"
+    },
+    {
+        "tablename": "moderation_queue",
+        "policyname": "queue_select",
+        "cmd": "SELECT",
+        "permissive": "PERMISSIVE",
+        "roles": "{public}",
+        "qual": "has_mod_permission(auth.uid(), 'content.moderation'::text)",
+        "with_check": null
+    },
+    {
+        "tablename": "moderation_queue",
+        "policyname": "queue_update",
+        "cmd": "UPDATE",
+        "permissive": "PERMISSIVE",
+        "roles": "{public}",
+        "qual": "has_mod_permission(auth.uid(), 'content.moderation'::text)",
+        "with_check": null
+    },
+    {
+        "tablename": "notes",
+        "policyname": "notes_delete",
+        "cmd": "DELETE",
+        "permissive": "PERMISSIVE",
+        "roles": "{public}",
+        "qual": "((uploaded_by = auth.uid()) OR has_mod_permission(auth.uid(), 'content.moderation'::text))",
+        "with_check": null
+    },
+    {
+        "tablename": "notes",
+        "policyname": "notes_insert",
+        "cmd": "INSERT",
+        "permissive": "PERMISSIVE",
+        "roles": "{public}",
+        "qual": null,
+        "with_check": "((uploaded_by = auth.uid()) AND can_create_post(auth.uid(), 'notes'::text, 'campus'::text, NULL::uuid, campus_id, college_id))"
+    },
+    {
+        "tablename": "notes",
+        "policyname": "notes_select",
+        "cmd": "SELECT",
+        "permissive": "PERMISSIVE",
+        "roles": "{public}",
+        "qual": "(auth.role() = 'authenticated'::text)",
+        "with_check": null
+    },
+    {
+        "tablename": "notes",
+        "policyname": "notes_update",
+        "cmd": "UPDATE",
+        "permissive": "PERMISSIVE",
+        "roles": "{public}",
+        "qual": "((uploaded_by = auth.uid()) OR has_mod_permission(auth.uid(), 'content.moderation'::text))",
+        "with_check": "((uploaded_by = auth.uid()) OR has_mod_permission(auth.uid(), 'content.moderation'::text))"
+    },
+    {
+        "tablename": "notifications",
+        "policyname": "notifications_select",
+        "cmd": "SELECT",
+        "permissive": "PERMISSIVE",
+        "roles": "{public}",
+        "qual": "(recipient_id = auth.uid())",
+        "with_check": null
+    },
+    {
+        "tablename": "notifications",
+        "policyname": "notifications_update",
+        "cmd": "UPDATE",
+        "permissive": "PERMISSIVE",
+        "roles": "{public}",
+        "qual": "(recipient_id = auth.uid())",
+        "with_check": "(recipient_id = auth.uid())"
+    },
+    {
+        "tablename": "opportunities",
+        "policyname": "opportunities_delete",
+        "cmd": "DELETE",
+        "permissive": "PERMISSIVE",
+        "roles": "{public}",
+        "qual": "((posted_by = auth.uid()) OR has_mod_permission(auth.uid(), 'content.moderation'::text))",
+        "with_check": null
+    },
+    {
+        "tablename": "opportunities",
+        "policyname": "opportunities_insert",
+        "cmd": "INSERT",
+        "permissive": "PERMISSIVE",
+        "roles": "{public}",
+        "qual": null,
+        "with_check": "((posted_by = auth.uid()) AND\nCASE opp_type\n    WHEN 'hackathon'::text THEN can_create_post(auth.uid(), 'hackathon'::text, 'campus'::text, NULL::uuid, campus_id, college_id)\n    WHEN 'internship'::text THEN can_create_post(auth.uid(), 'internship'::text, 'campus'::text, NULL::uuid, campus_id, college_id)\n    ELSE can_create_post(auth.uid(), 'opportunity'::text, 'campus'::text, NULL::uuid, campus_id, college_id)\nEND)"
+    },
+    {
+        "tablename": "opportunities",
+        "policyname": "opportunities_select",
+        "cmd": "SELECT",
+        "permissive": "PERMISSIVE",
+        "roles": "{public}",
+        "qual": "(auth.role() = 'authenticated'::text)",
+        "with_check": null
+    },
+    {
+        "tablename": "opportunities",
+        "policyname": "opportunities_update",
+        "cmd": "UPDATE",
+        "permissive": "PERMISSIVE",
+        "roles": "{public}",
+        "qual": "((posted_by = auth.uid()) OR has_mod_permission(auth.uid(), 'content.moderation'::text))",
+        "with_check": "((posted_by = auth.uid()) OR has_mod_permission(auth.uid(), 'content.moderation'::text))"
+    },
+    {
+        "tablename": "post_comments",
+        "policyname": "comments_delete",
+        "cmd": "DELETE",
+        "permissive": "PERMISSIVE",
+        "roles": "{public}",
+        "qual": "((author_id = auth.uid()) OR has_mod_permission(auth.uid(), 'content.moderation'::text))",
+        "with_check": null
+    },
+    {
+        "tablename": "post_comments",
+        "policyname": "comments_insert",
+        "cmd": "INSERT",
+        "permissive": "PERMISSIVE",
+        "roles": "{public}",
+        "qual": null,
+        "with_check": "((author_id = auth.uid()) AND can_interact_post_id(post_id))"
+    },
+    {
+        "tablename": "post_comments",
+        "policyname": "comments_select",
+        "cmd": "SELECT",
+        "permissive": "PERMISSIVE",
+        "roles": "{public}",
+        "qual": "(can_view_post_id(post_id) AND (NOT is_deleted))",
+        "with_check": null
+    },
+    {
+        "tablename": "post_comments",
+        "policyname": "comments_update",
+        "cmd": "UPDATE",
+        "permissive": "PERMISSIVE",
+        "roles": "{public}",
+        "qual": "(author_id = auth.uid())",
+        "with_check": null
+    },
+    {
+        "tablename": "post_reactions",
+        "policyname": "reactions_delete",
+        "cmd": "DELETE",
+        "permissive": "PERMISSIVE",
+        "roles": "{public}",
+        "qual": "(profile_id = auth.uid())",
+        "with_check": null
+    },
+    {
+        "tablename": "post_reactions",
+        "policyname": "reactions_insert",
+        "cmd": "INSERT",
+        "permissive": "PERMISSIVE",
+        "roles": "{public}",
+        "qual": null,
+        "with_check": "((profile_id = auth.uid()) AND can_interact_post_id(post_id))"
+    },
+    {
+        "tablename": "post_reactions",
+        "policyname": "reactions_select",
+        "cmd": "SELECT",
+        "permissive": "PERMISSIVE",
+        "roles": "{public}",
+        "qual": "(profile_id = auth.uid())",
+        "with_check": null
+    },
+    {
+        "tablename": "post_reactions",
+        "policyname": "reactions_update",
+        "cmd": "UPDATE",
+        "permissive": "PERMISSIVE",
+        "roles": "{public}",
+        "qual": "(profile_id = auth.uid())",
+        "with_check": "((profile_id = auth.uid()) AND can_interact_post_id(post_id))"
+    },
+    {
+        "tablename": "posts",
+        "policyname": "posts_delete",
+        "cmd": "DELETE",
+        "permissive": "PERMISSIVE",
+        "roles": "{public}",
+        "qual": "((author_id = auth.uid()) OR has_mod_permission(auth.uid(), 'post.manage'::text, campus_id))",
+        "with_check": null
+    },
+    {
+        "tablename": "posts",
+        "policyname": "posts_insert",
+        "cmd": "INSERT",
+        "permissive": "PERMISSIVE",
+        "roles": "{public}",
+        "qual": null,
+        "with_check": "((author_id = auth.uid()) AND can_create_post_by_category(auth.uid(), category_id, scope, community_id, campus_id, college_id))"
+    },
+    {
+        "tablename": "posts",
+        "policyname": "posts_select",
+        "cmd": "SELECT",
+        "permissive": "PERMISSIVE",
+        "roles": "{public}",
+        "qual": "can_view_post(posts.*)",
+        "with_check": null
+    },
+    {
+        "tablename": "posts",
+        "policyname": "posts_update",
+        "cmd": "UPDATE",
+        "permissive": "PERMISSIVE",
+        "roles": "{public}",
+        "qual": "((author_id = auth.uid()) OR has_mod_permission(auth.uid(), 'post.manage'::text, campus_id))",
+        "with_check": "((author_id = auth.uid()) OR has_mod_permission(auth.uid(), 'post.manage'::text, campus_id))"
+    },
+    {
+        "tablename": "profiles",
+        "policyname": "profiles_insert",
+        "cmd": "INSERT",
+        "permissive": "PERMISSIVE",
+        "roles": "{public}",
+        "qual": null,
+        "with_check": "(id = auth.uid())"
+    },
+    {
+        "tablename": "profiles",
+        "policyname": "profiles_select",
+        "cmd": "SELECT",
+        "permissive": "PERMISSIVE",
+        "roles": "{public}",
+        "qual": "((id = auth.uid()) OR is_public)",
+        "with_check": null
+    },
+    {
+        "tablename": "profiles",
+        "policyname": "profiles_update",
+        "cmd": "UPDATE",
+        "permissive": "PERMISSIVE",
+        "roles": "{public}",
+        "qual": "((id = auth.uid()) OR has_mod_permission(auth.uid(), 'users.manage'::text))",
+        "with_check": "((id = auth.uid()) OR has_mod_permission(auth.uid(), 'users.manage'::text))"
+    },
+    {
+        "tablename": "reports",
+        "policyname": "reports_insert",
+        "cmd": "INSERT",
+        "permissive": "PERMISSIVE",
+        "roles": "{public}",
+        "qual": null,
+        "with_check": "(reporter_id = auth.uid())"
+    },
+    {
+        "tablename": "reports",
+        "policyname": "reports_select",
+        "cmd": "SELECT",
+        "permissive": "PERMISSIVE",
+        "roles": "{public}",
+        "qual": "((reporter_id = auth.uid()) OR has_mod_permission(auth.uid(), 'report.manage'::text))",
+        "with_check": null
+    },
+    {
+        "tablename": "reports",
+        "policyname": "reports_update",
+        "cmd": "UPDATE",
+        "permissive": "PERMISSIVE",
+        "roles": "{public}",
+        "qual": "has_mod_permission(auth.uid(), 'report.manage'::text)",
+        "with_check": null
+    },
+    {
+        "tablename": "saved_posts",
+        "policyname": "saved_delete",
+        "cmd": "DELETE",
+        "permissive": "PERMISSIVE",
+        "roles": "{public}",
+        "qual": "(user_id = auth.uid())",
+        "with_check": null
+    },
+    {
+        "tablename": "saved_posts",
+        "policyname": "saved_insert",
+        "cmd": "INSERT",
+        "permissive": "PERMISSIVE",
+        "roles": "{public}",
+        "qual": null,
+        "with_check": "((user_id = auth.uid()) AND can_view_post_id(post_id))"
+    },
+    {
+        "tablename": "saved_posts",
+        "policyname": "saved_select",
+        "cmd": "SELECT",
+        "permissive": "PERMISSIVE",
+        "roles": "{public}",
+        "qual": "(user_id = auth.uid())",
+        "with_check": null
+    },
+    {
+        "tablename": "study_group_members",
+        "policyname": "sgm_all",
+        "cmd": "ALL",
+        "permissive": "PERMISSIVE",
+        "roles": "{public}",
+        "qual": "(user_id = auth.uid())",
+        "with_check": "(user_id = auth.uid())"
+    },
+    {
+        "tablename": "study_groups",
+        "policyname": "sg_insert",
+        "cmd": "INSERT",
+        "permissive": "PERMISSIVE",
+        "roles": "{public}",
+        "qual": null,
+        "with_check": "(created_by = auth.uid())"
+    },
+    {
+        "tablename": "study_groups",
+        "policyname": "sg_select",
+        "cmd": "SELECT",
+        "permissive": "PERMISSIVE",
+        "roles": "{public}",
+        "qual": "true",
+        "with_check": null
+    },
+    {
+        "tablename": "team_requests",
+        "policyname": "team_requests_delete",
+        "cmd": "DELETE",
+        "permissive": "PERMISSIVE",
+        "roles": "{public}",
+        "qual": "((posted_by = auth.uid()) OR has_mod_permission(auth.uid(), 'content.moderation'::text))",
+        "with_check": null
+    },
+    {
+        "tablename": "team_requests",
+        "policyname": "team_requests_insert",
+        "cmd": "INSERT",
+        "permissive": "PERMISSIVE",
+        "roles": "{public}",
+        "qual": null,
+        "with_check": "((posted_by = auth.uid()) AND (EXISTS ( SELECT 1\n   FROM admin_grants\n  WHERE (admin_grants.user_id = auth.uid()))))"
+    },
+    {
+        "tablename": "team_requests",
+        "policyname": "team_requests_select",
+        "cmd": "SELECT",
+        "permissive": "PERMISSIVE",
+        "roles": "{public}",
+        "qual": "(auth.role() = 'authenticated'::text)",
+        "with_check": null
+    },
+    {
+        "tablename": "team_requests",
+        "policyname": "team_requests_update",
+        "cmd": "UPDATE",
+        "permissive": "PERMISSIVE",
+        "roles": "{public}",
+        "qual": "((posted_by = auth.uid()) OR has_mod_permission(auth.uid(), 'content.moderation'::text))",
+        "with_check": "((posted_by = auth.uid()) OR has_mod_permission(auth.uid(), 'content.moderation'::text))"
+    },
+    {
+        "tablename": "travel_buddies",
+        "policyname": "travel_buddies_delete",
+        "cmd": "DELETE",
+        "permissive": "PERMISSIVE",
+        "roles": "{public}",
+        "qual": "((posted_by = auth.uid()) OR has_mod_permission(auth.uid(), 'content.moderation'::text))",
+        "with_check": null
+    },
+    {
+        "tablename": "travel_buddies",
+        "policyname": "travel_buddies_insert",
+        "cmd": "INSERT",
+        "permissive": "PERMISSIVE",
+        "roles": "{public}",
+        "qual": null,
+        "with_check": "((posted_by = auth.uid()) AND (EXISTS ( SELECT 1\n   FROM admin_grants\n  WHERE (admin_grants.user_id = auth.uid()))))"
+    },
+    {
+        "tablename": "travel_buddies",
+        "policyname": "travel_buddies_select",
+        "cmd": "SELECT",
+        "permissive": "PERMISSIVE",
+        "roles": "{public}",
+        "qual": "(auth.role() = 'authenticated'::text)",
+        "with_check": null
+    },
+    {
+        "tablename": "travel_buddies",
+        "policyname": "travel_buddies_update",
+        "cmd": "UPDATE",
+        "permissive": "PERMISSIVE",
+        "roles": "{public}",
+        "qual": "((posted_by = auth.uid()) OR has_mod_permission(auth.uid(), 'content.moderation'::text))",
+        "with_check": "((posted_by = auth.uid()) OR has_mod_permission(auth.uid(), 'content.moderation'::text))"
+    }
+]

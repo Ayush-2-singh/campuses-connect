@@ -1,0 +1,1256 @@
+[
+    {
+        "table_name": "admin_grants",
+        "conname": "admin_grants_admin_type_fkey",
+        "contype": "f",
+        "definition": "FOREIGN KEY (admin_type) REFERENCES admin_types(key)"
+    },
+    {
+        "table_name": "admin_grants",
+        "conname": "admin_grants_campus_id_fkey",
+        "contype": "f",
+        "definition": "FOREIGN KEY (campus_id) REFERENCES campuses(id) ON DELETE CASCADE"
+    },
+    {
+        "table_name": "admin_grants",
+        "conname": "admin_grants_check",
+        "contype": "c",
+        "definition": "CHECK ((((admin_type = 'platform_admin'::text) AND (community_id IS NULL) AND (college_id IS NULL) AND (campus_id IS NULL)) OR ((admin_type = 'campus_admin'::text) AND (community_id IS NULL)) OR ((admin_type = 'community_admin'::text) AND (campus_id IS NULL) AND (college_id IS NULL) AND (community_id IS NOT NULL))))"
+    },
+    {
+        "table_name": "admin_grants",
+        "conname": "admin_grants_college_id_fkey",
+        "contype": "f",
+        "definition": "FOREIGN KEY (college_id) REFERENCES colleges(id) ON DELETE CASCADE"
+    },
+    {
+        "table_name": "admin_grants",
+        "conname": "admin_grants_community_id_fkey",
+        "contype": "f",
+        "definition": "FOREIGN KEY (community_id) REFERENCES communities(id) ON DELETE CASCADE"
+    },
+    {
+        "table_name": "admin_grants",
+        "conname": "admin_grants_granted_by_fkey",
+        "contype": "f",
+        "definition": "FOREIGN KEY (granted_by) REFERENCES auth.users(id)"
+    },
+    {
+        "table_name": "admin_grants",
+        "conname": "admin_grants_pkey",
+        "contype": "p",
+        "definition": "PRIMARY KEY (id)"
+    },
+    {
+        "table_name": "admin_grants",
+        "conname": "admin_grants_user_id_admin_type_community_id_college_id_cam_key",
+        "contype": "u",
+        "definition": "UNIQUE (user_id, admin_type, community_id, college_id, campus_id)"
+    },
+    {
+        "table_name": "admin_grants",
+        "conname": "admin_grants_user_id_fkey",
+        "contype": "f",
+        "definition": "FOREIGN KEY (user_id) REFERENCES auth.users(id) ON DELETE CASCADE"
+    },
+    {
+        "table_name": "admin_grants",
+        "conname": "admin_grants_user_id_profiles_fkey",
+        "contype": "f",
+        "definition": "FOREIGN KEY (user_id) REFERENCES profiles(id) ON DELETE CASCADE"
+    },
+    {
+        "table_name": "admin_types",
+        "conname": "admin_types_key_key",
+        "contype": "u",
+        "definition": "UNIQUE (key)"
+    },
+    {
+        "table_name": "admin_types",
+        "conname": "admin_types_pkey",
+        "contype": "p",
+        "definition": "PRIMARY KEY (id)"
+    },
+    {
+        "table_name": "ai_agents",
+        "conname": "ai_agents_key_key",
+        "contype": "u",
+        "definition": "UNIQUE (key)"
+    },
+    {
+        "table_name": "ai_agents",
+        "conname": "ai_agents_pkey",
+        "contype": "p",
+        "definition": "PRIMARY KEY (id)"
+    },
+    {
+        "table_name": "assignment_questions",
+        "conname": "assignment_questions_assignment_id_fkey",
+        "contype": "f",
+        "definition": "FOREIGN KEY (assignment_id) REFERENCES assignments(id) ON DELETE CASCADE"
+    },
+    {
+        "table_name": "assignment_questions",
+        "conname": "assignment_questions_pkey",
+        "contype": "p",
+        "definition": "PRIMARY KEY (id)"
+    },
+    {
+        "table_name": "assignment_seen",
+        "conname": "assignment_seen_assignment_id_fkey",
+        "contype": "f",
+        "definition": "FOREIGN KEY (assignment_id) REFERENCES assignments(id) ON DELETE CASCADE"
+    },
+    {
+        "table_name": "assignment_seen",
+        "conname": "assignment_seen_pkey",
+        "contype": "p",
+        "definition": "PRIMARY KEY (assignment_id, student_id)"
+    },
+    {
+        "table_name": "assignment_seen",
+        "conname": "assignment_seen_student_id_fkey",
+        "contype": "f",
+        "definition": "FOREIGN KEY (student_id) REFERENCES profiles(id)"
+    },
+    {
+        "table_name": "assignment_submissions",
+        "conname": "assignment_submissions_assignment_id_fkey",
+        "contype": "f",
+        "definition": "FOREIGN KEY (assignment_id) REFERENCES assignments(id) ON DELETE CASCADE"
+    },
+    {
+        "table_name": "assignment_submissions",
+        "conname": "assignment_submissions_assignment_id_student_id_key",
+        "contype": "u",
+        "definition": "UNIQUE (assignment_id, student_id)"
+    },
+    {
+        "table_name": "assignment_submissions",
+        "conname": "assignment_submissions_pkey",
+        "contype": "p",
+        "definition": "PRIMARY KEY (id)"
+    },
+    {
+        "table_name": "assignment_submissions",
+        "conname": "assignment_submissions_student_id_fkey",
+        "contype": "f",
+        "definition": "FOREIGN KEY (student_id) REFERENCES profiles(id)"
+    },
+    {
+        "table_name": "assignments",
+        "conname": "assignments_campus_id_fkey",
+        "contype": "f",
+        "definition": "FOREIGN KEY (campus_id) REFERENCES campuses(id)"
+    },
+    {
+        "table_name": "assignments",
+        "conname": "assignments_department_id_fkey",
+        "contype": "f",
+        "definition": "FOREIGN KEY (department_id) REFERENCES departments(id)"
+    },
+    {
+        "table_name": "assignments",
+        "conname": "assignments_pkey",
+        "contype": "p",
+        "definition": "PRIMARY KEY (id)"
+    },
+    {
+        "table_name": "assignments",
+        "conname": "assignments_posted_by_fkey",
+        "contype": "f",
+        "definition": "FOREIGN KEY (posted_by) REFERENCES profiles(id)"
+    },
+    {
+        "table_name": "audit_log",
+        "conname": "audit_log_actor_id_fkey",
+        "contype": "f",
+        "definition": "FOREIGN KEY (actor_id) REFERENCES auth.users(id)"
+    },
+    {
+        "table_name": "audit_log",
+        "conname": "audit_log_pkey",
+        "contype": "p",
+        "definition": "PRIMARY KEY (id)"
+    },
+    {
+        "table_name": "campus_ai_agents",
+        "conname": "campus_ai_agents_agent_key_fkey",
+        "contype": "f",
+        "definition": "FOREIGN KEY (agent_key) REFERENCES ai_agents(key) ON DELETE CASCADE"
+    },
+    {
+        "table_name": "campus_ai_agents",
+        "conname": "campus_ai_agents_campus_id_fkey",
+        "contype": "f",
+        "definition": "FOREIGN KEY (campus_id) REFERENCES campuses(id) ON DELETE CASCADE"
+    },
+    {
+        "table_name": "campus_ai_agents",
+        "conname": "campus_ai_agents_pkey",
+        "contype": "p",
+        "definition": "PRIMARY KEY (campus_id, agent_key)"
+    },
+    {
+        "table_name": "campus_insights",
+        "conname": "campus_insights_campus_id_fkey",
+        "contype": "f",
+        "definition": "FOREIGN KEY (campus_id) REFERENCES campuses(id) ON DELETE CASCADE"
+    },
+    {
+        "table_name": "campus_insights",
+        "conname": "campus_insights_created_by_fkey",
+        "contype": "f",
+        "definition": "FOREIGN KEY (created_by) REFERENCES auth.users(id)"
+    },
+    {
+        "table_name": "campus_insights",
+        "conname": "campus_insights_pkey",
+        "contype": "p",
+        "definition": "PRIMARY KEY (id)"
+    },
+    {
+        "table_name": "campuses",
+        "conname": "campuses_college_id_fkey",
+        "contype": "f",
+        "definition": "FOREIGN KEY (college_id) REFERENCES colleges(id) ON DELETE CASCADE"
+    },
+    {
+        "table_name": "campuses",
+        "conname": "campuses_college_id_slug_key",
+        "contype": "u",
+        "definition": "UNIQUE (college_id, slug)"
+    },
+    {
+        "table_name": "campuses",
+        "conname": "campuses_pkey",
+        "contype": "p",
+        "definition": "PRIMARY KEY (id)"
+    },
+    {
+        "table_name": "club_members",
+        "conname": "club_members_club_id_fkey",
+        "contype": "f",
+        "definition": "FOREIGN KEY (club_id) REFERENCES clubs(id) ON DELETE CASCADE"
+    },
+    {
+        "table_name": "club_members",
+        "conname": "club_members_pkey",
+        "contype": "p",
+        "definition": "PRIMARY KEY (club_id, user_id)"
+    },
+    {
+        "table_name": "club_members",
+        "conname": "club_members_role_check",
+        "contype": "c",
+        "definition": "CHECK ((role = ANY (ARRAY['member'::text, 'lead'::text])))"
+    },
+    {
+        "table_name": "club_members",
+        "conname": "club_members_user_id_fkey",
+        "contype": "f",
+        "definition": "FOREIGN KEY (user_id) REFERENCES auth.users(id) ON DELETE CASCADE"
+    },
+    {
+        "table_name": "clubs",
+        "conname": "clubs_college_id_fkey",
+        "contype": "f",
+        "definition": "FOREIGN KEY (college_id) REFERENCES colleges(id) ON DELETE CASCADE"
+    },
+    {
+        "table_name": "clubs",
+        "conname": "clubs_created_by_fkey",
+        "contype": "f",
+        "definition": "FOREIGN KEY (created_by) REFERENCES auth.users(id)"
+    },
+    {
+        "table_name": "clubs",
+        "conname": "clubs_pkey",
+        "contype": "p",
+        "definition": "PRIMARY KEY (id)"
+    },
+    {
+        "table_name": "college_email_verifications",
+        "conname": "college_email_verifications_pkey",
+        "contype": "p",
+        "definition": "PRIMARY KEY (id)"
+    },
+    {
+        "table_name": "college_email_verifications",
+        "conname": "college_email_verifications_token_key",
+        "contype": "u",
+        "definition": "UNIQUE (token)"
+    },
+    {
+        "table_name": "college_email_verifications",
+        "conname": "college_email_verifications_user_id_fkey",
+        "contype": "f",
+        "definition": "FOREIGN KEY (user_id) REFERENCES auth.users(id) ON DELETE CASCADE"
+    },
+    {
+        "table_name": "college_features",
+        "conname": "college_features_college_id_feature_key",
+        "contype": "u",
+        "definition": "UNIQUE (college_id, feature)"
+    },
+    {
+        "table_name": "college_features",
+        "conname": "college_features_college_id_fkey",
+        "contype": "f",
+        "definition": "FOREIGN KEY (college_id) REFERENCES colleges(id) ON DELETE CASCADE"
+    },
+    {
+        "table_name": "college_features",
+        "conname": "college_features_pkey",
+        "contype": "p",
+        "definition": "PRIMARY KEY (id)"
+    },
+    {
+        "table_name": "colleges",
+        "conname": "colleges_pkey",
+        "contype": "p",
+        "definition": "PRIMARY KEY (id)"
+    },
+    {
+        "table_name": "colleges",
+        "conname": "colleges_slug_key",
+        "contype": "u",
+        "definition": "UNIQUE (slug)"
+    },
+    {
+        "table_name": "communities",
+        "conname": "communities_key_key",
+        "contype": "u",
+        "definition": "UNIQUE (key)"
+    },
+    {
+        "table_name": "communities",
+        "conname": "communities_pkey",
+        "contype": "p",
+        "definition": "PRIMARY KEY (id)"
+    },
+    {
+        "table_name": "community_members",
+        "conname": "community_members_community_id_fkey",
+        "contype": "f",
+        "definition": "FOREIGN KEY (community_id) REFERENCES communities(id) ON DELETE CASCADE"
+    },
+    {
+        "table_name": "community_members",
+        "conname": "community_members_pkey",
+        "contype": "p",
+        "definition": "PRIMARY KEY (community_id, user_id)"
+    },
+    {
+        "table_name": "community_members",
+        "conname": "community_members_role_check",
+        "contype": "c",
+        "definition": "CHECK ((role = ANY (ARRAY['member'::text, 'moderator'::text, 'admin'::text])))"
+    },
+    {
+        "table_name": "community_members",
+        "conname": "community_members_user_id_fkey",
+        "contype": "f",
+        "definition": "FOREIGN KEY (user_id) REFERENCES auth.users(id) ON DELETE CASCADE"
+    },
+    {
+        "table_name": "connections",
+        "conname": "connections_check",
+        "contype": "c",
+        "definition": "CHECK ((requester_id <> receiver_id))"
+    },
+    {
+        "table_name": "connections",
+        "conname": "connections_pkey",
+        "contype": "p",
+        "definition": "PRIMARY KEY (id)"
+    },
+    {
+        "table_name": "connections",
+        "conname": "connections_receiver_id_fkey",
+        "contype": "f",
+        "definition": "FOREIGN KEY (receiver_id) REFERENCES profiles(id) ON DELETE CASCADE"
+    },
+    {
+        "table_name": "connections",
+        "conname": "connections_requester_id_fkey",
+        "contype": "f",
+        "definition": "FOREIGN KEY (requester_id) REFERENCES profiles(id) ON DELETE CASCADE"
+    },
+    {
+        "table_name": "connections",
+        "conname": "connections_requester_id_receiver_id_key",
+        "contype": "u",
+        "definition": "UNIQUE (requester_id, receiver_id)"
+    },
+    {
+        "table_name": "connections",
+        "conname": "connections_status_check",
+        "contype": "c",
+        "definition": "CHECK ((status = ANY (ARRAY['pending'::text, 'accepted'::text, 'declined'::text, 'blocked'::text])))"
+    },
+    {
+        "table_name": "content_categories",
+        "conname": "content_categories_key_key",
+        "contype": "u",
+        "definition": "UNIQUE (key)"
+    },
+    {
+        "table_name": "content_categories",
+        "conname": "content_categories_pkey",
+        "contype": "p",
+        "definition": "PRIMARY KEY (id)"
+    },
+    {
+        "table_name": "content_permissions",
+        "conname": "content_permissions_actor_type_category_id_key",
+        "contype": "u",
+        "definition": "UNIQUE (actor_type, category_id)"
+    },
+    {
+        "table_name": "content_permissions",
+        "conname": "content_permissions_category_id_fkey",
+        "contype": "f",
+        "definition": "FOREIGN KEY (category_id) REFERENCES content_categories(id) ON DELETE CASCADE"
+    },
+    {
+        "table_name": "content_permissions",
+        "conname": "content_permissions_max_scope_check",
+        "contype": "c",
+        "definition": "CHECK ((max_scope = ANY (ARRAY['campus'::text, 'college_network'::text, 'global'::text])))"
+    },
+    {
+        "table_name": "content_permissions",
+        "conname": "content_permissions_pkey",
+        "contype": "p",
+        "definition": "PRIMARY KEY (id)"
+    },
+    {
+        "table_name": "content_permissions",
+        "conname": "content_permissions_updated_by_fkey",
+        "contype": "f",
+        "definition": "FOREIGN KEY (updated_by) REFERENCES auth.users(id)"
+    },
+    {
+        "table_name": "content_reports",
+        "conname": "content_reports_handled_by_fkey",
+        "contype": "f",
+        "definition": "FOREIGN KEY (handled_by) REFERENCES auth.users(id)"
+    },
+    {
+        "table_name": "content_reports",
+        "conname": "content_reports_pkey",
+        "contype": "p",
+        "definition": "PRIMARY KEY (id)"
+    },
+    {
+        "table_name": "content_reports",
+        "conname": "content_reports_reported_by_fkey",
+        "contype": "f",
+        "definition": "FOREIGN KEY (reported_by) REFERENCES auth.users(id) ON DELETE CASCADE"
+    },
+    {
+        "table_name": "content_reports",
+        "conname": "content_reports_status_check",
+        "contype": "c",
+        "definition": "CHECK ((status = ANY (ARRAY['open'::text, 'resolved'::text, 'dismissed'::text])))"
+    },
+    {
+        "table_name": "conversation_participants",
+        "conname": "conversation_participants_conversation_id_fkey",
+        "contype": "f",
+        "definition": "FOREIGN KEY (conversation_id) REFERENCES conversations(id) ON DELETE CASCADE"
+    },
+    {
+        "table_name": "conversation_participants",
+        "conname": "conversation_participants_pkey",
+        "contype": "p",
+        "definition": "PRIMARY KEY (conversation_id, profile_id)"
+    },
+    {
+        "table_name": "conversation_participants",
+        "conname": "conversation_participants_profile_id_fkey",
+        "contype": "f",
+        "definition": "FOREIGN KEY (profile_id) REFERENCES profiles(id) ON DELETE CASCADE"
+    },
+    {
+        "table_name": "conversations",
+        "conname": "conversations_pkey",
+        "contype": "p",
+        "definition": "PRIMARY KEY (id)"
+    },
+    {
+        "table_name": "departments",
+        "conname": "departments_campus_id_fkey",
+        "contype": "f",
+        "definition": "FOREIGN KEY (campus_id) REFERENCES campuses(id) ON DELETE CASCADE"
+    },
+    {
+        "table_name": "departments",
+        "conname": "departments_pkey",
+        "contype": "p",
+        "definition": "PRIMARY KEY (id)"
+    },
+    {
+        "table_name": "event_registrations",
+        "conname": "event_registrations_event_id_fkey",
+        "contype": "f",
+        "definition": "FOREIGN KEY (event_id) REFERENCES events(id) ON DELETE CASCADE"
+    },
+    {
+        "table_name": "event_registrations",
+        "conname": "event_registrations_event_id_profile_id_key",
+        "contype": "u",
+        "definition": "UNIQUE (event_id, profile_id)"
+    },
+    {
+        "table_name": "event_registrations",
+        "conname": "event_registrations_pkey",
+        "contype": "p",
+        "definition": "PRIMARY KEY (id)"
+    },
+    {
+        "table_name": "event_registrations",
+        "conname": "event_registrations_profile_id_fkey",
+        "contype": "f",
+        "definition": "FOREIGN KEY (profile_id) REFERENCES profiles(id) ON DELETE CASCADE"
+    },
+    {
+        "table_name": "event_registrations",
+        "conname": "event_registrations_status_check",
+        "contype": "c",
+        "definition": "CHECK ((status = ANY (ARRAY['registered'::text, 'attended'::text, 'cancelled'::text])))"
+    },
+    {
+        "table_name": "events",
+        "conname": "events_campus_id_fkey",
+        "contype": "f",
+        "definition": "FOREIGN KEY (campus_id) REFERENCES campuses(id)"
+    },
+    {
+        "table_name": "events",
+        "conname": "events_college_id_fkey",
+        "contype": "f",
+        "definition": "FOREIGN KEY (college_id) REFERENCES colleges(id)"
+    },
+    {
+        "table_name": "events",
+        "conname": "events_created_by_fkey",
+        "contype": "f",
+        "definition": "FOREIGN KEY (created_by) REFERENCES profiles(id)"
+    },
+    {
+        "table_name": "events",
+        "conname": "events_event_type_check",
+        "contype": "c",
+        "definition": "CHECK ((event_type = ANY (ARRAY['hackathon'::text, 'workshop'::text, 'seminar'::text, 'club_event'::text, 'placement'::text, 'cultural'::text, 'sports'::text, 'general'::text])))"
+    },
+    {
+        "table_name": "events",
+        "conname": "events_pkey",
+        "contype": "p",
+        "definition": "PRIMARY KEY (id)"
+    },
+    {
+        "table_name": "events",
+        "conname": "events_visibility_check",
+        "contype": "c",
+        "definition": "CHECK ((visibility = ANY (ARRAY['campus'::text, 'college'::text, 'platform'::text])))"
+    },
+    {
+        "table_name": "group_members",
+        "conname": "group_members_group_id_fkey",
+        "contype": "f",
+        "definition": "FOREIGN KEY (group_id) REFERENCES official_groups(id) ON DELETE CASCADE"
+    },
+    {
+        "table_name": "group_members",
+        "conname": "group_members_group_id_profile_id_key",
+        "contype": "u",
+        "definition": "UNIQUE (group_id, profile_id)"
+    },
+    {
+        "table_name": "group_members",
+        "conname": "group_members_pkey",
+        "contype": "p",
+        "definition": "PRIMARY KEY (id)"
+    },
+    {
+        "table_name": "group_members",
+        "conname": "group_members_profile_id_fkey",
+        "contype": "f",
+        "definition": "FOREIGN KEY (profile_id) REFERENCES profiles(id) ON DELETE CASCADE"
+    },
+    {
+        "table_name": "interests",
+        "conname": "interests_name_key",
+        "contype": "u",
+        "definition": "UNIQUE (name)"
+    },
+    {
+        "table_name": "interests",
+        "conname": "interests_pkey",
+        "contype": "p",
+        "definition": "PRIMARY KEY (id)"
+    },
+    {
+        "table_name": "lost_found",
+        "conname": "lost_found_campus_id_fkey",
+        "contype": "f",
+        "definition": "FOREIGN KEY (campus_id) REFERENCES campuses(id) ON DELETE CASCADE"
+    },
+    {
+        "table_name": "lost_found",
+        "conname": "lost_found_college_id_fkey",
+        "contype": "f",
+        "definition": "FOREIGN KEY (college_id) REFERENCES colleges(id) ON DELETE CASCADE"
+    },
+    {
+        "table_name": "lost_found",
+        "conname": "lost_found_item_type_check",
+        "contype": "c",
+        "definition": "CHECK ((item_type = ANY (ARRAY['lost'::text, 'found'::text])))"
+    },
+    {
+        "table_name": "lost_found",
+        "conname": "lost_found_pkey",
+        "contype": "p",
+        "definition": "PRIMARY KEY (id)"
+    },
+    {
+        "table_name": "lost_found",
+        "conname": "lost_found_posted_by_fkey",
+        "contype": "f",
+        "definition": "FOREIGN KEY (posted_by) REFERENCES auth.users(id) ON DELETE CASCADE"
+    },
+    {
+        "table_name": "lost_found",
+        "conname": "lost_found_posted_by_profiles_fkey",
+        "contype": "f",
+        "definition": "FOREIGN KEY (posted_by) REFERENCES profiles(id) ON DELETE CASCADE"
+    },
+    {
+        "table_name": "messages",
+        "conname": "messages_conversation_id_fkey",
+        "contype": "f",
+        "definition": "FOREIGN KEY (conversation_id) REFERENCES conversations(id) ON DELETE CASCADE"
+    },
+    {
+        "table_name": "messages",
+        "conname": "messages_message_type_check",
+        "contype": "c",
+        "definition": "CHECK ((message_type = ANY (ARRAY['text'::text, 'image'::text, 'file'::text, 'link'::text])))"
+    },
+    {
+        "table_name": "messages",
+        "conname": "messages_pkey",
+        "contype": "p",
+        "definition": "PRIMARY KEY (id)"
+    },
+    {
+        "table_name": "messages",
+        "conname": "messages_sender_id_fkey",
+        "contype": "f",
+        "definition": "FOREIGN KEY (sender_id) REFERENCES profiles(id)"
+    },
+    {
+        "table_name": "moderation_permissions",
+        "conname": "moderation_permissions_campus_id_fkey",
+        "contype": "f",
+        "definition": "FOREIGN KEY (campus_id) REFERENCES campuses(id) ON DELETE CASCADE"
+    },
+    {
+        "table_name": "moderation_permissions",
+        "conname": "moderation_permissions_granted_by_fkey",
+        "contype": "f",
+        "definition": "FOREIGN KEY (granted_by) REFERENCES auth.users(id)"
+    },
+    {
+        "table_name": "moderation_permissions",
+        "conname": "moderation_permissions_permission_key_check",
+        "contype": "c",
+        "definition": "CHECK ((permission_key = ANY (ARRAY['post.pin'::text, 'post.manage'::text, 'opportunity.verify'::text, 'content.moderation'::text, 'report.manage'::text, 'agent.manage'::text, 'campus.settings'::text, 'ai_agent.configure'::text, 'users.manage'::text, 'analytics.view'::text])))"
+    },
+    {
+        "table_name": "moderation_permissions",
+        "conname": "moderation_permissions_pkey",
+        "contype": "p",
+        "definition": "PRIMARY KEY (id)"
+    },
+    {
+        "table_name": "moderation_permissions",
+        "conname": "moderation_permissions_scope_check",
+        "contype": "c",
+        "definition": "CHECK ((scope = ANY (ARRAY['campus'::text, 'global'::text])))"
+    },
+    {
+        "table_name": "moderation_permissions",
+        "conname": "moderation_permissions_user_id_fkey",
+        "contype": "f",
+        "definition": "FOREIGN KEY (user_id) REFERENCES auth.users(id) ON DELETE CASCADE"
+    },
+    {
+        "table_name": "moderation_permissions",
+        "conname": "moderation_permissions_user_id_permission_key_campus_id_key",
+        "contype": "u",
+        "definition": "UNIQUE (user_id, permission_key, campus_id)"
+    },
+    {
+        "table_name": "moderation_queue",
+        "conname": "moderation_queue_content_type_check",
+        "contype": "c",
+        "definition": "CHECK ((content_type = ANY (ARRAY['post'::text, 'comment'::text, 'opportunity'::text, 'note'::text])))"
+    },
+    {
+        "table_name": "moderation_queue",
+        "conname": "moderation_queue_pkey",
+        "contype": "p",
+        "definition": "PRIMARY KEY (id)"
+    },
+    {
+        "table_name": "moderation_queue",
+        "conname": "moderation_queue_resolved_by_fkey",
+        "contype": "f",
+        "definition": "FOREIGN KEY (resolved_by) REFERENCES auth.users(id)"
+    },
+    {
+        "table_name": "moderation_queue",
+        "conname": "moderation_queue_source_check",
+        "contype": "c",
+        "definition": "CHECK ((source = ANY (ARRAY['ai'::text, 'user_report'::text])))"
+    },
+    {
+        "table_name": "moderation_queue",
+        "conname": "moderation_queue_status_check",
+        "contype": "c",
+        "definition": "CHECK ((status = ANY (ARRAY['open'::text, 'resolved'::text, 'dismissed'::text])))"
+    },
+    {
+        "table_name": "notes",
+        "conname": "notes_campus_id_fkey",
+        "contype": "f",
+        "definition": "FOREIGN KEY (campus_id) REFERENCES campuses(id)"
+    },
+    {
+        "table_name": "notes",
+        "conname": "notes_college_id_fkey",
+        "contype": "f",
+        "definition": "FOREIGN KEY (college_id) REFERENCES colleges(id)"
+    },
+    {
+        "table_name": "notes",
+        "conname": "notes_department_id_fkey",
+        "contype": "f",
+        "definition": "FOREIGN KEY (department_id) REFERENCES departments(id)"
+    },
+    {
+        "table_name": "notes",
+        "conname": "notes_pkey",
+        "contype": "p",
+        "definition": "PRIMARY KEY (id)"
+    },
+    {
+        "table_name": "notes",
+        "conname": "notes_resource_type_check",
+        "contype": "c",
+        "definition": "CHECK ((resource_type = ANY (ARRAY['notes'::text, 'pyq'::text, 'assignment'::text, 'book'::text, 'cheatsheet'::text, 'video_link'::text, 'other'::text])))"
+    },
+    {
+        "table_name": "notes",
+        "conname": "notes_semester_check",
+        "contype": "c",
+        "definition": "CHECK (((semester >= 1) AND (semester <= 8)))"
+    },
+    {
+        "table_name": "notes",
+        "conname": "notes_uploaded_by_fkey",
+        "contype": "f",
+        "definition": "FOREIGN KEY (uploaded_by) REFERENCES profiles(id)"
+    },
+    {
+        "table_name": "notes",
+        "conname": "notes_year_check",
+        "contype": "c",
+        "definition": "CHECK (((year >= 1) AND (year <= 4)))"
+    },
+    {
+        "table_name": "notifications",
+        "conname": "notifications_actor_id_fkey",
+        "contype": "f",
+        "definition": "FOREIGN KEY (actor_id) REFERENCES profiles(id)"
+    },
+    {
+        "table_name": "notifications",
+        "conname": "notifications_pkey",
+        "contype": "p",
+        "definition": "PRIMARY KEY (id)"
+    },
+    {
+        "table_name": "notifications",
+        "conname": "notifications_recipient_id_fkey",
+        "contype": "f",
+        "definition": "FOREIGN KEY (recipient_id) REFERENCES profiles(id) ON DELETE CASCADE"
+    },
+    {
+        "table_name": "notifications",
+        "conname": "notifications_type_check",
+        "contype": "c",
+        "definition": "CHECK ((type = ANY (ARRAY['connection_request'::text, 'connection_accepted'::text, 'post_reaction'::text, 'post_comment'::text, 'comment_reply'::text, 'new_opportunity'::text, 'new_event'::text, 'new_note'::text, 'mention'::text, 'message'::text, 'system'::text])))"
+    },
+    {
+        "table_name": "official_groups",
+        "conname": "official_groups_campus_id_fkey",
+        "contype": "f",
+        "definition": "FOREIGN KEY (campus_id) REFERENCES campuses(id)"
+    },
+    {
+        "table_name": "official_groups",
+        "conname": "official_groups_created_by_fkey",
+        "contype": "f",
+        "definition": "FOREIGN KEY (created_by) REFERENCES profiles(id)"
+    },
+    {
+        "table_name": "official_groups",
+        "conname": "official_groups_department_id_fkey",
+        "contype": "f",
+        "definition": "FOREIGN KEY (department_id) REFERENCES departments(id)"
+    },
+    {
+        "table_name": "official_groups",
+        "conname": "official_groups_pkey",
+        "contype": "p",
+        "definition": "PRIMARY KEY (id)"
+    },
+    {
+        "table_name": "opportunities",
+        "conname": "opportunities_campus_id_fkey",
+        "contype": "f",
+        "definition": "FOREIGN KEY (campus_id) REFERENCES campuses(id)"
+    },
+    {
+        "table_name": "opportunities",
+        "conname": "opportunities_college_id_fkey",
+        "contype": "f",
+        "definition": "FOREIGN KEY (college_id) REFERENCES colleges(id)"
+    },
+    {
+        "table_name": "opportunities",
+        "conname": "opportunities_location_type_check",
+        "contype": "c",
+        "definition": "CHECK ((location_type = ANY (ARRAY['remote'::text, 'onsite'::text, 'hybrid'::text])))"
+    },
+    {
+        "table_name": "opportunities",
+        "conname": "opportunities_opp_type_check",
+        "contype": "c",
+        "definition": "CHECK ((opp_type = ANY (ARRAY['hackathon'::text, 'internship'::text, 'freelance'::text, 'startup_role'::text, 'collab'::text, 'scholarship'::text, 'competition'::text, 'other'::text])))"
+    },
+    {
+        "table_name": "opportunities",
+        "conname": "opportunities_pkey",
+        "contype": "p",
+        "definition": "PRIMARY KEY (id)"
+    },
+    {
+        "table_name": "opportunities",
+        "conname": "opportunities_posted_by_fkey",
+        "contype": "f",
+        "definition": "FOREIGN KEY (posted_by) REFERENCES profiles(id)"
+    },
+    {
+        "table_name": "opportunities",
+        "conname": "opportunities_visibility_check",
+        "contype": "c",
+        "definition": "CHECK ((visibility = ANY (ARRAY['campus'::text, 'college'::text, 'platform'::text])))"
+    },
+    {
+        "table_name": "platform_settings",
+        "conname": "platform_settings_key_key",
+        "contype": "u",
+        "definition": "UNIQUE (key)"
+    },
+    {
+        "table_name": "platform_settings",
+        "conname": "platform_settings_pkey",
+        "contype": "p",
+        "definition": "PRIMARY KEY (id)"
+    },
+    {
+        "table_name": "post_comments",
+        "conname": "post_comments_author_id_fkey",
+        "contype": "f",
+        "definition": "FOREIGN KEY (author_id) REFERENCES profiles(id) ON DELETE CASCADE"
+    },
+    {
+        "table_name": "post_comments",
+        "conname": "post_comments_parent_id_fkey",
+        "contype": "f",
+        "definition": "FOREIGN KEY (parent_id) REFERENCES post_comments(id)"
+    },
+    {
+        "table_name": "post_comments",
+        "conname": "post_comments_pkey",
+        "contype": "p",
+        "definition": "PRIMARY KEY (id)"
+    },
+    {
+        "table_name": "post_comments",
+        "conname": "post_comments_post_id_fkey",
+        "contype": "f",
+        "definition": "FOREIGN KEY (post_id) REFERENCES posts(id) ON DELETE CASCADE"
+    },
+    {
+        "table_name": "post_reactions",
+        "conname": "post_reactions_pkey",
+        "contype": "p",
+        "definition": "PRIMARY KEY (id)"
+    },
+    {
+        "table_name": "post_reactions",
+        "conname": "post_reactions_post_id_fkey",
+        "contype": "f",
+        "definition": "FOREIGN KEY (post_id) REFERENCES posts(id) ON DELETE CASCADE"
+    },
+    {
+        "table_name": "post_reactions",
+        "conname": "post_reactions_post_id_profile_id_key",
+        "contype": "u",
+        "definition": "UNIQUE (post_id, profile_id)"
+    },
+    {
+        "table_name": "post_reactions",
+        "conname": "post_reactions_profile_id_fkey",
+        "contype": "f",
+        "definition": "FOREIGN KEY (profile_id) REFERENCES profiles(id) ON DELETE CASCADE"
+    },
+    {
+        "table_name": "post_reactions",
+        "conname": "post_reactions_reaction_check",
+        "contype": "c",
+        "definition": "CHECK ((reaction = ANY (ARRAY['like'::text, 'helpful'::text, 'fire'::text])))"
+    },
+    {
+        "table_name": "posts",
+        "conname": "posts_author_id_fkey",
+        "contype": "f",
+        "definition": "FOREIGN KEY (author_id) REFERENCES profiles(id) ON DELETE CASCADE"
+    },
+    {
+        "table_name": "posts",
+        "conname": "posts_campus_id_fkey",
+        "contype": "f",
+        "definition": "FOREIGN KEY (campus_id) REFERENCES campuses(id)"
+    },
+    {
+        "table_name": "posts",
+        "conname": "posts_category_id_fkey",
+        "contype": "f",
+        "definition": "FOREIGN KEY (category_id) REFERENCES content_categories(id)"
+    },
+    {
+        "table_name": "posts",
+        "conname": "posts_college_id_fkey",
+        "contype": "f",
+        "definition": "FOREIGN KEY (college_id) REFERENCES colleges(id)"
+    },
+    {
+        "table_name": "posts",
+        "conname": "posts_community_id_fkey",
+        "contype": "f",
+        "definition": "FOREIGN KEY (community_id) REFERENCES communities(id) ON DELETE CASCADE"
+    },
+    {
+        "table_name": "posts",
+        "conname": "posts_group_id_fkey",
+        "contype": "f",
+        "definition": "FOREIGN KEY (group_id) REFERENCES official_groups(id)"
+    },
+    {
+        "table_name": "posts",
+        "conname": "posts_is_verified_by_fkey",
+        "contype": "f",
+        "definition": "FOREIGN KEY (is_verified_by) REFERENCES profiles(id)"
+    },
+    {
+        "table_name": "posts",
+        "conname": "posts_pkey",
+        "contype": "p",
+        "definition": "PRIMARY KEY (id)"
+    },
+    {
+        "table_name": "posts",
+        "conname": "posts_post_type_check",
+        "contype": "c",
+        "definition": "CHECK ((post_type = ANY (ARRAY['general'::text, 'announcement'::text, 'opportunity'::text, 'resource'::text, 'event'::text, 'discussion'::text])))"
+    },
+    {
+        "table_name": "posts",
+        "conname": "posts_status_check",
+        "contype": "c",
+        "definition": "CHECK ((status = ANY (ARRAY['draft'::text, 'published'::text, 'held'::text, 'removed'::text])))"
+    },
+    {
+        "table_name": "posts",
+        "conname": "posts_visibility_check",
+        "contype": "c",
+        "definition": "CHECK ((visibility = ANY (ARRAY['campus'::text, 'college'::text, 'platform'::text])))"
+    },
+    {
+        "table_name": "profile_interests",
+        "conname": "profile_interests_interest_id_fkey",
+        "contype": "f",
+        "definition": "FOREIGN KEY (interest_id) REFERENCES interests(id) ON DELETE CASCADE"
+    },
+    {
+        "table_name": "profile_interests",
+        "conname": "profile_interests_pkey",
+        "contype": "p",
+        "definition": "PRIMARY KEY (profile_id, interest_id)"
+    },
+    {
+        "table_name": "profile_interests",
+        "conname": "profile_interests_profile_id_fkey",
+        "contype": "f",
+        "definition": "FOREIGN KEY (profile_id) REFERENCES profiles(id) ON DELETE CASCADE"
+    },
+    {
+        "table_name": "profile_skills",
+        "conname": "profile_skills_level_check",
+        "contype": "c",
+        "definition": "CHECK ((level = ANY (ARRAY['beginner'::text, 'intermediate'::text, 'advanced'::text])))"
+    },
+    {
+        "table_name": "profile_skills",
+        "conname": "profile_skills_pkey",
+        "contype": "p",
+        "definition": "PRIMARY KEY (id)"
+    },
+    {
+        "table_name": "profile_skills",
+        "conname": "profile_skills_profile_id_fkey",
+        "contype": "f",
+        "definition": "FOREIGN KEY (profile_id) REFERENCES profiles(id) ON DELETE CASCADE"
+    },
+    {
+        "table_name": "profile_skills",
+        "conname": "profile_skills_profile_id_skill_id_key",
+        "contype": "u",
+        "definition": "UNIQUE (profile_id, skill_id)"
+    },
+    {
+        "table_name": "profile_skills",
+        "conname": "profile_skills_skill_id_fkey",
+        "contype": "f",
+        "definition": "FOREIGN KEY (skill_id) REFERENCES skills(id) ON DELETE CASCADE"
+    },
+    {
+        "table_name": "profiles",
+        "conname": "profiles_campus_id_fkey",
+        "contype": "f",
+        "definition": "FOREIGN KEY (campus_id) REFERENCES campuses(id)"
+    },
+    {
+        "table_name": "profiles",
+        "conname": "profiles_college_id_fkey",
+        "contype": "f",
+        "definition": "FOREIGN KEY (college_id) REFERENCES colleges(id)"
+    },
+    {
+        "table_name": "profiles",
+        "conname": "profiles_department_id_fkey",
+        "contype": "f",
+        "definition": "FOREIGN KEY (department_id) REFERENCES departments(id)"
+    },
+    {
+        "table_name": "profiles",
+        "conname": "profiles_id_fkey",
+        "contype": "f",
+        "definition": "FOREIGN KEY (id) REFERENCES auth.users(id) ON DELETE CASCADE"
+    },
+    {
+        "table_name": "profiles",
+        "conname": "profiles_pkey",
+        "contype": "p",
+        "definition": "PRIMARY KEY (id)"
+    },
+    {
+        "table_name": "profiles",
+        "conname": "profiles_program_id_fkey",
+        "contype": "f",
+        "definition": "FOREIGN KEY (program_id) REFERENCES programs(id)"
+    },
+    {
+        "table_name": "profiles",
+        "conname": "profiles_status_check",
+        "contype": "c",
+        "definition": "CHECK ((status = ANY (ARRAY['active'::text, 'suspended'::text, 'banned'::text])))"
+    },
+    {
+        "table_name": "profiles",
+        "conname": "profiles_username_key",
+        "contype": "u",
+        "definition": "UNIQUE (username)"
+    },
+    {
+        "table_name": "programs",
+        "conname": "programs_department_id_fkey",
+        "contype": "f",
+        "definition": "FOREIGN KEY (department_id) REFERENCES departments(id) ON DELETE CASCADE"
+    },
+    {
+        "table_name": "programs",
+        "conname": "programs_pkey",
+        "contype": "p",
+        "definition": "PRIMARY KEY (id)"
+    },
+    {
+        "table_name": "reports",
+        "conname": "reports_pkey",
+        "contype": "p",
+        "definition": "PRIMARY KEY (id)"
+    },
+    {
+        "table_name": "reports",
+        "conname": "reports_reason_check",
+        "contype": "c",
+        "definition": "CHECK ((reason = ANY (ARRAY['spam'::text, 'inappropriate'::text, 'harassment'::text, 'misinformation'::text, 'other'::text])))"
+    },
+    {
+        "table_name": "reports",
+        "conname": "reports_reporter_id_fkey",
+        "contype": "f",
+        "definition": "FOREIGN KEY (reporter_id) REFERENCES profiles(id)"
+    },
+    {
+        "table_name": "reports",
+        "conname": "reports_reviewed_by_fkey",
+        "contype": "f",
+        "definition": "FOREIGN KEY (reviewed_by) REFERENCES profiles(id)"
+    },
+    {
+        "table_name": "reports",
+        "conname": "reports_status_check",
+        "contype": "c",
+        "definition": "CHECK ((status = ANY (ARRAY['pending'::text, 'reviewed'::text, 'resolved'::text, 'dismissed'::text])))"
+    },
+    {
+        "table_name": "saved_posts",
+        "conname": "saved_posts_pkey",
+        "contype": "p",
+        "definition": "PRIMARY KEY (user_id, post_id)"
+    },
+    {
+        "table_name": "saved_posts",
+        "conname": "saved_posts_post_id_fkey",
+        "contype": "f",
+        "definition": "FOREIGN KEY (post_id) REFERENCES posts(id) ON DELETE CASCADE"
+    },
+    {
+        "table_name": "saved_posts",
+        "conname": "saved_posts_user_id_fkey",
+        "contype": "f",
+        "definition": "FOREIGN KEY (user_id) REFERENCES auth.users(id) ON DELETE CASCADE"
+    },
+    {
+        "table_name": "skills",
+        "conname": "skills_name_key",
+        "contype": "u",
+        "definition": "UNIQUE (name)"
+    },
+    {
+        "table_name": "skills",
+        "conname": "skills_pkey",
+        "contype": "p",
+        "definition": "PRIMARY KEY (id)"
+    },
+    {
+        "table_name": "study_group_members",
+        "conname": "study_group_members_group_id_fkey",
+        "contype": "f",
+        "definition": "FOREIGN KEY (group_id) REFERENCES study_groups(id) ON DELETE CASCADE"
+    },
+    {
+        "table_name": "study_group_members",
+        "conname": "study_group_members_pkey",
+        "contype": "p",
+        "definition": "PRIMARY KEY (group_id, user_id)"
+    },
+    {
+        "table_name": "study_group_members",
+        "conname": "study_group_members_role_check",
+        "contype": "c",
+        "definition": "CHECK ((role = ANY (ARRAY['member'::text, 'lead'::text])))"
+    },
+    {
+        "table_name": "study_group_members",
+        "conname": "study_group_members_user_id_fkey",
+        "contype": "f",
+        "definition": "FOREIGN KEY (user_id) REFERENCES auth.users(id) ON DELETE CASCADE"
+    },
+    {
+        "table_name": "study_groups",
+        "conname": "study_groups_college_id_fkey",
+        "contype": "f",
+        "definition": "FOREIGN KEY (college_id) REFERENCES colleges(id) ON DELETE CASCADE"
+    },
+    {
+        "table_name": "study_groups",
+        "conname": "study_groups_created_by_fkey",
+        "contype": "f",
+        "definition": "FOREIGN KEY (created_by) REFERENCES auth.users(id)"
+    },
+    {
+        "table_name": "study_groups",
+        "conname": "study_groups_pkey",
+        "contype": "p",
+        "definition": "PRIMARY KEY (id)"
+    },
+    {
+        "table_name": "team_requests",
+        "conname": "team_requests_campus_id_fkey",
+        "contype": "f",
+        "definition": "FOREIGN KEY (campus_id) REFERENCES campuses(id) ON DELETE CASCADE"
+    },
+    {
+        "table_name": "team_requests",
+        "conname": "team_requests_pkey",
+        "contype": "p",
+        "definition": "PRIMARY KEY (id)"
+    },
+    {
+        "table_name": "team_requests",
+        "conname": "team_requests_posted_by_fkey",
+        "contype": "f",
+        "definition": "FOREIGN KEY (posted_by) REFERENCES auth.users(id) ON DELETE CASCADE"
+    },
+    {
+        "table_name": "team_requests",
+        "conname": "team_requests_posted_by_profiles_fkey",
+        "contype": "f",
+        "definition": "FOREIGN KEY (posted_by) REFERENCES profiles(id) ON DELETE CASCADE"
+    },
+    {
+        "table_name": "travel_buddies",
+        "conname": "travel_buddies_campus_id_fkey",
+        "contype": "f",
+        "definition": "FOREIGN KEY (campus_id) REFERENCES campuses(id) ON DELETE CASCADE"
+    },
+    {
+        "table_name": "travel_buddies",
+        "conname": "travel_buddies_pkey",
+        "contype": "p",
+        "definition": "PRIMARY KEY (id)"
+    },
+    {
+        "table_name": "travel_buddies",
+        "conname": "travel_buddies_posted_by_fkey",
+        "contype": "f",
+        "definition": "FOREIGN KEY (posted_by) REFERENCES auth.users(id) ON DELETE CASCADE"
+    },
+    {
+        "table_name": "travel_buddies",
+        "conname": "travel_buddies_posted_by_profiles_fkey",
+        "contype": "f",
+        "definition": "FOREIGN KEY (posted_by) REFERENCES profiles(id) ON DELETE CASCADE"
+    }
+]

@@ -1,0 +1,93 @@
+[
+    {
+        "tbl": "assignment_submissions",
+        "trigger_name": "on_mcq_submission",
+        "action_timing": "BEFORE",
+        "event_manipulation": "INSERT",
+        "action_statement": "EXECUTE FUNCTION auto_grade_mcq()"
+    },
+    {
+        "tbl": "assignments",
+        "trigger_name": "on_assignment_created",
+        "action_timing": "AFTER",
+        "event_manipulation": "INSERT",
+        "action_statement": "EXECUTE FUNCTION notify_on_assignment()"
+    },
+    {
+        "tbl": "connections",
+        "trigger_name": "on_connection_request",
+        "action_timing": "AFTER",
+        "event_manipulation": "INSERT",
+        "action_statement": "EXECUTE FUNCTION notify_on_connection()"
+    },
+    {
+        "tbl": "connections",
+        "trigger_name": "trg_connections_updated_at",
+        "action_timing": "BEFORE",
+        "event_manipulation": "UPDATE",
+        "action_statement": "EXECUTE FUNCTION update_updated_at()"
+    },
+    {
+        "tbl": "notes",
+        "trigger_name": "on_note_upload",
+        "action_timing": "AFTER",
+        "event_manipulation": "INSERT",
+        "action_statement": "EXECUTE FUNCTION notify_on_note()"
+    },
+    {
+        "tbl": "post_comments",
+        "trigger_name": "on_post_comment",
+        "action_timing": "AFTER",
+        "event_manipulation": "INSERT",
+        "action_statement": "EXECUTE FUNCTION notify_on_comment()"
+    },
+    {
+        "tbl": "post_reactions",
+        "trigger_name": "on_post_like",
+        "action_timing": "AFTER",
+        "event_manipulation": "INSERT",
+        "action_statement": "EXECUTE FUNCTION notify_on_like()"
+    },
+    {
+        "tbl": "posts",
+        "trigger_name": "on_official_announcement",
+        "action_timing": "AFTER",
+        "event_manipulation": "INSERT",
+        "action_statement": "EXECUTE FUNCTION notify_on_announcement()"
+    },
+    {
+        "tbl": "posts",
+        "trigger_name": "trg_posts_update_guard",
+        "action_timing": "BEFORE",
+        "event_manipulation": "UPDATE",
+        "action_statement": "EXECUTE FUNCTION guard_post_update()"
+    },
+    {
+        "tbl": "posts",
+        "trigger_name": "trg_posts_updated",
+        "action_timing": "BEFORE",
+        "event_manipulation": "UPDATE",
+        "action_statement": "EXECUTE FUNCTION set_updated_at()"
+    },
+    {
+        "tbl": "posts",
+        "trigger_name": "trg_posts_updated_at",
+        "action_timing": "BEFORE",
+        "event_manipulation": "UPDATE",
+        "action_statement": "EXECUTE FUNCTION update_updated_at()"
+    },
+    {
+        "tbl": "profiles",
+        "trigger_name": "trg_profiles_status_guard",
+        "action_timing": "BEFORE",
+        "event_manipulation": "UPDATE",
+        "action_statement": "EXECUTE FUNCTION guard_profile_status_change()"
+    },
+    {
+        "tbl": "profiles",
+        "trigger_name": "trg_profiles_updated_at",
+        "action_timing": "BEFORE",
+        "event_manipulation": "UPDATE",
+        "action_statement": "EXECUTE FUNCTION update_updated_at()"
+    }
+]

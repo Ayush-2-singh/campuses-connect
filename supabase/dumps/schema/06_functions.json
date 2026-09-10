@@ -1,0 +1,234 @@
+[
+    {
+        "signature": "add_karma(p_points integer)",
+        "definition": "CREATE OR REPLACE FUNCTION public.add_karma(p_points integer)\n RETURNS void\n LANGUAGE sql\n SECURITY DEFINER\n SET search_path TO 'public'\nAS $function$\n  UPDATE public.profiles SET karma_points = COALESCE(karma_points, 0) + p_points\n  WHERE id = auth.uid();\n$function$\n"
+    },
+    {
+        "signature": "auto_grade_mcq()",
+        "definition": "CREATE OR REPLACE FUNCTION public.auto_grade_mcq()\n RETURNS trigger\n LANGUAGE plpgsql\nAS $function$\nDECLARE\n  total_auto INTEGER := 0;\n  question_rec RECORD;\n  student_answer TEXT;\nBEGIN\n  IF NEW.submission_type = 'mcq' AND NEW.mcq_answers IS NOT NULL THEN\n    FOR question_rec IN\n      SELECT id, correct_option, marks FROM assignment_questions\n      WHERE assignment_id = NEW.assignment_id\n    LOOP\n      student_answer := NEW.mcq_answers->>(question_rec.id::TEXT);\n      IF student_answer = question_rec.correct_option THEN\n        total_auto := total_auto + question_rec.marks;\n      END IF;\n    END LOOP;\n    NEW.auto_marks := total_auto;\n    NEW.final_marks := total_auto;\n  END IF;\n  RETURN NEW;\nEND;\n$function$\n"
+    },
+    {
+        "signature": "can_create_post(p_user_id uuid, p_category_key text, p_scope text, p_community_id uuid, p_campus_id uuid, p_college_id uuid)",
+        "definition": "CREATE OR REPLACE FUNCTION public.can_create_post(p_user_id uuid, p_category_key text, p_scope text, p_community_id uuid DEFAULT NULL::uuid, p_campus_id uuid DEFAULT NULL::uuid, p_college_id uuid DEFAULT NULL::uuid)\n RETURNS boolean\n LANGUAGE plpgsql\n STABLE SECURITY DEFINER\n SET search_path TO 'public'\nAS $function$\nDECLARE v_actor TEXT;\n        v_max   TEXT;\nBEGIN\n  IF p_user_id IS DISTINCT FROM auth.uid() OR auth.uid() IS NULL THEN RETURN FALSE; END IF;\n  IF p_scope NOT IN ('campus', 'college_network', 'global') THEN RETURN FALSE; END IF;\n\n  v_actor := public.user_admin_type(p_user_id, p_campus_id, p_college_id, p_community_id);\n\n  IF v_actor = 'community_admin' AND p_community_id IS NULL THEN RETURN FALSE; END IF;\n  IF p_community_id IS NOT NULL AND p_scope <> 'global' THEN RETURN FALSE; END IF;\n  IF v_actor = 'campus_admin' AND p_campus_id IS NULL AND p_college_id IS NULL THEN RETURN FALSE; END IF;\n\n  SELECT cp.max_scope INTO v_max\n  FROM public.content_permissions cp\n  JOIN public.content_categories cc ON cc.id = cp.category_id\n  WHERE cp.actor_type = v_actor AND cc.key = p_category_key;\n\n  RETURN v_max IS NOT NULL AND public.scope_level(v_max) >= public.scope_level(p_scope);\nEND;\n$function$\n"
+    },
+    {
+        "signature": "can_create_post_by_category(p_user_id uuid, p_category_id uuid, p_scope text, p_community_id uuid, p_campus_id uuid, p_college_id uuid)",
+        "definition": "CREATE OR REPLACE FUNCTION public.can_create_post_by_category(p_user_id uuid, p_category_id uuid, p_scope text, p_community_id uuid DEFAULT NULL::uuid, p_campus_id uuid DEFAULT NULL::uuid, p_college_id uuid DEFAULT NULL::uuid)\n RETURNS boolean\n LANGUAGE plpgsql\n STABLE SECURITY DEFINER\n SET search_path TO 'public'\nAS $function$\nDECLARE v_key TEXT;\nBEGIN\n  IF p_user_id IS DISTINCT FROM auth.uid() OR auth.uid() IS NULL THEN RETURN FALSE; END IF;\n  SELECT cc.key INTO v_key FROM public.content_categories cc WHERE cc.id = p_category_id;\n  IF v_key IS NULL THEN RETURN FALSE; END IF;\n  RETURN public.can_create_post(p_user_id, v_key, p_scope, p_community_id, p_campus_id, p_college_id);\nEND;\n$function$\n"
+    },
+    {
+        "signature": "can_interact_post(p_post posts)",
+        "definition": "CREATE OR REPLACE FUNCTION public.can_interact_post(p_post posts)\n RETURNS boolean\n LANGUAGE plpgsql\n STABLE SECURITY DEFINER\n SET search_path TO 'public'\nAS $function$\nDECLARE v_uid UUID := auth.uid();\nBEGIN\n  IF v_uid IS NULL THEN RETURN FALSE; END IF;\n  IF NOT public.can_view_post(p_post) THEN RETURN FALSE; END IF;\n  IF p_post.community_id IS NOT NULL THEN\n    RETURN EXISTS (SELECT 1 FROM public.community_members\n                   WHERE community_id = p_post.community_id AND user_id = v_uid);\n  END IF;\n  RETURN TRUE;\nEND;\n$function$\n"
+    },
+    {
+        "signature": "can_interact_post_id(p_post_id uuid)",
+        "definition": "CREATE OR REPLACE FUNCTION public.can_interact_post_id(p_post_id uuid)\n RETURNS boolean\n LANGUAGE plpgsql\n STABLE SECURITY DEFINER\n SET search_path TO 'public'\nAS $function$\nDECLARE p public.posts;\nBEGIN\n  SELECT * INTO p FROM public.posts WHERE id = p_post_id;\n  RETURN p.id IS NOT NULL AND public.can_interact_post(p);\nEND;\n$function$\n"
+    },
+    {
+        "signature": "can_view_post(p_post posts)",
+        "definition": "CREATE OR REPLACE FUNCTION public.can_view_post(p_post posts)\n RETURNS boolean\n LANGUAGE plpgsql\n STABLE SECURITY DEFINER\n SET search_path TO 'public'\nAS $function$\nDECLARE v_uid UUID := auth.uid();\n        v_prof RECORD;\nBEGIN\n  IF v_uid IS NULL THEN RETURN FALSE; END IF;\n  IF p_post.status = 'removed' THEN RETURN FALSE; END IF;\n\n  -- Held (AI) posts: only author and moderators see them\n  IF p_post.status = 'held' THEN\n    RETURN p_post.author_id = v_uid\n        OR public.has_mod_permission(v_uid, 'content.moderation', p_post.campus_id);\n  END IF;\n\n  IF p_post.scope = 'global' THEN RETURN TRUE; END IF;\n\n  SELECT college_id, campus_id INTO v_prof FROM public.profiles WHERE id = v_uid;\n  IF v_prof IS NULL THEN RETURN FALSE; END IF;\n\n  IF p_post.scope = 'college_network' THEN\n    RETURN v_prof.college_id IS NOT NULL AND v_prof.college_id = p_post.college_id;\n  END IF;\n\n  IF p_post.scope = 'campus' THEN\n    RETURN v_prof.campus_id IS NOT NULL AND v_prof.campus_id = p_post.campus_id;\n  END IF;\n\n  RETURN FALSE;\nEND;\n$function$\n"
+    },
+    {
+        "signature": "can_view_post_id(p_post_id uuid)",
+        "definition": "CREATE OR REPLACE FUNCTION public.can_view_post_id(p_post_id uuid)\n RETURNS boolean\n LANGUAGE plpgsql\n STABLE SECURITY DEFINER\n SET search_path TO 'public'\nAS $function$\nDECLARE p public.posts;\nBEGIN\n  SELECT * INTO p FROM public.posts WHERE id = p_post_id;\n  RETURN p.id IS NOT NULL AND public.can_view_post(p);\nEND;\n$function$\n"
+    },
+    {
+        "signature": "create_notification(p_user_id uuid, p_type text, p_content text, p_link text)",
+        "definition": "CREATE OR REPLACE FUNCTION public.create_notification(p_user_id uuid, p_type text, p_content text, p_link text DEFAULT NULL::text)\n RETURNS void\n LANGUAGE plpgsql\nAS $function$\nBEGIN\n  INSERT INTO notifications (user_id, type, content, link, is_read, created_at)\n  VALUES (p_user_id, p_type, p_content, p_link, false, NOW());\nEND;\n$function$\n"
+    },
+    {
+        "signature": "gin_extract_query_trgm(text, internal, smallint, internal, internal, internal, internal)",
+        "definition": "CREATE OR REPLACE FUNCTION public.gin_extract_query_trgm(text, internal, smallint, internal, internal, internal, internal)\n RETURNS internal\n LANGUAGE c\n IMMUTABLE PARALLEL SAFE STRICT\nAS '$libdir/pg_trgm', $function$gin_extract_query_trgm$function$\n"
+    },
+    {
+        "signature": "gin_extract_value_trgm(text, internal)",
+        "definition": "CREATE OR REPLACE FUNCTION public.gin_extract_value_trgm(text, internal)\n RETURNS internal\n LANGUAGE c\n IMMUTABLE PARALLEL SAFE STRICT\nAS '$libdir/pg_trgm', $function$gin_extract_value_trgm$function$\n"
+    },
+    {
+        "signature": "gin_trgm_consistent(internal, smallint, text, integer, internal, internal, internal, internal)",
+        "definition": "CREATE OR REPLACE FUNCTION public.gin_trgm_consistent(internal, smallint, text, integer, internal, internal, internal, internal)\n RETURNS boolean\n LANGUAGE c\n IMMUTABLE PARALLEL SAFE STRICT\nAS '$libdir/pg_trgm', $function$gin_trgm_consistent$function$\n"
+    },
+    {
+        "signature": "gin_trgm_triconsistent(internal, smallint, text, integer, internal, internal, internal)",
+        "definition": "CREATE OR REPLACE FUNCTION public.gin_trgm_triconsistent(internal, smallint, text, integer, internal, internal, internal)\n RETURNS \"char\"\n LANGUAGE c\n IMMUTABLE PARALLEL SAFE STRICT\nAS '$libdir/pg_trgm', $function$gin_trgm_triconsistent$function$\n"
+    },
+    {
+        "signature": "gtrgm_compress(internal)",
+        "definition": "CREATE OR REPLACE FUNCTION public.gtrgm_compress(internal)\n RETURNS internal\n LANGUAGE c\n IMMUTABLE PARALLEL SAFE STRICT\nAS '$libdir/pg_trgm', $function$gtrgm_compress$function$\n"
+    },
+    {
+        "signature": "gtrgm_consistent(internal, text, smallint, oid, internal)",
+        "definition": "CREATE OR REPLACE FUNCTION public.gtrgm_consistent(internal, text, smallint, oid, internal)\n RETURNS boolean\n LANGUAGE c\n IMMUTABLE PARALLEL SAFE STRICT\nAS '$libdir/pg_trgm', $function$gtrgm_consistent$function$\n"
+    },
+    {
+        "signature": "gtrgm_decompress(internal)",
+        "definition": "CREATE OR REPLACE FUNCTION public.gtrgm_decompress(internal)\n RETURNS internal\n LANGUAGE c\n IMMUTABLE PARALLEL SAFE STRICT\nAS '$libdir/pg_trgm', $function$gtrgm_decompress$function$\n"
+    },
+    {
+        "signature": "gtrgm_distance(internal, text, smallint, oid, internal)",
+        "definition": "CREATE OR REPLACE FUNCTION public.gtrgm_distance(internal, text, smallint, oid, internal)\n RETURNS double precision\n LANGUAGE c\n IMMUTABLE PARALLEL SAFE STRICT\nAS '$libdir/pg_trgm', $function$gtrgm_distance$function$\n"
+    },
+    {
+        "signature": "gtrgm_in(cstring)",
+        "definition": "CREATE OR REPLACE FUNCTION public.gtrgm_in(cstring)\n RETURNS gtrgm\n LANGUAGE c\n IMMUTABLE PARALLEL SAFE STRICT\nAS '$libdir/pg_trgm', $function$gtrgm_in$function$\n"
+    },
+    {
+        "signature": "gtrgm_options(internal)",
+        "definition": "CREATE OR REPLACE FUNCTION public.gtrgm_options(internal)\n RETURNS void\n LANGUAGE c\n IMMUTABLE PARALLEL SAFE\nAS '$libdir/pg_trgm', $function$gtrgm_options$function$\n"
+    },
+    {
+        "signature": "gtrgm_out(gtrgm)",
+        "definition": "CREATE OR REPLACE FUNCTION public.gtrgm_out(gtrgm)\n RETURNS cstring\n LANGUAGE c\n IMMUTABLE PARALLEL SAFE STRICT\nAS '$libdir/pg_trgm', $function$gtrgm_out$function$\n"
+    },
+    {
+        "signature": "gtrgm_penalty(internal, internal, internal)",
+        "definition": "CREATE OR REPLACE FUNCTION public.gtrgm_penalty(internal, internal, internal)\n RETURNS internal\n LANGUAGE c\n IMMUTABLE PARALLEL SAFE STRICT\nAS '$libdir/pg_trgm', $function$gtrgm_penalty$function$\n"
+    },
+    {
+        "signature": "gtrgm_picksplit(internal, internal)",
+        "definition": "CREATE OR REPLACE FUNCTION public.gtrgm_picksplit(internal, internal)\n RETURNS internal\n LANGUAGE c\n IMMUTABLE PARALLEL SAFE STRICT\nAS '$libdir/pg_trgm', $function$gtrgm_picksplit$function$\n"
+    },
+    {
+        "signature": "gtrgm_same(gtrgm, gtrgm, internal)",
+        "definition": "CREATE OR REPLACE FUNCTION public.gtrgm_same(gtrgm, gtrgm, internal)\n RETURNS internal\n LANGUAGE c\n IMMUTABLE PARALLEL SAFE STRICT\nAS '$libdir/pg_trgm', $function$gtrgm_same$function$\n"
+    },
+    {
+        "signature": "gtrgm_union(internal, internal)",
+        "definition": "CREATE OR REPLACE FUNCTION public.gtrgm_union(internal, internal)\n RETURNS gtrgm\n LANGUAGE c\n IMMUTABLE PARALLEL SAFE STRICT\nAS '$libdir/pg_trgm', $function$gtrgm_union$function$\n"
+    },
+    {
+        "signature": "guard_post_update()",
+        "definition": "CREATE OR REPLACE FUNCTION public.guard_post_update()\n RETURNS trigger\n LANGUAGE plpgsql\n SECURITY DEFINER\n SET search_path TO 'public'\nAS $function$\nBEGIN\n  IF NEW.author_id = auth.uid()\n     AND NOT public.has_mod_permission(auth.uid(), 'post.manage', OLD.campus_id) THEN\n    IF NEW.scope IS DISTINCT FROM OLD.scope\n       OR NEW.category_id IS DISTINCT FROM OLD.category_id\n       OR NEW.community_id IS DISTINCT FROM OLD.community_id\n       OR (NEW.status = 'published' AND OLD.status <> 'published') THEN\n      RAISE EXCEPTION 'Authors cannot change scope, category, community, or publish held posts';\n    END IF;\n  END IF;\n  RETURN NEW;\nEND;\n$function$\n"
+    },
+    {
+        "signature": "guard_profile_status_change()",
+        "definition": "CREATE OR REPLACE FUNCTION public.guard_profile_status_change()\n RETURNS trigger\n LANGUAGE plpgsql\n SECURITY DEFINER\n SET search_path TO 'public'\nAS $function$\nBEGIN\n  IF OLD.status IS DISTINCT FROM NEW.status\n     AND NOT public.has_mod_permission(auth.uid(), 'users.manage') THEN\n    RAISE EXCEPTION 'Only moderators can change account status';\n  END IF;\n  RETURN NEW;\nEND;\n$function$\n"
+    },
+    {
+        "signature": "handle_new_user()",
+        "definition": "CREATE OR REPLACE FUNCTION public.handle_new_user()\n RETURNS trigger\n LANGUAGE plpgsql\n SECURITY DEFINER\n SET search_path TO 'public'\nAS $function$\nBEGIN\n  INSERT INTO public.profiles (id, full_name, username)\n  VALUES (NEW.id, NEW.raw_user_meta_data->>'full_name', NULL)\n  ON CONFLICT (id) DO NOTHING;\n  RETURN NEW;\nEND;\n$function$\n"
+    },
+    {
+        "signature": "has_mod_permission(p_user_id uuid, p_key text, p_campus_id uuid)",
+        "definition": "CREATE OR REPLACE FUNCTION public.has_mod_permission(p_user_id uuid, p_key text, p_campus_id uuid DEFAULT NULL::uuid)\n RETURNS boolean\n LANGUAGE plpgsql\n STABLE SECURITY DEFINER\n SET search_path TO 'public'\nAS $function$\nBEGIN\n  IF p_user_id IS DISTINCT FROM auth.uid() OR auth.uid() IS NULL THEN\n    RETURN FALSE;\n  END IF;\n  IF EXISTS (SELECT 1 FROM public.admin_grants\n             WHERE user_id = p_user_id AND admin_type = 'platform_admin') THEN\n    RETURN TRUE;\n  END IF;\n  RETURN EXISTS (\n    SELECT 1 FROM public.moderation_permissions mp\n    WHERE mp.user_id = p_user_id AND mp.permission_key = p_key\n      AND (mp.scope = 'global'\n           OR (p_campus_id IS NOT NULL AND mp.scope = 'campus' AND mp.campus_id = p_campus_id))\n  );\nEND;\n$function$\n"
+    },
+    {
+        "signature": "list_creatable_categories(p_user_id uuid, p_community_id uuid, p_campus_id uuid, p_college_id uuid)",
+        "definition": "CREATE OR REPLACE FUNCTION public.list_creatable_categories(p_user_id uuid, p_community_id uuid DEFAULT NULL::uuid, p_campus_id uuid DEFAULT NULL::uuid, p_college_id uuid DEFAULT NULL::uuid)\n RETURNS TABLE(category_key text, label text, max_scope text, category_id uuid)\n LANGUAGE plpgsql\n STABLE SECURITY DEFINER\n SET search_path TO 'public'\nAS $function$\nBEGIN\n  IF p_user_id IS DISTINCT FROM auth.uid() OR auth.uid() IS NULL THEN RETURN; END IF;\n  RETURN QUERY\n    SELECT cc.key, cc.label, cp.max_scope, cc.id\n    FROM public.content_categories cc\n    JOIN public.content_permissions cp ON cp.category_id = cc.id\n    WHERE cp.actor_type = public.user_admin_type(auth.uid(), p_campus_id, p_college_id, p_community_id)\n      AND cp.max_scope IS NOT NULL\n    ORDER BY cc.sort_order;\nEND;\n$function$\n"
+    },
+    {
+        "signature": "log_audit(p_action text, p_entity_type text, p_entity_id uuid, p_metadata jsonb)",
+        "definition": "CREATE OR REPLACE FUNCTION public.log_audit(p_action text, p_entity_type text, p_entity_id uuid, p_metadata jsonb DEFAULT NULL::jsonb)\n RETURNS void\n LANGUAGE sql\n SECURITY DEFINER\n SET search_path TO 'public'\nAS $function$\n  INSERT INTO public.audit_log (actor_id, action, entity_type, entity_id, metadata)\n  VALUES (auth.uid(), p_action, p_entity_type, p_entity_id, p_metadata);\n$function$\n"
+    },
+    {
+        "signature": "my_admin_grants()",
+        "definition": "CREATE OR REPLACE FUNCTION public.my_admin_grants()\n RETURNS TABLE(admin_type text, community_id uuid, college_id uuid, campus_id uuid)\n LANGUAGE sql\n STABLE SECURITY DEFINER\n SET search_path TO 'public'\nAS $function$\n  SELECT g.admin_type, g.community_id, g.college_id, g.campus_id\n  FROM public.admin_grants g WHERE g.user_id = auth.uid();\n$function$\n"
+    },
+    {
+        "signature": "notify_on_announcement()",
+        "definition": "CREATE OR REPLACE FUNCTION public.notify_on_announcement()\n RETURNS trigger\n LANGUAGE plpgsql\nAS $function$\nDECLARE\n  profile_rec RECORD;\nBEGIN\n  IF NEW.is_official = true THEN\n    FOR profile_rec IN \n      SELECT id FROM profiles \n      WHERE (NEW.scope = 'global') \n         OR (NEW.scope = 'campus' AND campus_id = NEW.campus_id)\n    LOOP\n      IF profile_rec.id != NEW.author_id THEN\n        PERFORM create_notification(\n          profile_rec.id,\n          'announcement',\n          '\ud83d\udce2 New official announcement posted',\n          '/feed'\n        );\n      END IF;\n    END LOOP;\n  END IF;\n  RETURN NEW;\nEND;\n$function$\n"
+    },
+    {
+        "signature": "notify_on_assignment()",
+        "definition": "CREATE OR REPLACE FUNCTION public.notify_on_assignment()\n RETURNS trigger\n LANGUAGE plpgsql\nAS $function$\nDECLARE\n  faculty_name TEXT;\n  student_rec RECORD;\nBEGIN\n  SELECT full_name INTO faculty_name FROM profiles WHERE id = NEW.posted_by;\n  \n  FOR student_rec IN\n    SELECT id FROM profiles\n    WHERE campus_id = NEW.campus_id\n    AND department_id = NEW.department_id\n    AND id != NEW.posted_by\n    AND role = 'student'\n  LOOP\n    PERFORM create_notification(\n      student_rec.id,\n      'assignment',\n      '\ud83d\udcdd New assignment: ' || NEW.title || ' \u2014 ' || NEW.subject || ' (Due: ' || TO_CHAR(NEW.due_date, 'DD Mon') || ')',\n      '/classroom/' || NEW.id::TEXT\n    );\n  END LOOP;\n  RETURN NEW;\nEND;\n$function$\n"
+    },
+    {
+        "signature": "notify_on_comment()",
+        "definition": "CREATE OR REPLACE FUNCTION public.notify_on_comment()\n RETURNS trigger\n LANGUAGE plpgsql\n SECURITY DEFINER\n SET search_path TO 'public'\nAS $function$\nDECLARE v_author UUID;\nBEGIN\n  SELECT author_id INTO v_author FROM public.posts WHERE id = NEW.post_id;\n  IF v_author IS NOT NULL AND v_author <> NEW.author_id THEN\n    INSERT INTO public.notifications (recipient_id, actor_id, type, ref_type, ref_id, title, body)\n    VALUES (v_author, NEW.author_id, 'post_comment', 'post', NEW.post_id,\n            'New comment', left(NEW.body, 200));\n  END IF;\n  RETURN NEW;\nEND;\n$function$\n"
+    },
+    {
+        "signature": "notify_on_connection()",
+        "definition": "CREATE OR REPLACE FUNCTION public.notify_on_connection()\n RETURNS trigger\n LANGUAGE plpgsql\n SECURITY DEFINER\n SET search_path TO 'public'\nAS $function$\nBEGIN\n  IF NEW.receiver_id <> NEW.requester_id THEN\n    INSERT INTO public.notifications (recipient_id, actor_id, type, ref_type, ref_id, title, body)\n    VALUES (NEW.receiver_id, NEW.requester_id, 'connection_request', 'connection', NEW.id,\n            'New connection request', 'Someone wants to connect with you');\n  END IF;\n  RETURN NEW;\nEND;\n$function$\n"
+    },
+    {
+        "signature": "notify_on_like()",
+        "definition": "CREATE OR REPLACE FUNCTION public.notify_on_like()\n RETURNS trigger\n LANGUAGE plpgsql\n SECURITY DEFINER\n SET search_path TO 'public'\nAS $function$\nDECLARE v_author UUID;\nBEGIN\n  SELECT author_id INTO v_author FROM public.posts WHERE id = NEW.post_id;\n  IF v_author IS NOT NULL AND v_author <> NEW.profile_id THEN\n    INSERT INTO public.notifications (recipient_id, actor_id, type, ref_type, ref_id, title, body)\n    VALUES (v_author, NEW.profile_id, 'post_reaction', 'post', NEW.post_id,\n            'New like', 'Someone liked your post');\n  END IF;\n  RETURN NEW;\nEND;\n$function$\n"
+    },
+    {
+        "signature": "notify_on_note()",
+        "definition": "CREATE OR REPLACE FUNCTION public.notify_on_note()\n RETURNS trigger\n LANGUAGE plpgsql\nAS $function$\nDECLARE\n  uploader_name TEXT;\n  profile_rec RECORD;\nBEGIN\n  SELECT full_name INTO uploader_name FROM profiles WHERE id = NEW.uploaded_by;\n  \n  FOR profile_rec IN\n    SELECT id FROM profiles\n    WHERE campus_id = NEW.campus_id\n    AND id != NEW.uploaded_by\n  LOOP\n    PERFORM create_notification(\n      profile_rec.id,\n      'note',\n      uploader_name || ' uploaded a new note \ud83d\udcda',\n      '/notes'\n    );\n  END LOOP;\n  RETURN NEW;\nEND;\n$function$\n"
+    },
+    {
+        "signature": "scope_level(p_scope text)",
+        "definition": "CREATE OR REPLACE FUNCTION public.scope_level(p_scope text)\n RETURNS integer\n LANGUAGE sql\n STABLE\nAS $function$\n  SELECT CASE p_scope\n    WHEN 'campus' THEN 1\n    WHEN 'college_network' THEN 2\n    WHEN 'global' THEN 3\n    ELSE 0 END;\n$function$\n"
+    },
+    {
+        "signature": "set_limit(real)",
+        "definition": "CREATE OR REPLACE FUNCTION public.set_limit(real)\n RETURNS real\n LANGUAGE c\n STRICT\nAS '$libdir/pg_trgm', $function$set_limit$function$\n"
+    },
+    {
+        "signature": "set_updated_at()",
+        "definition": "CREATE OR REPLACE FUNCTION public.set_updated_at()\n RETURNS trigger\n LANGUAGE plpgsql\nAS $function$\nBEGIN\n  NEW.updated_at = now();\n  RETURN NEW;\nEND;\n$function$\n"
+    },
+    {
+        "signature": "show_limit()",
+        "definition": "CREATE OR REPLACE FUNCTION public.show_limit()\n RETURNS real\n LANGUAGE c\n STABLE PARALLEL SAFE STRICT\nAS '$libdir/pg_trgm', $function$show_limit$function$\n"
+    },
+    {
+        "signature": "show_trgm(text)",
+        "definition": "CREATE OR REPLACE FUNCTION public.show_trgm(text)\n RETURNS text[]\n LANGUAGE c\n IMMUTABLE PARALLEL SAFE STRICT\nAS '$libdir/pg_trgm', $function$show_trgm$function$\n"
+    },
+    {
+        "signature": "similarity(text, text)",
+        "definition": "CREATE OR REPLACE FUNCTION public.similarity(text, text)\n RETURNS real\n LANGUAGE c\n IMMUTABLE PARALLEL SAFE STRICT\nAS '$libdir/pg_trgm', $function$similarity$function$\n"
+    },
+    {
+        "signature": "similarity_dist(text, text)",
+        "definition": "CREATE OR REPLACE FUNCTION public.similarity_dist(text, text)\n RETURNS real\n LANGUAGE c\n IMMUTABLE PARALLEL SAFE STRICT\nAS '$libdir/pg_trgm', $function$similarity_dist$function$\n"
+    },
+    {
+        "signature": "similarity_op(text, text)",
+        "definition": "CREATE OR REPLACE FUNCTION public.similarity_op(text, text)\n RETURNS boolean\n LANGUAGE c\n STABLE PARALLEL SAFE STRICT\nAS '$libdir/pg_trgm', $function$similarity_op$function$\n"
+    },
+    {
+        "signature": "strict_word_similarity(text, text)",
+        "definition": "CREATE OR REPLACE FUNCTION public.strict_word_similarity(text, text)\n RETURNS real\n LANGUAGE c\n IMMUTABLE PARALLEL SAFE STRICT\nAS '$libdir/pg_trgm', $function$strict_word_similarity$function$\n"
+    },
+    {
+        "signature": "strict_word_similarity_commutator_op(text, text)",
+        "definition": "CREATE OR REPLACE FUNCTION public.strict_word_similarity_commutator_op(text, text)\n RETURNS boolean\n LANGUAGE c\n STABLE PARALLEL SAFE STRICT\nAS '$libdir/pg_trgm', $function$strict_word_similarity_commutator_op$function$\n"
+    },
+    {
+        "signature": "strict_word_similarity_dist_commutator_op(text, text)",
+        "definition": "CREATE OR REPLACE FUNCTION public.strict_word_similarity_dist_commutator_op(text, text)\n RETURNS real\n LANGUAGE c\n IMMUTABLE PARALLEL SAFE STRICT\nAS '$libdir/pg_trgm', $function$strict_word_similarity_dist_commutator_op$function$\n"
+    },
+    {
+        "signature": "strict_word_similarity_dist_op(text, text)",
+        "definition": "CREATE OR REPLACE FUNCTION public.strict_word_similarity_dist_op(text, text)\n RETURNS real\n LANGUAGE c\n IMMUTABLE PARALLEL SAFE STRICT\nAS '$libdir/pg_trgm', $function$strict_word_similarity_dist_op$function$\n"
+    },
+    {
+        "signature": "strict_word_similarity_op(text, text)",
+        "definition": "CREATE OR REPLACE FUNCTION public.strict_word_similarity_op(text, text)\n RETURNS boolean\n LANGUAGE c\n STABLE PARALLEL SAFE STRICT\nAS '$libdir/pg_trgm', $function$strict_word_similarity_op$function$\n"
+    },
+    {
+        "signature": "update_streak()",
+        "definition": "CREATE OR REPLACE FUNCTION public.update_streak()\n RETURNS void\n LANGUAGE plpgsql\n SECURITY DEFINER\n SET search_path TO 'public'\nAS $function$\nDECLARE last_active DATE;\nBEGIN\n  IF auth.uid() IS NULL THEN RETURN; END IF;\n  SELECT (last_streak_date::date) INTO last_active FROM public.profiles WHERE id = auth.uid();\n  UPDATE public.profiles\n  SET streak_days = CASE\n        WHEN last_active = CURRENT_DATE THEN streak_days\n        WHEN last_active = CURRENT_DATE - 1 THEN COALESCE(streak_days, 0) + 1\n        ELSE 1 END,\n      last_streak_date = now()\n  WHERE id = auth.uid();\nEND;\n$function$\n"
+    },
+    {
+        "signature": "update_updated_at()",
+        "definition": "CREATE OR REPLACE FUNCTION public.update_updated_at()\n RETURNS trigger\n LANGUAGE plpgsql\nAS $function$\nBEGIN\n  NEW.updated_at = NOW();\n  RETURN NEW;\nEND;\n$function$\n"
+    },
+    {
+        "signature": "user_admin_type(p_user_id uuid, p_campus_id uuid, p_college_id uuid, p_community_id uuid)",
+        "definition": "CREATE OR REPLACE FUNCTION public.user_admin_type(p_user_id uuid, p_campus_id uuid DEFAULT NULL::uuid, p_college_id uuid DEFAULT NULL::uuid, p_community_id uuid DEFAULT NULL::uuid)\n RETURNS text\n LANGUAGE plpgsql\n STABLE SECURITY DEFINER\n SET search_path TO 'public'\nAS $function$\nDECLARE v_actor TEXT;\nBEGIN\n  -- Identity guard: results are only ever meaningful for the caller.\n  IF p_user_id IS DISTINCT FROM auth.uid() OR auth.uid() IS NULL THEN\n    RETURN 'student';\n  END IF;\n\n  IF EXISTS (SELECT 1 FROM public.admin_grants\n             WHERE user_id = p_user_id AND admin_type = 'platform_admin') THEN\n    RETURN 'platform_admin';\n  END IF;\n\n  IF p_campus_id IS NOT NULL AND EXISTS (\n    SELECT 1 FROM public.admin_grants\n    WHERE user_id = p_user_id AND admin_type = 'campus_admin' AND campus_id = p_campus_id) THEN\n    RETURN 'campus_admin';\n  END IF;\n\n  IF p_college_id IS NOT NULL AND EXISTS (\n    SELECT 1 FROM public.admin_grants g\n    JOIN public.campuses c ON c.college_id = p_college_id\n    WHERE g.user_id = p_user_id AND g.admin_type = 'campus_admin'\n      AND (g.campus_id = c.id OR (g.campus_id IS NULL AND g.college_id = p_college_id))) THEN\n    RETURN 'campus_admin';\n  END IF;\n\n  IF p_community_id IS NOT NULL AND EXISTS (\n    SELECT 1 FROM public.admin_grants\n    WHERE user_id = p_user_id AND admin_type = 'community_admin' AND community_id = p_community_id) THEN\n    RETURN 'community_admin';\n  END IF;\n\n  RETURN 'student';\nEND;\n$function$\n"
+    },
+    {
+        "signature": "word_similarity(text, text)",
+        "definition": "CREATE OR REPLACE FUNCTION public.word_similarity(text, text)\n RETURNS real\n LANGUAGE c\n IMMUTABLE PARALLEL SAFE STRICT\nAS '$libdir/pg_trgm', $function$word_similarity$function$\n"
+    },
+    {
+        "signature": "word_similarity_commutator_op(text, text)",
+        "definition": "CREATE OR REPLACE FUNCTION public.word_similarity_commutator_op(text, text)\n RETURNS boolean\n LANGUAGE c\n STABLE PARALLEL SAFE STRICT\nAS '$libdir/pg_trgm', $function$word_similarity_commutator_op$function$\n"
+    },
+    {
+        "signature": "word_similarity_dist_commutator_op(text, text)",
+        "definition": "CREATE OR REPLACE FUNCTION public.word_similarity_dist_commutator_op(text, text)\n RETURNS real\n LANGUAGE c\n IMMUTABLE PARALLEL SAFE STRICT\nAS '$libdir/pg_trgm', $function$word_similarity_dist_commutator_op$function$\n"
+    },
+    {
+        "signature": "word_similarity_dist_op(text, text)",
+        "definition": "CREATE OR REPLACE FUNCTION public.word_similarity_dist_op(text, text)\n RETURNS real\n LANGUAGE c\n IMMUTABLE PARALLEL SAFE STRICT\nAS '$libdir/pg_trgm', $function$word_similarity_dist_op$function$\n"
+    },
+    {
+        "signature": "word_similarity_op(text, text)",
+        "definition": "CREATE OR REPLACE FUNCTION public.word_similarity_op(text, text)\n RETURNS boolean\n LANGUAGE c\n STABLE PARALLEL SAFE STRICT\nAS '$libdir/pg_trgm', $function$word_similarity_op$function$\n"
+    }
+]

@@ -1,0 +1,3103 @@
+[
+    {
+        "table_name": "admin_grants",
+        "column_name": "id",
+        "data_type": "uuid",
+        "not_null": true,
+        "default_value": "gen_random_uuid()"
+    },
+    {
+        "table_name": "admin_grants",
+        "column_name": "user_id",
+        "data_type": "uuid",
+        "not_null": true,
+        "default_value": null
+    },
+    {
+        "table_name": "admin_grants",
+        "column_name": "admin_type",
+        "data_type": "text",
+        "not_null": true,
+        "default_value": null
+    },
+    {
+        "table_name": "admin_grants",
+        "column_name": "community_id",
+        "data_type": "uuid",
+        "not_null": false,
+        "default_value": null
+    },
+    {
+        "table_name": "admin_grants",
+        "column_name": "college_id",
+        "data_type": "uuid",
+        "not_null": false,
+        "default_value": null
+    },
+    {
+        "table_name": "admin_grants",
+        "column_name": "campus_id",
+        "data_type": "uuid",
+        "not_null": false,
+        "default_value": null
+    },
+    {
+        "table_name": "admin_grants",
+        "column_name": "granted_by",
+        "data_type": "uuid",
+        "not_null": false,
+        "default_value": null
+    },
+    {
+        "table_name": "admin_grants",
+        "column_name": "created_at",
+        "data_type": "timestamp with time zone",
+        "not_null": true,
+        "default_value": "now()"
+    },
+    {
+        "table_name": "admin_types",
+        "column_name": "id",
+        "data_type": "uuid",
+        "not_null": true,
+        "default_value": "gen_random_uuid()"
+    },
+    {
+        "table_name": "admin_types",
+        "column_name": "key",
+        "data_type": "text",
+        "not_null": true,
+        "default_value": null
+    },
+    {
+        "table_name": "admin_types",
+        "column_name": "label",
+        "data_type": "text",
+        "not_null": true,
+        "default_value": null
+    },
+    {
+        "table_name": "admin_types",
+        "column_name": "sort_order",
+        "data_type": "integer",
+        "not_null": true,
+        "default_value": "0"
+    },
+    {
+        "table_name": "ai_agents",
+        "column_name": "id",
+        "data_type": "uuid",
+        "not_null": true,
+        "default_value": "gen_random_uuid()"
+    },
+    {
+        "table_name": "ai_agents",
+        "column_name": "key",
+        "data_type": "text",
+        "not_null": true,
+        "default_value": null
+    },
+    {
+        "table_name": "ai_agents",
+        "column_name": "name",
+        "data_type": "text",
+        "not_null": true,
+        "default_value": null
+    },
+    {
+        "table_name": "ai_agents",
+        "column_name": "description",
+        "data_type": "text",
+        "not_null": false,
+        "default_value": null
+    },
+    {
+        "table_name": "ai_agents",
+        "column_name": "enabled",
+        "data_type": "boolean",
+        "not_null": true,
+        "default_value": "true"
+    },
+    {
+        "table_name": "ai_agents",
+        "column_name": "config",
+        "data_type": "jsonb",
+        "not_null": true,
+        "default_value": "'{}'::jsonb"
+    },
+    {
+        "table_name": "ai_agents",
+        "column_name": "created_at",
+        "data_type": "timestamp with time zone",
+        "not_null": true,
+        "default_value": "now()"
+    },
+    {
+        "table_name": "assignment_questions",
+        "column_name": "id",
+        "data_type": "uuid",
+        "not_null": true,
+        "default_value": "gen_random_uuid()"
+    },
+    {
+        "table_name": "assignment_questions",
+        "column_name": "assignment_id",
+        "data_type": "uuid",
+        "not_null": false,
+        "default_value": null
+    },
+    {
+        "table_name": "assignment_questions",
+        "column_name": "question",
+        "data_type": "text",
+        "not_null": true,
+        "default_value": null
+    },
+    {
+        "table_name": "assignment_questions",
+        "column_name": "option_a",
+        "data_type": "text",
+        "not_null": false,
+        "default_value": null
+    },
+    {
+        "table_name": "assignment_questions",
+        "column_name": "option_b",
+        "data_type": "text",
+        "not_null": false,
+        "default_value": null
+    },
+    {
+        "table_name": "assignment_questions",
+        "column_name": "option_c",
+        "data_type": "text",
+        "not_null": false,
+        "default_value": null
+    },
+    {
+        "table_name": "assignment_questions",
+        "column_name": "option_d",
+        "data_type": "text",
+        "not_null": false,
+        "default_value": null
+    },
+    {
+        "table_name": "assignment_questions",
+        "column_name": "correct_option",
+        "data_type": "text",
+        "not_null": false,
+        "default_value": null
+    },
+    {
+        "table_name": "assignment_questions",
+        "column_name": "marks",
+        "data_type": "integer",
+        "not_null": false,
+        "default_value": "1"
+    },
+    {
+        "table_name": "assignment_questions",
+        "column_name": "order_index",
+        "data_type": "integer",
+        "not_null": false,
+        "default_value": "0"
+    },
+    {
+        "table_name": "assignment_seen",
+        "column_name": "assignment_id",
+        "data_type": "uuid",
+        "not_null": true,
+        "default_value": null
+    },
+    {
+        "table_name": "assignment_seen",
+        "column_name": "student_id",
+        "data_type": "uuid",
+        "not_null": true,
+        "default_value": null
+    },
+    {
+        "table_name": "assignment_seen",
+        "column_name": "seen_at",
+        "data_type": "timestamp with time zone",
+        "not_null": false,
+        "default_value": "now()"
+    },
+    {
+        "table_name": "assignment_submissions",
+        "column_name": "id",
+        "data_type": "uuid",
+        "not_null": true,
+        "default_value": "gen_random_uuid()"
+    },
+    {
+        "table_name": "assignment_submissions",
+        "column_name": "assignment_id",
+        "data_type": "uuid",
+        "not_null": false,
+        "default_value": null
+    },
+    {
+        "table_name": "assignment_submissions",
+        "column_name": "student_id",
+        "data_type": "uuid",
+        "not_null": false,
+        "default_value": null
+    },
+    {
+        "table_name": "assignment_submissions",
+        "column_name": "submission_type",
+        "data_type": "text",
+        "not_null": false,
+        "default_value": null
+    },
+    {
+        "table_name": "assignment_submissions",
+        "column_name": "text_answer",
+        "data_type": "text",
+        "not_null": false,
+        "default_value": null
+    },
+    {
+        "table_name": "assignment_submissions",
+        "column_name": "link_answer",
+        "data_type": "text",
+        "not_null": false,
+        "default_value": null
+    },
+    {
+        "table_name": "assignment_submissions",
+        "column_name": "mcq_answers",
+        "data_type": "jsonb",
+        "not_null": false,
+        "default_value": null
+    },
+    {
+        "table_name": "assignment_submissions",
+        "column_name": "auto_marks",
+        "data_type": "integer",
+        "not_null": false,
+        "default_value": null
+    },
+    {
+        "table_name": "assignment_submissions",
+        "column_name": "manual_marks",
+        "data_type": "integer",
+        "not_null": false,
+        "default_value": null
+    },
+    {
+        "table_name": "assignment_submissions",
+        "column_name": "final_marks",
+        "data_type": "integer",
+        "not_null": false,
+        "default_value": null
+    },
+    {
+        "table_name": "assignment_submissions",
+        "column_name": "feedback",
+        "data_type": "text",
+        "not_null": false,
+        "default_value": null
+    },
+    {
+        "table_name": "assignment_submissions",
+        "column_name": "submitted_at",
+        "data_type": "timestamp with time zone",
+        "not_null": false,
+        "default_value": "now()"
+    },
+    {
+        "table_name": "assignment_submissions",
+        "column_name": "is_late",
+        "data_type": "boolean",
+        "not_null": false,
+        "default_value": "false"
+    },
+    {
+        "table_name": "assignments",
+        "column_name": "id",
+        "data_type": "uuid",
+        "not_null": true,
+        "default_value": "gen_random_uuid()"
+    },
+    {
+        "table_name": "assignments",
+        "column_name": "posted_by",
+        "data_type": "uuid",
+        "not_null": false,
+        "default_value": null
+    },
+    {
+        "table_name": "assignments",
+        "column_name": "campus_id",
+        "data_type": "uuid",
+        "not_null": false,
+        "default_value": null
+    },
+    {
+        "table_name": "assignments",
+        "column_name": "department_id",
+        "data_type": "uuid",
+        "not_null": false,
+        "default_value": null
+    },
+    {
+        "table_name": "assignments",
+        "column_name": "semester",
+        "data_type": "integer",
+        "not_null": false,
+        "default_value": null
+    },
+    {
+        "table_name": "assignments",
+        "column_name": "subject",
+        "data_type": "text",
+        "not_null": true,
+        "default_value": null
+    },
+    {
+        "table_name": "assignments",
+        "column_name": "title",
+        "data_type": "text",
+        "not_null": true,
+        "default_value": null
+    },
+    {
+        "table_name": "assignments",
+        "column_name": "description",
+        "data_type": "text",
+        "not_null": false,
+        "default_value": null
+    },
+    {
+        "table_name": "assignments",
+        "column_name": "due_date",
+        "data_type": "timestamp with time zone",
+        "not_null": false,
+        "default_value": null
+    },
+    {
+        "table_name": "assignments",
+        "column_name": "total_marks",
+        "data_type": "integer",
+        "not_null": false,
+        "default_value": "10"
+    },
+    {
+        "table_name": "assignments",
+        "column_name": "assignment_type",
+        "data_type": "text",
+        "not_null": false,
+        "default_value": "'text'::text"
+    },
+    {
+        "table_name": "assignments",
+        "column_name": "attachment_url",
+        "data_type": "text",
+        "not_null": false,
+        "default_value": null
+    },
+    {
+        "table_name": "assignments",
+        "column_name": "is_published",
+        "data_type": "boolean",
+        "not_null": false,
+        "default_value": "true"
+    },
+    {
+        "table_name": "assignments",
+        "column_name": "created_at",
+        "data_type": "timestamp with time zone",
+        "not_null": false,
+        "default_value": "now()"
+    },
+    {
+        "table_name": "audit_log",
+        "column_name": "id",
+        "data_type": "uuid",
+        "not_null": true,
+        "default_value": "gen_random_uuid()"
+    },
+    {
+        "table_name": "audit_log",
+        "column_name": "actor_id",
+        "data_type": "uuid",
+        "not_null": false,
+        "default_value": null
+    },
+    {
+        "table_name": "audit_log",
+        "column_name": "action",
+        "data_type": "text",
+        "not_null": true,
+        "default_value": null
+    },
+    {
+        "table_name": "audit_log",
+        "column_name": "entity_type",
+        "data_type": "text",
+        "not_null": false,
+        "default_value": null
+    },
+    {
+        "table_name": "audit_log",
+        "column_name": "entity_id",
+        "data_type": "uuid",
+        "not_null": false,
+        "default_value": null
+    },
+    {
+        "table_name": "audit_log",
+        "column_name": "metadata",
+        "data_type": "jsonb",
+        "not_null": false,
+        "default_value": null
+    },
+    {
+        "table_name": "audit_log",
+        "column_name": "created_at",
+        "data_type": "timestamp with time zone",
+        "not_null": true,
+        "default_value": "now()"
+    },
+    {
+        "table_name": "campus_ai_agents",
+        "column_name": "campus_id",
+        "data_type": "uuid",
+        "not_null": true,
+        "default_value": null
+    },
+    {
+        "table_name": "campus_ai_agents",
+        "column_name": "agent_key",
+        "data_type": "text",
+        "not_null": true,
+        "default_value": null
+    },
+    {
+        "table_name": "campus_ai_agents",
+        "column_name": "enabled",
+        "data_type": "boolean",
+        "not_null": true,
+        "default_value": "true"
+    },
+    {
+        "table_name": "campus_insights",
+        "column_name": "id",
+        "data_type": "uuid",
+        "not_null": true,
+        "default_value": "gen_random_uuid()"
+    },
+    {
+        "table_name": "campus_insights",
+        "column_name": "campus_id",
+        "data_type": "uuid",
+        "not_null": true,
+        "default_value": null
+    },
+    {
+        "table_name": "campus_insights",
+        "column_name": "title",
+        "data_type": "text",
+        "not_null": true,
+        "default_value": null
+    },
+    {
+        "table_name": "campus_insights",
+        "column_name": "body",
+        "data_type": "text",
+        "not_null": false,
+        "default_value": null
+    },
+    {
+        "table_name": "campus_insights",
+        "column_name": "insight_type",
+        "data_type": "text",
+        "not_null": true,
+        "default_value": "'general'::text"
+    },
+    {
+        "table_name": "campus_insights",
+        "column_name": "created_by",
+        "data_type": "uuid",
+        "not_null": false,
+        "default_value": null
+    },
+    {
+        "table_name": "campus_insights",
+        "column_name": "created_at",
+        "data_type": "timestamp with time zone",
+        "not_null": true,
+        "default_value": "now()"
+    },
+    {
+        "table_name": "campuses",
+        "column_name": "id",
+        "data_type": "uuid",
+        "not_null": true,
+        "default_value": "uuid_generate_v4()"
+    },
+    {
+        "table_name": "campuses",
+        "column_name": "college_id",
+        "data_type": "uuid",
+        "not_null": true,
+        "default_value": null
+    },
+    {
+        "table_name": "campuses",
+        "column_name": "name",
+        "data_type": "text",
+        "not_null": true,
+        "default_value": null
+    },
+    {
+        "table_name": "campuses",
+        "column_name": "slug",
+        "data_type": "text",
+        "not_null": true,
+        "default_value": null
+    },
+    {
+        "table_name": "campuses",
+        "column_name": "city",
+        "data_type": "text",
+        "not_null": false,
+        "default_value": null
+    },
+    {
+        "table_name": "campuses",
+        "column_name": "state",
+        "data_type": "text",
+        "not_null": false,
+        "default_value": null
+    },
+    {
+        "table_name": "campuses",
+        "column_name": "is_active",
+        "data_type": "boolean",
+        "not_null": false,
+        "default_value": "false"
+    },
+    {
+        "table_name": "campuses",
+        "column_name": "created_at",
+        "data_type": "timestamp with time zone",
+        "not_null": false,
+        "default_value": "now()"
+    },
+    {
+        "table_name": "club_members",
+        "column_name": "club_id",
+        "data_type": "uuid",
+        "not_null": true,
+        "default_value": null
+    },
+    {
+        "table_name": "club_members",
+        "column_name": "user_id",
+        "data_type": "uuid",
+        "not_null": true,
+        "default_value": null
+    },
+    {
+        "table_name": "club_members",
+        "column_name": "role",
+        "data_type": "text",
+        "not_null": true,
+        "default_value": "'member'::text"
+    },
+    {
+        "table_name": "club_members",
+        "column_name": "joined_at",
+        "data_type": "timestamp with time zone",
+        "not_null": true,
+        "default_value": "now()"
+    },
+    {
+        "table_name": "clubs",
+        "column_name": "id",
+        "data_type": "uuid",
+        "not_null": true,
+        "default_value": "gen_random_uuid()"
+    },
+    {
+        "table_name": "clubs",
+        "column_name": "college_id",
+        "data_type": "uuid",
+        "not_null": true,
+        "default_value": null
+    },
+    {
+        "table_name": "clubs",
+        "column_name": "name",
+        "data_type": "text",
+        "not_null": true,
+        "default_value": null
+    },
+    {
+        "table_name": "clubs",
+        "column_name": "description",
+        "data_type": "text",
+        "not_null": false,
+        "default_value": null
+    },
+    {
+        "table_name": "clubs",
+        "column_name": "logo_url",
+        "data_type": "text",
+        "not_null": false,
+        "default_value": null
+    },
+    {
+        "table_name": "clubs",
+        "column_name": "created_by",
+        "data_type": "uuid",
+        "not_null": false,
+        "default_value": null
+    },
+    {
+        "table_name": "clubs",
+        "column_name": "is_active",
+        "data_type": "boolean",
+        "not_null": true,
+        "default_value": "true"
+    },
+    {
+        "table_name": "clubs",
+        "column_name": "created_at",
+        "data_type": "timestamp with time zone",
+        "not_null": true,
+        "default_value": "now()"
+    },
+    {
+        "table_name": "college_email_verifications",
+        "column_name": "id",
+        "data_type": "uuid",
+        "not_null": true,
+        "default_value": "gen_random_uuid()"
+    },
+    {
+        "table_name": "college_email_verifications",
+        "column_name": "user_id",
+        "data_type": "uuid",
+        "not_null": true,
+        "default_value": null
+    },
+    {
+        "table_name": "college_email_verifications",
+        "column_name": "email",
+        "data_type": "text",
+        "not_null": true,
+        "default_value": null
+    },
+    {
+        "table_name": "college_email_verifications",
+        "column_name": "token",
+        "data_type": "text",
+        "not_null": true,
+        "default_value": null
+    },
+    {
+        "table_name": "college_email_verifications",
+        "column_name": "expires_at",
+        "data_type": "timestamp with time zone",
+        "not_null": true,
+        "default_value": null
+    },
+    {
+        "table_name": "college_email_verifications",
+        "column_name": "used_at",
+        "data_type": "timestamp with time zone",
+        "not_null": false,
+        "default_value": null
+    },
+    {
+        "table_name": "college_email_verifications",
+        "column_name": "created_at",
+        "data_type": "timestamp with time zone",
+        "not_null": true,
+        "default_value": "now()"
+    },
+    {
+        "table_name": "college_features",
+        "column_name": "id",
+        "data_type": "uuid",
+        "not_null": true,
+        "default_value": "uuid_generate_v4()"
+    },
+    {
+        "table_name": "college_features",
+        "column_name": "college_id",
+        "data_type": "uuid",
+        "not_null": true,
+        "default_value": null
+    },
+    {
+        "table_name": "college_features",
+        "column_name": "feature",
+        "data_type": "text",
+        "not_null": true,
+        "default_value": null
+    },
+    {
+        "table_name": "college_features",
+        "column_name": "is_enabled",
+        "data_type": "boolean",
+        "not_null": false,
+        "default_value": "true"
+    },
+    {
+        "table_name": "college_features",
+        "column_name": "config",
+        "data_type": "jsonb",
+        "not_null": false,
+        "default_value": null
+    },
+    {
+        "table_name": "colleges",
+        "column_name": "id",
+        "data_type": "uuid",
+        "not_null": true,
+        "default_value": "uuid_generate_v4()"
+    },
+    {
+        "table_name": "colleges",
+        "column_name": "name",
+        "data_type": "text",
+        "not_null": true,
+        "default_value": null
+    },
+    {
+        "table_name": "colleges",
+        "column_name": "slug",
+        "data_type": "text",
+        "not_null": true,
+        "default_value": null
+    },
+    {
+        "table_name": "colleges",
+        "column_name": "logo_url",
+        "data_type": "text",
+        "not_null": false,
+        "default_value": null
+    },
+    {
+        "table_name": "colleges",
+        "column_name": "website",
+        "data_type": "text",
+        "not_null": false,
+        "default_value": null
+    },
+    {
+        "table_name": "colleges",
+        "column_name": "is_active",
+        "data_type": "boolean",
+        "not_null": false,
+        "default_value": "false"
+    },
+    {
+        "table_name": "colleges",
+        "column_name": "is_verified",
+        "data_type": "boolean",
+        "not_null": false,
+        "default_value": "false"
+    },
+    {
+        "table_name": "colleges",
+        "column_name": "email_domains",
+        "data_type": "text[]",
+        "not_null": false,
+        "default_value": null
+    },
+    {
+        "table_name": "colleges",
+        "column_name": "created_at",
+        "data_type": "timestamp with time zone",
+        "not_null": false,
+        "default_value": "now()"
+    },
+    {
+        "table_name": "colleges",
+        "column_name": "updated_at",
+        "data_type": "timestamp with time zone",
+        "not_null": false,
+        "default_value": "now()"
+    },
+    {
+        "table_name": "colleges",
+        "column_name": "city",
+        "data_type": "text",
+        "not_null": false,
+        "default_value": null
+    },
+    {
+        "table_name": "colleges",
+        "column_name": "state",
+        "data_type": "text",
+        "not_null": false,
+        "default_value": null
+    },
+    {
+        "table_name": "communities",
+        "column_name": "id",
+        "data_type": "uuid",
+        "not_null": true,
+        "default_value": "gen_random_uuid()"
+    },
+    {
+        "table_name": "communities",
+        "column_name": "key",
+        "data_type": "text",
+        "not_null": true,
+        "default_value": null
+    },
+    {
+        "table_name": "communities",
+        "column_name": "name",
+        "data_type": "text",
+        "not_null": true,
+        "default_value": null
+    },
+    {
+        "table_name": "communities",
+        "column_name": "tagline",
+        "data_type": "text",
+        "not_null": false,
+        "default_value": null
+    },
+    {
+        "table_name": "communities",
+        "column_name": "description",
+        "data_type": "text",
+        "not_null": false,
+        "default_value": null
+    },
+    {
+        "table_name": "communities",
+        "column_name": "icon",
+        "data_type": "text",
+        "not_null": false,
+        "default_value": null
+    },
+    {
+        "table_name": "communities",
+        "column_name": "is_global",
+        "data_type": "boolean",
+        "not_null": true,
+        "default_value": "true"
+    },
+    {
+        "table_name": "communities",
+        "column_name": "is_active",
+        "data_type": "boolean",
+        "not_null": true,
+        "default_value": "true"
+    },
+    {
+        "table_name": "communities",
+        "column_name": "created_at",
+        "data_type": "timestamp with time zone",
+        "not_null": true,
+        "default_value": "now()"
+    },
+    {
+        "table_name": "community_members",
+        "column_name": "community_id",
+        "data_type": "uuid",
+        "not_null": true,
+        "default_value": null
+    },
+    {
+        "table_name": "community_members",
+        "column_name": "user_id",
+        "data_type": "uuid",
+        "not_null": true,
+        "default_value": null
+    },
+    {
+        "table_name": "community_members",
+        "column_name": "role",
+        "data_type": "text",
+        "not_null": true,
+        "default_value": "'member'::text"
+    },
+    {
+        "table_name": "community_members",
+        "column_name": "joined_at",
+        "data_type": "timestamp with time zone",
+        "not_null": true,
+        "default_value": "now()"
+    },
+    {
+        "table_name": "connections",
+        "column_name": "id",
+        "data_type": "uuid",
+        "not_null": true,
+        "default_value": "uuid_generate_v4()"
+    },
+    {
+        "table_name": "connections",
+        "column_name": "requester_id",
+        "data_type": "uuid",
+        "not_null": true,
+        "default_value": null
+    },
+    {
+        "table_name": "connections",
+        "column_name": "receiver_id",
+        "data_type": "uuid",
+        "not_null": true,
+        "default_value": null
+    },
+    {
+        "table_name": "connections",
+        "column_name": "status",
+        "data_type": "text",
+        "not_null": false,
+        "default_value": "'pending'::text"
+    },
+    {
+        "table_name": "connections",
+        "column_name": "created_at",
+        "data_type": "timestamp with time zone",
+        "not_null": false,
+        "default_value": "now()"
+    },
+    {
+        "table_name": "connections",
+        "column_name": "updated_at",
+        "data_type": "timestamp with time zone",
+        "not_null": false,
+        "default_value": "now()"
+    },
+    {
+        "table_name": "content_categories",
+        "column_name": "id",
+        "data_type": "uuid",
+        "not_null": true,
+        "default_value": "gen_random_uuid()"
+    },
+    {
+        "table_name": "content_categories",
+        "column_name": "key",
+        "data_type": "text",
+        "not_null": true,
+        "default_value": null
+    },
+    {
+        "table_name": "content_categories",
+        "column_name": "label",
+        "data_type": "text",
+        "not_null": true,
+        "default_value": null
+    },
+    {
+        "table_name": "content_categories",
+        "column_name": "description",
+        "data_type": "text",
+        "not_null": false,
+        "default_value": null
+    },
+    {
+        "table_name": "content_categories",
+        "column_name": "icon",
+        "data_type": "text",
+        "not_null": false,
+        "default_value": null
+    },
+    {
+        "table_name": "content_categories",
+        "column_name": "sort_order",
+        "data_type": "integer",
+        "not_null": true,
+        "default_value": "0"
+    },
+    {
+        "table_name": "content_categories",
+        "column_name": "is_active",
+        "data_type": "boolean",
+        "not_null": true,
+        "default_value": "true"
+    },
+    {
+        "table_name": "content_permissions",
+        "column_name": "id",
+        "data_type": "uuid",
+        "not_null": true,
+        "default_value": "gen_random_uuid()"
+    },
+    {
+        "table_name": "content_permissions",
+        "column_name": "actor_type",
+        "data_type": "text",
+        "not_null": true,
+        "default_value": null
+    },
+    {
+        "table_name": "content_permissions",
+        "column_name": "category_id",
+        "data_type": "uuid",
+        "not_null": true,
+        "default_value": null
+    },
+    {
+        "table_name": "content_permissions",
+        "column_name": "max_scope",
+        "data_type": "text",
+        "not_null": false,
+        "default_value": null
+    },
+    {
+        "table_name": "content_permissions",
+        "column_name": "updated_by",
+        "data_type": "uuid",
+        "not_null": false,
+        "default_value": null
+    },
+    {
+        "table_name": "content_permissions",
+        "column_name": "updated_at",
+        "data_type": "timestamp with time zone",
+        "not_null": true,
+        "default_value": "now()"
+    },
+    {
+        "table_name": "content_reports",
+        "column_name": "id",
+        "data_type": "uuid",
+        "not_null": true,
+        "default_value": "gen_random_uuid()"
+    },
+    {
+        "table_name": "content_reports",
+        "column_name": "content_type",
+        "data_type": "text",
+        "not_null": true,
+        "default_value": null
+    },
+    {
+        "table_name": "content_reports",
+        "column_name": "content_id",
+        "data_type": "uuid",
+        "not_null": true,
+        "default_value": null
+    },
+    {
+        "table_name": "content_reports",
+        "column_name": "reported_by",
+        "data_type": "uuid",
+        "not_null": true,
+        "default_value": null
+    },
+    {
+        "table_name": "content_reports",
+        "column_name": "reason",
+        "data_type": "text",
+        "not_null": false,
+        "default_value": null
+    },
+    {
+        "table_name": "content_reports",
+        "column_name": "status",
+        "data_type": "text",
+        "not_null": true,
+        "default_value": "'open'::text"
+    },
+    {
+        "table_name": "content_reports",
+        "column_name": "handled_by",
+        "data_type": "uuid",
+        "not_null": false,
+        "default_value": null
+    },
+    {
+        "table_name": "content_reports",
+        "column_name": "created_at",
+        "data_type": "timestamp with time zone",
+        "not_null": true,
+        "default_value": "now()"
+    },
+    {
+        "table_name": "content_reports",
+        "column_name": "resolved_at",
+        "data_type": "timestamp with time zone",
+        "not_null": false,
+        "default_value": null
+    },
+    {
+        "table_name": "conversation_participants",
+        "column_name": "conversation_id",
+        "data_type": "uuid",
+        "not_null": true,
+        "default_value": null
+    },
+    {
+        "table_name": "conversation_participants",
+        "column_name": "profile_id",
+        "data_type": "uuid",
+        "not_null": true,
+        "default_value": null
+    },
+    {
+        "table_name": "conversation_participants",
+        "column_name": "last_read_at",
+        "data_type": "timestamp with time zone",
+        "not_null": false,
+        "default_value": null
+    },
+    {
+        "table_name": "conversations",
+        "column_name": "id",
+        "data_type": "uuid",
+        "not_null": true,
+        "default_value": "uuid_generate_v4()"
+    },
+    {
+        "table_name": "conversations",
+        "column_name": "created_at",
+        "data_type": "timestamp with time zone",
+        "not_null": false,
+        "default_value": "now()"
+    },
+    {
+        "table_name": "departments",
+        "column_name": "id",
+        "data_type": "uuid",
+        "not_null": true,
+        "default_value": "uuid_generate_v4()"
+    },
+    {
+        "table_name": "departments",
+        "column_name": "campus_id",
+        "data_type": "uuid",
+        "not_null": true,
+        "default_value": null
+    },
+    {
+        "table_name": "departments",
+        "column_name": "name",
+        "data_type": "text",
+        "not_null": true,
+        "default_value": null
+    },
+    {
+        "table_name": "departments",
+        "column_name": "short_name",
+        "data_type": "text",
+        "not_null": false,
+        "default_value": null
+    },
+    {
+        "table_name": "departments",
+        "column_name": "created_at",
+        "data_type": "timestamp with time zone",
+        "not_null": false,
+        "default_value": "now()"
+    },
+    {
+        "table_name": "event_registrations",
+        "column_name": "id",
+        "data_type": "uuid",
+        "not_null": true,
+        "default_value": "uuid_generate_v4()"
+    },
+    {
+        "table_name": "event_registrations",
+        "column_name": "event_id",
+        "data_type": "uuid",
+        "not_null": true,
+        "default_value": null
+    },
+    {
+        "table_name": "event_registrations",
+        "column_name": "profile_id",
+        "data_type": "uuid",
+        "not_null": true,
+        "default_value": null
+    },
+    {
+        "table_name": "event_registrations",
+        "column_name": "status",
+        "data_type": "text",
+        "not_null": false,
+        "default_value": "'registered'::text"
+    },
+    {
+        "table_name": "event_registrations",
+        "column_name": "created_at",
+        "data_type": "timestamp with time zone",
+        "not_null": false,
+        "default_value": "now()"
+    },
+    {
+        "table_name": "events",
+        "column_name": "id",
+        "data_type": "uuid",
+        "not_null": true,
+        "default_value": "uuid_generate_v4()"
+    },
+    {
+        "table_name": "events",
+        "column_name": "created_by",
+        "data_type": "uuid",
+        "not_null": true,
+        "default_value": null
+    },
+    {
+        "table_name": "events",
+        "column_name": "campus_id",
+        "data_type": "uuid",
+        "not_null": false,
+        "default_value": null
+    },
+    {
+        "table_name": "events",
+        "column_name": "college_id",
+        "data_type": "uuid",
+        "not_null": false,
+        "default_value": null
+    },
+    {
+        "table_name": "events",
+        "column_name": "title",
+        "data_type": "text",
+        "not_null": true,
+        "default_value": null
+    },
+    {
+        "table_name": "events",
+        "column_name": "description",
+        "data_type": "text",
+        "not_null": false,
+        "default_value": null
+    },
+    {
+        "table_name": "events",
+        "column_name": "event_type",
+        "data_type": "text",
+        "not_null": false,
+        "default_value": "'general'::text"
+    },
+    {
+        "table_name": "events",
+        "column_name": "start_at",
+        "data_type": "timestamp with time zone",
+        "not_null": true,
+        "default_value": null
+    },
+    {
+        "table_name": "events",
+        "column_name": "end_at",
+        "data_type": "timestamp with time zone",
+        "not_null": false,
+        "default_value": null
+    },
+    {
+        "table_name": "events",
+        "column_name": "venue",
+        "data_type": "text",
+        "not_null": false,
+        "default_value": null
+    },
+    {
+        "table_name": "events",
+        "column_name": "is_online",
+        "data_type": "boolean",
+        "not_null": false,
+        "default_value": "false"
+    },
+    {
+        "table_name": "events",
+        "column_name": "meet_link",
+        "data_type": "text",
+        "not_null": false,
+        "default_value": null
+    },
+    {
+        "table_name": "events",
+        "column_name": "banner_url",
+        "data_type": "text",
+        "not_null": false,
+        "default_value": null
+    },
+    {
+        "table_name": "events",
+        "column_name": "registration_link",
+        "data_type": "text",
+        "not_null": false,
+        "default_value": null
+    },
+    {
+        "table_name": "events",
+        "column_name": "max_participants",
+        "data_type": "integer",
+        "not_null": false,
+        "default_value": null
+    },
+    {
+        "table_name": "events",
+        "column_name": "is_free",
+        "data_type": "boolean",
+        "not_null": false,
+        "default_value": "true"
+    },
+    {
+        "table_name": "events",
+        "column_name": "fee_amount",
+        "data_type": "numeric(10,2)",
+        "not_null": false,
+        "default_value": null
+    },
+    {
+        "table_name": "events",
+        "column_name": "visibility",
+        "data_type": "text",
+        "not_null": false,
+        "default_value": "'campus'::text"
+    },
+    {
+        "table_name": "events",
+        "column_name": "is_published",
+        "data_type": "boolean",
+        "not_null": false,
+        "default_value": "false"
+    },
+    {
+        "table_name": "events",
+        "column_name": "created_at",
+        "data_type": "timestamp with time zone",
+        "not_null": false,
+        "default_value": "now()"
+    },
+    {
+        "table_name": "group_members",
+        "column_name": "id",
+        "data_type": "uuid",
+        "not_null": true,
+        "default_value": "gen_random_uuid()"
+    },
+    {
+        "table_name": "group_members",
+        "column_name": "group_id",
+        "data_type": "uuid",
+        "not_null": false,
+        "default_value": null
+    },
+    {
+        "table_name": "group_members",
+        "column_name": "profile_id",
+        "data_type": "uuid",
+        "not_null": false,
+        "default_value": null
+    },
+    {
+        "table_name": "group_members",
+        "column_name": "role",
+        "data_type": "text",
+        "not_null": false,
+        "default_value": "'member'::text"
+    },
+    {
+        "table_name": "group_members",
+        "column_name": "joined_at",
+        "data_type": "timestamp with time zone",
+        "not_null": false,
+        "default_value": "now()"
+    },
+    {
+        "table_name": "interests",
+        "column_name": "id",
+        "data_type": "uuid",
+        "not_null": true,
+        "default_value": "uuid_generate_v4()"
+    },
+    {
+        "table_name": "interests",
+        "column_name": "name",
+        "data_type": "text",
+        "not_null": true,
+        "default_value": null
+    },
+    {
+        "table_name": "lost_found",
+        "column_name": "id",
+        "data_type": "uuid",
+        "not_null": true,
+        "default_value": "gen_random_uuid()"
+    },
+    {
+        "table_name": "lost_found",
+        "column_name": "college_id",
+        "data_type": "uuid",
+        "not_null": false,
+        "default_value": null
+    },
+    {
+        "table_name": "lost_found",
+        "column_name": "campus_id",
+        "data_type": "uuid",
+        "not_null": false,
+        "default_value": null
+    },
+    {
+        "table_name": "lost_found",
+        "column_name": "posted_by",
+        "data_type": "uuid",
+        "not_null": true,
+        "default_value": null
+    },
+    {
+        "table_name": "lost_found",
+        "column_name": "title",
+        "data_type": "text",
+        "not_null": true,
+        "default_value": null
+    },
+    {
+        "table_name": "lost_found",
+        "column_name": "description",
+        "data_type": "text",
+        "not_null": false,
+        "default_value": null
+    },
+    {
+        "table_name": "lost_found",
+        "column_name": "item_type",
+        "data_type": "text",
+        "not_null": true,
+        "default_value": "'lost'::text"
+    },
+    {
+        "table_name": "lost_found",
+        "column_name": "category",
+        "data_type": "text",
+        "not_null": false,
+        "default_value": null
+    },
+    {
+        "table_name": "lost_found",
+        "column_name": "location",
+        "data_type": "text",
+        "not_null": false,
+        "default_value": null
+    },
+    {
+        "table_name": "lost_found",
+        "column_name": "contact_info",
+        "data_type": "text",
+        "not_null": false,
+        "default_value": null
+    },
+    {
+        "table_name": "lost_found",
+        "column_name": "is_resolved",
+        "data_type": "boolean",
+        "not_null": true,
+        "default_value": "false"
+    },
+    {
+        "table_name": "lost_found",
+        "column_name": "created_at",
+        "data_type": "timestamp with time zone",
+        "not_null": true,
+        "default_value": "now()"
+    },
+    {
+        "table_name": "messages",
+        "column_name": "id",
+        "data_type": "uuid",
+        "not_null": true,
+        "default_value": "uuid_generate_v4()"
+    },
+    {
+        "table_name": "messages",
+        "column_name": "conversation_id",
+        "data_type": "uuid",
+        "not_null": true,
+        "default_value": null
+    },
+    {
+        "table_name": "messages",
+        "column_name": "sender_id",
+        "data_type": "uuid",
+        "not_null": true,
+        "default_value": null
+    },
+    {
+        "table_name": "messages",
+        "column_name": "content",
+        "data_type": "text",
+        "not_null": true,
+        "default_value": null
+    },
+    {
+        "table_name": "messages",
+        "column_name": "message_type",
+        "data_type": "text",
+        "not_null": false,
+        "default_value": "'text'::text"
+    },
+    {
+        "table_name": "messages",
+        "column_name": "media_url",
+        "data_type": "text",
+        "not_null": false,
+        "default_value": null
+    },
+    {
+        "table_name": "messages",
+        "column_name": "is_deleted",
+        "data_type": "boolean",
+        "not_null": false,
+        "default_value": "false"
+    },
+    {
+        "table_name": "messages",
+        "column_name": "created_at",
+        "data_type": "timestamp with time zone",
+        "not_null": false,
+        "default_value": "now()"
+    },
+    {
+        "table_name": "moderation_permissions",
+        "column_name": "id",
+        "data_type": "uuid",
+        "not_null": true,
+        "default_value": "gen_random_uuid()"
+    },
+    {
+        "table_name": "moderation_permissions",
+        "column_name": "user_id",
+        "data_type": "uuid",
+        "not_null": true,
+        "default_value": null
+    },
+    {
+        "table_name": "moderation_permissions",
+        "column_name": "permission_key",
+        "data_type": "text",
+        "not_null": true,
+        "default_value": null
+    },
+    {
+        "table_name": "moderation_permissions",
+        "column_name": "scope",
+        "data_type": "text",
+        "not_null": true,
+        "default_value": "'campus'::text"
+    },
+    {
+        "table_name": "moderation_permissions",
+        "column_name": "campus_id",
+        "data_type": "uuid",
+        "not_null": false,
+        "default_value": null
+    },
+    {
+        "table_name": "moderation_permissions",
+        "column_name": "granted_by",
+        "data_type": "uuid",
+        "not_null": false,
+        "default_value": null
+    },
+    {
+        "table_name": "moderation_permissions",
+        "column_name": "created_at",
+        "data_type": "timestamp with time zone",
+        "not_null": true,
+        "default_value": "now()"
+    },
+    {
+        "table_name": "moderation_queue",
+        "column_name": "id",
+        "data_type": "uuid",
+        "not_null": true,
+        "default_value": "gen_random_uuid()"
+    },
+    {
+        "table_name": "moderation_queue",
+        "column_name": "content_type",
+        "data_type": "text",
+        "not_null": true,
+        "default_value": null
+    },
+    {
+        "table_name": "moderation_queue",
+        "column_name": "content_id",
+        "data_type": "uuid",
+        "not_null": true,
+        "default_value": null
+    },
+    {
+        "table_name": "moderation_queue",
+        "column_name": "reason",
+        "data_type": "text",
+        "not_null": false,
+        "default_value": null
+    },
+    {
+        "table_name": "moderation_queue",
+        "column_name": "source",
+        "data_type": "text",
+        "not_null": true,
+        "default_value": "'ai'::text"
+    },
+    {
+        "table_name": "moderation_queue",
+        "column_name": "status",
+        "data_type": "text",
+        "not_null": true,
+        "default_value": "'open'::text"
+    },
+    {
+        "table_name": "moderation_queue",
+        "column_name": "resolved_by",
+        "data_type": "uuid",
+        "not_null": false,
+        "default_value": null
+    },
+    {
+        "table_name": "moderation_queue",
+        "column_name": "created_at",
+        "data_type": "timestamp with time zone",
+        "not_null": true,
+        "default_value": "now()"
+    },
+    {
+        "table_name": "moderation_queue",
+        "column_name": "resolved_at",
+        "data_type": "timestamp with time zone",
+        "not_null": false,
+        "default_value": null
+    },
+    {
+        "table_name": "notes",
+        "column_name": "id",
+        "data_type": "uuid",
+        "not_null": true,
+        "default_value": "uuid_generate_v4()"
+    },
+    {
+        "table_name": "notes",
+        "column_name": "uploaded_by",
+        "data_type": "uuid",
+        "not_null": true,
+        "default_value": null
+    },
+    {
+        "table_name": "notes",
+        "column_name": "campus_id",
+        "data_type": "uuid",
+        "not_null": false,
+        "default_value": null
+    },
+    {
+        "table_name": "notes",
+        "column_name": "college_id",
+        "data_type": "uuid",
+        "not_null": false,
+        "default_value": null
+    },
+    {
+        "table_name": "notes",
+        "column_name": "department_id",
+        "data_type": "uuid",
+        "not_null": false,
+        "default_value": null
+    },
+    {
+        "table_name": "notes",
+        "column_name": "title",
+        "data_type": "text",
+        "not_null": true,
+        "default_value": null
+    },
+    {
+        "table_name": "notes",
+        "column_name": "description",
+        "data_type": "text",
+        "not_null": false,
+        "default_value": null
+    },
+    {
+        "table_name": "notes",
+        "column_name": "subject",
+        "data_type": "text",
+        "not_null": true,
+        "default_value": null
+    },
+    {
+        "table_name": "notes",
+        "column_name": "semester",
+        "data_type": "integer",
+        "not_null": false,
+        "default_value": null
+    },
+    {
+        "table_name": "notes",
+        "column_name": "year",
+        "data_type": "integer",
+        "not_null": false,
+        "default_value": null
+    },
+    {
+        "table_name": "notes",
+        "column_name": "resource_type",
+        "data_type": "text",
+        "not_null": false,
+        "default_value": "'notes'::text"
+    },
+    {
+        "table_name": "notes",
+        "column_name": "file_url",
+        "data_type": "text",
+        "not_null": false,
+        "default_value": null
+    },
+    {
+        "table_name": "notes",
+        "column_name": "drive_link",
+        "data_type": "text",
+        "not_null": false,
+        "default_value": null
+    },
+    {
+        "table_name": "notes",
+        "column_name": "external_link",
+        "data_type": "text",
+        "not_null": false,
+        "default_value": null
+    },
+    {
+        "table_name": "notes",
+        "column_name": "is_verified",
+        "data_type": "boolean",
+        "not_null": false,
+        "default_value": "false"
+    },
+    {
+        "table_name": "notes",
+        "column_name": "download_count",
+        "data_type": "integer",
+        "not_null": false,
+        "default_value": "0"
+    },
+    {
+        "table_name": "notes",
+        "column_name": "view_count",
+        "data_type": "integer",
+        "not_null": false,
+        "default_value": "0"
+    },
+    {
+        "table_name": "notes",
+        "column_name": "created_at",
+        "data_type": "timestamp with time zone",
+        "not_null": false,
+        "default_value": "now()"
+    },
+    {
+        "table_name": "notifications",
+        "column_name": "id",
+        "data_type": "uuid",
+        "not_null": true,
+        "default_value": "uuid_generate_v4()"
+    },
+    {
+        "table_name": "notifications",
+        "column_name": "recipient_id",
+        "data_type": "uuid",
+        "not_null": true,
+        "default_value": null
+    },
+    {
+        "table_name": "notifications",
+        "column_name": "actor_id",
+        "data_type": "uuid",
+        "not_null": false,
+        "default_value": null
+    },
+    {
+        "table_name": "notifications",
+        "column_name": "type",
+        "data_type": "text",
+        "not_null": true,
+        "default_value": null
+    },
+    {
+        "table_name": "notifications",
+        "column_name": "ref_type",
+        "data_type": "text",
+        "not_null": false,
+        "default_value": null
+    },
+    {
+        "table_name": "notifications",
+        "column_name": "ref_id",
+        "data_type": "uuid",
+        "not_null": false,
+        "default_value": null
+    },
+    {
+        "table_name": "notifications",
+        "column_name": "title",
+        "data_type": "text",
+        "not_null": false,
+        "default_value": null
+    },
+    {
+        "table_name": "notifications",
+        "column_name": "body",
+        "data_type": "text",
+        "not_null": false,
+        "default_value": null
+    },
+    {
+        "table_name": "notifications",
+        "column_name": "is_read",
+        "data_type": "boolean",
+        "not_null": false,
+        "default_value": "false"
+    },
+    {
+        "table_name": "notifications",
+        "column_name": "created_at",
+        "data_type": "timestamp with time zone",
+        "not_null": false,
+        "default_value": "now()"
+    },
+    {
+        "table_name": "official_groups",
+        "column_name": "id",
+        "data_type": "uuid",
+        "not_null": true,
+        "default_value": "gen_random_uuid()"
+    },
+    {
+        "table_name": "official_groups",
+        "column_name": "name",
+        "data_type": "text",
+        "not_null": true,
+        "default_value": null
+    },
+    {
+        "table_name": "official_groups",
+        "column_name": "description",
+        "data_type": "text",
+        "not_null": false,
+        "default_value": null
+    },
+    {
+        "table_name": "official_groups",
+        "column_name": "group_type",
+        "data_type": "text",
+        "not_null": false,
+        "default_value": "'campus'::text"
+    },
+    {
+        "table_name": "official_groups",
+        "column_name": "campus_id",
+        "data_type": "uuid",
+        "not_null": false,
+        "default_value": null
+    },
+    {
+        "table_name": "official_groups",
+        "column_name": "department_id",
+        "data_type": "uuid",
+        "not_null": false,
+        "default_value": null
+    },
+    {
+        "table_name": "official_groups",
+        "column_name": "created_by",
+        "data_type": "uuid",
+        "not_null": false,
+        "default_value": null
+    },
+    {
+        "table_name": "official_groups",
+        "column_name": "avatar_url",
+        "data_type": "text",
+        "not_null": false,
+        "default_value": null
+    },
+    {
+        "table_name": "official_groups",
+        "column_name": "is_verified",
+        "data_type": "boolean",
+        "not_null": false,
+        "default_value": "true"
+    },
+    {
+        "table_name": "official_groups",
+        "column_name": "created_at",
+        "data_type": "timestamp with time zone",
+        "not_null": false,
+        "default_value": "now()"
+    },
+    {
+        "table_name": "opportunities",
+        "column_name": "id",
+        "data_type": "uuid",
+        "not_null": true,
+        "default_value": "uuid_generate_v4()"
+    },
+    {
+        "table_name": "opportunities",
+        "column_name": "posted_by",
+        "data_type": "uuid",
+        "not_null": true,
+        "default_value": null
+    },
+    {
+        "table_name": "opportunities",
+        "column_name": "campus_id",
+        "data_type": "uuid",
+        "not_null": false,
+        "default_value": null
+    },
+    {
+        "table_name": "opportunities",
+        "column_name": "college_id",
+        "data_type": "uuid",
+        "not_null": false,
+        "default_value": null
+    },
+    {
+        "table_name": "opportunities",
+        "column_name": "title",
+        "data_type": "text",
+        "not_null": true,
+        "default_value": null
+    },
+    {
+        "table_name": "opportunities",
+        "column_name": "description",
+        "data_type": "text",
+        "not_null": false,
+        "default_value": null
+    },
+    {
+        "table_name": "opportunities",
+        "column_name": "opp_type",
+        "data_type": "text",
+        "not_null": true,
+        "default_value": null
+    },
+    {
+        "table_name": "opportunities",
+        "column_name": "company_org",
+        "data_type": "text",
+        "not_null": false,
+        "default_value": null
+    },
+    {
+        "table_name": "opportunities",
+        "column_name": "external_link",
+        "data_type": "text",
+        "not_null": false,
+        "default_value": null
+    },
+    {
+        "table_name": "opportunities",
+        "column_name": "apply_link",
+        "data_type": "text",
+        "not_null": false,
+        "default_value": null
+    },
+    {
+        "table_name": "opportunities",
+        "column_name": "deadline",
+        "data_type": "date",
+        "not_null": false,
+        "default_value": null
+    },
+    {
+        "table_name": "opportunities",
+        "column_name": "is_paid",
+        "data_type": "boolean",
+        "not_null": false,
+        "default_value": null
+    },
+    {
+        "table_name": "opportunities",
+        "column_name": "stipend_range",
+        "data_type": "text",
+        "not_null": false,
+        "default_value": null
+    },
+    {
+        "table_name": "opportunities",
+        "column_name": "location_type",
+        "data_type": "text",
+        "not_null": false,
+        "default_value": null
+    },
+    {
+        "table_name": "opportunities",
+        "column_name": "skills_required",
+        "data_type": "text[]",
+        "not_null": false,
+        "default_value": null
+    },
+    {
+        "table_name": "opportunities",
+        "column_name": "visibility",
+        "data_type": "text",
+        "not_null": false,
+        "default_value": "'platform'::text"
+    },
+    {
+        "table_name": "opportunities",
+        "column_name": "is_verified",
+        "data_type": "boolean",
+        "not_null": false,
+        "default_value": "false"
+    },
+    {
+        "table_name": "opportunities",
+        "column_name": "is_active",
+        "data_type": "boolean",
+        "not_null": false,
+        "default_value": "true"
+    },
+    {
+        "table_name": "opportunities",
+        "column_name": "view_count",
+        "data_type": "integer",
+        "not_null": false,
+        "default_value": "0"
+    },
+    {
+        "table_name": "opportunities",
+        "column_name": "created_at",
+        "data_type": "timestamp with time zone",
+        "not_null": false,
+        "default_value": "now()"
+    },
+    {
+        "table_name": "opportunities",
+        "column_name": "updated_at",
+        "data_type": "timestamp with time zone",
+        "not_null": false,
+        "default_value": "now()"
+    },
+    {
+        "table_name": "platform_settings",
+        "column_name": "id",
+        "data_type": "uuid",
+        "not_null": true,
+        "default_value": "uuid_generate_v4()"
+    },
+    {
+        "table_name": "platform_settings",
+        "column_name": "key",
+        "data_type": "text",
+        "not_null": true,
+        "default_value": null
+    },
+    {
+        "table_name": "platform_settings",
+        "column_name": "value",
+        "data_type": "jsonb",
+        "not_null": false,
+        "default_value": null
+    },
+    {
+        "table_name": "platform_settings",
+        "column_name": "description",
+        "data_type": "text",
+        "not_null": false,
+        "default_value": null
+    },
+    {
+        "table_name": "platform_settings",
+        "column_name": "updated_at",
+        "data_type": "timestamp with time zone",
+        "not_null": false,
+        "default_value": "now()"
+    },
+    {
+        "table_name": "post_comments",
+        "column_name": "id",
+        "data_type": "uuid",
+        "not_null": true,
+        "default_value": "uuid_generate_v4()"
+    },
+    {
+        "table_name": "post_comments",
+        "column_name": "post_id",
+        "data_type": "uuid",
+        "not_null": true,
+        "default_value": null
+    },
+    {
+        "table_name": "post_comments",
+        "column_name": "author_id",
+        "data_type": "uuid",
+        "not_null": true,
+        "default_value": null
+    },
+    {
+        "table_name": "post_comments",
+        "column_name": "parent_id",
+        "data_type": "uuid",
+        "not_null": false,
+        "default_value": null
+    },
+    {
+        "table_name": "post_comments",
+        "column_name": "body",
+        "data_type": "text",
+        "not_null": true,
+        "default_value": null
+    },
+    {
+        "table_name": "post_comments",
+        "column_name": "is_deleted",
+        "data_type": "boolean",
+        "not_null": false,
+        "default_value": "false"
+    },
+    {
+        "table_name": "post_comments",
+        "column_name": "created_at",
+        "data_type": "timestamp with time zone",
+        "not_null": false,
+        "default_value": "now()"
+    },
+    {
+        "table_name": "post_reactions",
+        "column_name": "id",
+        "data_type": "uuid",
+        "not_null": true,
+        "default_value": "uuid_generate_v4()"
+    },
+    {
+        "table_name": "post_reactions",
+        "column_name": "post_id",
+        "data_type": "uuid",
+        "not_null": true,
+        "default_value": null
+    },
+    {
+        "table_name": "post_reactions",
+        "column_name": "profile_id",
+        "data_type": "uuid",
+        "not_null": true,
+        "default_value": null
+    },
+    {
+        "table_name": "post_reactions",
+        "column_name": "reaction",
+        "data_type": "text",
+        "not_null": false,
+        "default_value": "'like'::text"
+    },
+    {
+        "table_name": "post_reactions",
+        "column_name": "created_at",
+        "data_type": "timestamp with time zone",
+        "not_null": false,
+        "default_value": "now()"
+    },
+    {
+        "table_name": "posts",
+        "column_name": "id",
+        "data_type": "uuid",
+        "not_null": true,
+        "default_value": "uuid_generate_v4()"
+    },
+    {
+        "table_name": "posts",
+        "column_name": "author_id",
+        "data_type": "uuid",
+        "not_null": true,
+        "default_value": null
+    },
+    {
+        "table_name": "posts",
+        "column_name": "campus_id",
+        "data_type": "uuid",
+        "not_null": false,
+        "default_value": null
+    },
+    {
+        "table_name": "posts",
+        "column_name": "college_id",
+        "data_type": "uuid",
+        "not_null": false,
+        "default_value": null
+    },
+    {
+        "table_name": "posts",
+        "column_name": "title",
+        "data_type": "text",
+        "not_null": false,
+        "default_value": null
+    },
+    {
+        "table_name": "posts",
+        "column_name": "body",
+        "data_type": "text",
+        "not_null": true,
+        "default_value": null
+    },
+    {
+        "table_name": "posts",
+        "column_name": "media_urls",
+        "data_type": "text[]",
+        "not_null": false,
+        "default_value": null
+    },
+    {
+        "table_name": "posts",
+        "column_name": "post_type",
+        "data_type": "text",
+        "not_null": false,
+        "default_value": "'general'::text"
+    },
+    {
+        "table_name": "posts",
+        "column_name": "visibility",
+        "data_type": "text",
+        "not_null": false,
+        "default_value": "'campus'::text"
+    },
+    {
+        "table_name": "posts",
+        "column_name": "is_pinned",
+        "data_type": "boolean",
+        "not_null": false,
+        "default_value": "false"
+    },
+    {
+        "table_name": "posts",
+        "column_name": "is_archived",
+        "data_type": "boolean",
+        "not_null": false,
+        "default_value": "false"
+    },
+    {
+        "table_name": "posts",
+        "column_name": "pin_expires_at",
+        "data_type": "timestamp with time zone",
+        "not_null": false,
+        "default_value": null
+    },
+    {
+        "table_name": "posts",
+        "column_name": "view_count",
+        "data_type": "integer",
+        "not_null": false,
+        "default_value": "0"
+    },
+    {
+        "table_name": "posts",
+        "column_name": "created_at",
+        "data_type": "timestamp with time zone",
+        "not_null": false,
+        "default_value": "now()"
+    },
+    {
+        "table_name": "posts",
+        "column_name": "updated_at",
+        "data_type": "timestamp with time zone",
+        "not_null": false,
+        "default_value": "now()"
+    },
+    {
+        "table_name": "posts",
+        "column_name": "scope",
+        "data_type": "text",
+        "not_null": false,
+        "default_value": "'campus'::text"
+    },
+    {
+        "table_name": "posts",
+        "column_name": "is_official",
+        "data_type": "boolean",
+        "not_null": false,
+        "default_value": "false"
+    },
+    {
+        "table_name": "posts",
+        "column_name": "target_campus_ids",
+        "data_type": "uuid[]",
+        "not_null": false,
+        "default_value": null
+    },
+    {
+        "table_name": "posts",
+        "column_name": "group_id",
+        "data_type": "uuid",
+        "not_null": false,
+        "default_value": null
+    },
+    {
+        "table_name": "posts",
+        "column_name": "category_id",
+        "data_type": "uuid",
+        "not_null": false,
+        "default_value": null
+    },
+    {
+        "table_name": "posts",
+        "column_name": "community_id",
+        "data_type": "uuid",
+        "not_null": false,
+        "default_value": null
+    },
+    {
+        "table_name": "posts",
+        "column_name": "status",
+        "data_type": "text",
+        "not_null": true,
+        "default_value": "'published'::text"
+    },
+    {
+        "table_name": "posts",
+        "column_name": "share_count",
+        "data_type": "integer",
+        "not_null": true,
+        "default_value": "0"
+    },
+    {
+        "table_name": "posts",
+        "column_name": "company_org",
+        "data_type": "text",
+        "not_null": false,
+        "default_value": null
+    },
+    {
+        "table_name": "posts",
+        "column_name": "apply_link",
+        "data_type": "text",
+        "not_null": false,
+        "default_value": null
+    },
+    {
+        "table_name": "posts",
+        "column_name": "deadline",
+        "data_type": "timestamp with time zone",
+        "not_null": false,
+        "default_value": null
+    },
+    {
+        "table_name": "posts",
+        "column_name": "is_paid",
+        "data_type": "boolean",
+        "not_null": false,
+        "default_value": "false"
+    },
+    {
+        "table_name": "posts",
+        "column_name": "stipend_range",
+        "data_type": "text",
+        "not_null": false,
+        "default_value": null
+    },
+    {
+        "table_name": "posts",
+        "column_name": "location_type",
+        "data_type": "text",
+        "not_null": false,
+        "default_value": null
+    },
+    {
+        "table_name": "posts",
+        "column_name": "skills_required",
+        "data_type": "jsonb",
+        "not_null": false,
+        "default_value": null
+    },
+    {
+        "table_name": "posts",
+        "column_name": "is_verified_by",
+        "data_type": "uuid",
+        "not_null": false,
+        "default_value": null
+    },
+    {
+        "table_name": "posts",
+        "column_name": "drive_link",
+        "data_type": "text",
+        "not_null": false,
+        "default_value": null
+    },
+    {
+        "table_name": "posts",
+        "column_name": "external_link",
+        "data_type": "text",
+        "not_null": false,
+        "default_value": null
+    },
+    {
+        "table_name": "posts",
+        "column_name": "file_url",
+        "data_type": "text",
+        "not_null": false,
+        "default_value": null
+    },
+    {
+        "table_name": "posts",
+        "column_name": "held_reason",
+        "data_type": "text",
+        "not_null": false,
+        "default_value": null
+    },
+    {
+        "table_name": "profile_interests",
+        "column_name": "profile_id",
+        "data_type": "uuid",
+        "not_null": true,
+        "default_value": null
+    },
+    {
+        "table_name": "profile_interests",
+        "column_name": "interest_id",
+        "data_type": "uuid",
+        "not_null": true,
+        "default_value": null
+    },
+    {
+        "table_name": "profile_skills",
+        "column_name": "id",
+        "data_type": "uuid",
+        "not_null": true,
+        "default_value": "uuid_generate_v4()"
+    },
+    {
+        "table_name": "profile_skills",
+        "column_name": "profile_id",
+        "data_type": "uuid",
+        "not_null": true,
+        "default_value": null
+    },
+    {
+        "table_name": "profile_skills",
+        "column_name": "skill_id",
+        "data_type": "uuid",
+        "not_null": true,
+        "default_value": null
+    },
+    {
+        "table_name": "profile_skills",
+        "column_name": "level",
+        "data_type": "text",
+        "not_null": false,
+        "default_value": null
+    },
+    {
+        "table_name": "profile_skills",
+        "column_name": "endorsed_count",
+        "data_type": "integer",
+        "not_null": false,
+        "default_value": "0"
+    },
+    {
+        "table_name": "profile_skills",
+        "column_name": "created_at",
+        "data_type": "timestamp with time zone",
+        "not_null": false,
+        "default_value": "now()"
+    },
+    {
+        "table_name": "profiles",
+        "column_name": "id",
+        "data_type": "uuid",
+        "not_null": true,
+        "default_value": null
+    },
+    {
+        "table_name": "profiles",
+        "column_name": "college_id",
+        "data_type": "uuid",
+        "not_null": false,
+        "default_value": null
+    },
+    {
+        "table_name": "profiles",
+        "column_name": "campus_id",
+        "data_type": "uuid",
+        "not_null": false,
+        "default_value": null
+    },
+    {
+        "table_name": "profiles",
+        "column_name": "department_id",
+        "data_type": "uuid",
+        "not_null": false,
+        "default_value": null
+    },
+    {
+        "table_name": "profiles",
+        "column_name": "program_id",
+        "data_type": "uuid",
+        "not_null": false,
+        "default_value": null
+    },
+    {
+        "table_name": "profiles",
+        "column_name": "username",
+        "data_type": "text",
+        "not_null": false,
+        "default_value": null
+    },
+    {
+        "table_name": "profiles",
+        "column_name": "full_name",
+        "data_type": "text",
+        "not_null": false,
+        "default_value": null
+    },
+    {
+        "table_name": "profiles",
+        "column_name": "avatar_url",
+        "data_type": "text",
+        "not_null": false,
+        "default_value": null
+    },
+    {
+        "table_name": "profiles",
+        "column_name": "bio",
+        "data_type": "text",
+        "not_null": false,
+        "default_value": null
+    },
+    {
+        "table_name": "profiles",
+        "column_name": "batch_year",
+        "data_type": "integer",
+        "not_null": false,
+        "default_value": null
+    },
+    {
+        "table_name": "profiles",
+        "column_name": "current_year",
+        "data_type": "integer",
+        "not_null": false,
+        "default_value": null
+    },
+    {
+        "table_name": "profiles",
+        "column_name": "roll_number",
+        "data_type": "text",
+        "not_null": false,
+        "default_value": null
+    },
+    {
+        "table_name": "profiles",
+        "column_name": "github_url",
+        "data_type": "text",
+        "not_null": false,
+        "default_value": null
+    },
+    {
+        "table_name": "profiles",
+        "column_name": "linkedin_url",
+        "data_type": "text",
+        "not_null": false,
+        "default_value": null
+    },
+    {
+        "table_name": "profiles",
+        "column_name": "twitter_url",
+        "data_type": "text",
+        "not_null": false,
+        "default_value": null
+    },
+    {
+        "table_name": "profiles",
+        "column_name": "portfolio_url",
+        "data_type": "text",
+        "not_null": false,
+        "default_value": null
+    },
+    {
+        "table_name": "profiles",
+        "column_name": "resume_url",
+        "data_type": "text",
+        "not_null": false,
+        "default_value": null
+    },
+    {
+        "table_name": "profiles",
+        "column_name": "is_verified",
+        "data_type": "boolean",
+        "not_null": false,
+        "default_value": "false"
+    },
+    {
+        "table_name": "profiles",
+        "column_name": "is_active",
+        "data_type": "boolean",
+        "not_null": false,
+        "default_value": "true"
+    },
+    {
+        "table_name": "profiles",
+        "column_name": "is_public",
+        "data_type": "boolean",
+        "not_null": false,
+        "default_value": "true"
+    },
+    {
+        "table_name": "profiles",
+        "column_name": "last_seen_at",
+        "data_type": "timestamp with time zone",
+        "not_null": false,
+        "default_value": null
+    },
+    {
+        "table_name": "profiles",
+        "column_name": "created_at",
+        "data_type": "timestamp with time zone",
+        "not_null": false,
+        "default_value": "now()"
+    },
+    {
+        "table_name": "profiles",
+        "column_name": "updated_at",
+        "data_type": "timestamp with time zone",
+        "not_null": false,
+        "default_value": "now()"
+    },
+    {
+        "table_name": "profiles",
+        "column_name": "college_email",
+        "data_type": "text",
+        "not_null": false,
+        "default_value": null
+    },
+    {
+        "table_name": "profiles",
+        "column_name": "college_email_verified",
+        "data_type": "boolean",
+        "not_null": false,
+        "default_value": "false"
+    },
+    {
+        "table_name": "profiles",
+        "column_name": "karma_points",
+        "data_type": "integer",
+        "not_null": false,
+        "default_value": "0"
+    },
+    {
+        "table_name": "profiles",
+        "column_name": "streak_days",
+        "data_type": "integer",
+        "not_null": false,
+        "default_value": "0"
+    },
+    {
+        "table_name": "profiles",
+        "column_name": "last_active_date",
+        "data_type": "date",
+        "not_null": false,
+        "default_value": null
+    },
+    {
+        "table_name": "profiles",
+        "column_name": "status",
+        "data_type": "text",
+        "not_null": true,
+        "default_value": "'active'::text"
+    },
+    {
+        "table_name": "profiles",
+        "column_name": "last_streak_date",
+        "data_type": "timestamp with time zone",
+        "not_null": false,
+        "default_value": null
+    },
+    {
+        "table_name": "programs",
+        "column_name": "id",
+        "data_type": "uuid",
+        "not_null": true,
+        "default_value": "uuid_generate_v4()"
+    },
+    {
+        "table_name": "programs",
+        "column_name": "department_id",
+        "data_type": "uuid",
+        "not_null": true,
+        "default_value": null
+    },
+    {
+        "table_name": "programs",
+        "column_name": "name",
+        "data_type": "text",
+        "not_null": true,
+        "default_value": null
+    },
+    {
+        "table_name": "programs",
+        "column_name": "duration_years",
+        "data_type": "integer",
+        "not_null": false,
+        "default_value": "4"
+    },
+    {
+        "table_name": "programs",
+        "column_name": "created_at",
+        "data_type": "timestamp with time zone",
+        "not_null": false,
+        "default_value": "now()"
+    },
+    {
+        "table_name": "reports",
+        "column_name": "id",
+        "data_type": "uuid",
+        "not_null": true,
+        "default_value": "uuid_generate_v4()"
+    },
+    {
+        "table_name": "reports",
+        "column_name": "reporter_id",
+        "data_type": "uuid",
+        "not_null": true,
+        "default_value": null
+    },
+    {
+        "table_name": "reports",
+        "column_name": "ref_type",
+        "data_type": "text",
+        "not_null": true,
+        "default_value": null
+    },
+    {
+        "table_name": "reports",
+        "column_name": "ref_id",
+        "data_type": "uuid",
+        "not_null": true,
+        "default_value": null
+    },
+    {
+        "table_name": "reports",
+        "column_name": "reason",
+        "data_type": "text",
+        "not_null": true,
+        "default_value": null
+    },
+    {
+        "table_name": "reports",
+        "column_name": "description",
+        "data_type": "text",
+        "not_null": false,
+        "default_value": null
+    },
+    {
+        "table_name": "reports",
+        "column_name": "status",
+        "data_type": "text",
+        "not_null": false,
+        "default_value": "'pending'::text"
+    },
+    {
+        "table_name": "reports",
+        "column_name": "reviewed_by",
+        "data_type": "uuid",
+        "not_null": false,
+        "default_value": null
+    },
+    {
+        "table_name": "reports",
+        "column_name": "created_at",
+        "data_type": "timestamp with time zone",
+        "not_null": false,
+        "default_value": "now()"
+    },
+    {
+        "table_name": "saved_posts",
+        "column_name": "user_id",
+        "data_type": "uuid",
+        "not_null": true,
+        "default_value": null
+    },
+    {
+        "table_name": "saved_posts",
+        "column_name": "post_id",
+        "data_type": "uuid",
+        "not_null": true,
+        "default_value": null
+    },
+    {
+        "table_name": "saved_posts",
+        "column_name": "created_at",
+        "data_type": "timestamp with time zone",
+        "not_null": true,
+        "default_value": "now()"
+    },
+    {
+        "table_name": "skills",
+        "column_name": "id",
+        "data_type": "uuid",
+        "not_null": true,
+        "default_value": "uuid_generate_v4()"
+    },
+    {
+        "table_name": "skills",
+        "column_name": "name",
+        "data_type": "text",
+        "not_null": true,
+        "default_value": null
+    },
+    {
+        "table_name": "skills",
+        "column_name": "category",
+        "data_type": "text",
+        "not_null": false,
+        "default_value": null
+    },
+    {
+        "table_name": "skills",
+        "column_name": "created_at",
+        "data_type": "timestamp with time zone",
+        "not_null": false,
+        "default_value": "now()"
+    },
+    {
+        "table_name": "study_group_members",
+        "column_name": "group_id",
+        "data_type": "uuid",
+        "not_null": true,
+        "default_value": null
+    },
+    {
+        "table_name": "study_group_members",
+        "column_name": "user_id",
+        "data_type": "uuid",
+        "not_null": true,
+        "default_value": null
+    },
+    {
+        "table_name": "study_group_members",
+        "column_name": "role",
+        "data_type": "text",
+        "not_null": true,
+        "default_value": "'member'::text"
+    },
+    {
+        "table_name": "study_group_members",
+        "column_name": "joined_at",
+        "data_type": "timestamp with time zone",
+        "not_null": true,
+        "default_value": "now()"
+    },
+    {
+        "table_name": "study_groups",
+        "column_name": "id",
+        "data_type": "uuid",
+        "not_null": true,
+        "default_value": "gen_random_uuid()"
+    },
+    {
+        "table_name": "study_groups",
+        "column_name": "college_id",
+        "data_type": "uuid",
+        "not_null": true,
+        "default_value": null
+    },
+    {
+        "table_name": "study_groups",
+        "column_name": "name",
+        "data_type": "text",
+        "not_null": true,
+        "default_value": null
+    },
+    {
+        "table_name": "study_groups",
+        "column_name": "description",
+        "data_type": "text",
+        "not_null": false,
+        "default_value": null
+    },
+    {
+        "table_name": "study_groups",
+        "column_name": "subject",
+        "data_type": "text",
+        "not_null": false,
+        "default_value": null
+    },
+    {
+        "table_name": "study_groups",
+        "column_name": "created_by",
+        "data_type": "uuid",
+        "not_null": false,
+        "default_value": null
+    },
+    {
+        "table_name": "study_groups",
+        "column_name": "max_size",
+        "data_type": "integer",
+        "not_null": false,
+        "default_value": null
+    },
+    {
+        "table_name": "study_groups",
+        "column_name": "is_active",
+        "data_type": "boolean",
+        "not_null": true,
+        "default_value": "true"
+    },
+    {
+        "table_name": "study_groups",
+        "column_name": "created_at",
+        "data_type": "timestamp with time zone",
+        "not_null": true,
+        "default_value": "now()"
+    },
+    {
+        "table_name": "team_requests",
+        "column_name": "id",
+        "data_type": "uuid",
+        "not_null": true,
+        "default_value": "gen_random_uuid()"
+    },
+    {
+        "table_name": "team_requests",
+        "column_name": "posted_by",
+        "data_type": "uuid",
+        "not_null": true,
+        "default_value": null
+    },
+    {
+        "table_name": "team_requests",
+        "column_name": "campus_id",
+        "data_type": "uuid",
+        "not_null": false,
+        "default_value": null
+    },
+    {
+        "table_name": "team_requests",
+        "column_name": "event_name",
+        "data_type": "text",
+        "not_null": true,
+        "default_value": null
+    },
+    {
+        "table_name": "team_requests",
+        "column_name": "description",
+        "data_type": "text",
+        "not_null": false,
+        "default_value": null
+    },
+    {
+        "table_name": "team_requests",
+        "column_name": "skills_needed",
+        "data_type": "text",
+        "not_null": false,
+        "default_value": null
+    },
+    {
+        "table_name": "team_requests",
+        "column_name": "team_size",
+        "data_type": "integer",
+        "not_null": false,
+        "default_value": null
+    },
+    {
+        "table_name": "team_requests",
+        "column_name": "contact_info",
+        "data_type": "text",
+        "not_null": false,
+        "default_value": null
+    },
+    {
+        "table_name": "team_requests",
+        "column_name": "is_open",
+        "data_type": "boolean",
+        "not_null": true,
+        "default_value": "true"
+    },
+    {
+        "table_name": "team_requests",
+        "column_name": "created_at",
+        "data_type": "timestamp with time zone",
+        "not_null": true,
+        "default_value": "now()"
+    },
+    {
+        "table_name": "travel_buddies",
+        "column_name": "id",
+        "data_type": "uuid",
+        "not_null": true,
+        "default_value": "gen_random_uuid()"
+    },
+    {
+        "table_name": "travel_buddies",
+        "column_name": "posted_by",
+        "data_type": "uuid",
+        "not_null": true,
+        "default_value": null
+    },
+    {
+        "table_name": "travel_buddies",
+        "column_name": "campus_id",
+        "data_type": "uuid",
+        "not_null": false,
+        "default_value": null
+    },
+    {
+        "table_name": "travel_buddies",
+        "column_name": "from_location",
+        "data_type": "text",
+        "not_null": true,
+        "default_value": null
+    },
+    {
+        "table_name": "travel_buddies",
+        "column_name": "to_location",
+        "data_type": "text",
+        "not_null": true,
+        "default_value": null
+    },
+    {
+        "table_name": "travel_buddies",
+        "column_name": "travel_date",
+        "data_type": "date",
+        "not_null": false,
+        "default_value": null
+    },
+    {
+        "table_name": "travel_buddies",
+        "column_name": "transport_mode",
+        "data_type": "text",
+        "not_null": false,
+        "default_value": null
+    },
+    {
+        "table_name": "travel_buddies",
+        "column_name": "seats_available",
+        "data_type": "integer",
+        "not_null": false,
+        "default_value": null
+    },
+    {
+        "table_name": "travel_buddies",
+        "column_name": "contact_info",
+        "data_type": "text",
+        "not_null": false,
+        "default_value": null
+    },
+    {
+        "table_name": "travel_buddies",
+        "column_name": "notes",
+        "data_type": "text",
+        "not_null": false,
+        "default_value": null
+    },
+    {
+        "table_name": "travel_buddies",
+        "column_name": "created_at",
+        "data_type": "timestamp with time zone",
+        "not_null": true,
+        "default_value": "now()"
+    }
+]

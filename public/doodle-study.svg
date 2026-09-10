@@ -1,0 +1,193 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="400" height="400" viewBox="0 0 400 400">
+  <defs>
+    <style>
+      .doodle { fill: none; stroke-linecap: round; stroke-linejoin: round; }
+    </style>
+  </defs>
+
+  <!-- Book 1 -->
+  <g class="doodle" stroke="currentColor" stroke-width="1.2" opacity="0.06">
+    <rect x="20" y="30" width="30" height="40" rx="2" transform="rotate(-8 35 50)"/>
+    <line x1="35" y1="30" x2="35" y2="70" transform="rotate(-8 35 50)"/>
+  </g>
+
+  <!-- Pencil -->
+  <g class="doodle" stroke="currentColor" stroke-width="1.2" opacity="0.06">
+    <line x1="90" y1="20" x2="130" y2="60"/>
+    <polygon points="130,60 135,55 125,55" fill="currentColor" opacity="0.04"/>
+    <line x1="95" y1="25" x2="90" y2="20"/>
+  </g>
+
+  <!-- Formula: E=mc² -->
+  <text x="180" y="45" font-family="serif" font-size="16" font-style="italic" fill="currentColor" opacity="0.05">E=mc²</text>
+
+  <!-- Open book -->
+  <g class="doodle" stroke="currentColor" stroke-width="1" opacity="0.05">
+    <path d="M 260 30 Q 280 25 300 30 L 300 65 Q 280 60 260 65 Z"/>
+    <line x1="280" y1="28" x2="280" y2="62"/>
+    <path d="M 300 30 Q 320 25 340 30 L 340 65 Q 320 60 300 65 Z"/>
+  </g>
+
+  <!-- Graduation cap -->
+  <g class="doodle" stroke="currentColor" stroke-width="1.2" opacity="0.06">
+    <polygon points="370,25 390,35 370,45 350,35"/>
+    <line x1="370" y1="45" x2="370" y2="58"/>
+    <path d="M 358 55 Q 370 62 382 55"/>
+  </g>
+
+  <!-- Calculator -->
+  <g class="doodle" stroke="currentColor" stroke-width="1" opacity="0.05">
+    <rect x="25" y="110" width="24" height="35" rx="3"/>
+    <rect x="28" y="113" width="18" height="8" rx="1"/>
+    <circle cx="31" cy="128" r="1.5"/>
+    <circle cx="37" cy="128" r="1.5"/>
+    <circle cx="43" cy="128" r="1.5"/>
+    <circle cx="31" cy="135" r="1.5"/>
+    <circle cx="37" cy="135" r="1.5"/>
+    <circle cx="43" cy="135" r="1.5"/>
+    <circle cx="31" cy="142" r="1.5"/>
+    <circle cx="37" cy="142" r="1.5"/>
+    <circle cx="43" cy="142" r="1.5"/>
+  </g>
+
+  <!-- Lightbulb (idea) -->
+  <g class="doodle" stroke="currentColor" stroke-width="1.2" opacity="0.06">
+    <path d="M 100 110 Q 100 95 112 95 Q 124 95 124 110 Q 124 118 120 122 L 104 122 Q 100 118 100 110 Z"/>
+    <line x1="106" y1="126" x2="118" y2="126"/>
+    <line x1="108" y1="130" x2="116" y2="130"/>
+    <line x1="112" y1="88" x2="112" y2="82"/>
+    <line x1="98" y1="92" x2="94" y2="88"/>
+    <line x1="126" y1="92" x2="130" y2="88"/>
+  </g>
+
+  <!-- Math symbols -->
+  <text x="180" y="130" font-family="serif" font-size="14" font-style="italic" fill="currentColor" opacity="0.04">∫ dx</text>
+
+  <!-- Atom -->
+  <g class="doodle" stroke="currentColor" stroke-width="0.8" opacity="0.05">
+    <circle cx="300" cy="130" r="3" fill="currentColor" opacity="0.04"/>
+    <ellipse cx="300" cy="130" rx="20" ry="8" transform="rotate(0 300 130)"/>
+    <ellipse cx="300" cy="130" rx="20" ry="8" transform="rotate(60 300 130)"/>
+    <ellipse cx="300" cy="130" rx="20" ry="8" transform="rotate(-60 300 130)"/>
+  </g>
+
+  <!-- Notebook spiral -->
+  <g class="doodle" stroke="currentColor" stroke-width="1" opacity="0.05">
+    <rect x="350" y="100" width="35" height="45" rx="2"/>
+    <circle cx="355" cy="110" r="3"/>
+    <circle cx="355" cy="120" r="3"/>
+    <circle cx="355" cy="130" r="3"/>
+    <circle cx="355" cy="140" r="3"/>
+    <line x1="362" y1="108" x2="380" y2="108"/>
+    <line x1="362" y1="115" x2="378" y2="115"/>
+    <line x1="362" y1="122" x2="380" y2="122"/>
+  </g>
+
+  <!-- Apple (for teacher) -->
+  <g class="doodle" stroke="currentColor" stroke-width="1.2" opacity="0.06">
+    <path d="M 50 210 Q 40 195 50 185 Q 60 175 70 185 Q 80 195 70 210 Q 60 220 50 210 Z"/>
+    <line x1="60" y1="185" x2="58" y2="175"/>
+    <path d="M 58 175 Q 65 172 68 176"/>
+  </g>
+
+  <!-- Ruler -->
+  <g class="doodle" stroke="currentColor" stroke-width="1" opacity="0.05">
+    <rect x="110" y="200" width="60" height="12" rx="1" transform="rotate(25 140 206)"/>
+    <line x1="120" y1="200" x2="120" y2="205" transform="rotate(25 140 206)"/>
+    <line x1="130" y1="200" x2="130" y2="205" transform="rotate(25 140 206)"/>
+    <line x1="140" y1="200" x2="140" y2="207" transform="rotate(25 140 206)"/>
+    <line x1="150" y1="200" x2="150" y2="205" transform="rotate(25 140 206)"/>
+    <line x1="160" y1="200" x2="160" y2="205" transform="rotate(25 140 206)"/>
+  </g>
+
+  <!-- Graph -->
+  <g class="doodle" stroke="currentColor" stroke-width="1" opacity="0.05">
+    <line x1="220" y1="230" x2="220" y2="190"/>
+    <line x1="220" y1="230" x2="260" y2="230"/>
+    <polyline points="222,225 230,215 238,220 248,200 258,195"/>
+  </g>
+
+  <!-- Chemistry flask -->
+  <g class="doodle" stroke="currentColor" stroke-width="1.2" opacity="0.06">
+    <path d="M 310 195 L 310 215 L 295 240 Q 290 250 300 250 L 320 250 Q 330 250 325 240 L 310 215"/>
+    <line x1="307" y1="195" x2="323" y2="195"/>
+    <circle cx="305" cy="235" r="2" fill="currentColor" opacity="0.03"/>
+    <circle cx="315" cy="240" r="1.5" fill="currentColor" opacity="0.03"/>
+  </g>
+
+  <!-- WiFi/signal (connectivity) -->
+  <g class="doodle" stroke="currentColor" stroke-width="1" opacity="0.05">
+    <path d="M 370 230 Q 380 220 390 230" fill="none"/>
+    <path d="M 365 237 Q 380 218 395 237" fill="none"/>
+    <circle cx="380" cy="240" r="2" fill="currentColor" opacity="0.04"/>
+  </g>
+
+  <!-- DNA helix -->
+  <g class="doodle" stroke="currentColor" stroke-width="0.8" opacity="0.05">
+    <path d="M 20 300 Q 35 290 35 300 Q 35 310 20 320 Q 35 330 35 320"/>
+    <path d="M 50 300 Q 35 290 35 300 Q 35 310 50 320 Q 35 330 35 320"/>
+    <line x1="25" y1="305" x2="45" y2="305"/>
+    <line x1="25" y1="315" x2="45" y2="315"/>
+  </g>
+
+  <!-- Coffee cup (study fuel) -->
+  <g class="doodle" stroke="currentColor" stroke-width="1.2" opacity="0.06">
+    <path d="M 100 295 L 105 315 Q 107 320 115 320 Q 123 320 125 315 L 130 295 Z"/>
+    <path d="M 130 300 Q 140 300 140 307 Q 140 314 130 314"/>
+    <path d="M 110 290 Q 112 283 115 290"/>
+    <path d="M 118 288 Q 120 280 122 288"/>
+  </g>
+
+  <!-- Graduation scroll -->
+  <g class="doodle" stroke="currentColor" stroke-width="1" opacity="0.05">
+    <rect x="200" y="290" width="40" height="30" rx="2"/>
+    <circle cx="200" cy="295" r="5"/>
+    <circle cx="240" cy="295" r="5"/>
+    <line x1="215" y1="300" x2="225" y2="300"/>
+    <line x1="210" y1="306" x2="230" y2="306"/>
+    <line x1="212" y1="312" x2="228" y2="312"/>
+  </g>
+
+  <!-- Star -->
+  <g class="doodle" stroke="currentColor" stroke-width="1" opacity="0.05">
+    <polygon points="320,300 324,312 337,312 327,319 330,331 320,323 310,331 313,319 303,312 316,312"/>
+  </g>
+
+  <!-- Pi symbol -->
+  <text x="170" y="310" font-family="serif" font-size="18" font-style="italic" fill="currentColor" opacity="0.04">π</text>
+
+  <!-- Sigma -->
+  <text x="270" y="310" font-family="serif" font-size="16" font-style="italic" fill="currentColor" opacity="0.04">Σ</text>
+
+  <!-- Delta -->
+  <text x="380" y="310" font-family="serif" font-size="14" font-style="italic" fill="currentColor" opacity="0.04">Δ</text>
+
+  <!-- Pen -->
+  <g class="doodle" stroke="currentColor" stroke-width="1.2" opacity="0.06">
+    <line x1="340" y1="350" x2="380" y2="380"/>
+    <polygon points="380,380 385,375 375,375"/>
+    <line x1="343" y1="353" x2="340" y2="350"/>
+  </g>
+
+  <!-- Triangle -->
+  <g class="doodle" stroke="currentColor" stroke-width="1" opacity="0.05">
+    <polygon points="60,370 80,350 100,370"/>
+    <line x1="70" y1="370" x2="70" y2="358"/>
+  </g>
+
+  <!-- Parentheses -->
+  <text x="140" y="375" font-family="serif" font-size="16" fill="currentColor" opacity="0.04">(x)</text>
+
+  <!-- Checkmark -->
+  <g class="doodle" stroke="currentColor" stroke-width="1.5" opacity="0.06">
+    <polyline points="240,365 248,375 265,355"/>
+  </g>
+
+  <!-- Underline scribble -->
+  <g class="doodle" stroke="currentColor" stroke-width="1" opacity="0.05">
+    <path d="M 300 370 Q 310 365 320 370 Q 330 375 340 370"/>
+  </g>
+
+  <!-- Circle doodle -->
+  <circle cx="170" cy="380" r="12" fill="none" stroke="currentColor" stroke-width="0.8" opacity="0.04"/>
+</svg>

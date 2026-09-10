@@ -1,0 +1,552 @@
+[
+    {
+        "tablename": "admin_grants",
+        "indexname": "admin_grants_pkey",
+        "indexdef": "CREATE UNIQUE INDEX admin_grants_pkey ON public.admin_grants USING btree (id)"
+    },
+    {
+        "tablename": "admin_grants",
+        "indexname": "admin_grants_user_id_admin_type_community_id_college_id_cam_key",
+        "indexdef": "CREATE UNIQUE INDEX admin_grants_user_id_admin_type_community_id_college_id_cam_key ON public.admin_grants USING btree (user_id, admin_type, community_id, college_id, campus_id)"
+    },
+    {
+        "tablename": "admin_types",
+        "indexname": "admin_types_key_key",
+        "indexdef": "CREATE UNIQUE INDEX admin_types_key_key ON public.admin_types USING btree (key)"
+    },
+    {
+        "tablename": "admin_types",
+        "indexname": "admin_types_pkey",
+        "indexdef": "CREATE UNIQUE INDEX admin_types_pkey ON public.admin_types USING btree (id)"
+    },
+    {
+        "tablename": "ai_agents",
+        "indexname": "ai_agents_key_key",
+        "indexdef": "CREATE UNIQUE INDEX ai_agents_key_key ON public.ai_agents USING btree (key)"
+    },
+    {
+        "tablename": "ai_agents",
+        "indexname": "ai_agents_pkey",
+        "indexdef": "CREATE UNIQUE INDEX ai_agents_pkey ON public.ai_agents USING btree (id)"
+    },
+    {
+        "tablename": "assignment_questions",
+        "indexname": "assignment_questions_pkey",
+        "indexdef": "CREATE UNIQUE INDEX assignment_questions_pkey ON public.assignment_questions USING btree (id)"
+    },
+    {
+        "tablename": "assignment_seen",
+        "indexname": "assignment_seen_pkey",
+        "indexdef": "CREATE UNIQUE INDEX assignment_seen_pkey ON public.assignment_seen USING btree (assignment_id, student_id)"
+    },
+    {
+        "tablename": "assignment_seen",
+        "indexname": "idx_seen_assignment",
+        "indexdef": "CREATE INDEX idx_seen_assignment ON public.assignment_seen USING btree (assignment_id)"
+    },
+    {
+        "tablename": "assignment_seen",
+        "indexname": "idx_seen_student",
+        "indexdef": "CREATE INDEX idx_seen_student ON public.assignment_seen USING btree (student_id)"
+    },
+    {
+        "tablename": "assignment_submissions",
+        "indexname": "assignment_submissions_assignment_id_student_id_key",
+        "indexdef": "CREATE UNIQUE INDEX assignment_submissions_assignment_id_student_id_key ON public.assignment_submissions USING btree (assignment_id, student_id)"
+    },
+    {
+        "tablename": "assignment_submissions",
+        "indexname": "assignment_submissions_pkey",
+        "indexdef": "CREATE UNIQUE INDEX assignment_submissions_pkey ON public.assignment_submissions USING btree (id)"
+    },
+    {
+        "tablename": "assignment_submissions",
+        "indexname": "idx_submissions_assignment",
+        "indexdef": "CREATE INDEX idx_submissions_assignment ON public.assignment_submissions USING btree (assignment_id)"
+    },
+    {
+        "tablename": "assignment_submissions",
+        "indexname": "idx_submissions_student",
+        "indexdef": "CREATE INDEX idx_submissions_student ON public.assignment_submissions USING btree (student_id)"
+    },
+    {
+        "tablename": "assignments",
+        "indexname": "assignments_pkey",
+        "indexdef": "CREATE UNIQUE INDEX assignments_pkey ON public.assignments USING btree (id)"
+    },
+    {
+        "tablename": "assignments",
+        "indexname": "idx_assignments_campus",
+        "indexdef": "CREATE INDEX idx_assignments_campus ON public.assignments USING btree (campus_id)"
+    },
+    {
+        "tablename": "assignments",
+        "indexname": "idx_assignments_dept",
+        "indexdef": "CREATE INDEX idx_assignments_dept ON public.assignments USING btree (department_id)"
+    },
+    {
+        "tablename": "assignments",
+        "indexname": "idx_assignments_semester",
+        "indexdef": "CREATE INDEX idx_assignments_semester ON public.assignments USING btree (semester)"
+    },
+    {
+        "tablename": "audit_log",
+        "indexname": "audit_log_pkey",
+        "indexdef": "CREATE UNIQUE INDEX audit_log_pkey ON public.audit_log USING btree (id)"
+    },
+    {
+        "tablename": "campus_ai_agents",
+        "indexname": "campus_ai_agents_pkey",
+        "indexdef": "CREATE UNIQUE INDEX campus_ai_agents_pkey ON public.campus_ai_agents USING btree (campus_id, agent_key)"
+    },
+    {
+        "tablename": "campus_insights",
+        "indexname": "campus_insights_pkey",
+        "indexdef": "CREATE UNIQUE INDEX campus_insights_pkey ON public.campus_insights USING btree (id)"
+    },
+    {
+        "tablename": "campuses",
+        "indexname": "campuses_college_id_slug_key",
+        "indexdef": "CREATE UNIQUE INDEX campuses_college_id_slug_key ON public.campuses USING btree (college_id, slug)"
+    },
+    {
+        "tablename": "campuses",
+        "indexname": "campuses_pkey",
+        "indexdef": "CREATE UNIQUE INDEX campuses_pkey ON public.campuses USING btree (id)"
+    },
+    {
+        "tablename": "club_members",
+        "indexname": "club_members_pkey",
+        "indexdef": "CREATE UNIQUE INDEX club_members_pkey ON public.club_members USING btree (club_id, user_id)"
+    },
+    {
+        "tablename": "clubs",
+        "indexname": "clubs_pkey",
+        "indexdef": "CREATE UNIQUE INDEX clubs_pkey ON public.clubs USING btree (id)"
+    },
+    {
+        "tablename": "college_email_verifications",
+        "indexname": "college_email_verifications_pkey",
+        "indexdef": "CREATE UNIQUE INDEX college_email_verifications_pkey ON public.college_email_verifications USING btree (id)"
+    },
+    {
+        "tablename": "college_email_verifications",
+        "indexname": "college_email_verifications_token_key",
+        "indexdef": "CREATE UNIQUE INDEX college_email_verifications_token_key ON public.college_email_verifications USING btree (token)"
+    },
+    {
+        "tablename": "college_features",
+        "indexname": "college_features_college_id_feature_key",
+        "indexdef": "CREATE UNIQUE INDEX college_features_college_id_feature_key ON public.college_features USING btree (college_id, feature)"
+    },
+    {
+        "tablename": "college_features",
+        "indexname": "college_features_pkey",
+        "indexdef": "CREATE UNIQUE INDEX college_features_pkey ON public.college_features USING btree (id)"
+    },
+    {
+        "tablename": "colleges",
+        "indexname": "colleges_pkey",
+        "indexdef": "CREATE UNIQUE INDEX colleges_pkey ON public.colleges USING btree (id)"
+    },
+    {
+        "tablename": "colleges",
+        "indexname": "colleges_slug_key",
+        "indexdef": "CREATE UNIQUE INDEX colleges_slug_key ON public.colleges USING btree (slug)"
+    },
+    {
+        "tablename": "communities",
+        "indexname": "communities_key_key",
+        "indexdef": "CREATE UNIQUE INDEX communities_key_key ON public.communities USING btree (key)"
+    },
+    {
+        "tablename": "communities",
+        "indexname": "communities_pkey",
+        "indexdef": "CREATE UNIQUE INDEX communities_pkey ON public.communities USING btree (id)"
+    },
+    {
+        "tablename": "community_members",
+        "indexname": "community_members_pkey",
+        "indexdef": "CREATE UNIQUE INDEX community_members_pkey ON public.community_members USING btree (community_id, user_id)"
+    },
+    {
+        "tablename": "connections",
+        "indexname": "connections_pkey",
+        "indexdef": "CREATE UNIQUE INDEX connections_pkey ON public.connections USING btree (id)"
+    },
+    {
+        "tablename": "connections",
+        "indexname": "connections_requester_id_receiver_id_key",
+        "indexdef": "CREATE UNIQUE INDEX connections_requester_id_receiver_id_key ON public.connections USING btree (requester_id, receiver_id)"
+    },
+    {
+        "tablename": "connections",
+        "indexname": "idx_connections_receiver",
+        "indexdef": "CREATE INDEX idx_connections_receiver ON public.connections USING btree (receiver_id, status)"
+    },
+    {
+        "tablename": "connections",
+        "indexname": "idx_connections_requester",
+        "indexdef": "CREATE INDEX idx_connections_requester ON public.connections USING btree (requester_id, status)"
+    },
+    {
+        "tablename": "content_categories",
+        "indexname": "content_categories_key_key",
+        "indexdef": "CREATE UNIQUE INDEX content_categories_key_key ON public.content_categories USING btree (key)"
+    },
+    {
+        "tablename": "content_categories",
+        "indexname": "content_categories_pkey",
+        "indexdef": "CREATE UNIQUE INDEX content_categories_pkey ON public.content_categories USING btree (id)"
+    },
+    {
+        "tablename": "content_permissions",
+        "indexname": "content_permissions_actor_type_category_id_key",
+        "indexdef": "CREATE UNIQUE INDEX content_permissions_actor_type_category_id_key ON public.content_permissions USING btree (actor_type, category_id)"
+    },
+    {
+        "tablename": "content_permissions",
+        "indexname": "content_permissions_pkey",
+        "indexdef": "CREATE UNIQUE INDEX content_permissions_pkey ON public.content_permissions USING btree (id)"
+    },
+    {
+        "tablename": "content_reports",
+        "indexname": "content_reports_pkey",
+        "indexdef": "CREATE UNIQUE INDEX content_reports_pkey ON public.content_reports USING btree (id)"
+    },
+    {
+        "tablename": "conversation_participants",
+        "indexname": "conversation_participants_pkey",
+        "indexdef": "CREATE UNIQUE INDEX conversation_participants_pkey ON public.conversation_participants USING btree (conversation_id, profile_id)"
+    },
+    {
+        "tablename": "conversations",
+        "indexname": "conversations_pkey",
+        "indexdef": "CREATE UNIQUE INDEX conversations_pkey ON public.conversations USING btree (id)"
+    },
+    {
+        "tablename": "departments",
+        "indexname": "departments_pkey",
+        "indexdef": "CREATE UNIQUE INDEX departments_pkey ON public.departments USING btree (id)"
+    },
+    {
+        "tablename": "event_registrations",
+        "indexname": "event_registrations_event_id_profile_id_key",
+        "indexdef": "CREATE UNIQUE INDEX event_registrations_event_id_profile_id_key ON public.event_registrations USING btree (event_id, profile_id)"
+    },
+    {
+        "tablename": "event_registrations",
+        "indexname": "event_registrations_pkey",
+        "indexdef": "CREATE UNIQUE INDEX event_registrations_pkey ON public.event_registrations USING btree (id)"
+    },
+    {
+        "tablename": "events",
+        "indexname": "events_pkey",
+        "indexdef": "CREATE UNIQUE INDEX events_pkey ON public.events USING btree (id)"
+    },
+    {
+        "tablename": "group_members",
+        "indexname": "group_members_group_id_profile_id_key",
+        "indexdef": "CREATE UNIQUE INDEX group_members_group_id_profile_id_key ON public.group_members USING btree (group_id, profile_id)"
+    },
+    {
+        "tablename": "group_members",
+        "indexname": "group_members_pkey",
+        "indexdef": "CREATE UNIQUE INDEX group_members_pkey ON public.group_members USING btree (id)"
+    },
+    {
+        "tablename": "group_members",
+        "indexname": "idx_group_members_group",
+        "indexdef": "CREATE INDEX idx_group_members_group ON public.group_members USING btree (group_id)"
+    },
+    {
+        "tablename": "group_members",
+        "indexname": "idx_group_members_profile",
+        "indexdef": "CREATE INDEX idx_group_members_profile ON public.group_members USING btree (profile_id)"
+    },
+    {
+        "tablename": "interests",
+        "indexname": "interests_name_key",
+        "indexdef": "CREATE UNIQUE INDEX interests_name_key ON public.interests USING btree (name)"
+    },
+    {
+        "tablename": "interests",
+        "indexname": "interests_pkey",
+        "indexdef": "CREATE UNIQUE INDEX interests_pkey ON public.interests USING btree (id)"
+    },
+    {
+        "tablename": "lost_found",
+        "indexname": "lost_found_pkey",
+        "indexdef": "CREATE UNIQUE INDEX lost_found_pkey ON public.lost_found USING btree (id)"
+    },
+    {
+        "tablename": "messages",
+        "indexname": "idx_messages_conversation",
+        "indexdef": "CREATE INDEX idx_messages_conversation ON public.messages USING btree (conversation_id, created_at DESC)"
+    },
+    {
+        "tablename": "messages",
+        "indexname": "messages_pkey",
+        "indexdef": "CREATE UNIQUE INDEX messages_pkey ON public.messages USING btree (id)"
+    },
+    {
+        "tablename": "moderation_permissions",
+        "indexname": "moderation_permissions_pkey",
+        "indexdef": "CREATE UNIQUE INDEX moderation_permissions_pkey ON public.moderation_permissions USING btree (id)"
+    },
+    {
+        "tablename": "moderation_permissions",
+        "indexname": "moderation_permissions_user_id_permission_key_campus_id_key",
+        "indexdef": "CREATE UNIQUE INDEX moderation_permissions_user_id_permission_key_campus_id_key ON public.moderation_permissions USING btree (user_id, permission_key, campus_id)"
+    },
+    {
+        "tablename": "moderation_queue",
+        "indexname": "idx_queue_status",
+        "indexdef": "CREATE INDEX idx_queue_status ON public.moderation_queue USING btree (status, created_at)"
+    },
+    {
+        "tablename": "moderation_queue",
+        "indexname": "moderation_queue_pkey",
+        "indexdef": "CREATE UNIQUE INDEX moderation_queue_pkey ON public.moderation_queue USING btree (id)"
+    },
+    {
+        "tablename": "notes",
+        "indexname": "idx_notes_semester",
+        "indexdef": "CREATE INDEX idx_notes_semester ON public.notes USING btree (semester, department_id)"
+    },
+    {
+        "tablename": "notes",
+        "indexname": "idx_notes_subject",
+        "indexdef": "CREATE INDEX idx_notes_subject ON public.notes USING gin (subject gin_trgm_ops)"
+    },
+    {
+        "tablename": "notes",
+        "indexname": "notes_pkey",
+        "indexdef": "CREATE UNIQUE INDEX notes_pkey ON public.notes USING btree (id)"
+    },
+    {
+        "tablename": "notifications",
+        "indexname": "idx_notifications_recipient",
+        "indexdef": "CREATE INDEX idx_notifications_recipient ON public.notifications USING btree (recipient_id, is_read, created_at DESC)"
+    },
+    {
+        "tablename": "notifications",
+        "indexname": "notifications_pkey",
+        "indexdef": "CREATE UNIQUE INDEX notifications_pkey ON public.notifications USING btree (id)"
+    },
+    {
+        "tablename": "official_groups",
+        "indexname": "official_groups_pkey",
+        "indexdef": "CREATE UNIQUE INDEX official_groups_pkey ON public.official_groups USING btree (id)"
+    },
+    {
+        "tablename": "opportunities",
+        "indexname": "idx_opportunities_campus",
+        "indexdef": "CREATE INDEX idx_opportunities_campus ON public.opportunities USING btree (campus_id)"
+    },
+    {
+        "tablename": "opportunities",
+        "indexname": "idx_opportunities_deadline",
+        "indexdef": "CREATE INDEX idx_opportunities_deadline ON public.opportunities USING btree (deadline)"
+    },
+    {
+        "tablename": "opportunities",
+        "indexname": "idx_opportunities_type",
+        "indexdef": "CREATE INDEX idx_opportunities_type ON public.opportunities USING btree (opp_type, is_active)"
+    },
+    {
+        "tablename": "opportunities",
+        "indexname": "opportunities_pkey",
+        "indexdef": "CREATE UNIQUE INDEX opportunities_pkey ON public.opportunities USING btree (id)"
+    },
+    {
+        "tablename": "platform_settings",
+        "indexname": "platform_settings_key_key",
+        "indexdef": "CREATE UNIQUE INDEX platform_settings_key_key ON public.platform_settings USING btree (key)"
+    },
+    {
+        "tablename": "platform_settings",
+        "indexname": "platform_settings_pkey",
+        "indexdef": "CREATE UNIQUE INDEX platform_settings_pkey ON public.platform_settings USING btree (id)"
+    },
+    {
+        "tablename": "post_comments",
+        "indexname": "idx_comments_post",
+        "indexdef": "CREATE INDEX idx_comments_post ON public.post_comments USING btree (post_id, created_at)"
+    },
+    {
+        "tablename": "post_comments",
+        "indexname": "post_comments_pkey",
+        "indexdef": "CREATE UNIQUE INDEX post_comments_pkey ON public.post_comments USING btree (id)"
+    },
+    {
+        "tablename": "post_reactions",
+        "indexname": "post_reactions_pkey",
+        "indexdef": "CREATE UNIQUE INDEX post_reactions_pkey ON public.post_reactions USING btree (id)"
+    },
+    {
+        "tablename": "post_reactions",
+        "indexname": "post_reactions_post_id_profile_id_key",
+        "indexdef": "CREATE UNIQUE INDEX post_reactions_post_id_profile_id_key ON public.post_reactions USING btree (post_id, profile_id)"
+    },
+    {
+        "tablename": "posts",
+        "indexname": "idx_posts_author",
+        "indexdef": "CREATE INDEX idx_posts_author ON public.posts USING btree (author_id)"
+    },
+    {
+        "tablename": "posts",
+        "indexname": "idx_posts_body",
+        "indexdef": "CREATE INDEX idx_posts_body ON public.posts USING gin (body gin_trgm_ops)"
+    },
+    {
+        "tablename": "posts",
+        "indexname": "idx_posts_campus",
+        "indexdef": "CREATE INDEX idx_posts_campus ON public.posts USING btree (campus_id, created_at DESC)"
+    },
+    {
+        "tablename": "posts",
+        "indexname": "idx_posts_category",
+        "indexdef": "CREATE INDEX idx_posts_category ON public.posts USING btree (category_id)"
+    },
+    {
+        "tablename": "posts",
+        "indexname": "idx_posts_college",
+        "indexdef": "CREATE INDEX idx_posts_college ON public.posts USING btree (college_id)"
+    },
+    {
+        "tablename": "posts",
+        "indexname": "idx_posts_community",
+        "indexdef": "CREATE INDEX idx_posts_community ON public.posts USING btree (community_id)"
+    },
+    {
+        "tablename": "posts",
+        "indexname": "idx_posts_group_id",
+        "indexdef": "CREATE INDEX idx_posts_group_id ON public.posts USING btree (group_id)"
+    },
+    {
+        "tablename": "posts",
+        "indexname": "idx_posts_is_official",
+        "indexdef": "CREATE INDEX idx_posts_is_official ON public.posts USING btree (is_official)"
+    },
+    {
+        "tablename": "posts",
+        "indexname": "idx_posts_scope",
+        "indexdef": "CREATE INDEX idx_posts_scope ON public.posts USING btree (scope)"
+    },
+    {
+        "tablename": "posts",
+        "indexname": "idx_posts_scope_created",
+        "indexdef": "CREATE INDEX idx_posts_scope_created ON public.posts USING btree (scope, created_at DESC)"
+    },
+    {
+        "tablename": "posts",
+        "indexname": "idx_posts_type",
+        "indexdef": "CREATE INDEX idx_posts_type ON public.posts USING btree (post_type, campus_id)"
+    },
+    {
+        "tablename": "posts",
+        "indexname": "posts_pkey",
+        "indexdef": "CREATE UNIQUE INDEX posts_pkey ON public.posts USING btree (id)"
+    },
+    {
+        "tablename": "profile_interests",
+        "indexname": "profile_interests_pkey",
+        "indexdef": "CREATE UNIQUE INDEX profile_interests_pkey ON public.profile_interests USING btree (profile_id, interest_id)"
+    },
+    {
+        "tablename": "profile_skills",
+        "indexname": "profile_skills_pkey",
+        "indexdef": "CREATE UNIQUE INDEX profile_skills_pkey ON public.profile_skills USING btree (id)"
+    },
+    {
+        "tablename": "profile_skills",
+        "indexname": "profile_skills_profile_id_skill_id_key",
+        "indexdef": "CREATE UNIQUE INDEX profile_skills_profile_id_skill_id_key ON public.profile_skills USING btree (profile_id, skill_id)"
+    },
+    {
+        "tablename": "profiles",
+        "indexname": "idx_profiles_campus",
+        "indexdef": "CREATE INDEX idx_profiles_campus ON public.profiles USING btree (campus_id)"
+    },
+    {
+        "tablename": "profiles",
+        "indexname": "idx_profiles_college",
+        "indexdef": "CREATE INDEX idx_profiles_college ON public.profiles USING btree (college_id)"
+    },
+    {
+        "tablename": "profiles",
+        "indexname": "idx_profiles_fullname",
+        "indexdef": "CREATE INDEX idx_profiles_fullname ON public.profiles USING gin (full_name gin_trgm_ops)"
+    },
+    {
+        "tablename": "profiles",
+        "indexname": "idx_profiles_karma",
+        "indexdef": "CREATE INDEX idx_profiles_karma ON public.profiles USING btree (karma_points DESC)"
+    },
+    {
+        "tablename": "profiles",
+        "indexname": "idx_profiles_username",
+        "indexdef": "CREATE INDEX idx_profiles_username ON public.profiles USING gin (username gin_trgm_ops)"
+    },
+    {
+        "tablename": "profiles",
+        "indexname": "profiles_pkey",
+        "indexdef": "CREATE UNIQUE INDEX profiles_pkey ON public.profiles USING btree (id)"
+    },
+    {
+        "tablename": "profiles",
+        "indexname": "profiles_username_key",
+        "indexdef": "CREATE UNIQUE INDEX profiles_username_key ON public.profiles USING btree (username)"
+    },
+    {
+        "tablename": "programs",
+        "indexname": "programs_pkey",
+        "indexdef": "CREATE UNIQUE INDEX programs_pkey ON public.programs USING btree (id)"
+    },
+    {
+        "tablename": "reports",
+        "indexname": "reports_pkey",
+        "indexdef": "CREATE UNIQUE INDEX reports_pkey ON public.reports USING btree (id)"
+    },
+    {
+        "tablename": "saved_posts",
+        "indexname": "idx_saved_user",
+        "indexdef": "CREATE INDEX idx_saved_user ON public.saved_posts USING btree (user_id, created_at DESC)"
+    },
+    {
+        "tablename": "saved_posts",
+        "indexname": "saved_posts_pkey",
+        "indexdef": "CREATE UNIQUE INDEX saved_posts_pkey ON public.saved_posts USING btree (user_id, post_id)"
+    },
+    {
+        "tablename": "skills",
+        "indexname": "skills_name_key",
+        "indexdef": "CREATE UNIQUE INDEX skills_name_key ON public.skills USING btree (name)"
+    },
+    {
+        "tablename": "skills",
+        "indexname": "skills_pkey",
+        "indexdef": "CREATE UNIQUE INDEX skills_pkey ON public.skills USING btree (id)"
+    },
+    {
+        "tablename": "study_group_members",
+        "indexname": "study_group_members_pkey",
+        "indexdef": "CREATE UNIQUE INDEX study_group_members_pkey ON public.study_group_members USING btree (group_id, user_id)"
+    },
+    {
+        "tablename": "study_groups",
+        "indexname": "study_groups_pkey",
+        "indexdef": "CREATE UNIQUE INDEX study_groups_pkey ON public.study_groups USING btree (id)"
+    },
+    {
+        "tablename": "team_requests",
+        "indexname": "team_requests_pkey",
+        "indexdef": "CREATE UNIQUE INDEX team_requests_pkey ON public.team_requests USING btree (id)"
+    },
+    {
+        "tablename": "travel_buddies",
+        "indexname": "travel_buddies_pkey",
+        "indexdef": "CREATE UNIQUE INDEX travel_buddies_pkey ON public.travel_buddies USING btree (id)"
+    }
+]

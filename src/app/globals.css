@@ -1,27 +1,1208 @@
-@custom-variant dark (&:where(.dark, .dark *));
-@import "tailwindcss";
+@import 'tailwindcss';
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   CONNECT MY CAMPUS — DYNAMIC COLOR SYSTEM
+   One dark design system; every section gets its own subtle contextual
+   accent identity (gold · blue · cyan · purple · green).
+
+   Component code consumes semantic tokens (var(--accent), var(--panel)…).
+   Sections override the *accent family* via `data-accent`, so every button,
+   badge, active state and glow inside that section recolors contextually —
+   no per-component color props needed.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* ───────────────────────── 1. RAW PALETTE ───────────────────────── */
+/* Single source of truth for accent hues. Semantic tokens below alias these. */
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --accent-gold: #e0a83c;
+  --accent-cyan: #41c8d8;
+  --accent-purple: #a97bf0;
+  --accent-green: #4cbf7a;
+  --accent-blue: #5b9dff;
+  --accent-red: #e0553e;
+
+  /* Text on accent-filled surfaces — accents are light, so dark text wins. */
+  --on-accent: #1d1503;
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+/* ───────────────────────── 2. DARK FOUNDATION (default) ───────────────────────── */
+
+:root {
+  color-scheme: dark;
+  -webkit-color-scheme: dark;
+
+  /* Surfaces */
+  --bg: #0f1115;
+  --bg-secondary: #171a21;
+  --bg-tertiary: #1e222b;
+
+  /* Borders */
+  --border: #2a2f3a;
+  --border-strong: #3a4150;
+
+  /* Text */
+  --text-primary: #e8e9ed;
+  --text-secondary: #8b93a3;
+  --text-muted: #697383;
+
+  /* Brand — gold by default; sections override via [data-accent] */
+  --accent: var(--accent-gold);
+  --accent-light: color-mix(in srgb, var(--accent) 14%, transparent);
+  --accent-text: #f2c96b;
+  --accent-border: color-mix(in srgb, var(--accent) 42%, transparent);
+  --accent-glow: 0 0 22px color-mix(in srgb, var(--accent) 22%, transparent);
+
+  /* Semantic */
+  --success: var(--accent-green);
+  --success-light: color-mix(in srgb, var(--accent-green) 14%, transparent);
+  --success-text: #74dd9e;
+  --success-border: color-mix(in srgb, var(--accent-green) 40%, transparent);
+
+  --warning: #ef9e2e;
+  --warning-light: color-mix(in srgb, var(--warning) 14%, transparent);
+  --warning-text: #f5bc64;
+  --warning-border: color-mix(in srgb, var(--warning) 40%, transparent);
+
+  --danger: var(--accent-red);
+  --danger-light: color-mix(in srgb, var(--accent-red) 14%, transparent);
+  --danger-text: #f07b66;
+  --danger-border: color-mix(in srgb, var(--accent-red) 40%, transparent);
+
+  --purple: var(--accent-purple);
+  --purple-light: color-mix(in srgb, var(--accent-purple) 14%, transparent);
+  --purple-text: #c6a4f8;
+  --purple-border: color-mix(in srgb, var(--accent-purple) 40%, transparent);
+
+  --cyan: var(--accent-cyan);
+  --cyan-light: color-mix(in srgb, var(--accent-cyan) 14%, transparent);
+  --cyan-text: #71dce8;
+  --cyan-border: color-mix(in srgb, var(--accent-cyan) 40%, transparent);
+
+  --blue: var(--accent-blue);
+  --blue-light: color-mix(in srgb, var(--accent-blue) 14%, transparent);
+  --blue-text: #90bdff;
+  --blue-border: color-mix(in srgb, var(--accent-blue) 40%, transparent);
+
+  /* Extra tints used across the app */
+  --orange-light: color-mix(in srgb, var(--warning) 16%, transparent);
+  --orange-text: #fdba74;
+  --orange-border: color-mix(in srgb, var(--warning) 40%, transparent);
+  --yellow-light: color-mix(in srgb, var(--accent-gold) 16%, transparent);
+  --yellow-text: #f5c56b;
+  --gray-soft: #1e222b;
+  --disabled: color-mix(in srgb, var(--accent) 32%, var(--bg-tertiary));
+
+  /* Radii */
+  --radius-sm: 10px;
+  --radius: 12px;
+  --radius-lg: 16px;
+  --radius-xl: 20px;
+
+  /* Elevation */
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.45), 0 1px 3px rgba(0, 0, 0, 0.4);
+  --shadow: 0 4px 6px -2px rgba(0, 0, 0, 0.55), 0 12px 16px -4px rgba(0, 0, 0, 0.5);
+  --shadow-lg: 0 24px 48px -12px rgba(0, 0, 0, 0.72);
+
+  --font-sans: Inter, -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Segoe UI', Roboto, sans-serif;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+/* ───────────────────────── 3. SEMANTIC ALIASES ───────────────────────── */
+/* The requested token names — aliases of the values above so both systems
+   stay in sync. New code should prefer these; legacy names keep working. */
+
+:root {
+  --color-bg: var(--bg);
+  --color-panel: var(--bg-secondary);
+  --color-panel-secondary: var(--bg-tertiary);
+  --color-border: var(--border);
+  --color-text: var(--text-primary);
+  --color-muted: var(--text-secondary);
+
+  --color-primary: var(--accent);
+  --color-primary-soft: var(--accent-light);
+  --color-primary-glow: var(--accent-glow);
+
+  --color-success: var(--success);
+  --color-danger: var(--danger);
+  --color-ai: var(--purple);
+  --color-ai-soft: var(--purple-light);
+  --color-info: var(--cyan);
+  --color-info-soft: var(--cyan-light);
+}
+
+/* ───────────────────────── 4. LIGHT MODE (optional toggle) ───────────────────────── */
+/* Dark is the foundation. Light stays available for toggle users. */
+
+[data-theme='light'] {
+  color-scheme: light;
+  -webkit-color-scheme: light;
+
+  --bg: #fafafb;
+  --bg-secondary: #f2f3f5;
+  --bg-tertiary: #eaebef;
+
+  --border: #e3e5ea;
+  --border-strong: #cfd3db;
+
+  --text-primary: #171a21;
+  --text-secondary: #5c6470;
+  --text-muted: #8a919e;
+
+  --accent: var(--accent-gold);
+  --accent-light: color-mix(in srgb, var(--accent) 14%, white);
+  --accent-text: #8a6418;
+  --accent-border: color-mix(in srgb, var(--accent) 46%, white);
+  --accent-glow: 0 0 18px color-mix(in srgb, var(--accent) 18%, transparent);
+
+  --success: #2fa36a;
+  --success-light: color-mix(in srgb, #2fa36a 13%, white);
+  --success-text: #1e7a4a;
+  --success-border: color-mix(in srgb, #2fa36a 42%, white);
+
+  --warning: #b97c14;
+  --warning-light: color-mix(in srgb, #b97c14 13%, white);
+  --warning-text: #925f0a;
+  --warning-border: color-mix(in srgb, #b97c14 42%, white);
+
+  --danger: #c93c26;
+  --danger-light: color-mix(in srgb, #c93c26 13%, white);
+  --danger-text: #a62b16;
+  --danger-border: color-mix(in srgb, #c93c26 42%, white);
+
+  --purple: #7c5be8;
+  --purple-light: color-mix(in srgb, #7c5be8 13%, white);
+  --purple-text: #5b3fd0;
+  --purple-border: color-mix(in srgb, #7c5be8 42%, white);
+
+  --cyan: #0fa6b8;
+  --cyan-light: color-mix(in srgb, #0fa6b8 13%, white);
+  --cyan-text: #0b7683;
+  --cyan-border: color-mix(in srgb, #0fa6b8 42%, white);
+
+  --blue: #2f6fe0;
+  --blue-light: color-mix(in srgb, #2f6fe0 13%, white);
+  --blue-text: #2456c9;
+  --blue-border: color-mix(in srgb, #2f6fe0 42%, white);
+
+  --orange-light: color-mix(in srgb, #b97c14 13%, white);
+  --orange-text: #925f0a;
+  --orange-border: color-mix(in srgb, #b97c14 42%, white);
+  --yellow-light: color-mix(in srgb, #b97c14 12%, white);
+  --yellow-text: #7a5a10;
+  --gray-soft: #eaebef;
+  --disabled: color-mix(in srgb, var(--accent) 38%, white);
+
+  --shadow-sm: 0 1px 2px rgba(16, 24, 40, 0.05), 0 1px 3px rgba(16, 24, 40, 0.07);
+  --shadow: 0 4px 6px -2px rgba(16, 24, 40, 0.06), 0 12px 16px -4px rgba(16, 24, 40, 0.08);
+  --shadow-lg: 0 24px 48px -12px rgba(16, 24, 40, 0.2);
+}
+
+/* ───────────────────────── 5. CONTEXTUAL SECTION ACCENTS ───────────────────────── */
+/* A section (page route) sets `data-accent` on its shell. This redefines the
+   whole accent family for every descendant — buttons, badges, active nav
+   states, icons and glows all follow the section's color automatically. */
+
+[data-accent='gold'] {
+  --accent: var(--accent-gold);
+  --accent-light: color-mix(in srgb, var(--accent-gold) 14%, transparent);
+  --accent-text: #f2c96b;
+  --accent-border: color-mix(in srgb, var(--accent-gold) 42%, transparent);
+  --accent-glow: 0 0 22px color-mix(in srgb, var(--accent-gold) 22%, transparent);
+}
+[data-accent='cyan'] {
+  --accent: var(--accent-cyan);
+  --accent-light: color-mix(in srgb, var(--accent-cyan) 14%, transparent);
+  --accent-text: var(--cyan-text);
+  --accent-border: color-mix(in srgb, var(--accent-cyan) 42%, transparent);
+  --accent-glow: 0 0 22px color-mix(in srgb, var(--accent-cyan) 22%, transparent);
+}
+[data-accent='purple'] {
+  --accent: var(--accent-purple);
+  --accent-light: color-mix(in srgb, var(--accent-purple) 14%, transparent);
+  --accent-text: var(--purple-text);
+  --accent-border: color-mix(in srgb, var(--accent-purple) 42%, transparent);
+  --accent-glow: 0 0 22px color-mix(in srgb, var(--accent-purple) 22%, transparent);
+}
+[data-accent='green'] {
+  --accent: var(--accent-green);
+  --accent-light: color-mix(in srgb, var(--accent-green) 14%, transparent);
+  --accent-text: var(--success-text);
+  --accent-border: color-mix(in srgb, var(--accent-green) 42%, transparent);
+  --accent-glow: 0 0 22px color-mix(in srgb, var(--accent-green) 22%, transparent);
+}
+[data-accent='blue'] {
+  --accent: var(--accent-blue);
+  --accent-light: color-mix(in srgb, var(--accent-blue) 14%, transparent);
+  --accent-text: var(--blue-text);
+  --accent-border: color-mix(in srgb, var(--accent-blue) 42%, transparent);
+  --accent-glow: 0 0 22px color-mix(in srgb, var(--accent-blue) 22%, transparent);
+}
+
+/* Light-mode adjustments for section accents (darker text on pale surfaces) */
+[data-theme='light'] [data-accent='gold'] {
+  --accent-light: color-mix(in srgb, var(--accent-gold) 14%, white);
+  --accent-text: #8a6418;
+  --accent-border: color-mix(in srgb, var(--accent-gold) 46%, white);
+}
+[data-theme='light'] [data-accent='cyan'] {
+  --accent-light: color-mix(in srgb, var(--accent-cyan) 13%, white);
+  --accent-text: #0b7683;
+  --accent-border: color-mix(in srgb, var(--accent-cyan) 45%, white);
+}
+[data-theme='light'] [data-accent='purple'] {
+  --accent-light: color-mix(in srgb, var(--accent-purple) 13%, white);
+  --accent-text: #5b3fd0;
+  --accent-border: color-mix(in srgb, var(--accent-purple) 45%, white);
+}
+[data-theme='light'] [data-accent='green'] {
+  --accent-light: color-mix(in srgb, var(--accent-green) 13%, white);
+  --accent-text: #1e7a4a;
+  --accent-border: color-mix(in srgb, var(--accent-green) 45%, white);
+}
+[data-theme='light'] [data-accent='blue'] {
+  --accent-light: color-mix(in srgb, var(--accent-blue) 13%, white);
+  --accent-text: #2456c9;
+  --accent-border: color-mix(in srgb, var(--accent-blue) 45%, white);
+}
+
+/* ───────────────────────── 6. CONTEXTUAL GRADIENTS & AMBIENT ───────────────────────── */
+
+/* Subtle ambient accent glow behind heroes / section headers. Use sparingly. */
+.ambient {
+  background-image: radial-gradient(
+    620px 300px at 12% -8%,
+    color-mix(in srgb, var(--accent) 10%, transparent),
+    transparent 72%
+  );
+}
+
+/* AI / premium gradient — purple → cyan */
+.grad-ai {
+  background: linear-gradient(135deg, var(--accent-purple) 0%, var(--accent-cyan) 100%) !important;
+  border: none !important;
+}
+
+/* Brand gradient — gold → light gold */
+.grad-gold {
+  background: linear-gradient(135deg, var(--accent-gold) 0%, #f2c96b 100%) !important;
+  border: none !important;
+}
+
+/* ───────────────────────── Base ───────────────────────── */
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background: var(--bg-secondary);
+  background-image: url('/whatsapp-doodles-light.svg');
+  background-repeat: repeat;
+  background-size: 360px 360px;
+  color: var(--text-primary);
+  font-family: var(--font-sans);
+  margin: 0;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+  letter-spacing: -0.011em;
+  transition:
+    background-color 0.25s ease,
+    color 0.25s ease;
+}
+[data-theme='light'] body {
+  background-image: url('/whatsapp-doodles-dark.svg');
+}
+
+h1,
+h2,
+h3,
+h4 {
+  letter-spacing: -0.02em;
+}
+
+/* ───────────────────────── Base interactions ───────────────────────── */
+
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+button,
+input,
+select,
+textarea,
+a {
+  transition:
+    background-color 0.2s ease,
+    border-color 0.2s ease,
+    color 0.2s ease,
+    box-shadow 0.2s ease,
+    opacity 0.15s ease,
+    transform 0.15s ease;
+}
+
+button {
+  font-family: inherit;
+}
+
+/* Disabled buttons sit on the dark accent-tinted `--disabled` mix — muted text
+   keeps them readable (near-black on-accent would vanish there). */
+button:disabled {
+  cursor: not-allowed;
+  color: var(--text-muted) !important;
+}
+
+/* ── WhatsApp-style doodle chat background ──
+   Faint hand-drawn doodles tile behind the chat thread, like WhatsApp's
+   default wallpaper. Stroke color flips with the theme so it stays subtle
+   on both surfaces. */
+.chat-doodle-bg {
+  background-color: var(--bg-secondary);
+  background-image: url('/chat-doodles-light.svg');
+  background-size: 360px 360px;
+  background-repeat: repeat;
+}
+[data-theme='light'] .chat-doodle-bg {
+  background-image: url('/chat-doodles-dark.svg');
+}
+
+/* Card hover — border + shadow pick up the section accent */
+.card-hover {
+  transition:
+    transform 0.18s ease,
+    box-shadow 0.18s ease,
+    border-color 0.18s ease;
+}
+.card-hover:hover {
+  transform: translateY(-2px);
+  box-shadow:
+    var(--shadow),
+    0 0 0 1px var(--accent-border),
+    var(--accent-glow);
+  border-color: var(--accent-border);
+}
+
+/* ── Premium polish: gradient text, glow accents, animated ambient ── */
+
+/* Headline text that carries the section accent gradient */
+.text-gradient {
+  background: linear-gradient(120deg, var(--accent) 0%, color-mix(in srgb, var(--accent) 45%, #ffffff) 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  color: transparent;
+}
+
+/* Glow ring around key cards (profile banner, featured cards) */
+.card-premium {
+  position: relative;
+  border: 1px solid color-mix(in srgb, var(--accent) 28%, var(--border));
+  box-shadow:
+    var(--shadow-sm),
+    0 0 0 1px color-mix(in srgb, var(--accent) 6%, transparent);
+  transition:
+    transform 0.2s ease,
+    box-shadow 0.2s ease,
+    border-color 0.2s ease;
+}
+.card-premium:hover {
+  transform: translateY(-3px);
+  border-color: color-mix(in srgb, var(--accent) 55%, var(--border));
+  box-shadow:
+    var(--shadow),
+    0 0 0 1px var(--accent-border),
+    var(--accent-glow);
+}
+
+/* Soft pulsing ambient orb used behind hero sections */
+@keyframes orbDrift {
+  0%,
+  100% {
+    transform: translate(0, 0) scale(1);
+  }
+  50% {
+    transform: translate(12px, -10px) scale(1.08);
+  }
+}
+.orb {
+  position: absolute;
+  border-radius: 50%;
+  pointer-events: none;
+  filter: blur(46px);
+  opacity: 0.4;
+  animation: orbDrift 9s ease-in-out infinite;
+}
+
+/* Shine sweep on primary CTA buttons */
+.btn-shine {
+  position: relative;
+  overflow: hidden;
+}
+.btn-shine::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -70%;
+  width: 50%;
+  height: 100%;
+  background: linear-gradient(105deg, transparent, rgba(255, 255, 255, 0.35), transparent);
+  transform: skewX(-20deg);
+  transition: left 0.5s ease;
+}
+.btn-shine:hover::after {
+  left: 130%;
+}
+
+/* Slight entrance lift for cards as they appear */
+.rise-in {
+  animation: riseIn 0.35s cubic-bezier(0.2, 0.8, 0.3, 1) both;
+}
+@keyframes riseIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* Gently dim images so white-backed icons don't glare on dark surfaces */
+img {
+  filter: brightness(0.92) contrast(1.02);
+}
+[data-theme='light'] img {
+  filter: none;
+}
+
+/* Profile photos must stay true-to-life — no dimming */
+img.avatar-img {
+  filter: none !important;
+}
+
+/* ───────────────────────── Skeleton / shimmer ───────────────────────── */
+
+.skeleton {
+  position: relative;
+  overflow: hidden;
+  background: var(--bg-tertiary);
+  border-radius: var(--radius-sm);
+}
+.skeleton::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  transform: translateX(-100%);
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.07), transparent);
+  animation: shimmer 1.5s infinite;
+}
+[data-theme='light'] .skeleton::after {
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.55), transparent);
+}
+@keyframes shimmer {
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+/* ───────────────────────── Scrollbars ───────────────────────── */
+
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+*::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+*::-webkit-scrollbar-thumb {
+  background: var(--border-strong);
+  border-radius: 8px;
+  border: 2px solid transparent;
+  background-clip: content-box;
+}
+*::-webkit-scrollbar-thumb:hover {
+  background-color: var(--text-muted);
+}
+*::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+/* ───────────────────────── Reduced motion ───────────────────────── */
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* ───────────────────────── Misc helpers ───────────────────────── */
+
+.line-clamp-2 {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+/* ───────────────────────── Theme toggle button ───────────────────────── */
+
+.theme-toggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  border: 1px solid var(--border-strong);
+  background: var(--bg);
+  color: var(--text-primary);
+  box-shadow: var(--shadow);
+  cursor: pointer;
+  font-family: inherit;
+  transition:
+    background 0.2s ease,
+    border-color 0.2s ease,
+    color 0.2s ease,
+    transform 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+.theme-toggle:hover {
+  transform: scale(1.08) rotate(10deg);
+  border-color: var(--accent);
+  color: var(--accent);
+  box-shadow: var(--shadow-sm);
+}
+
+.theme-toggle:active {
+  transform: scale(0.92);
+}
+
+.theme-toggle svg {
+  transition: transform 0.3s ease;
+}
+
+.theme-toggle--floating {
+  position: fixed;
+  top: 14px;
+  right: 14px;
+  z-index: 999;
+}
+
+.theme-toggle--inline {
+  width: 36px;
+  height: 36px;
+  background: var(--bg-tertiary);
+  box-shadow: none;
+}
+
+body:has(.app-topbar) .theme-toggle--floating {
+  display: none;
+}
+
+/* Standalone pages (profile etc.) render their own header controls — the
+   floating toggle would cover their Edit / action buttons, so hide it there. */
+body:has(.standalone-bottomnav) .theme-toggle--floating {
+  display: none;
+}
+
+@media (max-width: 768px) {
+  body:has(.mobile-topbar) .theme-toggle--floating {
+    display: none;
+  }
+}
+
+/* ───────────────────────── Command palette ───────────────────────── */
+
+.cmd-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  background: rgba(15, 18, 26, 0.55);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding: 12vh 16px 16px;
+  animation: cmdFade 0.12s ease;
+}
+
+.cmd-panel {
+  width: 100%;
+  max-width: 580px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-lg);
+  overflow: hidden;
+  animation: cmdPop 0.14s cubic-bezier(0.2, 0.8, 0.3, 1);
+}
+
+@keyframes cmdFade {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+@keyframes cmdPop {
+  from {
+    opacity: 0;
+    transform: translateY(-6px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.cmd-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  text-align: left;
+  background: none;
+  border: none;
+  padding: 11px 16px;
+  font-size: 14px;
+  color: var(--text-primary);
+  cursor: pointer;
+  font-family: inherit;
+}
+.cmd-item:hover,
+.cmd-item[data-active='true'] {
+  background: var(--accent-light);
+  color: var(--accent-text);
+}
+.cmd-item[data-active='true'] {
+  box-shadow: inset 2px 0 0 var(--accent);
+}
+
+/* ───────────────────────── Mobile FAB ───────────────────────── */
+
+.fab-wrap {
+  position: fixed;
+  right: 16px;
+  bottom: 84px;
+  z-index: 60;
+  display: none;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 10px;
+}
+.fab-btn {
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  border: none;
+  background: var(--accent);
+  color: var(--on-accent);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow:
+    var(--shadow-lg),
+    0 0 24px color-mix(in srgb, var(--accent) 28%, transparent);
+  cursor: pointer;
+  font-family: inherit;
+  transition:
+    transform 0.2s ease,
+    box-shadow 0.2s ease,
+    background-color 0.2s ease;
+}
+.fab-btn:hover {
+  transform: scale(1.06);
+  box-shadow:
+    var(--shadow-lg),
+    0 0 32px color-mix(in srgb, var(--accent) 40%, transparent);
+}
+
+@media (max-width: 768px) {
+  .fab-wrap {
+    display: flex;
+  }
+}
+
+/* ───────────────────────── Mobile responsiveness ───────────────────────── */
+
+/* Kill the grey tap flash on mobile taps */
+button,
+a,
+[role='button'] {
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* iOS Safari auto-zooms into any input smaller than 16px — bump them on
+   small touch screens so tapping a field never zooms the page. */
+@media (max-width: 768px) and (pointer: coarse) {
+  input,
+  select,
+  textarea {
+    font-size: 16px !important;
+  }
+}
+
+/* Notes AI search keeps its “Ask AI” button clear of the text on tiny screens */
+@media (max-width: 400px) {
+  .ai-search-input {
+    padding-right: 78px !important;
+  }
+  .ai-search-btn {
+    padding: 7px 10px !important;
+  }
+}
+
+/* Safe areas — keep bars clear of the notch and home indicator */
+.mobile-topbar {
+  padding-top: max(12px, env(safe-area-inset-top)) !important;
+}
+
+.mobile-bottomnav {
+  padding-bottom: env(safe-area-inset-bottom);
+}
+.mobile-bottomnav button {
+  min-height: 50px;
+  padding-bottom: max(8px, env(safe-area-inset-bottom)) !important;
+}
+
+/* Standalone fixed bottom navs (profile pages — no app shell) */
+.standalone-bottomnav {
+  display: none;
+  padding-bottom: env(safe-area-inset-bottom);
+}
+.standalone-bottomnav button {
+  min-height: 50px;
+  padding-bottom: max(8px, env(safe-area-inset-bottom)) !important;
+}
+
+@media (max-width: 768px) {
+  .standalone-bottomnav {
+    display: block !important;
+  }
+
+  /* Keep content clear of the bottom bar + home indicator */
+  .main-content {
+    padding-bottom: calc(88px + env(safe-area-inset-bottom)) !important;
+  }
+  .fab-wrap {
+    bottom: calc(84px + env(safe-area-inset-bottom)) !important;
+  }
+}
+
+/* ── Mobile horizontal scroll sections ──
+   A row of cards that reads as a clean vertical list on desktop but becomes
+   a swipeable snap-scroll strip on mobile (the pattern users expect for
+   hackathons, internships, communities, etc.). */
+.h-scroll-cards {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.h-scroll-cards > * {
+  flex-shrink: 0;
+}
+@media (max-width: 768px) {
+  .h-scroll-cards {
+    flex-direction: row;
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    margin-left: -20px;
+    margin-right: -20px;
+    padding-left: 20px;
+    padding-right: 20px;
+    padding-bottom: 6px;
+    -webkit-overflow-scrolling: touch;
+  }
+  .h-scroll-cards > * {
+    flex: 0 0 82%;
+    max-width: 300px;
+    scroll-snap-align: start;
+  }
+}
+
+/* Post/discussion cards — never let content force the card wider than the
+   screen (long URLs, code, unbroken words cut the right side on mobile). */
+.post-card {
+  max-width: 100%;
+  min-width: 0;
+  overflow-wrap: break-word;
+  word-break: break-word;
+}
+.post-card > div {
+  min-width: 0;
+}
+
+/* Small stat cards (e.g. the home feed Pulse cards) — grid layout only, so
+   every card stays fully visible (no cut-off, no scroll needed). */
+.stat-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 10px;
+}
+@media (max-width: 768px) {
+  .stat-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 8px;
+  }
+}
+
+/* Filter/tab chip rows — one scrollable row on desktop (when they don't fit),
+   but on mobile the chips WRAP so every option is visible like on a tablet —
+   nothing hidden behind a scroll. */
+.chips-wrap {
+  flex-wrap: nowrap;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+@media (max-width: 768px) {
+  .chips-wrap {
+    flex-wrap: wrap;
+    overflow-x: visible;
+    margin-left: 0 !important;
+    margin-right: 0 !important;
+    padding-left: 0 !important;
+    padding-right: 0 !important;
+    -webkit-mask-image: none !important;
+    mask-image: none !important;
+  }
+}
+
+/* Same idea for grids (e.g. the landing features) — auto-fit columns on
+   desktop, a swipeable strip on mobile. */
+.h-scroll-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 14px;
+}
+@media (max-width: 768px) {
+  .h-scroll-grid {
+    display: flex;
+    flex-direction: row;
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    margin-left: -20px;
+    margin-right: -20px;
+    padding-left: 20px;
+    padding-right: 20px;
+    padding-bottom: 6px;
+    -webkit-overflow-scrolling: touch;
+  }
+  .h-scroll-grid > * {
+    flex: 0 0 78%;
+    max-width: 280px;
+    scroll-snap-align: start;
+  }
+}
+
+/* Sidebar premium — gradient active nav pill */
+.nav-pill {
+  transition:
+    background 0.18s ease,
+    box-shadow 0.18s ease,
+    color 0.18s ease;
+}
+.nav-pill:hover {
+  background: var(--accent-light);
+  color: var(--accent-text);
+}
+
+/* Topbar search — accent ring + glow on hover/focus */
+.search-pill {
+  transition:
+    border-color 0.18s ease,
+    box-shadow 0.18s ease;
+}
+.search-pill:hover {
+  border-color: var(--accent-border);
+  box-shadow:
+    0 0 0 1px var(--accent-border),
+    var(--accent-glow);
+}
+
+/* ── Landing page ── */
+.landing-nav > div {
+  flex-wrap: wrap;
+  row-gap: 10px;
+}
+
+@media (max-width: 480px) {
+  .landing-hero {
+    font-size: 38px !important;
+  }
+  .landing-cta {
+    padding: 36px 24px !important;
+  }
+}
+@media (max-width: 360px) {
+  .landing-hero {
+    font-size: 31px !important;
+  }
+}
+
+/* Landing hero — text + phone mockup side by side on desktop, stacked on mobile */
+.landing-hero-grid {
+  display: grid;
+  grid-template-columns: 1.15fr 0.85fr;
+  gap: 48px;
+  align-items: center;
+}
+@media (max-width: 880px) {
+  .landing-hero-grid {
+    grid-template-columns: 1fr;
+    gap: 48px;
+  }
+}
+
+/* Landing stats — 4 across on desktop, 2x2 on small screens */
+.landing-stats {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 10px;
+  max-width: 520px;
+}
+/* Stat cards (opportunities / notes / discussions / hackathons) — clean 2x2
+   grid on every mobile width; never squeeze into 4 cramped columns. */
+@media (max-width: 768px) {
+  .landing-stats {
+    grid-template-columns: repeat(2, 1fr);
+    max-width: none;
+    gap: 8px;
+  }
+  .landing-stats > div {
+    padding: 8px 10px !important;
+  }
+  .landing-stats p:first-child {
+    font-size: 18px !important;
+    margin-bottom: 3px !important;
+  }
+  .landing-stats p:last-child {
+    font-size: 10px !important;
+    line-height: 1.35 !important;
+  }
+}
+
+/* ── Admin panel ── */
+@media (max-width: 768px) {
+  .admin-header {
+    padding: 12px 16px !important;
+  }
+  .admin-content {
+    padding: 16px !important;
+  }
+  .admin-tabs {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+  }
+  .admin-tabs::-webkit-scrollbar {
+    display: none;
+  }
+  .admin-tabs button {
+    white-space: nowrap;
+    padding: 10px 14px !important;
+  }
+}
+
+/* ── Meetings tabs ── */
+@media (max-width: 480px) {
+  .meetings-tabs button {
+    padding: 9px 8px !important;
+    gap: 5px !important;
+    font-size: 12px !important;
+  }
+}
+
+/* Safety net — never force horizontal scrolling on mobile. `overflow: clip`
+   does NOT create a scroll container, so sticky bars keep working. */
+@media (max-width: 768px) {
+  html,
+  body {
+    overflow-x: clip;
+  }
+}
+
+/* ───────────────────────── Page transitions ───────────────────────── */
+/* Route changes remount the main content (keyed on pathname); this fades +
+   slides the new page in for a softer, more premium feel. */
+.page-enter {
+  animation: pageIn 0.22s ease;
+}
+@keyframes pageIn {
+  from {
+    opacity: 0;
+    transform: translateY(5px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* ───────────────────────── Press feedback ───────────────────────── */
+/* Every tappable element gets a subtle press-down. Class-specific rules
+   (theme-toggle, fab-btn, card-hover) override via higher specificity. */
+button:not(:disabled):active,
+a:active,
+[role='button']:not(:disabled):active {
+  transform: scale(0.97);
+}
+.card-hover:active {
+  transform: translateY(-1px) scale(0.99);
+}
+
+/* ───────────────────────── Scrolling chip rows ───────────────────────── */
+/* Fades the edges of horizontally scrollable chip/tab rows so users can
+   tell there is more content past the fold. */
+.fade-x {
+  -webkit-mask-image: linear-gradient(90deg, transparent 0, #000 14px, #000 calc(100% - 14px), transparent 100%);
+  mask-image: linear-gradient(90deg, transparent 0, #000 14px, #000 calc(100% - 14px), transparent 100%);
+}
+
+/* ───────────────────────── Toasts ───────────────────────── */
+.toast-viewport {
+  position: fixed;
+  left: 50%;
+  transform: translateX(-50%);
+  bottom: calc(96px + env(safe-area-inset-bottom));
+  z-index: 9999;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  pointer-events: none;
+  max-width: calc(100vw - 32px);
+}
+@media (min-width: 769px) {
+  .toast-viewport {
+    bottom: 24px;
+  }
+}
+.toast {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--bg-tertiary);
+  color: var(--text-primary);
+  border: 1px solid var(--border-strong);
+  padding: 10px 18px;
+  border-radius: 999px;
+  font-size: 13px;
+  font-weight: 600;
+  box-shadow: var(--shadow-lg);
+  animation: toastIn 0.18s ease;
+  white-space: nowrap;
+}
+.toast--success {
+  border-color: var(--success-border);
+  color: var(--success-text);
+}
+.toast--danger {
+  border-color: var(--danger-border);
+  color: var(--danger-text);
+}
+@keyframes toastIn {
+  from {
+    opacity: 0;
+    transform: translateY(8px) scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes slideDown {
+  from {
+    transform: translateY(-100%);
+  }
+  to {
+    transform: translateY(0);
+  }
+}
+
+/* ───────────────────────── Like pop ───────────────────────── */
+.like-pop {
+  animation: likePop 0.32s cubic-bezier(0.2, 0.8, 0.3, 1.2);
+}
+@keyframes likePop {
+  0% {
+    transform: scale(1);
+  }
+  45% {
+    transform: scale(1.35);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+/* ───────────────────────── Mobile bottom sheets ───────────────────────── */
+/* Dialogs become bottom sheets on small screens — thumb-friendly, feels native. */
+.modal-sheet {
+  animation: sheetIn 0.18s ease;
+}
+@keyframes sheetIn {
+  from {
+    opacity: 0;
+    transform: translateY(18px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+@media (max-width: 480px) {
+  .modal-overlay {
+    align-items: flex-end !important;
+    padding: 0 !important;
+  }
+  .modal-sheet {
+    width: 100% !important;
+    max-width: none !important;
+    border-radius: 20px 20px 0 0 !important;
+    border-bottom: none !important;
+    padding-bottom: max(20px, env(safe-area-inset-bottom)) !important;
+  }
+}
+
+/* ───────────────────────── Keyboard-aware bars ───────────────────────── */
+/* Toggled by MobileBottomNav while the user types — keeps the bottom bar and
+   FAB out of the on-screen keyboard's way. Wins over the media-query rules. */
+html.nav-hidden .mobile-bottomnav,
+html.nav-hidden .fab-wrap {
+  display: none !important;
+}
+
+/* Don't let the fixed bars chain-scroll (bounce the page behind them). */
+.mobile-topbar,
+.mobile-bottomnav,
+.standalone-bottomnav,
+.fab-wrap {
+  overscroll-behavior: contain;
+}
+
+/* ── Compete / Rankings: collapse secondary leaderboard column on narrow screens ── */
+@media (max-width: 480px) {
+  .hide-mobile-soft {
+    display: none;
+  }
 }
