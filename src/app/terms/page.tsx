@@ -75,7 +75,7 @@ export default function TermsOfServicePage() {
               marginBottom: 16,
             }}
           >
-            ← Back to Campus Connect
+            ← Back to ConnectToCampus
           </Link>
           <h1
             style={{
@@ -94,26 +94,26 @@ export default function TermsOfServicePage() {
 
         {/* Introduction */}
         <p style={textStyle}>
-          Welcome to <strong>Campus Connect</strong> (&ldquo;Campus Connect,&rdquo; &ldquo;we,&rdquo; &ldquo;our,&rdquo; or &ldquo;us&rdquo;).
+          Welcome to <strong>ConnectToCampus</strong> (&ldquo;ConnectToCampus,&rdquo; &ldquo;we,&rdquo; &ldquo;our,&rdquo; or &ldquo;us&rdquo;).
         </p>
         <p style={textStyle}>
-          Campus Connect is a platform designed to help students connect, communicate, learn, participate in activities, and access student-focused features and services.
+          ConnectToCampus is a platform designed to help students connect, communicate, learn, participate in activities, and access student-focused features and services.
         </p>
         <p style={textStyle}>
-          These Terms of Service (&ldquo;Terms&rdquo;) govern your access to and use of the Campus Connect website, applications, games, and related services (collectively, the &ldquo;Service&rdquo;). By accessing or using the Service, you agree to be bound by these Terms. If you do not agree, do not use the Service.
+          These Terms of Service (&ldquo;Terms&rdquo;) govern your access to and use of the ConnectToCampus website, applications, games, and related services (collectively, the &ldquo;Service&rdquo;). By accessing or using the Service, you agree to be bound by these Terms. If you do not agree, do not use the Service.
         </p>
 
         {/* Section 1 */}
         <div style={sectionStyle}>
           <h2 style={headingStyle}>1. Eligibility</h2>
-          <p style={textStyle}>You must meet the following requirements to use Campus Connect:</p>
+          <p style={textStyle}>You must meet the following requirements to use ConnectToCampus:</p>
           <ul style={listStyle}>
             <li>You must be at least 13 years of age (or the minimum age required in your jurisdiction).</li>
             <li>You must have the legal capacity to enter into a binding agreement.</li>
             <li>You must not be barred from using the Service under applicable law.</li>
             <li>If you are using the Service on behalf of an organization, you represent that you have the authority to bind that organization to these Terms.</li>
           </ul>
-          <p style={textStyle}>By using Campus Connect, you represent and warrant that you meet all eligibility requirements.</p>
+          <p style={textStyle}>By using ConnectToCampus, you represent and warrant that you meet all eligibility requirements.</p>
         </div>
 
         {/* Section 2 */}
@@ -134,7 +134,7 @@ export default function TermsOfServicePage() {
         {/* Section 3 */}
         <div style={sectionStyle}>
           <h2 style={headingStyle}>3. Acceptable Use</h2>
-          <p style={textStyle}>When using Campus Connect, you agree to:</p>
+          <p style={textStyle}>When using ConnectToCampus, you agree to:</p>
           <ul style={listStyle}>
             <li>Use the Service only for lawful purposes and in accordance with these Terms.</li>
             <li>Respect the rights and dignity of other users.</li>
@@ -163,13 +163,13 @@ export default function TermsOfServicePage() {
         {/* Section 4 */}
         <div style={sectionStyle}>
           <h2 style={headingStyle}>4. User Content</h2>
-          <p style={textStyle}>Campus Connect may allow you to create, post, upload, share, or otherwise make available content (&ldquo;User Content&rdquo;), including but not limited to text, posts, comments, messages, images, files, notes, and other materials.</p>
+          <p style={textStyle}>ConnectToCampus may allow you to create, post, upload, share, or otherwise make available content (&ldquo;User Content&rdquo;), including but not limited to text, posts, comments, messages, images, files, notes, and other materials.</p>
 
           <h3 style={subHeadingStyle}>4.1 Ownership</h3>
-          <p style={textStyle}>You retain ownership of your User Content. Posting or sharing content on Campus Connect does not transfer ownership to us.</p>
+          <p style={textStyle}>You retain ownership of your User Content. Posting or sharing content on ConnectToCampus does not transfer ownership to us.</p>
 
           <h3 style={subHeadingStyle}>4.2 License Grant</h3>
-          <p style={textStyle}>By posting User Content on Campus Connect, you grant us a non-exclusive, worldwide, royalty-free, sublicensable, and transferable license to use, reproduce, modify, adapt, publish, translate, create derivative works from, distribute, and display such content in connection with operating and providing the Service.</p>
+          <p style={textStyle}>By posting User Content on ConnectToCampus, you grant us a non-exclusive, worldwide, royalty-free, sublicensable, and transferable license to use, reproduce, modify, adapt, publish, translate, create derivative works from, distribute, and display such content in connection with operating and providing the Service.</p>
           <p style={textStyle}>This license is limited to the purpose of operating, improving, and promoting the Service and ends when you delete your content or your account, except where content has been shared with others who have not deleted it, or where cached or archived copies persist.</p>
 
           <h3 style={subHeadingStyle}>4.3 Content Responsibility</h3>
@@ -182,7 +182,7 @@ export default function TermsOfServicePage() {
         {/* Section 5 */}
         <div style={sectionStyle}>
           <h2 style={headingStyle}>5. Games, Competitions, and Interactive Features</h2>
-          <p style={textStyle}>Campus Connect may offer games, quizzes, competitions, rankings, leaderboards, and other interactive features.</p>
+          <p style={textStyle}>ConnectToCampus may offer games, quizzes, competitions, rankings, leaderboards, and other interactive features.</p>
           <ul style={listStyle}>
             <li>Some features may allow participation without creating an account, using a temporary identifier or display name.</li>
             <li>You agree to participate fairly and not to cheat, use bots, exploit vulnerabilities, or use any unauthorized tools or methods to gain an unfair advantage.</li>
@@ -195,7 +195,7 @@ export default function TermsOfServicePage() {
         {/* Section 6 */}
         <div style={sectionStyle}>
           <h2 style={headingStyle}>6. Intellectual Property</h2>
-          <p style={textStyle}>The Service, including its design, code, features, graphics, logos, trademarks, and documentation, is owned by or licensed to Campus Connect and is protected by intellectual property laws.</p>
+          <p style={textStyle}>The Service, including its design, code, features, graphics, logos, trademarks, and documentation, is owned by or licensed to ConnectToCampus and is protected by intellectual property laws.</p>
           <p style={textStyle}>You may not copy, modify, distribute, sell, lease, reverse-engineer, or create derivative works based on the Service or any part thereof without our express written permission.</p>
           <p style={textStyle}>Any feedback, suggestions, or ideas you provide about the Service may be used by us without restriction or compensation to you.</p>
         </div>
@@ -203,7 +203,7 @@ export default function TermsOfServicePage() {
         {/* Section 7 */}
         <div style={sectionStyle}>
           <h2 style={headingStyle}>7. Third-Party Services and Links</h2>
-          <p style={textStyle}>Campus Connect may integrate with or contain links to third-party services, websites, or applications. These third parties are not under our control, and we are not responsible for their content, products, services, privacy practices, or terms.</p>
+          <p style={textStyle}>ConnectToCampus may integrate with or contain links to third-party services, websites, or applications. These third parties are not under our control, and we are not responsible for their content, products, services, privacy practices, or terms.</p>
           <p style={textStyle}>Your interactions with third-party services are governed by their respective terms and privacy policies. We encourage you to review them before engaging with such services.</p>
         </div>
 
@@ -247,7 +247,7 @@ export default function TermsOfServicePage() {
         {/* Section 11 */}
         <div style={sectionStyle}>
           <h2 style={headingStyle}>11. Indemnification</h2>
-          <p style={textStyle}>You agree to indemnify, defend, and hold harmless Campus Connect and its affiliates, officers, directors, employees, agents, and licensors from and against any claims, liabilities, damages, losses, costs, and expenses (including reasonable attorneys&rsquo; fees) arising out of or relating to:</p>
+          <p style={textStyle}>You agree to indemnify, defend, and hold harmless ConnectToCampus and its affiliates, officers, directors, employees, agents, and licensors from and against any claims, liabilities, damages, losses, costs, and expenses (including reasonable attorneys&rsquo; fees) arising out of or relating to:</p>
           <ul style={listStyle}>
             <li>Your use of the Service.</li>
             <li>Your violation of these Terms.</li>
@@ -308,16 +308,16 @@ export default function TermsOfServicePage() {
           <p style={textStyle}>These Terms, together with our{' '}
             <Link href="/privacy" style={{ color: 'var(--accent)', textDecoration: 'none', fontWeight: 600 }}>
               Privacy Policy
-            </Link>, constitute the entire agreement between you and Campus Connect regarding the Service and supersede all prior agreements and understandings.</p>
+            </Link>, constitute the entire agreement between you and ConnectToCampus regarding the Service and supersede all prior agreements and understandings.</p>
         </div>
 
         {/* Section 19 */}
         <div style={sectionStyle}>
           <h2 style={headingStyle}>19. Contact Us</h2>
-          <p style={textStyle}>If you have questions, concerns, or requests regarding these Terms, please contact us through the contact/support information provided on Campus Connect.</p>
-          <p style={boldTextStyle}>Campus Connect</p>
+          <p style={textStyle}>If you have questions, concerns, or requests regarding these Terms, please contact us through the contact/support information provided on ConnectToCampus.</p>
+          <p style={boldTextStyle}>ConnectToCampus</p>
           <p style={textStyle}>Website: <Link href="/" style={{ color: 'var(--accent)', textDecoration: 'none' }}>connecttocampus.com</Link></p>
-          <p style={textStyle}>Support: Contact the Campus Connect support team through the website.</p>
+          <p style={textStyle}>Support: Contact the ConnectToCampus support team through the website.</p>
         </div>
 
         {/* Footer */}
