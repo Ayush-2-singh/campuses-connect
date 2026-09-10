@@ -7,7 +7,7 @@ export const GAME_CONFIG = {
   TOTAL_ROUNDS: 10,
 
   /** Maximum players per room */
-  MAX_PLAYERS: 8,
+  MAX_PLAYERS: 100,
 
   /** Minimum players to start (host counts) */
   MIN_PLAYERS: 2,
