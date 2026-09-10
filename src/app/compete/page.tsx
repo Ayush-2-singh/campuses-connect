@@ -357,7 +357,7 @@ function CompetePageInner() {
               <h2 style={{ fontSize: 22, fontWeight: 800, color: 'var(--text-primary)', margin: '0 0 2px' }}>
                 ⚔️ Compete
               </h2>
-              <p style={{ fontSize: 13, color: 'var(--text-muted)', margin: 0 }}>Rank. Solve. Earn Aura.</p>
+              <p style={{ fontSize: 13, color: 'var(--text-muted)', margin: 0 }}>Rank. Play. Win. Earn Aura.</p>
             </div>
             {karma && (
               <div style={{ display: 'flex', gap: 8 }}>
@@ -373,9 +373,7 @@ function CompetePageInner() {
                   <p style={{ fontSize: 16, fontWeight: 800, color: 'var(--accent-text)', margin: 0 }}>
                     ⚡ {karma.aura}
                   </p>
-                  <p style={{ fontSize: 10.5, color: 'var(--text-muted)', margin: 0 }}>
-                    Aura · {karma.season || 'Season 1'}
-                  </p>
+                  <p style={{ fontSize: 10.5, color: 'var(--text-muted)', margin: 0 }}>Aura · Game wins</p>
                 </div>
                 <div
                   style={{
@@ -858,8 +856,7 @@ function CompetePageInner() {
                     </button>
                   )}
                   <p style={{ fontSize: 12, color: 'var(--text-muted)', margin: '16px 0 0', lineHeight: 1.6 }}>
-                    Every Saturday 9 PM IST · 60 minutes · Solve problems, earn Aura, climb the national + campus
-                    boards.
+                    Every Saturday 9 PM IST · 60 minutes · Solve problems, climb the national + campus boards.
                   </p>
                 </div>
               )}
@@ -991,9 +988,9 @@ function RankingsTab({
         if (!me) return
         const myVal = (me as any)[meCol] || 0
 
-        // One ranking definition: under Aura the rank shown IS the season
-        // rank (Aura resets with the season); under Karma it's lifetime.
-        // Counted in the DB so it works far outside the top 50.
+        // One ranking definition: Aura = wins from Compete games; Karma is
+        // lifetime earned points. Counted in the DB so it works far outside
+        // the top 50.
         const { count: ahead } = await supabase
           .from('profiles')
           .select('id', { count: 'exact', head: true })
@@ -1038,7 +1035,7 @@ function RankingsTab({
         ? 'Add connections to see where you stand against your friends.'
         : filterScope === 'campus'
           ? 'No ranked students from your campus yet — be the first!'
-          : 'Be the first to solve challenges, earn Aura, and climb the leaderboard!'
+          : 'Be the first to win a Compete game and earn Aura!'
     return (
       <div
         style={{
@@ -1085,9 +1082,7 @@ function RankingsTab({
           </p>
           <p style={{ fontSize: 11, color: 'var(--text-muted)', margin: 0 }}>
             {seasonWeek(season) ? `${seasonWeek(season)} · ` : ''}
-            {sortBy === 'aura'
-              ? 'Aura = season points from karma-earning activities'
-              : 'Karma = lifetime earned points'}
+            {sortBy === 'aura' ? 'Aura = points from winning games in Compete' : 'Karma = lifetime earned points'}
           </p>
         </div>
         {myRank !== null && (
@@ -1137,7 +1132,7 @@ function RankingsTab({
             </p>
             {/* Rank context: Aura view = season rank, Karma view = lifetime */}
             <p style={{ fontSize: 11, color: 'var(--text-muted)', margin: 0 }}>
-              {sortBy === 'aura' ? `Season rank · ${season?.name || 'Season 1'}` : 'Lifetime rank · all-time Karma'}
+              {sortBy === 'aura' ? 'Game rank · Aura from wins' : 'Lifetime rank · all-time Karma'}
             </p>
             <p style={{ fontSize: 12, color: 'var(--text-muted)', margin: 0 }}>
               @{profile?.username || 'you'}

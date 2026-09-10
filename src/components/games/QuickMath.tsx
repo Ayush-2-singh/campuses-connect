@@ -34,8 +34,14 @@ export default function QuickMath({ initialRoomCode }: { initialRoomCode?: strin
   const [countdown, setCountdown] = useState(0)
   const [matchmaking, setMatchmaking] = useState<'idle' | 'searching'>('idle')
   const [matchmade, setMatchmade] = useState(false)
+  const [authUserId, setAuthUserId] = useState<string | null>(null)
   const matchmakingPollRef = useRef<ReturnType<typeof setInterval> | null>(null)
   const ROUNDS_OPTIONS = [5, 10, 20, 30, 50]
+
+  // Signed-in players carry their profile id so a win awards Aura to them.
+  useEffect(() => {
+    supabase.auth.getUser().then(({ data }) => setAuthUserId(data.user?.id ?? null))
+  }, [supabase])
 
   // ── Realtime subscription ──────────────────────────────────────────────
   const subscribeToRoom = useCallback(
@@ -169,6 +175,7 @@ export default function QuickMath({ initialRoomCode }: { initialRoomCode?: strin
       p_difficulty: difficulty,
       p_total_rounds: totalRounds,
       p_max_players: GAME_CONFIG.MAX_PLAYERS,
+      p_user_id: authUserId,
     })
 
     setLoading(false)
@@ -207,6 +214,7 @@ export default function QuickMath({ initialRoomCode }: { initialRoomCode?: strin
       p_room_code: joinCode,
       p_player_id: guestId,
       p_nickname: joinNick,
+      p_user_id: authUserId,
     })
 
     setLoading(false)
@@ -311,6 +319,7 @@ export default function QuickMath({ initialRoomCode }: { initialRoomCode?: strin
       p_nickname: nickname.trim(),
       p_difficulty: difficulty,
       p_total_rounds: totalRounds,
+      p_user_id: authUserId,
     })
     setLoading(false)
 
