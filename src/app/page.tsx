@@ -795,11 +795,63 @@ export default function LandingPage() {
         </div>
       </div>
 
+      {/* Why we request data — transparency for OAuth consent screen */}
+      <div style={{ maxWidth: 640, margin: '0 auto', padding: '40px 20px 60px', textAlign: 'center' }}>
+        <h3
+          style={{
+            fontSize: 20,
+            fontWeight: 700,
+            color: 'var(--text-primary)',
+            margin: '0 0 12px',
+          }}
+        >
+          Why we use Google Sign-In
+        </h3>
+        <p
+          style={{
+            fontSize: 14,
+            color: 'var(--text-secondary)',
+            lineHeight: 1.7,
+            margin: '0 auto 20px',
+            maxWidth: 540,
+          }}
+        >
+          When you sign in with Google, we only access your <strong>name</strong>, <strong>email address</strong>, and <strong>profile picture</strong> to create and verify your ConnectToCampus account. We do not access your Google Drive, Gmail, contacts, or any other Google data. This information is used solely for authentication and to personalize your campus profile.
+        </p>
+        <div style={{ display: 'flex', gap: 16, justifyContent: 'center', flexWrap: 'wrap' }}>
+          <a
+            href="/privacy"
+            style={{
+              fontSize: 14,
+              fontWeight: 600,
+              color: 'var(--accent)',
+              textDecoration: 'none',
+            }}
+          >
+            Privacy Policy
+          </a>
+          <a
+            href="/terms"
+            style={{
+              fontSize: 14,
+              fontWeight: 600,
+              color: 'var(--accent)',
+              textDecoration: 'none',
+            }}
+          >
+            Terms of Service
+          </a>
+        </div>
+      </div>
+
       {/* Footer */}
       <div style={{ borderTop: '1px solid var(--border)', padding: '20px', textAlign: 'center' }}>
         <p style={{ fontSize: 12, color: 'var(--text-muted)', margin: 0 }}>
           ConnectToCampus is an independent student networking platform. Not affiliated with or endorsed by any
-          educational institution.
+          educational institution.{' '}
+          <a href="/privacy" style={{ color: 'var(--text-muted)', textDecoration: 'underline' }}>Privacy</a>
+          {' · '}
+          <a href="/terms" style={{ color: 'var(--text-muted)', textDecoration: 'underline' }}>Terms</a>
         </p>
       </div>
 
