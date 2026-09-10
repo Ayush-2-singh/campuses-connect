@@ -45,12 +45,28 @@ export default function LoginPage() {
         'Google blocked the sign-in: this site\u2019s URL is not whitelisted in the OAuth settings. Try email instead.',
       invalid_request: 'Google sign-in request was invalid (OAuth configuration issue). Try email instead.',
       access_denied: 'Google sign-in was cancelled or denied. Please try again.',
+      server_error: 'We could not complete Google sign-in. Please try again or use email.',
       oauth_failed: 'We could not complete Google sign-in. Please try again or use email.',
     }
     let msg = messages[callbackError] || 'We could not complete Google sign-in. Please try again or use email.'
-    // Debug aid while sign-in is being stabilised: show the provider's raw
-    // reason so failures are diagnosable (no secrets are in these strings).
-    if (rawDetail) msg += ` — Detail: ${rawDetail}`
+    // "Unable to exchange external code" means Supabase could not trade the
+    // Google authorization code for tokens — a provider config mismatch
+    // (Client ID/Secret in Supabase, or the Supabase callback missing from
+    // Google Console), NOT a transient failure. Show the exact fix instead of
+    // a misleading "try again".
+    if (/unable to exchange external code/i.test(rawDetail)) {
+      const ref = process.env.NEXT_PUBLIC_SUPABASE_URL?.match(/https:\/\/([^.]+)\.supabase\.co/)?.[1]
+      const supabaseCallback = ref
+        ? `https://${ref}.supabase.co/auth/v1/callback`
+        : 'https://<project-ref>.supabase.co/auth/v1/callback'
+      msg =
+        'Google sign-in is misconfigured. In Supabase → Authentication → Providers → Google, re-paste the Client ID and Client Secret (no extra spaces). In Google Cloud Console, add the Authorized redirect URI: ' +
+        supabaseCallback
+    } else if (rawDetail) {
+      // Debug aid while sign-in is being stabilised: show the provider's raw
+      // reason so failures are diagnosable (no secrets are in these strings).
+      msg += ` — Detail: ${rawDetail}`
+    }
     setError(msg)
     window.history.replaceState(null, '', window.location.pathname)
   }, [])
