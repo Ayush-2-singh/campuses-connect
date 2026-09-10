@@ -49,24 +49,27 @@ export default function GoogleSignInButton({ label = 'Continue with Google' }: {
     // cookie would otherwise be unreachable by the callback (TEST 1/2 fix).
     if (redirectToCanonicalOrigin()) return
 
-    const supabase = createClient()
-    // Preserve the original destination (?redirect=/protected-page) through
-    // the OAuth round-trip; validated again server-side in the callback.
-    const next = getSafeRedirect(new URLSearchParams(window.location.search).get('redirect'), '/feed')
-    const callbackUrl = new URL('/auth/callback', window.location.origin)
-    if (next !== '/feed') callbackUrl.searchParams.set('next', next)
+    try {
+      const supabase = createClient()
+      // Preserve the original destination (?redirect=/protected-page) through
+      // the OAuth round-trip; validated again server-side in the callback.
+      const next = getSafeRedirect(new URLSearchParams(window.location.search).get('redirect'), '/feed')
+      const callbackUrl = new URL('/auth/callback', window.location.origin)
+      if (next !== '/feed') callbackUrl.searchParams.set('next', next)
 
-    // PKCE flow: @supabase/ssr's browser client defaults flowType to 'pkce',
-    // storing the code verifier in an origin-scoped cookie (see guard above).
-    const { error: err } = await supabase.auth.signInWithOAuth({
-      provider: 'google',
-      options: { redirectTo: callbackUrl.toString() },
-    })
+      // PKCE flow: @supabase/ssr's browser client defaults flowType to 'pkce',
+      // storing the code verifier in an origin-scoped cookie (see guard above).
+      const { error: err } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: { redirectTo: callbackUrl.toString() },
+      })
 
-    // On success the browser navigates away to Google. If we're still here,
-    // the flow failed to start — show a useful, retryable error.
-    if (err) {
-      setError(getAuthErrorMessage(err.message || 'Google sign-in is unavailable. Please try again.'))
+      // On success the browser navigates away to Google. If we're still here,
+      // the flow failed to start — show a useful, retryable error.
+      if (err) throw err
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Google sign-in is unavailable. Please try again.'
+      setError(getAuthErrorMessage(message))
       setLoading(false)
     }
   }
