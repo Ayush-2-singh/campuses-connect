@@ -71,6 +71,19 @@ export async function GET(request: NextRequest) {
     }
   )
 
+  // Idempotency guard: if the browser already holds a session (a stale
+  // callback URL, a retried request, or a flow that finished on an earlier
+  // attempt), skip the exchange — the one-time code would be rejected on a
+  // second use and bounce an already-signed-in user back to the login page.
+  const {
+    data: { session: existingSession },
+  } = await supabase.auth.getSession()
+  if (existingSession) {
+    const response = NextResponse.redirect(new URL(next, requestUrl.origin))
+    sessionCookies.forEach(({ name, value, options }) => response.cookies.set(name, value, options))
+    return response
+  }
+
   // PKCE: exchange the one-time authorization code for the Supabase session
   // (access JWT + refresh token live ONLY in httpOnly SSR cookies).
   const { error } = await supabase.auth.exchangeCodeForSession(code)
