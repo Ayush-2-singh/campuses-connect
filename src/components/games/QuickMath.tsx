@@ -32,6 +32,9 @@ export default function QuickMath({ initialRoomCode }: { initialRoomCode?: strin
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
   const [countdown, setCountdown] = useState(0)
+  const [matchmaking, setMatchmaking] = useState<'idle' | 'searching'>('idle')
+  const [matchmade, setMatchmade] = useState(false)
+  const matchmakingPollRef = useRef<ReturnType<typeof setInterval> | null>(null)
   const ROUNDS_OPTIONS = [5, 10, 20, 30, 50]
 
   // ── Realtime subscription ──────────────────────────────────────────────
@@ -282,7 +285,99 @@ export default function QuickMath({ initialRoomCode }: { initialRoomCode?: strin
     setRoom(null)
     setPlayers([])
     setPhase('entry')
+    setMatchmade(false)
   }
+
+  // ── 1v1 random matchmaking ───────────────────────────────────────────────
+  const stopMatchmakingPoll = () => {
+    if (matchmakingPollRef.current) {
+      clearInterval(matchmakingPollRef.current)
+      matchmakingPollRef.current = null
+    }
+  }
+
+  const handleQuickMatch = async () => {
+    if (matchmaking === 'searching') return
+    if (!nickname.trim()) {
+      setError('Enter a nickname')
+      return
+    }
+    setLoading(true)
+    setError('')
+    saveNickname(nickname)
+
+    const { data, error: rpcError } = await supabase.rpc('join_matchmaking', {
+      p_player_id: guestId,
+      p_nickname: nickname.trim(),
+      p_difficulty: difficulty,
+      p_total_rounds: totalRounds,
+    })
+    setLoading(false)
+
+    if (rpcError) {
+      setError(rpcError.message)
+      return
+    }
+
+    const result = data as unknown as { status: string; room_code?: string }
+    if (result.status === 'matched' && result.room_code) {
+      // Opponent found instantly — jump straight into the room.
+      setMatchmade(true)
+      setMyPlayerId(guestId)
+      await loadRoomState(result.room_code)
+      return
+    }
+
+    // Waiting in the queue — poll until matched (or timeout/expiry).
+    setMatchmaking('searching')
+    matchmakingPollRef.current = setInterval(async () => {
+      const { data: pollData, error: pollError } = await supabase.rpc('check_matchmaking_status', {
+        p_player_id: guestId,
+      })
+      if (pollError) return
+      const st = pollData as unknown as { status: string; room_code?: string }
+      if (st.status === 'not_in_queue') {
+        // Queue entry expired without a match.
+        stopMatchmakingPoll()
+        setMatchmaking('idle')
+        setError('No opponent found. Try again!')
+        return
+      }
+      if (st.status === 'matched' && st.room_code) {
+        stopMatchmakingPoll()
+        setMatchmaking('idle')
+        setMatchmade(true)
+        setMyPlayerId(guestId)
+        await loadRoomState(st.room_code)
+      }
+    }, 2500)
+  }
+
+  const handleCancelMatchmaking = async () => {
+    stopMatchmakingPoll()
+    setMatchmaking('idle')
+    // RPC errors come back in the result, not as exceptions.
+    await supabase.rpc('leave_matchmaking', { p_player_id: guestId })
+  }
+
+  // Leave the queue if the user navigates away mid-search.
+  useEffect(() => {
+    return () => {
+      stopMatchmakingPoll()
+      supabase.rpc('leave_matchmaking', { p_player_id: guestId })
+    }
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Matchmade games: both players enter pre-readied — auto-start for the host.
+  useEffect(() => {
+    if (!matchmade || phase !== 'lobby' || !room?.id || myPlayerId !== room.host_id) return
+    if (players.length >= 2 && players.every((p) => p.is_ready)) {
+      const t = setTimeout(() => {
+        handleStart()
+      }, 800)
+      return () => clearTimeout(t)
+    }
+  }, [matchmade, phase, room?.id, room?.host_id, myPlayerId, players]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // No rematch — game ends with exit only
 
@@ -390,6 +485,62 @@ export default function QuickMath({ initialRoomCode }: { initialRoomCode?: strin
               ))}
             </div>
           </div>
+
+          {/* 1v1 Quick Match — random opponent, same difficulty + rounds */}
+          {matchmaking === 'searching' ? (
+            <div
+              style={{
+                border: '2px solid var(--cyan)',
+                background: 'var(--bg)',
+                borderRadius: 14,
+                padding: '22px 16px',
+                textAlign: 'center',
+              }}
+            >
+              <p style={{ fontSize: 28, margin: '0 0 6px' }}>🔍</p>
+              <p style={{ fontSize: 15, fontWeight: 700, color: 'var(--text-primary)', margin: '0 0 4px' }}>
+                Searching for opponent…
+              </p>
+              <p style={{ fontSize: 12, color: 'var(--text-muted)', margin: '0 0 14px' }}>
+                {DIFFICULTY_CONFIG[difficulty].emoji} {DIFFICULTY_CONFIG[difficulty].label} · {totalRounds} rounds · 1v1
+              </p>
+              <button
+                onClick={handleCancelMatchmaking}
+                style={{
+                  background: 'none',
+                  border: '1px solid var(--border-strong)',
+                  color: 'var(--text-secondary)',
+                  borderRadius: 10,
+                  padding: '8px 22px',
+                  fontSize: 13,
+                  fontWeight: 700,
+                  cursor: 'pointer',
+                  fontFamily: 'inherit',
+                }}
+              >
+                Cancel
+              </button>
+            </div>
+          ) : (
+            <button
+              onClick={handleQuickMatch}
+              disabled={loading || !nickname.trim()}
+              style={{
+                width: '100%',
+                background: loading || !nickname.trim() ? 'var(--disabled)' : 'var(--cyan)',
+                color: loading || !nickname.trim() ? 'var(--text-muted)' : '#fff',
+                border: 'none',
+                borderRadius: 14,
+                padding: '14px',
+                fontSize: 16,
+                fontWeight: 700,
+                cursor: loading || !nickname.trim() ? 'not-allowed' : 'pointer',
+                fontFamily: 'inherit',
+              }}
+            >
+              {loading ? 'Finding match...' : '⚔️ 1v1 Quick Match'}
+            </button>
+          )}
 
           {/* Create Game */}
           <button

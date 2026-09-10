@@ -9,6 +9,7 @@ import ErrorBoundary from '@/components/ErrorBoundary'
 import { useRouter, useSearchParams } from 'next/navigation'
 
 const QuickMath = dynamic(() => import('@/components/games/QuickMath'), { ssr: false })
+const GameChampions = dynamic(() => import('@/components/games/GameChampions'), { ssr: false })
 
 // ══════════════════════════════════════════════════════════════
 // TYPES
@@ -83,7 +84,7 @@ function seasonWeek(season: SeasonInfo | null): string | null {
 const TABS: { key: Tab; label: string; icon: string }[] = [
   { key: 'rankings', label: 'Rankings', icon: '🏆' },
   { key: 'challenge', label: 'Daily Challenge', icon: '🧩' },
-  { key: 'clash', label: 'Campus Clash', icon: '⚔️' },
+  { key: 'clash', label: 'Games & Clash', icon: '🎮' },
 ]
 
 const TAB_FROM_URL: Record<string, Tab> = {
@@ -721,6 +722,9 @@ function CompetePageInner() {
           {/* ═══════════ CAMPUS CLASH ═══════════ */}
           {tab === 'clash' && (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+              {/* Game Champions — winners of every game, +1 per win */}
+              <GameChampions />
+
               {/* Quick Math Game */}
               <div
                 style={{
