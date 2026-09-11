@@ -5,6 +5,7 @@ import dynamic from 'next/dynamic'
 import { createClient } from '@/lib/supabase/client'
 import { useRouter, usePathname } from 'next/navigation'
 import ThemeToggle from '@/components/ThemeToggle'
+import LogoToggle, { getLogoSrc } from '@/components/LogoToggle'
 import MobileBottomNav from '@/components/MobileBottomNav'
 import MobileMenu from '@/components/MobileMenu'
 import Avatar from '@/components/Avatar'
@@ -156,7 +157,7 @@ export default function Layout({ children, user, profile }: { children: React.Re
           }}
         >
           <img
-            src="/ctc-logo.svg"
+            src={getLogoSrc()}
             alt="CTC"
             width={36}
             height={36}
@@ -421,6 +422,7 @@ export default function Layout({ children, user, profile }: { children: React.Re
               </kbd>
             </button>
             <div style={{ flex: 1 }} />
+            <LogoToggle size={36} />
             <ThemeToggle mode="plain" />
             <button
               onClick={() => router.push('/notifications')}
@@ -489,7 +491,7 @@ export default function Layout({ children, user, profile }: { children: React.Re
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
               <img
-                src="/ctc-logo.svg"
+                src={getLogoSrc()}
                 alt="CTC"
                 width={30}
                 height={30}
@@ -518,6 +520,7 @@ export default function Layout({ children, user, profile }: { children: React.Re
               >
                 <Icon name="search" size={17} />
               </button>
+              <LogoToggle size={36} />
               <ThemeToggle mode="inline" />
               {!user ? (
                 <button

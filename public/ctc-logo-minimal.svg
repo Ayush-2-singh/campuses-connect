@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 300" fill="none">
+  <!-- Minimal: just the T with swoosh -->
+  <rect x="170" y="50" width="60" height="16" rx="2" fill="currentColor"/>
+  <rect x="192" y="50" width="16" height="210" rx="2" fill="currentColor"/>
+  
+  <!-- Gold swoosh -->
+  <path d="M80 175 Q140 120 200 155 Q260 190 320 145" stroke="#E0A83C" stroke-width="14" stroke-linecap="round" fill="none"/>
+</svg>
