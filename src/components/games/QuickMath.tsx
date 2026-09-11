@@ -16,7 +16,9 @@ import GamePlay from './GamePlay'
 import GameResults from './GameResults'
 
 export default function QuickMath({ initialRoomCode }: { initialRoomCode?: string }) {
-  const supabase = createClient()
+  // PROFESSIONAL PATTERN: Singleton client via useRef — prevents re-creation on every render.
+  const supabaseRef = useRef(createClient())
+  const supabase = supabaseRef.current
   const guestId = useRef(getGuestId()).current
 
   // ── State ───────────────────────────────────────────────────────────────
@@ -292,7 +294,15 @@ export default function QuickMath({ initialRoomCode }: { initialRoomCode?: strin
     setPhase('entry')
   }
 
-  // No rematch — game ends with exit only
+  // ── Rematch ────────────────────────────────────────────────────────────
+  const handleRematch = async () => {
+    // Same host, same settings, new room
+    await handleLeave()
+    // Small delay to clean up old room
+    setTimeout(() => {
+      handleCreate()
+    }, 300)
+  }
 
   // ── Render ─────────────────────────────────────────────────────────────
 
@@ -558,7 +568,7 @@ export default function QuickMath({ initialRoomCode }: { initialRoomCode?: strin
       )}
 
       {/* ═══ RESULTS PHASE ═══ */}
-      {phase === 'finished' && <GameResults players={players} myPlayerId={myPlayerId} onExit={handleLeave} />}
+      {phase === 'finished' && <GameResults players={players} myPlayerId={myPlayerId} onExit={handleLeave} onRematch={handleRematch} />}
     </div>
   )
 }

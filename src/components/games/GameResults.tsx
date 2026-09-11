@@ -11,10 +11,12 @@ export default function GameResults({
   players,
   myPlayerId,
   onExit,
+  onRematch,
 }: {
   players: GamePlayer[]
   myPlayerId: string
   onExit: () => void
+  onRematch?: () => void
 }) {
   const sorted = [...players].sort((a, b) => b.score - a.score || b.correct_count - a.correct_count)
   const winner = sorted[0]
@@ -66,6 +68,11 @@ export default function GameResults({
         >
           ⚡ {winner?.score || 0} points
         </p>
+        {winner && winner.total_answered > 0 && (
+          <p style={{ fontSize: 13, color: 'var(--text-muted)', margin: '4px 0 0' }}>
+            {Math.round((winner.correct_count / winner.total_answered) * 100)}% accuracy · {winner.correct_count}/{winner.total_answered} correct
+          </p>
+        )}
       </div>
 
       {/* Podium — Top 3 */}
@@ -165,7 +172,7 @@ export default function GameResults({
               You placed {myRank + 1} of {sorted.length}
             </p>
             <p style={{ fontSize: 12, color: 'var(--text-muted)', margin: 0 }}>
-              ⚡ {me.score} points · {me.correct_count}/{me.total_answered} correct
+              ⚡ {me.score} points · {me.correct_count}/{me.total_answered} correct ({me.total_answered > 0 ? Math.round((me.correct_count / me.total_answered) * 100) : 0}%)
             </p>
           </div>
         </div>
@@ -257,24 +264,45 @@ export default function GameResults({
         </div>
       </div>
 
-      {/* Exit only — no rematch */}
-      <button
-        onClick={onExit}
-        style={{
-          width: '100%',
-          background: 'var(--accent)',
-          color: 'var(--on-accent)',
-          border: 'none',
-          borderRadius: 14,
-          padding: '14px',
-          fontSize: 15,
-          fontWeight: 700,
-          cursor: 'pointer',
-          fontFamily: 'inherit',
-        }}
-      >
-        Exit
-      </button>
+      {/* Actions — Rematch + Exit */}
+      <div style={{ display: 'flex', gap: 10 }}>
+        <button
+          onClick={onExit}
+          style={{
+            flex: 1,
+            background: 'var(--bg)',
+            color: 'var(--text-secondary)',
+            border: '1px solid var(--border)',
+            borderRadius: 14,
+            padding: '14px',
+            fontSize: 15,
+            fontWeight: 600,
+            cursor: 'pointer',
+            fontFamily: 'inherit',
+          }}
+        >
+          Exit
+        </button>
+        {onRematch && (
+          <button
+            onClick={onRematch}
+            style={{
+              flex: 2,
+              background: 'var(--accent)',
+              color: 'var(--on-accent)',
+              border: 'none',
+              borderRadius: 14,
+              padding: '14px',
+              fontSize: 15,
+              fontWeight: 700,
+              cursor: 'pointer',
+              fontFamily: 'inherit',
+            }}
+          >
+            🔄 Rematch
+          </button>
+        )}
+      </div>
     </div>
   )
 }

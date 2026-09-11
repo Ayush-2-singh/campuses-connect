@@ -55,7 +55,7 @@ export default function GamePlay({
       }
     }
     tick()
-    const interval = setInterval(tick, 50) // 50ms for smooth countdown
+    const interval = setInterval(tick, 100) // 100ms — smooth enough, half the CPU
     return () => clearInterval(interval)
   }, [room.round_started_at, room.current_round, submitted, question])
 
