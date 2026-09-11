@@ -227,33 +227,109 @@ export default function RankingsTab({
         </div>
       </div>
 
-      {/* Top 3 Podium */}
+      {/* Top 3 Podium — proper stepped podium design */}
       {top3.length >= 3 && (
-        <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'flex-end', gap: 6, marginBottom: 24, padding: '0 8px' }}>
-          {[1, 0, 2].map(pos => {
-            const p = top3[pos]
-            const h = pos === 0 ? 76 : pos === 1 ? 56 : 40
-            const grad = pos === 0 ? 'linear-gradient(180deg, #fde68a, #f59e0b)'
-              : pos === 1 ? 'linear-gradient(180deg, #d1d5db, #9ca3af)'
-              : 'linear-gradient(180deg, #fed7aa, #ea580c)'
-            return (
-              <div key={p.user_id} onClick={() => router.push(`/profile/${p.username}`)}
-                role="link" tabIndex={0}
-                onKeyDown={e => (e.key === 'Enter' || e.key === ' ') && router.push(`/profile/${p.username}`)}
-                style={{ flex: 1, textAlign: 'center', cursor: 'pointer' }}>
-                <Avatar name={p.full_name} avatarUrl={p.avatar_url} size={pos === 0 ? 52 : 44} />
-                <p style={{ fontSize: pos === 0 ? 32 : 24, margin: '4px 0 2px' }}>{medal(pos)}</p>
-                <p style={{ fontSize: pos === 0 ? 13 : 12, fontWeight: pos === 0 ? 700 : 600, color: 'var(--text-primary)', margin: '0 0 2px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                  {p.full_name?.split(' ')[0] || 'Anon'}
-                </p>
-                <p style={{ fontSize: 10, color: 'var(--text-muted)', margin: 0 }}>@{p.username}</p>
-                <p style={{ fontSize: pos === 0 ? 14 : 13, fontWeight: 800, color: 'var(--accent)', margin: '2px 0 0' }}>
-                  {sortBy === 'aura' ? `⚡ ${p.aura_points}` : `⭐ ${p.karma_points}`}
-                </p>
-                <div style={{ height: h, background: grad, borderRadius: '8px 8px 0 0', marginTop: 4 }} />
-              </div>
-            )
-          })}
+        <div style={{ marginBottom: 24, padding: '0 4px' }}>
+          <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'center', gap: 0 }}>
+            {[1, 0, 2].map(pos => {
+              const p = top3[pos]
+              const isChampion = pos === 0
+              const barH = isChampion ? 100 : pos === 1 ? 72 : 52
+              const avatarSize = isChampion ? 60 : 48
+              const medalSize = isChampion ? 36 : 28
+              const grad = isChampion
+                ? 'linear-gradient(180deg, #fde68a 0%, #f59e0b 60%, #d97706 100%)'
+                : pos === 1
+                  ? 'linear-gradient(180deg, #e5e7eb 0%, #9ca3af 60%, #6b7280 100%)'
+                  : 'linear-gradient(180deg, #fed7aa 0%, #f97316 60%, #c2410c 100%)'
+              const shadow = isChampion
+                ? '0 0 20px rgba(245, 158, 11, 0.3), 0 -4px 12px rgba(245, 158, 11, 0.15)'
+                : pos === 1
+                  ? '0 0 12px rgba(156, 163, 175, 0.2)'
+                  : '0 0 12px rgba(249, 115, 22, 0.2)'
+
+              return (
+                <div
+                  key={p.user_id}
+                  onClick={() => router.push(`/profile/${p.username}`)}
+                  role="link"
+                  tabIndex={0}
+                  onKeyDown={e => (e.key === 'Enter' || e.key === ' ') && router.push(`/profile/${p.username}`)}
+                  style={{
+                    flex: 1,
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    cursor: 'pointer',
+                    maxWidth: 140,
+                  }}
+                >
+                  {/* Person info — sits ON TOP of the bar */}
+                  <div style={{ textAlign: 'center', marginBottom: 8, padding: '0 4px' }}>
+                    <Avatar name={p.full_name} avatarUrl={p.avatar_url} size={avatarSize} />
+                    <p style={{
+                      fontSize: medalSize, margin: '2px 0', lineHeight: 1,
+                    }}>{medal(pos)}</p>
+                    <p style={{
+                      fontSize: isChampion ? 13 : 12,
+                      fontWeight: isChampion ? 700 : 600,
+                      color: 'var(--text-primary)',
+                      margin: '0 0 1px',
+                      overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+                      maxWidth: 110,
+                    }}>
+                      {p.full_name?.split(' ')[0] || 'Anon'}
+                    </p>
+                    <p style={{
+                      fontSize: 10, color: isChampion ? 'var(--accent)' : 'var(--text-muted)',
+                      margin: 0, fontWeight: isChampion ? 600 : 400,
+                    }}>
+                      @{p.username}
+                    </p>
+                    <p style={{
+                      fontSize: isChampion ? 15 : 13, fontWeight: 800,
+                      color: 'var(--accent-text)', margin: '3px 0 0',
+                    }}>
+                      {sortBy === 'aura' ? `⚡ ${p.aura_points}` : `⭐ ${p.karma_points}`}
+                    </p>
+                  </div>
+
+                  {/* Podium bar — the stepped platform */}
+                  <div style={{
+                    width: '100%',
+                    height: barH,
+                    background: grad,
+                    borderRadius: isChampion ? '12px 12px 4px 4px' : '8px 8px 4px 4px',
+                    boxShadow: shadow,
+                    position: 'relative',
+                    overflow: 'hidden',
+                  }}>
+                    {/* Shine effect on the bar */}
+                    <div style={{
+                      position: 'absolute',
+                      top: 0, left: 0, right: 0,
+                      height: '40%',
+                      background: 'linear-gradient(180deg, rgba(255,255,255,0.25) 0%, transparent 100%)',
+                      borderRadius: 'inherit',
+                    }} />
+                    {/* Rank number on the bar */}
+                    <div style={{
+                      position: 'absolute',
+                      bottom: 8,
+                      left: '50%',
+                      transform: 'translateX(-50%)',
+                      fontSize: isChampion ? 22 : 18,
+                      fontWeight: 900,
+                      color: 'rgba(0,0,0,0.25)',
+                      letterSpacing: '-0.02em',
+                    }}>
+                      {pos === 0 ? '#1' : pos === 1 ? '#2' : '#3'}
+                    </div>
+                  </div>
+                </div>
+              )
+            })}
+          </div>
         </div>
       )}
 
