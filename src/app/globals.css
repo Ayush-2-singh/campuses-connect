@@ -1206,3 +1206,17 @@ html.nav-hidden .fab-wrap {
     display: none;
   }
 }
+
+/* ───────────────────────── Layout responsive rules ───────────────────────── */
+/* Moved from inline <style> in Layout.tsx — avoids DOM churn on every render. */
+.app-topbar { display: none; }
+@media (min-width: 769px) {
+  .app-topbar { display: block !important; }
+}
+@media (max-width: 768px) {
+  .desktop-sidebar { display: none !important; }
+  .main-content { margin-left: 0 !important; }
+  .mobile-topbar { display: block !important; }
+  .mobile-bottomnav { display: block !important; }
+  .app-topbar { display: none !important; }
+}

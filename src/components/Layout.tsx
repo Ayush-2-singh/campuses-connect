@@ -1,15 +1,20 @@
 'use client'
 import React from 'react'
+import dynamic from 'next/dynamic'
 
 import { createClient } from '@/lib/supabase/client'
 import { useRouter, usePathname } from 'next/navigation'
 import ThemeToggle from '@/components/ThemeToggle'
-import CommandPalette from '@/components/CommandPalette'
 import MobileBottomNav from '@/components/MobileBottomNav'
 import MobileMenu from '@/components/MobileMenu'
 import Avatar from '@/components/Avatar'
 import { Icon } from '@/components/icons'
 import { accentForPath } from '@/theme/colors'
+
+// PROFESSIONAL PATTERN: Lazy-load heavy components (Vercel/Linear/Notion).
+// CommandPalette is only needed when user presses Cmd+K — no point loading
+// its code on every page navigation.
+const CommandPalette = dynamic(() => import('@/components/CommandPalette'), { ssr: false })
 
 const NAV_ITEMS = [
   { label: 'Home', href: '/feed', icon: 'home' },
@@ -672,20 +677,6 @@ export default function Layout({ children, user, profile }: { children: React.Re
       </div>
 
       <CommandPalette open={cmdOpen} onClose={() => setCmdOpen(false)} />
-
-      <style>{`
-        .app-topbar { display: none; }
-        @media (min-width: 769px) {
-          .app-topbar { display: block !important; }
-        }
-        @media (max-width: 768px) {
-          .desktop-sidebar { display: none !important; }
-          .main-content { margin-left: 0 !important; }
-          .mobile-topbar { display: block !important; }
-          .mobile-bottomnav { display: block !important; }
-          .app-topbar { display: none !important; }
-        }
-      `}</style>
     </div>
   )
 }

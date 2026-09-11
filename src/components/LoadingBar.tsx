@@ -47,37 +47,28 @@ export default function LoadingBar() {
   if (!loading) return null
 
   return (
-    <>
+    <div
+      style={{
+        position: 'fixed',
+        top: 0,
+        left: 0,
+        right: 0,
+        height: 3,
+        zIndex: 9999,
+        background: 'transparent',
+        overflow: 'hidden',
+      }}
+    >
       <div
         style={{
-          position: 'fixed',
-          top: 0,
-          left: 0,
-          right: 0,
-          height: 3,
-          zIndex: 9999,
-          background: 'transparent',
-          overflow: 'hidden',
+          height: '100%',
+          width: `${progress}%`,
+          background: 'var(--accent)',
+          borderRadius: '0 2px 2px 0',
+          transition: progress < 95 ? 'width 0.3s ease' : 'width 0.15s ease',
+          boxShadow: '0 0 8px var(--accent-glow)',
         }}
-      >
-        <div
-          style={{
-            height: '100%',
-            width: `${progress}%`,
-            background: 'var(--accent)',
-            borderRadius: '0 2px 2px 0',
-            transition: progress < 95 ? 'width 0.3s ease' : 'width 0.15s ease',
-            boxShadow: '0 0 8px var(--accent-glow)',
-          }}
-        />
-      </div>
-      {/* Shimmer effect during load */}
-      <style>{`
-        @keyframes loadingBarShimmer {
-          0% { transform: translateX(-100%); }
-          100% { transform: translateX(200%); }
-        }
-      `}</style>
-    </>
+      />
+    </div>
   )
 }

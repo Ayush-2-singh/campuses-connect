@@ -14,53 +14,40 @@ export default function LandingPage() {
   const router = useRouter()
   const supabase = createClient()
 
+  // PROFESSIONAL PATTERN: Single useEffect, ALL queries in parallel.
+  // Before: 3 separate useEffects = 3 sequential waterfalls.
+  // After: 1 useEffect with Promise.all = all queries fire at once.
   useEffect(() => {
-    supabase.auth.getUser().then(({ data: { user } }) => {
-      if (user) setUser(user)
-    })
-  }, [])
-
-  // Real colleges + campuses from the database — every campus is live now.
-  useEffect(() => {
-    supabase
-      .from('colleges')
-      .select('id, name, campuses!inner(name)')
-      .eq('is_active', true)
-      .eq('campuses.is_active', true)
-      .then(({ data }) => {
-        setLiveColleges(
-          (data || []).map((c: any) => ({
-            name: c.name,
-            campuses: (c.campuses || []).map((x: any) => x.name),
-          }))
-        )
-      })
-  }, [supabase])
-
-  // Real counts from the database — makes the landing page feel alive.
-  useEffect(() => {
+    let cancelled = false
     const now = new Date().toISOString()
     const week = new Date(Date.now() + 7 * 86400000).toISOString()
-    ;(async () => {
-      const [notes, opps, posts, hacks] = await Promise.all([
-        supabase.from('notes').select('id', { count: 'exact', head: true }),
-        supabase.from('opportunities').select('id', { count: 'exact', head: true }).eq('is_active', true),
-        supabase.from('posts').select('id', { count: 'exact', head: true }).eq('status', 'published'),
-        supabase
-          .from('opportunities')
-          .select('id', { count: 'exact', head: true })
-          .eq('opp_type', 'hackathon')
-          .gte('deadline', now)
-          .lte('deadline', week),
-      ])
+
+    // Fire ALL 6 queries simultaneously — no waterfall
+    Promise.all([
+      supabase.auth.getUser(),
+      supabase.from('colleges').select('id, name, campuses!inner(name)').eq('is_active', true).eq('campuses.is_active', true),
+      supabase.from('notes').select('id', { count: 'exact', head: true }),
+      supabase.from('opportunities').select('id', { count: 'exact', head: true }).eq('is_active', true),
+      supabase.from('posts').select('id', { count: 'exact', head: true }).eq('status', 'published'),
+      supabase.from('opportunities').select('id', { count: 'exact', head: true }).eq('opp_type', 'hackathon').gte('deadline', now).lte('deadline', week),
+    ]).then(([authRes, collegesRes, notesRes, oppsRes, postsRes, hacksRes]) => {
+      if (cancelled) return
+      if (authRes.data.user) setUser(authRes.data.user)
+      setLiveColleges(
+        (collegesRes.data || []).map((c: any) => ({
+          name: c.name,
+          campuses: (c.campuses || []).map((x: any) => x.name),
+        }))
+      )
       setPulse({
-        notes: notes.count || 0,
-        opportunities: opps.count || 0,
-        discussions: posts.count || 0,
-        hackathons: hacks.count || 0,
+        notes: notesRes.count || 0,
+        opportunities: oppsRes.count || 0,
+        discussions: postsRes.count || 0,
+        hackathons: hacksRes.count || 0,
       })
-    })().catch(() => {})
-  }, [])
+    }).catch(() => {})
+    return () => { cancelled = true }
+  }, [supabase])
 
   const features = [
     { icon: 'home', title: 'Campus Feed', desc: 'Announcements, events and discussions for your campus.' },

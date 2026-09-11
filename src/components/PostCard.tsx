@@ -62,54 +62,40 @@ export default function PostCard({
 
   const isHackathon = post.categories?.key === 'hackathon'
 
-  // Load like + comment counts (visible to anyone who can see the post).
+  // PROFESSIONAL PATTERN: Single useEffect for all initial data, parallel queries.
+  // Before: 3 separate useEffects × 2 queries each = 6+ queries per card.
+  // After: 1 useEffect with parallel queries = 2-3 queries per card.
   useEffect(() => {
     let alive = true
     const load = async () => {
       const supabase = createClient()
-      const [likeRes, commRes] = await Promise.all([
-        supabase.from('post_reactions').select('id', { count: 'exact', head: true }).eq('post_id', post.id),
-        supabase.from('post_comments').select('id', { count: 'exact', head: true }).eq('post_id', post.id),
+      // Fire reaction count + comment count + (if logged in) like status — all at once
+      const [likeRes, commRes, ...rest] = await Promise.all([
+        supabase.from('post_reactions').select('id', { count: 'exact', head: true }).eq('post_id', post.id) as any,
+        supabase.from('post_comments').select('id', { count: 'exact', head: true }).eq('post_id', post.id) as any,
+        ...(currentUserId ? [
+          supabase.from('post_reactions').select('id').eq('post_id', post.id).eq('profile_id', currentUserId).maybeSingle() as any,
+        ] : []),
+        ...(isHackathon && currentUserId ? [
+          supabase.from('post_joins').select('id', { count: 'exact', head: true }).eq('post_id', post.id) as any,
+          supabase.from('post_joins').select('user_id').eq('post_id', post.id).eq('user_id', currentUserId).maybeSingle() as any,
+        ] : []),
       ])
       if (!alive) return
       setLikeCount(likeRes.count || 0)
       setCommentCount(commRes.count || 0)
+      let idx = 0
+      if (currentUserId) {
+        setLiked(!!rest[idx++]?.data)
+      }
+      if (isHackathon && currentUserId) {
+        setJoinCount(rest[idx++]?.count || 0)
+        setJoined(!!rest[idx++]?.data)
+      }
     }
     load()
     return () => { alive = false }
-  }, [post.id])
-
-  // Load whether the current user already liked this post.
-  useEffect(() => {
-    if (!currentUserId) return
-    let alive = true
-    const load = async () => {
-      const supabase = createClient()
-      const { data } = await supabase.from('post_reactions').select('id').eq('post_id', post.id).eq('profile_id', currentUserId).maybeSingle()
-      if (!alive) return
-      setLiked(!!data)
-    }
-    load()
-    return () => { alive = false }
-  }, [currentUserId, post.id])
-
-  // Load hackathon join state (count is visible to anyone who can see the post).
-  useEffect(() => {
-    if (!isHackathon || !currentUserId) return
-    let alive = true
-    const load = async () => {
-      const supabase = createClient()
-      const [{ count }, { data: mine }] = await Promise.all([
-        supabase.from('post_joins').select('id', { count: 'exact', head: true }).eq('post_id', post.id),
-        supabase.from('post_joins').select('user_id').eq('post_id', post.id).eq('user_id', currentUserId).maybeSingle(),
-      ])
-      if (!alive) return
-      setJoinCount(count || 0)
-      setJoined(!!mine)
-    }
-    load()
-    return () => { alive = false }
-  }, [isHackathon, currentUserId, post.id])
+  }, [post.id, currentUserId, isHackathon])
 
   const handleJoinToggle = async () => {
     if (!currentUserId || !canInteract || joining) return

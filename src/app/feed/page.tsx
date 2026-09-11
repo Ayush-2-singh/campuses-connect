@@ -1,6 +1,6 @@
 'use client'
 
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
 import Layout from '@/components/Layout'
@@ -42,13 +42,13 @@ export default function FeedPage() {
   const PAGE_SIZE = 30
   const supabase = createClient()
   const router = useRouter()
+  const filterRef = useRef(filter)
+  filterRef.current = filter
 
-  const fetchPosts = useCallback(async (offset = 0) => {
-    // Home = the campus layer only (campus + whole-college posts). Global has
-    // its own page — it is never mixed into the campus feed.
-    // When filtering by category, the embed must be an INNER join — otherwise
-    // PostgREST keeps every post and only nulls the category (everything loads).
-    const inner = filter !== 'all' ? '!inner' : ''
+  // PROFESSIONAL PATTERN: Pure async functions that return data (no side effects).
+  // Used by both the initial parallel load and the filter-change refetch.
+  const fetchPostsData = useCallback(async (offset: number, currentFilter: string) => {
+    const inner = currentFilter !== 'all' ? '!inner' : ''
     let q = supabase
       .from('posts')
       .select(`*, profiles!posts_author_id_fkey(full_name, username, is_verified), content_categories${inner}(key, label)`)
@@ -56,24 +56,29 @@ export default function FeedPage() {
       .order('is_pinned', { ascending: false })
       .order('created_at', { ascending: false })
       .range(offset, offset + PAGE_SIZE - 1)
-    if (filter !== 'all') q = q.eq('content_categories.key', filter)
+    if (currentFilter !== 'all') q = q.eq('content_categories.key', currentFilter)
     const { data } = await q
+    return { data: data || [], hasMore: (data || []).length === PAGE_SIZE }
+  }, [supabase])
+
+  const fetchPosts = useCallback(async (offset = 0) => {
+    const { data, hasMore: more } = await fetchPostsData(offset, filterRef.current)
     if (offset === 0) {
-      setPosts(data || [])
+      setPosts(data)
     } else {
-      setPosts(prev => [...prev, ...(data || [])])
+      setPosts(prev => [...prev, ...data])
     }
-    setHasMore((data || []).length === PAGE_SIZE)
+    setHasMore(more)
     setLoading(false)
     setLoadingMore(false)
-  }, [filter, supabase])
+  }, [fetchPostsData])
 
   const loadMore = async () => {
     setLoadingMore(true)
     await fetchPosts(posts.length)
   }
 
-  const fetchPulse = useCallback(async () => {
+  const fetchPulseData = useCallback(async () => {
     const now = new Date().toISOString()
     const week = new Date(Date.now() + 7 * 86400000).toISOString()
     const [opps, notes, discussions, hacks] = await Promise.all([
@@ -82,12 +87,12 @@ export default function FeedPage() {
       supabase.from('posts').select('id', { count: 'exact', head: true }).eq('status', 'published'),
       supabase.from('opportunities').select('id', { count: 'exact', head: true }).eq('opp_type', 'hackathon').gte('deadline', now).lte('deadline', week),
     ])
-    setPulse({
+    return {
       opportunities: opps.count || 0,
       notes: notes.count || 0,
       discussions: discussions.count || 0,
       hackathons: hacks.count || 0,
-    })
+    }
   }, [supabase])
 
   useEffect(() => { setMounted(true) }, [])
@@ -101,19 +106,38 @@ export default function FeedPage() {
     } catch { /* ignore */ }
   }, [])
 
+  // PROFESSIONAL PATTERN (Vercel/Linear/Notion):
+  // Fire ALL initial queries in parallel — no sequential waterfall.
+  // Auth + profile + posts + pulse all run at the same time.
   useEffect(() => {
+    let cancelled = false
     const load = async () => {
-      const { data: { user } } = await supabase.auth.getUser()
+      const currentFilter = filterRef.current
+      // Fire auth, posts, and pulse ALL at once — no waiting
+      const [authResult, postsResult, pulseResult] = await Promise.all([
+        supabase.auth.getUser(),
+        fetchPostsData(0, currentFilter),
+        fetchPulseData(),
+      ])
+
+      if (cancelled) return
+
+      setPosts(postsResult.data)
+      setHasMore(postsResult.hasMore)
+      setPulse(pulseResult)
+      setLoading(false)
+
+      const user = authResult.data.user
       if (user) {
         setUser(user)
+        // Profile can wait — it's not needed for initial render
         const { data: prof } = await supabase.from('profiles').select('*, colleges(name), campuses(name)').eq('id', user.id).single()
-        setProfile(prof)
+        if (!cancelled) setProfile(prof)
       }
-      fetchPulse()
-      fetchPosts()
     }
     load()
-  }, [fetchPosts, fetchPulse, supabase])
+    return () => { cancelled = true }
+  }, [supabase, fetchPostsData, fetchPulseData])
 
   const firstName = profile?.full_name?.split(' ')[0]
 
