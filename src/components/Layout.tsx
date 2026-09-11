@@ -155,23 +155,13 @@ export default function Layout({ children, user, profile }: { children: React.Re
             gap: 10,
           }}
         >
-          <div
-            style={{
-              width: 36,
-              height: 36,
-              borderRadius: 11,
-              background:
-                'linear-gradient(135deg, var(--accent) 0%, color-mix(in srgb, var(--accent) 40%, var(--accent-purple)) 100%)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              color: 'var(--on-accent)',
-              flexShrink: 0,
-              boxShadow: 'var(--accent-glow)',
-            }}
-          >
-            <Icon name="grad" size={20} />
-          </div>
+          <img
+            src="/ctc-logo.svg"
+            alt="CTC"
+            width={36}
+            height={36}
+            style={{ flexShrink: 0, borderRadius: 11 }}
+          />
           <div>
             <h1
               style={{
@@ -498,22 +488,13 @@ export default function Layout({ children, user, profile }: { children: React.Re
         >
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-              <div
-                style={{
-                  width: 30,
-                  height: 30,
-                  borderRadius: 9,
-                  background:
-                    'linear-gradient(135deg, var(--accent) 0%, color-mix(in srgb, var(--accent) 40%, var(--accent-purple)) 100%)',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  color: 'var(--on-accent)',
-                  boxShadow: 'var(--accent-glow)',
-                }}
-              >
-                <Icon name="grad" size={17} />
-              </div>
+              <img
+                src="/ctc-logo.svg"
+                alt="CTC"
+                width={30}
+                height={30}
+                style={{ borderRadius: 9 }}
+              />
               <h1 style={{ fontSize: 17, fontWeight: 800, color: 'var(--text-primary)', margin: 0 }}>
                 Connect<span style={{ color: 'var(--accent)' }}>ToCampus</span>
               </h1>

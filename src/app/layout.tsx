@@ -70,12 +70,11 @@ export const metadata: Metadata = {
     creator: '@connecttocampus',
   },
   icons: {
-    icon: '/favicon.ico',
-    apple: [{ url: '/apple-touch-icon.png', sizes: '180x180', type: 'image/png' }],
+    icon: '/ctc-logo.svg',
+    apple: [{ url: '/ctc-logo.svg', sizes: '180x180', type: 'image/svg+xml' }],
     other: [
-      { rel: 'icon', url: '/icon-192.png', sizes: '192x192', type: 'image/png' },
-      { rel: 'icon', url: '/icon-512.png', sizes: '512x512', type: 'image/png' },
-      { rel: 'mask-icon', url: '/icon-192.png', color: '#D4A843' },
+      { rel: 'icon', url: '/ctc-logo.svg', sizes: 'any', type: 'image/svg+xml' },
+      { rel: 'mask-icon', url: '/ctc-logo.svg', color: '#D4A843' },
     ],
   },
   manifest: '/manifest.webmanifest',
@@ -181,8 +180,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(organizationJsonLd) }} />
 
         {/* Favicons & App Icons */}
-        <link rel="icon" href="/favicon.ico" sizes="any" />
-        <link rel="apple-touch-icon" href="/apple-touch-icon.png" sizes="180x180" />
+        <link rel="icon" href="/ctc-logo.svg" type="image/svg+xml" sizes="any" />
+        <link rel="apple-touch-icon" href="/ctc-logo.svg" type="image/svg+xml" />
         <link rel="manifest" href="/manifest.webmanifest" />
         <meta name="theme-color" content="#D4A843" />
         <meta name="msapplication-TileColor" content="#D4A843" />

@@ -96,20 +96,13 @@ export default function LandingPage() {
           }}
         >
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-            <div
-              style={{
-                width: 32,
-                height: 32,
-                borderRadius: 9,
-                background: 'var(--accent)',
-                color: 'var(--on-accent)',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-              }}
-            >
-              <Icon name="grad" size={18} />
-            </div>
+            <img
+              src="/ctc-logo.svg"
+              alt="CTC"
+              width={32}
+              height={32}
+              style={{ borderRadius: 9 }}
+            />
             <h1 style={{ fontSize: 19, fontWeight: 800, margin: 0, color: 'var(--text-primary)' }}>
               Connect<span style={{ color: 'var(--accent)' }}>ToCampus</span>
             </h1>
