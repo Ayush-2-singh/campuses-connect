@@ -5,9 +5,9 @@
   <!-- Light gray swoosh -->
   <path d="M80 175 Q140 120 200 155 Q260 190 320 145" stroke="#b0b0b0" stroke-width="14" stroke-linecap="round" fill="none"/>
   
-  <!-- Light gray T -->
-  <rect x="170" y="50" width="60" height="16" rx="2" fill="#d0d0d0"/>
-  <rect x="192" y="50" width="16" height="210" rx="2" fill="#d0d0d0"/>
+  <!-- Gray T -->
+  <rect x="170" y="50" width="60" height="16" rx="2" fill="#999999"/>
+  <rect x="192" y="50" width="16" height="210" rx="2" fill="#999999"/>
   
   <!-- Light gray C (right) -->
   <path d="M240 60 C300 60 345 105 345 160 C345 215 300 260 240 260 L240 220 C275 220 305 195 305 160 C305 125 275 100 240 100 Z" fill="#b0b0b0"/>
