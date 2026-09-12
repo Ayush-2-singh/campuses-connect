@@ -1,9 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { createServerClient } from '@supabase/ssr'
 import { createClient, type SupabaseClient } from '@supabase/supabase-js'
 
 // Server-side client with service role — bypasses RLS.
-// Lazy, request-time init — module-scope createClient() throws at build when
-// SUPABASE_SERVICE_ROLE_KEY is absent, and a shared client risks cross-user state.
 let _supabaseAdmin: SupabaseClient | null = null
 function getSupabaseAdmin(): SupabaseClient {
   if (!_supabaseAdmin) {
@@ -13,31 +12,32 @@ function getSupabaseAdmin(): SupabaseClient {
 }
 
 export async function POST(request: NextRequest) {
-  // ── Verify caller is authenticated ──────────────────────
-  const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!)
-
-  const cookieHeader = request.headers.get('cookie') || ''
-  const tokenMatch = cookieHeader.match(/sb-[^=]+-auth-token=([^;]+)/)
-  if (!tokenMatch) {
-    return NextResponse.json({ error: 'Not authenticated' }, { status: 401 })
-  }
-
-  let user: any = null
-  try {
-    const tokenData = JSON.parse(decodeURIComponent(tokenMatch[1]))
-    const accessToken = tokenData.access_token
-    if (!accessToken) {
-      return NextResponse.json({ error: 'Not authenticated' }, { status: 401 })
+  // ── Verify caller is authenticated via SSR client (handles cookie format) ──
+  let supabaseResponse = NextResponse.next({ request })
+  const supabase = createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    {
+      cookies: {
+        getAll() {
+          return request.cookies.getAll()
+        },
+        setAll(cookiesToSet) {
+          cookiesToSet.forEach(({ name, value }) => request.cookies.set(name, value))
+          supabaseResponse = NextResponse.next({ request })
+          cookiesToSet.forEach(({ name, value, options }) =>
+            supabaseResponse.cookies.set(name, value, options)
+          )
+        },
+      },
     }
-    const {
-      data: { user: authUser },
-      error,
-    } = await supabase.auth.getUser(accessToken)
-    if (error || !authUser) {
-      return NextResponse.json({ error: 'Not authenticated' }, { status: 401 })
-    }
-    user = authUser
-  } catch {
+  )
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+
+  if (!user) {
     return NextResponse.json({ error: 'Not authenticated' }, { status: 401 })
   }
 
