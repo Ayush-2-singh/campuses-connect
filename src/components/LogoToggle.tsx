@@ -2,94 +2,57 @@
 
 import React from 'react'
 
-const LOGO_KEY = 'cc-logo-variant'
-const LOGO_CHANGE_EVENT = 'cc-logo-change'
+const THEME_CHANGE_EVENT = 'cc-theme-change'
 
-export type LogoVariant = 'default' | 'mono' | 'minimal'
-
-const VARIANTS: LogoVariant[] = ['default', 'mono', 'minimal']
-
-const VARIANT_LABELS: Record<LogoVariant, string> = {
-  default: 'Color',
-  mono: 'Mono',
-  minimal: 'Minimal',
+// Dark mode → mono logo, Light mode → color logo
+function getLogoForTheme(): string {
+  if (typeof window === 'undefined') return '/ctc-logo.svg'
+  const theme = document.documentElement.getAttribute('data-theme')
+  return theme === 'dark' ? '/ctc-logo-mono.svg' : '/ctc-logo.svg'
 }
 
 export function getLogoSrc(): string {
-  if (typeof window === 'undefined') return '/ctc-logo.svg'
-  const variant = localStorage.getItem(LOGO_KEY) as LogoVariant | null
-  switch (variant) {
-    case 'mono':
-      return '/ctc-logo-mono.svg'
-    case 'minimal':
-      return '/ctc-logo-minimal.svg'
-    default:
-      return '/ctc-logo.svg'
-  }
-}
-
-function getNextVariant(current: LogoVariant): LogoVariant {
-  const idx = VARIANTS.indexOf(current)
-  return VARIANTS[(idx + 1) % VARIANTS.length]
+  return getLogoForTheme()
 }
 
 export default function LogoToggle({ size = 36 }: { size?: number }) {
-  const [current, setCurrent] = React.useState<LogoVariant>('default')
+  const [logoSrc, setLogoSrc] = React.useState('/ctc-logo.svg')
   const [mounted, setMounted] = React.useState(false)
   const [flash, setFlash] = React.useState(false)
 
   React.useEffect(() => {
     setMounted(true)
-    const saved = localStorage.getItem(LOGO_KEY) as LogoVariant | null
-    if (saved) setCurrent(saved)
+    setLogoSrc(getLogoForTheme())
 
     const sync = () => {
-      const v = localStorage.getItem(LOGO_KEY) as LogoVariant | null
-      if (v) setCurrent(v)
+      setLogoSrc(getLogoForTheme())
+      setFlash(true)
+      setTimeout(() => setFlash(false), 300)
     }
-    window.addEventListener(LOGO_CHANGE_EVENT, sync)
-    return () => window.removeEventListener(LOGO_CHANGE_EVENT, sync)
+    window.addEventListener(THEME_CHANGE_EVENT, sync)
+    return () => window.removeEventListener(THEME_CHANGE_EVENT, sync)
   }, [])
-
-  const cycle = () => {
-    const next = getNextVariant(current)
-    setCurrent(next)
-    try {
-      localStorage.setItem(LOGO_KEY, next)
-    } catch {}
-    window.dispatchEvent(new Event(LOGO_CHANGE_EVENT))
-    // Flash effect on switch
-    setFlash(true)
-    setTimeout(() => setFlash(false), 300)
-  }
 
   if (!mounted) return null
 
   return (
-    <button
-      type="button"
-      onClick={cycle}
-      aria-label={`Logo style: ${VARIANT_LABELS[current]}. Click to switch to ${VARIANT_LABELS[getNextVariant(current)]}`}
-      title={`Logo: ${VARIANT_LABELS[current]} — click to cycle`}
+    <div
       style={{
         width: size,
         height: size,
         borderRadius: '50%',
-        border: flash ? '2px solid var(--accent)' : '1px solid var(--border)',
-        background: 'var(--bg)',
-        color: 'var(--text-secondary)',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        cursor: 'pointer',
-        padding: 0,
-        overflow: 'hidden',
-        transition: 'border 0.2s ease',
         flexShrink: 0,
+        overflow: 'hidden',
+        border: flash ? '2px solid var(--accent)' : '1px solid var(--border)',
+        transition: 'border 0.2s ease',
+        background: 'var(--bg)',
       }}
     >
       <img
-        src={getLogoSrc()}
+        src={logoSrc}
         alt="CTC"
         width={size - 6}
         height={size - 6}
@@ -100,6 +63,6 @@ export default function LogoToggle({ size = 36 }: { size?: number }) {
           opacity: flash ? 0.8 : 1,
         }}
       />
-    </button>
+    </div>
   )
 }
