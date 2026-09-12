@@ -203,6 +203,14 @@ export interface Note {
   resource_type: string
   file_url?: string
   drive_link?: string
+  external_link?: string
+  // New fields for external storage
+  storage_provider?: 'link' | 'r2' | 'supabase'
+  external_file_url?: string
+  external_file_id?: string
+  file_size?: number
+  mime_type?: string
+  preview_url?: string
   download_count: number
   created_at: string
 }
