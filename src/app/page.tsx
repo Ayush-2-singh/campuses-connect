@@ -5,14 +5,24 @@ import { useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { Icon } from '@/components/icons'
 import GuestEntry from '@/components/GuestEntry'
+import { getLogoSrc } from '@/components/LogoToggle'
 
 export default function LandingPage() {
   const [user, setUser] = useState<any>(null)
   const [pulse, setPulse] = useState({ notes: 0, opportunities: 0, discussions: 0, hackathons: 0 })
   const [liveColleges, setLiveColleges] = useState<{ name: string; campuses: string[] }[]>([])
   const [guestOpen, setGuestOpen] = useState(false)
+  const [logoSrc, setLogoSrc] = useState('/ctc-logo.svg')
   const router = useRouter()
   const supabase = createClient()
+
+  // Sync logo with theme
+  useEffect(() => {
+    setLogoSrc(getLogoSrc())
+    const handler = () => setLogoSrc(getLogoSrc())
+    window.addEventListener('cc-theme-change', handler)
+    return () => window.removeEventListener('cc-theme-change', handler)
+  }, [])
 
   // PROFESSIONAL PATTERN: Single useEffect, ALL queries in parallel.
   // Before: 3 separate useEffects = 3 sequential waterfalls.
@@ -97,7 +107,7 @@ export default function LandingPage() {
         >
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
             <img
-              src="/ctc-logo.svg"
+              src={logoSrc}
               alt="CTC"
               width={32}
               height={32}

@@ -4,11 +4,15 @@ import React from 'react'
 
 const THEME_CHANGE_EVENT = 'cc-theme-change'
 
-// Dark mode → mono logo, Light mode → color logo
+// Dark mode → dark variants (white left C), Light mode → default variants
 function getLogoForTheme(): string {
   if (typeof window === 'undefined') return '/ctc-logo.svg'
   const theme = document.documentElement.getAttribute('data-theme')
-  return theme === 'dark' ? '/ctc-logo-mono.svg' : '/ctc-logo.svg'
+  if (theme === 'dark') {
+    // Dark: white left C + golden T + golden C
+    return '/ctc-logo-dark.svg'
+  }
+  return '/ctc-logo.svg'
 }
 
 export function getLogoSrc(): string {

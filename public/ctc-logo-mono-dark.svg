@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 300" fill="none">
+  <!-- White C (left) -->
+  <path d="M160 60 C100 60 55 105 55 160 C55 215 100 260 160 260 L160 220 C125 220 95 195 95 160 C95 125 125 100 160 100 Z" fill="#ffffff"/>
+  
+  <!-- Light gray swoosh -->
+  <path d="M80 175 Q140 120 200 155 Q260 190 320 145" stroke="#b0b0b0" stroke-width="14" stroke-linecap="round" fill="none"/>
+  
+  <!-- Light gray T -->
+  <rect x="170" y="50" width="60" height="16" rx="2" fill="#d0d0d0"/>
+  <rect x="192" y="50" width="16" height="210" rx="2" fill="#d0d0d0"/>
+  
+  <!-- Light gray C (right) -->
+  <path d="M240 60 C300 60 345 105 345 160 C345 215 300 260 240 260 L240 220 C275 220 305 195 305 160 C305 125 275 100 240 100 Z" fill="#b0b0b0"/>
+</svg>
