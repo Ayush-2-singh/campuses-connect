@@ -5,9 +5,9 @@
   <!-- Gold swoosh through T -->
   <path d="M80 175 Q140 120 200 155 Q260 190 320 145" stroke="#E0A83C" stroke-width="14" stroke-linecap="round" fill="none"/>
   
-  <!-- Black T -->
-  <rect x="170" y="50" width="60" height="16" rx="2" fill="#1a1a1a"/>
-  <rect x="192" y="50" width="16" height="210" rx="2" fill="#1a1a1a"/>
+  <!-- Gold T -->
+  <rect x="170" y="50" width="60" height="16" rx="2" fill="#E0A83C"/>
+  <rect x="192" y="50" width="16" height="210" rx="2" fill="#E0A83C"/>
   
   <!-- Gold C -->
   <path d="M240 60 C300 60 345 105 345 160 C345 215 300 260 240 260 L240 220 C275 220 305 195 305 160 C305 125 275 100 240 100 Z" fill="#E0A83C"/>
