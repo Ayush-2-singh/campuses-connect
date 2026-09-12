@@ -65,6 +65,15 @@ export default function Layout({ children, user, profile }: { children: React.Re
   const [cmdOpen, setCmdOpen] = React.useState(false)
   const [fabOpen, setFabOpen] = React.useState(false)
   const [menuOpen, setMenuOpen] = React.useState(false)
+  const [logoSrc, setLogoSrc] = React.useState('/ctc-logo.svg')
+
+  // Sync logo with theme changes
+  React.useEffect(() => {
+    setLogoSrc(getLogoSrc())
+    const sync = () => setLogoSrc(getLogoSrc())
+    window.addEventListener('cc-theme-change', sync)
+    return () => window.removeEventListener('cc-theme-change', sync)
+  }, [])
 
   // Close the mobile ☰ menu whenever the route changes.
   React.useEffect(() => {
@@ -157,7 +166,7 @@ export default function Layout({ children, user, profile }: { children: React.Re
           }}
         >
           <img
-            src={getLogoSrc()}
+            src={logoSrc}
             alt="CTC"
             width={36}
             height={36}
@@ -491,7 +500,7 @@ export default function Layout({ children, user, profile }: { children: React.Re
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
               <img
-                src={getLogoSrc()}
+                src={logoSrc}
                 alt="CTC"
                 width={30}
                 height={30}
