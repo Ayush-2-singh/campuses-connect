@@ -7,11 +7,13 @@ const LOGO_CHANGE_EVENT = 'cc-logo-change'
 
 export type LogoVariant = 'default' | 'mono' | 'minimal'
 
-const LOGO_OPTIONS: { id: LogoVariant; label: string; preview: string }[] = [
-  { id: 'default', label: 'Color', preview: '🎨' },
-  { id: 'mono', label: 'Mono', preview: '⬛' },
-  { id: 'minimal', label: 'Minimal', preview: '✦' },
-]
+const VARIANTS: LogoVariant[] = ['default', 'mono', 'minimal']
+
+const VARIANT_LABELS: Record<LogoVariant, string> = {
+  default: 'Color',
+  mono: 'Mono',
+  minimal: 'Minimal',
+}
 
 export function getLogoSrc(): string {
   if (typeof window === 'undefined') return '/ctc-logo.svg'
@@ -26,11 +28,15 @@ export function getLogoSrc(): string {
   }
 }
 
+function getNextVariant(current: LogoVariant): LogoVariant {
+  const idx = VARIANTS.indexOf(current)
+  return VARIANTS[(idx + 1) % VARIANTS.length]
+}
+
 export default function LogoToggle({ size = 36 }: { size?: number }) {
   const [current, setCurrent] = React.useState<LogoVariant>('default')
-  const [open, setOpen] = React.useState(false)
   const [mounted, setMounted] = React.useState(false)
-  const ref = React.useRef<HTMLDivElement>(null)
+  const [flash, setFlash] = React.useState(false)
 
   React.useEffect(() => {
     setMounted(true)
@@ -45,104 +51,55 @@ export default function LogoToggle({ size = 36 }: { size?: number }) {
     return () => window.removeEventListener(LOGO_CHANGE_EVENT, sync)
   }, [])
 
-  // Close dropdown on outside click
-  React.useEffect(() => {
-    if (!open) return
-    const handler = (e: MouseEvent) => {
-      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false)
-    }
-    document.addEventListener('mousedown', handler)
-    return () => document.removeEventListener('mousedown', handler)
-  }, [open])
-
-  const select = (id: LogoVariant) => {
-    setCurrent(id)
+  const cycle = () => {
+    const next = getNextVariant(current)
+    setCurrent(next)
     try {
-      localStorage.setItem(LOGO_KEY, id)
+      localStorage.setItem(LOGO_KEY, next)
     } catch {}
     window.dispatchEvent(new Event(LOGO_CHANGE_EVENT))
-    setOpen(false)
+    // Flash effect on switch
+    setFlash(true)
+    setTimeout(() => setFlash(false), 300)
   }
 
   if (!mounted) return null
 
   return (
-    <div ref={ref} style={{ position: 'relative' }}>
-      <button
-        type="button"
-        onClick={() => setOpen((o) => !o)}
-        aria-label="Change logo style"
-        title="Change logo style"
+    <button
+      type="button"
+      onClick={cycle}
+      aria-label={`Logo style: ${VARIANT_LABELS[current]}. Click to switch to ${VARIANT_LABELS[getNextVariant(current)]}`}
+      title={`Logo: ${VARIANT_LABELS[current]} — click to cycle`}
+      style={{
+        width: size,
+        height: size,
+        borderRadius: '50%',
+        border: flash ? '2px solid var(--accent)' : '1px solid var(--border)',
+        background: 'var(--bg)',
+        color: 'var(--text-secondary)',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        cursor: 'pointer',
+        padding: 0,
+        overflow: 'hidden',
+        transition: 'border 0.2s ease',
+        flexShrink: 0,
+      }}
+    >
+      <img
+        src={getLogoSrc()}
+        alt="CTC"
+        width={size - 6}
+        height={size - 6}
         style={{
-          width: size,
-          height: size,
           borderRadius: '50%',
-          border: '1px solid var(--border)',
-          background: 'var(--bg)',
-          color: 'var(--text-secondary)',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          cursor: 'pointer',
-          padding: 0,
-          overflow: 'hidden',
+          transition: 'transform 0.2s ease, opacity 0.2s ease',
+          transform: flash ? 'scale(1.15)' : 'scale(1)',
+          opacity: flash ? 0.8 : 1,
         }}
-      >
-        <img
-          src={getLogoSrc()}
-          alt="CTC"
-          width={size - 6}
-          height={size - 6}
-          style={{ borderRadius: '50%' }}
-        />
-      </button>
-
-      {open && (
-        <div
-          style={{
-            position: 'absolute',
-            top: 'calc(100% + 8px)',
-            right: 0,
-            background: 'var(--bg)',
-            border: '1px solid var(--border)',
-            borderRadius: 'var(--radius-md)',
-            boxShadow: 'var(--shadow-lg)',
-            padding: 6,
-            zIndex: 100,
-            minWidth: 140,
-          }}
-        >
-          <p style={{ fontSize: 11, color: 'var(--text-muted)', padding: '4px 8px', margin: 0, fontWeight: 600 }}>
-            Logo Style
-          </p>
-          {LOGO_OPTIONS.map((opt) => (
-            <button
-              key={opt.id}
-              onClick={() => select(opt.id)}
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: 10,
-                width: '100%',
-                textAlign: 'left',
-                background: current === opt.id ? 'var(--accent-light)' : 'transparent',
-                color: current === opt.id ? 'var(--accent-text)' : 'var(--text-secondary)',
-                border: 'none',
-                borderRadius: 'var(--radius-sm)',
-                padding: '8px 10px',
-                cursor: 'pointer',
-                fontSize: 13,
-                fontWeight: current === opt.id ? 600 : 500,
-                fontFamily: 'inherit',
-              }}
-            >
-              <span style={{ fontSize: 16 }}>{opt.preview}</span>
-              <span>{opt.label}</span>
-              {current === opt.id && <span style={{ marginLeft: 'auto', fontSize: 12 }}>✓</span>}
-            </button>
-          ))}
-        </div>
-      )}
-    </div>
+      />
+    </button>
   )
 }
