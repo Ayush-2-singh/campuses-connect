@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState, useCallback } from 'react'
+import React, { useEffect, useState, useCallback } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
 
@@ -33,23 +33,14 @@ interface AuditEntry {
   profiles?: { full_name: string; username: string } | null
 }
 
-const TABS = [
-  'Overview',
-  'Analytics',
-  'Features',
-  'Settings',
-  'Users',
-  'Verify',
-  'Premium',
-  'Content',
-  'Messages',
-  'Moderation',
-  'Colleges',
-  'Campus Changes',
-  'Audit Log',
-] as const
+// ── Permission-based tab access ──────────────────────────
+// Platform Admin: full access to everything
+// Campus Admin: only data feeding (Overview, Content, Verify)
+const PLATFORM_ONLY_TABS = ['Analytics', 'Features', 'Settings', 'Users', 'Premium', 'Messages', 'Moderation', 'Colleges', 'Campus Changes', 'Audit Log'] as const
+const CAMPUS_ACCESSIBLE_TABS = ['Overview', 'Content', 'Verify'] as const
+const ALL_TABS = [...CAMPUS_ACCESSIBLE_TABS, ...PLATFORM_ONLY_TABS] as const
 
-type Tab = (typeof TABS)[number]
+type Tab = (typeof ALL_TABS)[number]
 
 export default function AdminPage() {
   // ── Auth / Access ───────────────────────────────────────
@@ -206,6 +197,19 @@ export default function AdminPage() {
   }, [])
 
   const isPlatformAdmin = grants.some((g: any) => g.admin_type === 'platform_admin')
+  const isCampusAdmin = grants.some((g: any) => g.admin_type === 'campus_admin') && !isPlatformAdmin
+
+  // Filter tabs based on admin type
+  const availableTabs = isPlatformAdmin
+    ? [...ALL_TABS]
+    : [...CAMPUS_ACCESSIBLE_TABS]
+
+  // Redirect campus admins away from restricted tabs
+  React.useEffect(() => {
+    if (isCampusAdmin && PLATFORM_ONLY_TABS.includes(activeTab as any)) {
+      setActiveTab('Overview')
+    }
+  }, [isCampusAdmin, activeTab])
 
   // ── Data loaders ────────────────────────────────────────
   const loadUsers = useCallback(async () => {
@@ -982,7 +986,7 @@ export default function AdminPage() {
             overflowX: 'auto',
           }}
         >
-          {TABS.map((tab) => (
+          {availableTabs.map((tab) => (
             <button
               key={tab}
               onClick={() => setActiveTab(tab)}
@@ -1176,14 +1180,12 @@ export default function AdminPage() {
                 marginTop: 16,
                 boxShadow: 'var(--shadow-sm)',
               }}
-            >
-              <p style={{ fontSize: 14, color: 'var(--text-secondary)', lineHeight: 1.7, margin: 0 }}>
-                Welcome to the <strong>full admin panel</strong>. You can now manage <strong>Features</strong> (toggle
-                on/off), <strong>Settings</strong> (platform configuration),
-                <strong> Users</strong> (grant or revoke admin access), <strong>Posts</strong> (pin or delete),{' '}
-                <strong>Colleges</strong> (view registered institutions),
-                <strong> Moderation</strong> (AI copilot), and review the <strong>Audit Log</strong> — all from this
-                dashboard.
+            >            <p style={{ fontSize: 14, color: 'var(--text-secondary)', lineHeight: 1.7, margin: 0 }}>
+                {isPlatformAdmin ? (
+                  <>Welcome to the <strong>full admin panel</strong>. You can manage <strong>Features</strong>, <strong>Settings</strong>, <strong>Users</strong>, <strong>Moderation</strong>, and more.</>
+                ) : (
+                  <>Welcome, <strong>Campus Admin</strong>. You can manage <strong>Content</strong> (notes, posts) and <strong>Verify</strong> users for your campus. Sensitive operations are restricted to Platform Admin.</>
+                )}
               </p>
             </div>
           </div>

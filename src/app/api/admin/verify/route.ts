@@ -7,12 +7,14 @@ export async function GET(req: NextRequest) {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
-  // Verify platform admin
+  // Verify admin (platform or campus)
   const { data: grants } = await supabase.rpc('my_admin_grants')
   const g = (grants as any[]) || []
-  if (!g.some((x: any) => x.admin_type === 'platform_admin')) {
+  const isAdmin = g.some((x: any) => x.admin_type === 'platform_admin' || x.admin_type === 'campus_admin')
+  if (!isAdmin) {
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
   }
+  const isPlatformAdmin = g.some((x: any) => x.admin_type === 'platform_admin')
 
   const { searchParams } = new URL(req.url)
   const search = searchParams.get('search') || ''
@@ -48,10 +50,11 @@ export async function POST(req: NextRequest) {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
-  // Verify platform admin
+  // Verify admin (platform or campus)
   const { data: grants } = await supabase.rpc('my_admin_grants')
   const g = (grants as any[]) || []
-  if (!g.some((x: any) => x.admin_type === 'platform_admin')) {
+  const isAdmin = g.some((x: any) => x.admin_type === 'platform_admin' || x.admin_type === 'campus_admin')
+  if (!isAdmin) {
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
   }
 
@@ -159,9 +162,11 @@ export async function PATCH(req: NextRequest) {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
+  // Verify admin (platform or campus)
   const { data: grants } = await supabase.rpc('my_admin_grants')
   const g = (grants as any[]) || []
-  if (!g.some((x: any) => x.admin_type === 'platform_admin')) {
+  const isAdmin = g.some((x: any) => x.admin_type === 'platform_admin' || x.admin_type === 'campus_admin')
+  if (!isAdmin) {
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
   }
 
