@@ -42,15 +42,12 @@ export default function NotesPage() {
     external_link: '',
     visibility: 'campus' as 'global' | 'campus',
   })
-  const [selectedFile, setSelectedFile] = useState<File | null>(null)
-  const [uploadProgress, setUploadProgress] = useState(0)
   const supabase = createClient()
   const admin = useAdminContext(user?.id)
   const [ai, setAi] = useState<{ answer: string; sources: string[]; asked: string } | null>(null)
   const [aiLoading, setAiLoading] = useState(false)
   const [showPendingOnly, setShowPendingOnly] = useState(false)
 
-  const canUpload = admin.isPlatformAdmin // admin-only file upload
   const canSubmitLink = !!user // everyone can submit a link
   const canVerify = admin.isPlatformAdmin || admin.isCampusAdmin // admin verifies notes
 
@@ -120,26 +117,19 @@ export default function NotesPage() {
   const handlePost = async () => {
     if (!form.title.trim() || !form.subject.trim()) return
     setPosting(true)
-    setUploadProgress(0)
     try {
-      // Use FormData for file upload
-      const formData = new FormData()
-      formData.append('title', form.title)
-      formData.append('subject', form.subject)
-      formData.append('resource_type', form.resource_type)
-      formData.append('description', form.description)
-      if (form.drive_link) formData.append('drive_link', form.drive_link)
-      if (form.external_link) formData.append('external_link', form.external_link)
-      formData.append('visibility', profile?.campus_id ? form.visibility : 'global')
-      
-      // Add file if selected
-      if (selectedFile) {
-        formData.append('file', selectedFile)
-      }
-
-      const res = await fetch('/api/notes/upload', {
+      const res = await fetch('/api/notes/submit', {
         method: 'POST',
-        body: formData,
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          title: form.title,
+          subject: form.subject,
+          resource_type: form.resource_type,
+          description: form.description,
+          drive_link: form.drive_link || null,
+          external_link: form.external_link || null,
+          visibility: profile?.campus_id ? form.visibility : 'global',
+        }),
         credentials: 'include',
       })
       const data = await res.json()
@@ -157,8 +147,6 @@ export default function NotesPage() {
       external_link: '',
       visibility: 'campus',
     })
-    setSelectedFile(null)
-    setUploadProgress(0)
     setShowCompose(false)
     const { data } = await supabase
       .from('notes')
@@ -276,24 +264,6 @@ export default function NotesPage() {
                   }}
                 >
                   🔗 Submit Link
-                </button>
-              )}
-              {canUpload && (
-                <button
-                  onClick={() => setShowCompose(true)}
-                  style={{
-                    background: 'var(--accent)',
-                    color: 'var(--on-accent)',
-                    border: 'none',
-                    padding: '9px 18px',
-                    borderRadius: 'var(--radius-sm)',
-                    fontSize: 14,
-                    fontWeight: 600,
-                    cursor: 'pointer',
-                    fontFamily: 'inherit',
-                  }}
-                >
-                  + Upload
                 </button>
               )}
             </div>
@@ -475,7 +445,7 @@ export default function NotesPage() {
           )}
 
           {/* Upload/Submit form — admin upload OR user link submission */}
-          {showCompose && (canUpload || canSubmitLink) && (
+          {showCompose && canSubmitLink && (
             <div
               style={{
                 background: 'var(--bg)',
@@ -487,7 +457,7 @@ export default function NotesPage() {
               }}
             >
               <h3 style={{ fontSize: 16, fontWeight: 700, color: 'var(--text-primary)', margin: '0 0 16px' }}>
-                Upload Resource
+                Submit Note Link
               </h3>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
                 <input
@@ -534,70 +504,6 @@ export default function NotesPage() {
                   rows={2}
                   style={{ ...inputStyle, resize: 'none' }}
                 />
-                {/* File upload */}
-                <div
-                  style={{
-                    border: '2px dashed var(--border)',
-                    borderRadius: 10,
-                    padding: '20px',
-                    textAlign: 'center',
-                    background: selectedFile ? 'var(--accent-light)' : 'var(--bg-secondary)',
-                    cursor: 'pointer',
-                    transition: 'all 0.2s',
-                  }}
-                  onClick={() => document.getElementById('file-upload')?.click()}
-                  onDragOver={(e) => {
-                    e.preventDefault()
-                    e.currentTarget.style.borderColor = 'var(--accent)'
-                  }}
-                  onDragLeave={(e) => {
-                    e.currentTarget.style.borderColor = 'var(--border)'
-                  }}
-                  onDrop={(e) => {
-                    e.preventDefault()
-                    e.currentTarget.style.borderColor = 'var(--border)'
-                    const file = e.dataTransfer.files[0]
-                    if (file) setSelectedFile(file)
-                  }}
-                >
-                  <input
-                    id="file-upload"
-                    type="file"
-                    accept=".pdf,.doc,.docx,.ppt,.pptx,.jpg,.jpeg,.png,.webp,.txt"
-                    style={{ display: 'none' }}
-                    onChange={(e) => {
-                      const file = e.target.files?.[0]
-                      if (file) setSelectedFile(file)
-                    }}
-                  />
-                  {selectedFile ? (
-                    <div>
-                      <p style={{ fontSize: 13, fontWeight: 600, color: 'var(--accent)', margin: '0 0 4px' }}>
-                        📎 {selectedFile.name}
-                      </p>
-                      <p style={{ fontSize: 11, color: 'var(--text-muted)', margin: 0 }}>
-                        {(selectedFile.size / 1024 / 1024).toFixed(2)} MB · Click to change
-                      </p>
-                    </div>
-                  ) : (
-                    <div>
-                      <p style={{ fontSize: 13, color: 'var(--text-secondary)', margin: '0 0 4px' }}>
-                        📎 Drop file here or click to upload
-                      </p>
-                      <p style={{ fontSize: 11, color: 'var(--text-muted)', margin: 0 }}>
-                        PDF, DOC, DOCX, PPT, PPTX, JPG, PNG, WebP, TXT (max 50MB)
-                      </p>
-                    </div>
-                  )}
-                </div>
-
-                {/* Or use a link */}
-                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                  <div style={{ flex: 1, height: 1, background: 'var(--border)' }} />
-                  <span style={{ fontSize: 12, color: 'var(--text-muted)' }}>or use a link</span>
-                  <div style={{ flex: 1, height: 1, background: 'var(--border)' }} />
-                </div>
-
                 <input
                   type="url"
                   value={form.drive_link}
@@ -612,20 +518,18 @@ export default function NotesPage() {
                   placeholder="Other Link (YouTube, Notion, etc.)"
                   style={inputStyle}
                 />
-                {!canUpload && (
-                  <div
-                    style={{
-                      background: 'var(--orange-light)',
-                      borderRadius: 10,
-                      padding: '10px 14px',
-                      fontSize: 12,
-                      color: 'var(--orange-text)',
-                      lineHeight: 1.5,
-                    }}
-                  >
-                    📌 Your submission will be reviewed by an admin before it becomes visible to others.
-                  </div>
-                )}
+                <div
+                  style={{
+                    background: 'var(--orange-light)',
+                    borderRadius: 10,
+                    padding: '10px 14px',
+                    fontSize: 12,
+                    color: 'var(--orange-text)',
+                    lineHeight: 1.5,
+                  }}
+                >
+                  📌 Your submission will be reviewed by an admin before it becomes visible to others.
+                </div>
               </div>
               <div style={{ display: 'flex', gap: 8, marginTop: 14 }}>
                 <button
@@ -743,9 +647,7 @@ export default function NotesPage() {
               body={
                 query
                   ? 'Try a different subject or topic — new notes are added every week.'
-                  : canUpload
-                    ? 'Upload the first resource for your campus.'
-                    : 'Check back later — notes are added regularly.'
+                  : 'Check back later — notes are added regularly.'
               }
             />
           ) : tab === 'subject' ? (
@@ -874,11 +776,6 @@ function NoteRow({
           @{note.profiles?.username}
           {(note.download_count || 0) > 0 && (
             <span style={{ marginLeft: 8, color: 'var(--text-secondary)' }}>↓ {note.download_count}</span>
-          )}
-          {note.file_size && (
-            <span style={{ marginLeft: 8, color: 'var(--text-secondary)' }}>
-              📎 {(note.file_size / 1024 / 1024).toFixed(1)} MB
-            </span>
           )}
         </p>
       </div>
