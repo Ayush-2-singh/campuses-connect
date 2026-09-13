@@ -4,21 +4,54 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@/lib/supabase/server'
-import { requireAuth, requireAdmin } from '@/lib/api/middleware'
+import { createClient, type SupabaseClient } from '@supabase/supabase-js'
+
+// ── Service-role client (bypasses RLS, always available) ─────
+let _supabaseAdmin: SupabaseClient | null = null
+function getSupabaseAdmin(): SupabaseClient {
+  if (!_supabaseAdmin) {
+    _supabaseAdmin = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!)
+  }
+  return _supabaseAdmin!
+}
+
+/** Extract verified user from request cookies via service-role client. */
+async function getVerifiedUser(request: NextRequest) {
+  const allCookies = request.cookies.getAll()
+  const tokenCookie = allCookies.find((c) => c.name.match(/^sb-.*-auth-token$/))
+  if (!tokenCookie) return null
+
+  let accessToken: string | undefined
+  try {
+    const parsed = JSON.parse(decodeURIComponent(tokenCookie.value))
+    accessToken = parsed.access_token
+  } catch {
+    accessToken = tokenCookie.value
+  }
+  if (!accessToken) return null
+
+  const admin = getSupabaseAdmin()
+  const {
+    data: { user },
+    error,
+  } = await admin.auth.getUser(accessToken)
+  if (error || !user) return null
+  return user
+}
 
 // ─── GET /api/opportunities ───────────────────────────────────────────────────
 export async function GET(request: NextRequest) {
-  // Must be signed in
-  const authResult = await requireAuth()
-  if (!authResult.ok) return authResult.response
+  const user = await getVerifiedUser(request)
+  if (!user) {
+    return NextResponse.json({ error: 'Unauthorized.' }, { status: 401 })
+  }
 
-  const supabase = await createClient()
+  const admin = getSupabaseAdmin()
   const { searchParams } = new URL(request.url)
   const oppType = searchParams.get('opp_type')
   const limit = Math.min(Number(searchParams.get('limit') ?? '50'), 100)
 
-  let query = supabase
+  let query = admin
     .from('opportunities')
     .select('*, profiles(full_name, username)')
     .eq('is_active', true)
@@ -41,11 +74,22 @@ export async function GET(request: NextRequest) {
 
 // ─── POST /api/opportunities ──────────────────────────────────────────────────
 export async function POST(request: NextRequest) {
-  // Must be an admin
-  const authResult = await requireAdmin()
-  if (!authResult.ok) return authResult.response
+  const user = await getVerifiedUser(request)
+  if (!user) {
+    return NextResponse.json({ error: 'Unauthorized.' }, { status: 401 })
+  }
 
-  const { auth } = authResult
+  // Check admin status
+  const admin = getSupabaseAdmin()
+  const { data: grants } = await admin.rpc('my_admin_grants')
+  const grantsArr = (grants as any[]) || []
+  const isAdmin = grantsArr.some((g: any) => g.admin_type === 'platform_admin' || g.admin_type === 'campus_admin')
+  if (!isAdmin) {
+    return NextResponse.json({ error: 'Forbidden. Admin access required.' }, { status: 403 })
+  }
+
+  // Get profile
+  const { data: profile } = await admin.from('profiles').select('campus_id, college_id').eq('id', user.id).single()
 
   let body: Record<string, unknown>
   try {
@@ -54,25 +98,32 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Invalid JSON body.' }, { status: 400 })
   }
 
-  const { title, description, opp_type, company_org, apply_link, deadline, is_paid, stipend_range, location_type, skills_required, visibility } = body
+  const {
+    title,
+    description,
+    opp_type,
+    company_org,
+    apply_link,
+    deadline,
+    is_paid,
+    stipend_range,
+    location_type,
+    skills_required,
+    visibility,
+  } = body
 
   if (!title || typeof title !== 'string' || !title.trim()) {
     return NextResponse.json({ error: 'title is required.' }, { status: 422 })
   }
 
-  const supabase = await createClient()
-
-  // Content reach: 'global' = every student; 'campus' = only the poster's
-  // campus/college (global users never see it). Defaults to the admin's own
-  // layer: campus admins post to their campus, platform admins to global.
   const vis = visibility === 'campus' ? 'campus' : 'global'
 
-  const { data, error } = await supabase
+  const { data, error } = await admin
     .from('opportunities')
     .insert({
-      posted_by: auth.userId,
-      campus_id: auth.profile.campus_id ?? null,
-      college_id: auth.profile.college_id ?? null,
+      posted_by: user.id,
+      campus_id: profile?.campus_id ?? null,
+      college_id: profile?.college_id ?? null,
       title: title.trim(),
       description: description ?? null,
       opp_type: opp_type ?? 'other',
@@ -83,7 +134,7 @@ export async function POST(request: NextRequest) {
       stipend_range: stipend_range ?? null,
       location_type: location_type ?? 'remote',
       skills_required: Array.isArray(skills_required) ? skills_required.map(String).filter(Boolean).slice(0, 12) : null,
-      visibility: auth.profile.campus_id ? vis : 'global',
+      visibility: profile?.campus_id ? vis : 'global',
       is_active: true,
     })
     .select('*, profiles(full_name, username)')
@@ -95,7 +146,7 @@ export async function POST(request: NextRequest) {
   }
 
   // Award karma via the validated wrapper
-  await supabase.rpc('reward_opportunity_post', { p_opportunity_id: data.id })
+  await admin.rpc('reward_opportunity_post', { p_opportunity_id: data.id })
 
   return NextResponse.json({ data }, { status: 201 })
 }

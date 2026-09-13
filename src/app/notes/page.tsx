@@ -94,24 +94,34 @@ export default function NotesPage() {
   }
 
   useEffect(() => {
+    let cancelled = false
     const load = async () => {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser()
+      // Fire auth + notes ALL AT ONCE — no sequential waterfall
+      const [authResult, notesResult] = await Promise.all([
+        supabase.auth.getUser(),
+        supabase
+          .from('notes')
+          .select('*, profiles(full_name, username)')
+          .order('created_at', { ascending: false })
+          .limit(100),
+      ])
+
+      if (cancelled) return
+      setNotes(notesResult.data || [])
+      setLoading(false)
+
+      const user = authResult.data.user
       if (user) {
         setUser(user)
+        // Profile can wait — not needed for initial render
         const { data: prof } = await supabase.from('profiles').select('*, campuses(name)').eq('id', user.id).single()
-        setProfile(prof)
+        if (!cancelled) setProfile(prof)
       }
-      const { data } = await supabase
-        .from('notes')
-        .select('*, profiles(full_name, username)')
-        .order('created_at', { ascending: false })
-        .limit(100)
-      setNotes(data || [])
-      setLoading(false)
     }
     load()
+    return () => {
+      cancelled = true
+    }
   }, [])
 
   const handlePost = async () => {
