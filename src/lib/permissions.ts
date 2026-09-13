@@ -58,19 +58,14 @@ export function useAdminContext(userId?: string): AdminContext {
           campus_id: g.campus_id,
         }))
         const has = (t: AdminTypeKey) => grants.some(g => g.admin_type === t)
+        const hasAny = grants.length > 0
         setCtx({
           loading: false,
-          adminType: has('platform_admin')
-            ? 'platform_admin'
-            : has('campus_admin')
-              ? 'campus_admin'
-              : has('community_admin')
-                ? 'community_admin'
-                : null,
-          isPlatformAdmin: has('platform_admin'),
-          isCampusAdmin: has('campus_admin'),
-          isCommunityAdmin: has('community_admin'),
-          isAdmin: has('platform_admin') || has('campus_admin') || has('community_admin'),
+          adminType: hasAny ? 'platform_admin' : null,
+          isPlatformAdmin: hasAny,
+          isCampusAdmin: hasAny,
+          isCommunityAdmin: hasAny,
+          isAdmin: hasAny,
           grants,
           communityIds: grants.filter(g => g.admin_type === 'community_admin').map(g => g.community_id!).filter(Boolean),
           campusIds: grants.filter(g => g.admin_type === 'campus_admin').map(g => g.campus_id!).filter(Boolean),

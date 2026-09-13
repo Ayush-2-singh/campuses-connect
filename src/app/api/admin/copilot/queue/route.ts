@@ -1,16 +1,16 @@
-import { NextResponse } from 'next/server'
+import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { requireAuth } from '@/lib/api/middleware'
 import { checkRateLimit } from '@/lib/rateLimit'
 
 export const runtime = 'nodejs'
 
-export async function GET() {
-  const authResult = await requireAuth()
+export async function GET(request: NextRequest) {
+  const authResult = await requireAuth(request)
   if (!authResult.ok) return authResult.response
   const { userId, adminTypes, profile } = authResult.auth
 
-  const isAdmin = adminTypes.includes('platform_admin') || adminTypes.includes('campus_admin')
+  const isAdmin = adminTypes.length > 0
   if (!isAdmin) {
     return NextResponse.json({ error: 'Admins only.' }, { status: 403 })
   }

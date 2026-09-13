@@ -1,16 +1,19 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 
+async function checkAdmin(supabase: Awaited<ReturnType<typeof createClient>>) {
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { user: null, isAdmin: false }
+  const { data: grants } = await supabase.rpc('my_admin_grants')
+  const isAdmin = ((grants as any[]) || []).length > 0
+  return { user, isAdmin }
+}
+
 /** GET /api/admin/platform-settings — list all platform settings */
 export async function GET() {
   const supabase = await createClient()
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
+  const { user, isAdmin } = await checkAdmin(supabase)
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-
-  const { data: grants } = await supabase.rpc('my_admin_grants')
-  const isAdmin = (grants as any[])?.some((g: any) => g.admin_type === 'platform_admin')
   if (!isAdmin) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
 
   const { data, error } = await supabase.from('platform_settings').select('*').order('key')
@@ -29,13 +32,8 @@ export async function GET() {
 /** PATCH /api/admin/platform-settings — update a setting */
 export async function PATCH(req: NextRequest) {
   const supabase = await createClient()
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
+  const { user, isAdmin } = await checkAdmin(supabase)
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-
-  const { data: grants } = await supabase.rpc('my_admin_grants')
-  const isAdmin = (grants as any[])?.some((g: any) => g.admin_type === 'platform_admin')
   if (!isAdmin) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
 
   const body = await req.json()
@@ -55,7 +53,6 @@ export async function PATCH(req: NextRequest) {
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
 
-  // Log the action
   await supabase.rpc('log_admin_action', {
     p_action: 'platform_setting.update',
     p_entity_type: 'platform_settings',
@@ -68,13 +65,8 @@ export async function PATCH(req: NextRequest) {
 /** DELETE /api/admin/platform-settings — delete a setting */
 export async function DELETE(req: NextRequest) {
   const supabase = await createClient()
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
+  const { user, isAdmin } = await checkAdmin(supabase)
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-
-  const { data: grants } = await supabase.rpc('my_admin_grants')
-  const isAdmin = (grants as any[])?.some((g: any) => g.admin_type === 'platform_admin')
   if (!isAdmin) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
 
   const body = await req.json()
@@ -87,7 +79,6 @@ export async function DELETE(req: NextRequest) {
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
 
-  // Log the action
   await supabase.rpc('log_admin_action', {
     p_action: 'platform_setting.delete',
     p_entity_type: 'platform_settings',

@@ -41,6 +41,7 @@ export default function NotesPage() {
     drive_link: '',
     external_link: '',
     visibility: 'campus' as 'global' | 'campus',
+    file: null as File | null,
   })
   const supabase = createClient()
   const admin = useAdminContext(user?.id)
@@ -53,7 +54,16 @@ export default function NotesPage() {
 
   const deleteNote = async (note: any) => {
     if (!window.confirm(`Delete "${note.title}"? This cannot be undone.`)) return
-    await supabase.from('notes').delete().eq('id', note.id)
+    
+    if (user?.id === note.uploaded_by) {
+      await supabase.from('notes').delete().eq('id', note.id)
+    } else {
+      await fetch('/api/admin/content', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ type: 'notes', ids: [note.id] })
+      })
+    }
     const { data } = await supabase
       .from('notes')
       .select('*, profiles(full_name, username)')
@@ -63,7 +73,11 @@ export default function NotesPage() {
   }
 
   const verifyNote = async (noteId: string, approved: boolean) => {
-    await supabase.from('notes').update({ is_verified: approved }).eq('id', noteId)
+    await fetch('/api/notes/verify', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ note_id: noteId, is_verified: approved })
+    })
     const { data } = await supabase
       .from('notes')
       .select('*, profiles(full_name, username)')
@@ -128,19 +142,19 @@ export default function NotesPage() {
     if (!form.title.trim() || !form.subject.trim()) return
     setPosting(true)
     try {
-      const res = await fetch('/api/notes/submit', {
+      const formData = new FormData()
+      formData.append('title', form.title)
+      formData.append('subject', form.subject)
+      formData.append('resource_type', form.resource_type)
+      formData.append('description', form.description)
+      if (form.drive_link) formData.append('drive_link', form.drive_link)
+      if (form.external_link) formData.append('external_link', form.external_link)
+      if (form.file) formData.append('file', form.file)
+      formData.append('visibility', profile?.campus_id ? form.visibility : 'global')
+
+      const res = await fetch('/api/notes/upload', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          title: form.title,
-          subject: form.subject,
-          resource_type: form.resource_type,
-          description: form.description,
-          drive_link: form.drive_link || null,
-          external_link: form.external_link || null,
-          visibility: profile?.campus_id ? form.visibility : 'global',
-        }),
-        credentials: 'include',
+        body: formData,
       })
       const data = await res.json()
       if (!res.ok) throw new Error(data?.error || 'Failed to submit')
@@ -156,6 +170,7 @@ export default function NotesPage() {
       drive_link: '',
       external_link: '',
       visibility: 'campus',
+      file: null,
     })
     setShowCompose(false)
     const { data } = await supabase
@@ -273,7 +288,7 @@ export default function NotesPage() {
                     fontFamily: 'inherit',
                   }}
                 >
-                  🔗 Submit Link
+                  🔗 Upload Note
                 </button>
               )}
             </div>
@@ -467,9 +482,15 @@ export default function NotesPage() {
               }}
             >
               <h3 style={{ fontSize: 16, fontWeight: 700, color: 'var(--text-primary)', margin: '0 0 16px' }}>
-                Submit Note Link
+                Upload Note or Submit Link
               </h3>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                <input
+                  type="file"
+                  onChange={(e) => setForm((f) => ({ ...f, file: e.target.files?.[0] || null }))}
+                  style={{ ...inputStyle, background: 'var(--bg-secondary)', padding: '12px' }}
+                  accept=".pdf,.doc,.docx,.ppt,.pptx,.jpg,.jpeg,.png,.webp,.txt"
+                />
                 <input
                   type="text"
                   value={form.title}

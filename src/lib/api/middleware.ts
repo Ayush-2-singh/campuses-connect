@@ -8,7 +8,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getVerifiedUser, getSupabaseAdmin } from '@/lib/auth'
 
-export const ADMIN_ROLES = ['platform_admin', 'campus_admin'] as const
+export const ADMIN_ROLES = ['platform_admin', 'campus_admin', 'community_admin'] as const
 export type AdminRole = (typeof ADMIN_ROLES)[number]
 
 export interface AuthResult {
@@ -91,7 +91,7 @@ export async function requireAuth(
 }
 
 /**
- * Verify the request is from an authenticated admin.
+ * Verify the request is from an authenticated admin (any admin type = full access).
  * Returns `{ ok: true, auth }` or a ready-to-return 401/403 NextResponse.
  */
 export async function requireAdmin(
@@ -102,7 +102,8 @@ export async function requireAdmin(
 
   const { auth } = result
 
-  if (!auth.adminTypes.some((t) => (ADMIN_ROLES as readonly string[]).includes(t))) {
+  // Any admin grant (platform, campus, community) = full admin access
+  if (auth.adminTypes.length === 0) {
     return {
       ok: false,
       response: NextResponse.json({ error: 'Forbidden. Admin access required.' }, { status: 403 }),
