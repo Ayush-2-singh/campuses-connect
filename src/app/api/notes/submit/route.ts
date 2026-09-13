@@ -1,10 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient, type SupabaseClient } from '@supabase/supabase-js'
-import { createServerClient } from '@supabase/ssr'
 
-// Server-side client with service role — bypasses RLS.
-// Lazy, request-time init — module-scope createClient() throws at build when
-// SUPABASE_SERVICE_ROLE_KEY is absent, and a shared client risks cross-user state.
+// ── Service-role client (bypasses RLS, always available) ─────
 let _supabaseAdmin: SupabaseClient | null = null
 function getSupabaseAdmin(): SupabaseClient {
   if (!_supabaseAdmin) {
@@ -13,37 +10,50 @@ function getSupabaseAdmin(): SupabaseClient {
   return _supabaseAdmin!
 }
 
-/** Build an SSR-aware server client from request cookies (not next/headers). */
-function createSSRClient(request: NextRequest) {
-  return createServerClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!, {
-    cookies: {
-      getAll() {
-        return request.cookies.getAll()
-      },
-      setAll() {
-        // Route handlers cannot set cookies on the request — ignore.
-        // The middleware handles session refresh via response cookies.
-      },
-    },
-  })
+/**
+ * Extract the authenticated user from cookies using the service-role client.
+ *
+ * Why service-role? The middleware does fire-and-forget getUser() on public
+ * routes, so the session refresh may not have completed by the time this
+ * route handler runs. The browser's httpOnly cookies still carry a valid
+ * access_token — we just need to verify it. The service-role client can call
+ * auth.getUser(token) to validate any access token directly.
+ */
+async function getVerifiedUser(request: NextRequest) {
+  // 1. Find the auth cookie — @supabase/ssr stores it as sb-<ref>-auth-token
+  //    (may be chunked as .0, .1, etc.)
+  const allCookies = request.cookies.getAll()
+  const tokenCookie = allCookies.find((c) => c.name.match(/^sb-.*-auth-token$/))
+  if (!tokenCookie) return null
+
+  // 2. Parse the JSON session blob
+  let accessToken: string | undefined
+  try {
+    const parsed = JSON.parse(decodeURIComponent(tokenCookie.value))
+    accessToken = parsed.access_token
+  } catch {
+    // Cookie might be base64url-encoded or stored as plain access_token
+    // Try using the raw value as the access token directly
+    accessToken = tokenCookie.value
+  }
+  if (!accessToken) return null
+
+  // 3. Verify via service-role client (works even if anon key is bad)
+  const admin = getSupabaseAdmin()
+  const {
+    data: { user },
+    error,
+  } = await admin.auth.getUser(accessToken)
+  if (error || !user) return null
+  return user
 }
 
 export async function POST(request: NextRequest) {
   // ── Verify caller is authenticated ──────────────────────
-  // Read cookies directly from request (not cookies() from next/headers)
-  // because the middleware's fire-and-forget getUser() may not have completed.
-  const supabase = createSSRClient(request)
-
-  const {
-    data: { user: authUser },
-    error: authError,
-  } = await supabase.auth.getUser()
-
-  if (authError || !authUser) {
+  const user = await getVerifiedUser(request)
+  if (!user) {
     return NextResponse.json({ error: 'Not authenticated' }, { status: 401 })
   }
-
-  const user = authUser
 
   // ── Parse body ──────────────────────────────────────────
   const body = await request.json()
@@ -62,19 +72,20 @@ export async function POST(request: NextRequest) {
   }
 
   // ── Get user profile for campus/college context ─────────
-  const { data: profile } = await getSupabaseAdmin()
+  const admin = getSupabaseAdmin()
+  const { data: profile } = await admin
     .from('profiles')
     .select('campus_id, college_id, department_id')
     .eq('id', user.id)
     .single()
 
   // ── Check if user is admin (auto-verify) ────────────────
-  const { data: grants } = await getSupabaseAdmin().rpc('my_admin_grants')
+  const { data: grants } = await admin.rpc('my_admin_grants')
   const grantsArr = (grants as any[]) || []
   const isAdmin = grantsArr.some((g: any) => g.admin_type === 'platform_admin' || g.admin_type === 'campus_admin')
 
   // ── Insert note using service role (bypasses RLS) ───────
-  const { data: noteRow, error: insertError } = await getSupabaseAdmin()
+  const { data: noteRow, error: insertError } = await admin
     .from('notes')
     .insert({
       uploaded_by: user.id,
@@ -88,7 +99,6 @@ export async function POST(request: NextRequest) {
       drive_link: drive_link || null,
       external_link: external_link || null,
       visibility: profile?.campus_id ? visibility : 'global',
-      // Admin uploads are auto-verified; user submissions need review
       is_verified: isAdmin,
     })
     .select('id')
@@ -100,7 +110,7 @@ export async function POST(request: NextRequest) {
 
   // ── Reward upload (best-effort) ─────────────────────────
   try {
-    await getSupabaseAdmin().rpc('reward_note_upload', { p_note_id: noteRow?.id })
+    await admin.rpc('reward_note_upload', { p_note_id: noteRow?.id })
   } catch {
     // ignore — reward is optional
   }
