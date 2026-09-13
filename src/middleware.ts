@@ -35,15 +35,14 @@ export async function middleware(request: NextRequest) {
   if (path.startsWith('/_next') || path.includes('.')) return supabaseResponse
 
   // Determine if we need auth at all for this route
-  const needsAuth = PROTECTED_ROUTES.some(r => path.startsWith(r))
-  const isAuthPage = AUTH_REDIRECT_ROUTES.some(r => path.startsWith(r)) &&
-    !AUTH_KEEP_ROUTES.some(r => path.startsWith(r))
+  const needsAuth = PROTECTED_ROUTES.some((r) => path.startsWith(r))
+  const isAuthPage =
+    AUTH_REDIRECT_ROUTES.some((r) => path.startsWith(r)) && !AUTH_KEEP_ROUTES.some((r) => path.startsWith(r))
 
-  // PUBLIC ROUTES: Just refresh cookies (keep session alive) but don't
-  // block on getUser(). This is the key optimization — most page loads
-  // skip the expensive auth round-trip entirely.
+  // PUBLIC ROUTES: Refresh cookies (keep session alive).
+  // API routes MUST await getUser() so the session is refreshed before
+  // the route handler reads cookies. Page routes skip it for speed.
   if (!needsAuth && !isAuthPage) {
-    // Still create the client to refresh cookies silently (keeps users logged in)
     const supabase = createServerClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
       process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
@@ -55,16 +54,20 @@ export async function middleware(request: NextRequest) {
           setAll(cookiesToSet) {
             cookiesToSet.forEach(({ name, value }) => request.cookies.set(name, value))
             supabaseResponse = NextResponse.next({ request })
-            cookiesToSet.forEach(({ name, value, options }) =>
-              supabaseResponse.cookies.set(name, value, options)
-            )
+            cookiesToSet.forEach(({ name, value, options }) => supabaseResponse.cookies.set(name, value, options))
           },
         },
       }
     )
-    // Fire-and-forget: refresh the session in the background.
-    // Don't await — the page loads immediately with the current session.
-    supabase.auth.getUser().catch(() => {})
+
+    const isApiRoute = path.startsWith('/api/')
+    if (isApiRoute) {
+      // API routes: await getUser() so cookies are refreshed before the handler runs
+      await supabase.auth.getUser().catch(() => {})
+    } else {
+      // Page routes: fire-and-forget for speed (session refreshes in background)
+      supabase.auth.getUser().catch(() => {})
+    }
     return supabaseResponse
   }
 
@@ -80,9 +83,7 @@ export async function middleware(request: NextRequest) {
         setAll(cookiesToSet) {
           cookiesToSet.forEach(({ name, value }) => request.cookies.set(name, value))
           supabaseResponse = NextResponse.next({ request })
-          cookiesToSet.forEach(({ name, value, options }) =>
-            supabaseResponse.cookies.set(name, value, options)
-          )
+          cookiesToSet.forEach(({ name, value, options }) => supabaseResponse.cookies.set(name, value, options))
         },
       },
     }

@@ -71,24 +71,39 @@ export function getSupabaseAdmin(): SupabaseClient {
  * @supabase/ssr v0.12.4 stores auth tokens in CHUNKED cookies:
  *   sb-<ref>-auth-token.0
  *   sb-<ref>-auth-token.1
- * We find all chunks, reassemble them, parse the JSON session,
- * and verify the access_token via the service-role client.
+ *
+ * Strategy: find all cookies, reassemble chunks, parse JSON, verify via service role.
  */
 export async function getVerifiedUser(request: NextRequest) {
   try {
     const allCookies = request.cookies.getAll()
 
-    // 1. Find all auth token chunks: sb-<ref>-auth-token.0, .1, etc.
+    // Collect ALL cookie names and values for debugging
+    const cookieNames = allCookies.map((c) => c.name)
+
+    // Find auth token chunks: name ends with -auth-token.N (where N is a digit)
+    // This matches: sb-tnlbqirrrjrkxkxlkpat-auth-token.0, .1, etc.
+    // It does NOT match: sb-...-auth-token-flow-...-code-verifier
     const authChunks: { index: number; value: string }[] = []
+
     for (const cookie of allCookies) {
-      const match = cookie.name.match(/^(sb-.*-auth-token)\.(\d+)$/)
-      if (match) {
-        authChunks.push({ index: parseInt(match[2], 10), value: cookie.value })
+      const name = cookie.name
+      // Check if name ends with -auth-token followed by .NUMBER
+      const dotIndex = name.lastIndexOf('.')
+      if (dotIndex > 0) {
+        const afterDot = name.slice(dotIndex + 1)
+        if (/^\d+$/.test(afterDot)) {
+          // This is a chunk like sb-...-auth-token.0
+          const baseName = name.slice(0, dotIndex)
+          if (baseName.endsWith('-auth-token')) {
+            authChunks.push({ index: parseInt(afterDot, 10), value: cookie.value })
+          }
+        }
       }
     }
 
-    // 2. Also check for a non-chunked token (fallback)
-    const singleToken = allCookies.find((c) => c.name.match(/^sb-.*-auth-token$/))
+    // Also check for a non-chunked token (fallback)
+    const singleToken = allCookies.find((c) => c.name.endsWith('-auth-token') && !c.name.includes('.'))
 
     let sessionValue: string | null = null
 
@@ -99,30 +114,53 @@ export async function getVerifiedUser(request: NextRequest) {
       sessionValue = singleToken.value
     }
 
-    if (!sessionValue) return null
+    if (!sessionValue) {
+      console.error('[auth] No auth cookie. Names:', cookieNames.join(', '))
+      return null
+    }
 
-    // 3. Parse the session JSON to get access_token
+    // Parse the session to get access_token
+    // @supabase/ssr stores sessions as JSON (may be base64url-encoded)
     let accessToken: string | undefined
     try {
+      // Try JSON parse first
       const decoded = decodeURIComponent(sessionValue)
       const parsed = JSON.parse(decoded)
       accessToken = parsed.access_token
     } catch {
-      accessToken = sessionValue
+      try {
+        // Try base64url decode (Supabase default cookieEncoding)
+        const base64 = sessionValue.replace(/-/g, '+').replace(/_/g, '/')
+        const padded = base64 + '='.repeat((4 - (base64.length % 4)) % 4)
+        const json = atob(padded)
+        const parsed = JSON.parse(json)
+        accessToken = parsed.access_token
+      } catch {
+        // Last resort: use raw value as token
+        accessToken = sessionValue
+      }
     }
 
-    if (!accessToken) return null
+    if (!accessToken) {
+      console.error('[auth] No access_token in session. Preview:', sessionValue.slice(0, 80))
+      return null
+    }
 
-    // 4. Verify via service-role client
+    // Verify via service-role client
     const admin = getSupabaseAdmin()
     const {
       data: { user },
       error,
     } = await admin.auth.getUser(accessToken)
 
-    if (error || !user) return null
+    if (error || !user) {
+      console.error('[auth] getUser failed:', error?.message)
+      return null
+    }
+
     return user
-  } catch {
+  } catch (err) {
+    console.error('[auth] getVerifiedUser error:', err)
     return null
   }
 }
