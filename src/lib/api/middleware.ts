@@ -2,29 +2,11 @@
  * Server-side API middleware helpers.
  * Use inside Next.js Route Handlers to enforce authentication and role checks.
  *
- * Admin identity comes from the admin_grants table via the self-scoped
- * `my_admin_grants()` RPC — never from a `profiles.role` column (dropped in V3).
+ * Uses shared getVerifiedUser from @/lib/auth which handles chunked cookies.
  */
 
-import { createClient } from '@/lib/supabase/server'
-import { createServerClient } from '@supabase/ssr'
 import { NextRequest, NextResponse } from 'next/server'
-
-/**
- * Build an SSR-aware Supabase client directly from request.cookies.
- * Bypasses cookies() from next/headers which may miss refreshed tokens
- * when the middleware fire-and-forgets getUser on public API routes.
- */
-function createSSRClient(request: NextRequest) {
-  return createServerClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!, {
-    cookies: {
-      getAll() {
-        return request.cookies.getAll()
-      },
-      setAll() {}, // Route handlers cannot set cookies on the request
-    },
-  })
-}
+import { getVerifiedUser, getSupabaseAdmin } from '@/lib/auth'
 
 export const ADMIN_ROLES = ['platform_admin', 'campus_admin'] as const
 export type AdminRole = (typeof ADMIN_ROLES)[number]
@@ -38,23 +20,17 @@ export interface AuthResult {
 /**
  * Lightweight auth — skips the admin-grants RPC call.
  * Use for non-admin API routes (Brain, etc.) to save one DB round-trip.
- *
- * Accepts the NextRequest so we read cookies from request.cookies
- * (not cookies() from next/headers, which may miss refreshed tokens
- * when the middleware fire-and-forgets getUser).
  */
 export async function requireAuthLite(
   request?: NextRequest
 ): Promise<{ ok: true; auth: Pick<AuthResult, 'userId' | 'profile'> } | { ok: false; response: NextResponse }> {
-  const supabase = request ? createSSRClient(request) : await createClient()
-  const {
-    data: { user },
-    error,
-  } = await supabase.auth.getUser()
-  if (error || !user) {
+  const user = request ? await getVerifiedUser(request) : null
+  if (!user) {
     return { ok: false, response: NextResponse.json({ error: 'Unauthorized.' }, { status: 401 }) }
   }
-  const { data: profile, error: pe } = await supabase
+
+  const admin = getSupabaseAdmin()
+  const { data: profile, error: pe } = await admin
     .from('profiles')
     .select('id, campus_id, college_id')
     .eq('id', user.id)
@@ -70,8 +46,8 @@ export async function requireAuthLite(
  * Uses the `is_user_premium` RPC — a single indexed query.
  */
 export async function requirePremium(userId: string): Promise<{ ok: boolean; error?: string }> {
-  const supabase = await createClient()
-  const { data, error } = await supabase.rpc('is_user_premium', { p_user_id: userId })
+  const admin = getSupabaseAdmin()
+  const { data, error } = await admin.rpc('is_user_premium', { p_user_id: userId })
   if (error) return { ok: false, error: 'Could not verify premium status.' }
   if (data === true) return { ok: true }
   return { ok: false, error: 'This feature requires ConnectToCampus Pro.' }
@@ -84,21 +60,17 @@ export async function requirePremium(userId: string): Promise<{ ok: boolean; err
 export async function requireAuth(
   request?: NextRequest
 ): Promise<{ ok: true; auth: AuthResult } | { ok: false; response: NextResponse }> {
-  const supabase = request ? createSSRClient(request) : await createClient()
-
-  const {
-    data: { user },
-    error: authError,
-  } = await supabase.auth.getUser()
-
-  if (authError || !user) {
+  const user = request ? await getVerifiedUser(request) : null
+  if (!user) {
     return {
       ok: false,
       response: NextResponse.json({ error: 'Unauthorized. Please sign in.' }, { status: 401 }),
     }
   }
 
-  const { data: profile, error: profileError } = await supabase
+  const admin = getSupabaseAdmin()
+
+  const { data: profile, error: profileError } = await admin
     .from('profiles')
     .select('id, campus_id, college_id')
     .eq('id', user.id)
@@ -112,7 +84,7 @@ export async function requireAuth(
   }
 
   // Self-scoped grants only — never caller-supplied ids.
-  const { data: grants } = await supabase.rpc('my_admin_grants')
+  const { data: grants } = await admin.rpc('my_admin_grants')
   const adminTypes = ((grants as any[]) || []).map((g: any) => g.admin_type)
 
   return { ok: true, auth: { userId: user.id, profile, adminTypes } }

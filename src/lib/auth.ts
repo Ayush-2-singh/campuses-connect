@@ -1,11 +1,10 @@
-/**
- * One reusable safe-redirect validator for every post-auth destination
- * (`next` / `redirect` / `returnTo` query params — never trust them directly).
- *
- * Allowed:   /feed  /onboarding  /admin  /courses?id=123  /auth/reset-password
- * Rejected:  https://evil.com  http://evil.com  //evil.com  /\evil.com
- *            javascript:alert(...)  %2F%2Fevil.com (encoded)  malformed URLs
- */
+import { type NextRequest } from 'next/server'
+import { createClient, type SupabaseClient } from '@supabase/supabase-js'
+
+// ═══════════════════════════════════════════════════════════════
+// Redirect / validation helpers (used by auth pages)
+// ═══════════════════════════════════════════════════════════════
+
 const RESET_PASSWORD_PATH = '/auth/reset-password'
 
 export function getSafeRedirect(value: string | null | undefined, fallback = '/feed'): string {
@@ -13,28 +12,17 @@ export function getSafeRedirect(value: string | null | undefined, fallback = '/f
   let candidate = value.trim()
   if (!candidate) return fallback
 
-  // Decode exactly once so double-encoded bypasses (`%2F%2Fevil.com`)
-  // resolve to their real form before the checks below. Malformed
-  // encodings (e.g. `/100%off`) are rejected outright.
   try {
     candidate = decodeURIComponent(candidate)
   } catch {
     return fallback
   }
 
-  // Strip control characters (URL/header smuggling hygiene).
   candidate = candidate.replace(/[\u0000-\u001F\u007F]/g, '')
   if (!candidate) return fallback
-
-  // Must be a relative path starting with a single slash.
   if (!candidate.startsWith('/')) return fallback
-
-  // Protocol-relative URLs (`//evil.com`, `/\evil.com`) are treated as
-  // cross-origin by browsers — reject both.
   if (candidate.startsWith('//') || candidate.startsWith('/\\')) return fallback
 
-  // Auth pages would loop back into the auth flow. The one exception is
-  // the password-recovery page, which the recovery email link targets.
   if (candidate.startsWith('/auth')) {
     const isResetPassword =
       candidate === RESET_PASSWORD_PATH ||
@@ -62,4 +50,79 @@ export function getPasswordError(password: string): string {
     return 'Use at least one uppercase letter, one lowercase letter, and one number.'
   }
   return ''
+}
+
+// ═══════════════════════════════════════════════════════════════
+// Service-role client + cookie-based user verification
+// (handles chunked @supabase/ssr v0.12.4 cookies)
+// ═══════════════════════════════════════════════════════════════
+
+let _supabaseAdmin: SupabaseClient | null = null
+export function getSupabaseAdmin(): SupabaseClient {
+  if (!_supabaseAdmin) {
+    _supabaseAdmin = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!)
+  }
+  return _supabaseAdmin!
+}
+
+/**
+ * Extract the authenticated user from request cookies.
+ *
+ * @supabase/ssr v0.12.4 stores auth tokens in CHUNKED cookies:
+ *   sb-<ref>-auth-token.0
+ *   sb-<ref>-auth-token.1
+ * We find all chunks, reassemble them, parse the JSON session,
+ * and verify the access_token via the service-role client.
+ */
+export async function getVerifiedUser(request: NextRequest) {
+  try {
+    const allCookies = request.cookies.getAll()
+
+    // 1. Find all auth token chunks: sb-<ref>-auth-token.0, .1, etc.
+    const authChunks: { index: number; value: string }[] = []
+    for (const cookie of allCookies) {
+      const match = cookie.name.match(/^(sb-.*-auth-token)\.(\d+)$/)
+      if (match) {
+        authChunks.push({ index: parseInt(match[2], 10), value: cookie.value })
+      }
+    }
+
+    // 2. Also check for a non-chunked token (fallback)
+    const singleToken = allCookies.find((c) => c.name.match(/^sb-.*-auth-token$/))
+
+    let sessionValue: string | null = null
+
+    if (authChunks.length > 0) {
+      authChunks.sort((a, b) => a.index - b.index)
+      sessionValue = authChunks.map((c) => c.value).join('')
+    } else if (singleToken) {
+      sessionValue = singleToken.value
+    }
+
+    if (!sessionValue) return null
+
+    // 3. Parse the session JSON to get access_token
+    let accessToken: string | undefined
+    try {
+      const decoded = decodeURIComponent(sessionValue)
+      const parsed = JSON.parse(decoded)
+      accessToken = parsed.access_token
+    } catch {
+      accessToken = sessionValue
+    }
+
+    if (!accessToken) return null
+
+    // 4. Verify via service-role client
+    const admin = getSupabaseAdmin()
+    const {
+      data: { user },
+      error,
+    } = await admin.auth.getUser(accessToken)
+
+    if (error || !user) return null
+    return user
+  } catch {
+    return null
+  }
 }

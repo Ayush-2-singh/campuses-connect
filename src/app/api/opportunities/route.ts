@@ -4,59 +4,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient, type SupabaseClient } from '@supabase/supabase-js'
-
-// ── Service-role client (bypasses RLS, always available) ─────
-let _supabaseAdmin: SupabaseClient | null = null
-function getSupabaseAdmin(): SupabaseClient {
-  if (!_supabaseAdmin) {
-    _supabaseAdmin = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!)
-  }
-  return _supabaseAdmin!
-}
-
-/** Extract verified user from request cookies via service-role client. */
-async function getVerifiedUser(request: NextRequest) {
-  try {
-    const allCookies = request.cookies.getAll()
-    const authCookie = allCookies.find((c) => c.name.match(/^sb-.*-auth-token$/))
-    if (!authCookie) {
-      console.error(
-        '[opportunities] No auth cookie found. Cookies:',
-        allCookies.map((c) => c.name)
-      )
-      return null
-    }
-
-    let accessToken: string | undefined
-    try {
-      const decoded = decodeURIComponent(authCookie.value)
-      const parsed = JSON.parse(decoded)
-      accessToken = parsed.access_token
-    } catch {
-      accessToken = authCookie.value
-    }
-
-    if (!accessToken) {
-      console.error('[opportunities] No access_token in cookie')
-      return null
-    }
-
-    const admin = getSupabaseAdmin()
-    const {
-      data: { user },
-      error,
-    } = await admin.auth.getUser(accessToken)
-    if (error) {
-      console.error('[opportunities] getUser failed:', error.message)
-      return null
-    }
-    return user
-  } catch (err) {
-    console.error('[opportunities] getVerifiedUser error:', err)
-    return null
-  }
-}
+import { getVerifiedUser, getSupabaseAdmin } from '@/lib/auth'
 
 // ─── GET /api/opportunities ───────────────────────────────────────────────────
 export async function GET(request: NextRequest) {
