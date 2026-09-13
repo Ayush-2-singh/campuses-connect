@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient, type SupabaseClient } from '@supabase/supabase-js'
 import { S3Client, PutObjectCommand } from '@aws-sdk/client-s3'
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner'
+import { requireAuthLite } from '@/lib/api/middleware'
 
 // ── Lazy init clients ───────────────────────────────────────
 let _supabaseAdmin: SupabaseClient | null = null
@@ -9,10 +10,7 @@ let _r2Client: S3Client | null = null
 
 function getSupabaseAdmin(): SupabaseClient {
   if (!_supabaseAdmin) {
-    _supabaseAdmin = createClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.SUPABASE_SERVICE_ROLE_KEY!
-    )
+    _supabaseAdmin = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!)
   }
   return _supabaseAdmin
 }
@@ -46,32 +44,6 @@ const ALLOWED_TYPES = [
 ]
 const BUCKET_NAME = process.env.R2_BUCKET_NAME || 'campus-notes'
 
-// ── Verify user ─────────────────────────────────────────────
-async function verifyUser(request: NextRequest) {
-  const supabase = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-  )
-  const cookieHeader = request.headers.get('cookie') || ''
-  const tokenMatch = cookieHeader.match(/sb-[^=]+-auth-token=([^;]+)/)
-  if (!tokenMatch) return null
-
-  try {
-    const tokenData = JSON.parse(decodeURIComponent(tokenMatch[1]))
-    const accessToken = tokenData.access_token
-    if (!accessToken) return null
-
-    const {
-      data: { user },
-      error,
-    } = await supabase.auth.getUser(accessToken)
-    if (error || !user) return null
-    return user
-  } catch {
-    return null
-  }
-}
-
 // ── Generate unique filename ─────────────────────────────────
 function generateFileName(originalName: string, userId: string): string {
   const ext = originalName.split('.').pop() || 'bin'
@@ -84,10 +56,9 @@ function generateFileName(originalName: string, userId: string): string {
 export async function POST(request: NextRequest) {
   try {
     // 1. Verify user
-    const user = await verifyUser(request)
-    if (!user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
+    const auth = await requireAuthLite()
+    if (!auth.ok) return auth.response
+    const user = { id: auth.auth.userId } as any
 
     // 2. Parse form data
     const formData = await request.formData()
@@ -102,10 +73,7 @@ export async function POST(request: NextRequest) {
 
     // 3. Validate required fields
     if (!title?.trim() || !subject?.trim()) {
-      return NextResponse.json(
-        { error: 'Title and subject are required' },
-        { status: 400 }
-      )
+      return NextResponse.json({ error: 'Title and subject are required' }, { status: 400 })
     }
 
     // 4. Handle file upload OR link-only submission
@@ -118,10 +86,7 @@ export async function POST(request: NextRequest) {
     if (file && file.size > 0) {
       // Validate file
       if (file.size > MAX_FILE_SIZE) {
-        return NextResponse.json(
-          { error: 'File too large. Maximum size is 50MB.' },
-          { status: 400 }
-        )
+        return NextResponse.json({ error: 'File too large. Maximum size is 50MB.' }, { status: 400 })
       }
 
       if (!ALLOWED_TYPES.includes(file.type)) {
@@ -167,9 +132,7 @@ export async function POST(request: NextRequest) {
     // 6. Check admin status
     const { data: grants } = await getSupabaseAdmin().rpc('my_admin_grants')
     const grantsArr = (grants as any[]) || []
-    const isAdmin = grantsArr.some(
-      (g: any) => g.admin_type === 'platform_admin' || g.admin_type === 'campus_admin'
-    )
+    const isAdmin = grantsArr.some((g: any) => g.admin_type === 'platform_admin' || g.admin_type === 'campus_admin')
 
     // 7. Insert metadata
     const { data: noteRow, error: insertError } = await getSupabaseAdmin()
@@ -183,8 +146,8 @@ export async function POST(request: NextRequest) {
         subject: subject.trim(),
         resource_type: resourceType,
         description: description || null,
-        drive_link: storageProvider === 'link' ? (driveLink || null) : null,
-        external_link: storageProvider === 'link' ? (externalLink || null) : null,
+        drive_link: storageProvider === 'link' ? driveLink || null : null,
+        external_link: storageProvider === 'link' ? externalLink || null : null,
         // New fields for external storage
         storage_provider: storageProvider,
         external_file_url: externalFileUrl,
@@ -228,15 +191,10 @@ export async function POST(request: NextRequest) {
       note_id: noteRow?.id,
       storage_provider: storageProvider,
       is_verified: isAdmin,
-      message: isAdmin
-        ? 'Note uploaded and auto-verified!'
-        : 'Note submitted! It will be visible after admin review.',
+      message: isAdmin ? 'Note uploaded and auto-verified!' : 'Note submitted! It will be visible after admin review.',
     })
   } catch (err: any) {
     console.error('Upload error:', err)
-    return NextResponse.json(
-      { error: err.message || 'Upload failed' },
-      { status: 500 }
-    )
+    return NextResponse.json({ error: err.message || 'Upload failed' }, { status: 500 })
   }
 }

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient, type SupabaseClient } from '@supabase/supabase-js'
+import { requireAdmin } from '@/lib/api/middleware'
 
 let _supabaseAdmin: SupabaseClient | null = null
 /** Lazy, request-time init — module-scope createClient() throws at build when
@@ -12,44 +13,13 @@ function getSupabaseAdmin(): SupabaseClient {
   return _supabaseAdmin!
 }
 
-// ── Verify admin ──────────────────────────────────────────────
-async function verifyAdmin(request: NextRequest) {
-  const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!)
-
-  const cookieHeader = request.headers.get('cookie') || ''
-  const tokenMatch = cookieHeader.match(/sb-[^=]+-auth-token=([^;]+)/)
-  if (!tokenMatch) return null
-
-  try {
-    const tokenData = JSON.parse(decodeURIComponent(tokenMatch[1]))
-    const accessToken = tokenData.access_token
-    if (!accessToken) return null
-
-    const {
-      data: { user },
-      error,
-    } = await supabase.auth.getUser(accessToken)
-    if (error || !user) return null
-
-    const { data: grants } = await getSupabaseAdmin().rpc('my_admin_grants')
-    const grantsArr = (grants as any[]) || []
-    const isAdmin = grantsArr.some((g: any) => g.admin_type === 'platform_admin')
-    if (!isAdmin) return null
-
-    return user
-  } catch {
-    return null
-  }
-}
-
 // ═══════════════════════════════════════════════════════════════
 // GET — List all conversations with last message & participant info
 // ═══════════════════════════════════════════════════════════════
 export async function GET(request: NextRequest) {
-  const admin = await verifyAdmin(request)
-  if (!admin) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-  }
+  const auth = await requireAdmin()
+  if (!auth.ok) return auth.response
+  const admin = auth.auth
 
   const { searchParams } = new URL(request.url)
   const search = searchParams.get('search') || ''
@@ -186,10 +156,9 @@ export async function GET(request: NextRequest) {
 // DELETE — Delete messages (single, conversation, or bulk)
 // ═══════════════════════════════════════════════════════════════
 export async function DELETE(request: NextRequest) {
-  const admin = await verifyAdmin(request)
-  if (!admin) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-  }
+  const auth = await requireAdmin()
+  if (!auth.ok) return auth.response
+  const admin = auth.auth
 
   const body = await request.json()
   const { message_ids, conversation_id, action } = body
@@ -210,7 +179,7 @@ export async function DELETE(request: NextRequest) {
     await getSupabaseAdmin()
       .from('audit_log')
       .insert({
-        actor_id: admin.id,
+        actor_id: admin.userId,
         action: 'messages.delete',
         entity_type: 'message',
         metadata: { message_ids, count: message_ids.length },
@@ -246,7 +215,7 @@ export async function DELETE(request: NextRequest) {
     await getSupabaseAdmin()
       .from('audit_log')
       .insert({
-        actor_id: admin.id,
+        actor_id: admin.userId,
         action: 'messages.delete_conversation',
         entity_type: 'conversation',
         entity_id: conversation_id,
@@ -268,7 +237,7 @@ export async function DELETE(request: NextRequest) {
     await getSupabaseAdmin()
       .from('audit_log')
       .insert({
-        actor_id: admin.id,
+        actor_id: admin.userId,
         action: 'messages.hard_delete_conversation',
         entity_type: 'conversation',
         entity_id: conversation_id,
