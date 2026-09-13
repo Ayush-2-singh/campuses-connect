@@ -36,7 +36,7 @@ const PRESIGN_EXPIRY = 3600 // 1 hour
 export async function GET(request: NextRequest) {
   try {
     // 1. Verify user
-    const auth = await requireAuthLite()
+    const auth = await requireAuthLite(request)
     if (!auth.ok) return auth.response
 
     // 2. Get file path

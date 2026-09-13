@@ -56,7 +56,7 @@ function generateFileName(originalName: string, userId: string): string {
 export async function POST(request: NextRequest) {
   try {
     // 1. Verify user
-    const auth = await requireAuthLite()
+    const auth = await requireAuthLite(request)
     if (!auth.ok) return auth.response
     const user = { id: auth.auth.userId } as any
 

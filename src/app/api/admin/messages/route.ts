@@ -17,7 +17,7 @@ function getSupabaseAdmin(): SupabaseClient {
 // GET — List all conversations with last message & participant info
 // ═══════════════════════════════════════════════════════════════
 export async function GET(request: NextRequest) {
-  const auth = await requireAdmin()
+  const auth = await requireAdmin(request)
   if (!auth.ok) return auth.response
   const admin = auth.auth
 
@@ -156,7 +156,7 @@ export async function GET(request: NextRequest) {
 // DELETE — Delete messages (single, conversation, or bulk)
 // ═══════════════════════════════════════════════════════════════
 export async function DELETE(request: NextRequest) {
-  const auth = await requireAdmin()
+  const auth = await requireAdmin(request)
   if (!auth.ok) return auth.response
   const admin = auth.auth
 

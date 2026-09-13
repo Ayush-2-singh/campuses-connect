@@ -7,7 +7,24 @@
  */
 
 import { createClient } from '@/lib/supabase/server'
-import { NextResponse } from 'next/server'
+import { createServerClient } from '@supabase/ssr'
+import { NextRequest, NextResponse } from 'next/server'
+
+/**
+ * Build an SSR-aware Supabase client directly from request.cookies.
+ * Bypasses cookies() from next/headers which may miss refreshed tokens
+ * when the middleware fire-and-forgets getUser on public API routes.
+ */
+function createSSRClient(request: NextRequest) {
+  return createServerClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!, {
+    cookies: {
+      getAll() {
+        return request.cookies.getAll()
+      },
+      setAll() {}, // Route handlers cannot set cookies on the request
+    },
+  })
+}
 
 export const ADMIN_ROLES = ['platform_admin', 'campus_admin'] as const
 export type AdminRole = (typeof ADMIN_ROLES)[number]
@@ -21,18 +38,27 @@ export interface AuthResult {
 /**
  * Lightweight auth — skips the admin-grants RPC call.
  * Use for non-admin API routes (Brain, etc.) to save one DB round-trip.
+ *
+ * Accepts the NextRequest so we read cookies from request.cookies
+ * (not cookies() from next/headers, which may miss refreshed tokens
+ * when the middleware fire-and-forgets getUser).
  */
-export async function requireAuthLite(): Promise<
-  | { ok: true; auth: Pick<AuthResult, 'userId' | 'profile'> }
-  | { ok: false; response: NextResponse }
-> {
-  const supabase = await createClient()
-  const { data: { user }, error } = await supabase.auth.getUser()
+export async function requireAuthLite(
+  request?: NextRequest
+): Promise<{ ok: true; auth: Pick<AuthResult, 'userId' | 'profile'> } | { ok: false; response: NextResponse }> {
+  const supabase = request ? createSSRClient(request) : await createClient()
+  const {
+    data: { user },
+    error,
+  } = await supabase.auth.getUser()
   if (error || !user) {
     return { ok: false, response: NextResponse.json({ error: 'Unauthorized.' }, { status: 401 }) }
   }
   const { data: profile, error: pe } = await supabase
-    .from('profiles').select('id, campus_id, college_id').eq('id', user.id).single()
+    .from('profiles')
+    .select('id, campus_id, college_id')
+    .eq('id', user.id)
+    .single()
   if (pe || !profile) {
     return { ok: false, response: NextResponse.json({ error: 'Profile not found.' }, { status: 401 }) }
   }
@@ -55,11 +81,10 @@ export async function requirePremium(userId: string): Promise<{ ok: boolean; err
  * Verify the incoming request carries a valid Supabase session.
  * Returns `{ ok: true, auth }` or a ready-to-return 401 NextResponse.
  */
-export async function requireAuth(): Promise<
-  | { ok: true; auth: AuthResult }
-  | { ok: false; response: NextResponse }
-> {
-  const supabase = await createClient()
+export async function requireAuth(
+  request?: NextRequest
+): Promise<{ ok: true; auth: AuthResult } | { ok: false; response: NextResponse }> {
+  const supabase = request ? createSSRClient(request) : await createClient()
 
   const {
     data: { user },
@@ -69,10 +94,7 @@ export async function requireAuth(): Promise<
   if (authError || !user) {
     return {
       ok: false,
-      response: NextResponse.json(
-        { error: 'Unauthorized. Please sign in.' },
-        { status: 401 },
-      ),
+      response: NextResponse.json({ error: 'Unauthorized. Please sign in.' }, { status: 401 }),
     }
   }
 
@@ -85,10 +107,7 @@ export async function requireAuth(): Promise<
   if (profileError || !profile) {
     return {
       ok: false,
-      response: NextResponse.json(
-        { error: 'User profile not found.' },
-        { status: 401 },
-      ),
+      response: NextResponse.json({ error: 'User profile not found.' }, { status: 401 }),
     }
   }
 
@@ -103,22 +122,18 @@ export async function requireAuth(): Promise<
  * Verify the request is from an authenticated admin.
  * Returns `{ ok: true, auth }` or a ready-to-return 401/403 NextResponse.
  */
-export async function requireAdmin(): Promise<
-  | { ok: true; auth: AuthResult }
-  | { ok: false; response: NextResponse }
-> {
-  const result = await requireAuth()
+export async function requireAdmin(
+  request?: NextRequest
+): Promise<{ ok: true; auth: AuthResult } | { ok: false; response: NextResponse }> {
+  const result = await requireAuth(request)
   if (!result.ok) return result
 
   const { auth } = result
 
-  if (!auth.adminTypes.some(t => (ADMIN_ROLES as readonly string[]).includes(t))) {
+  if (!auth.adminTypes.some((t) => (ADMIN_ROLES as readonly string[]).includes(t))) {
     return {
       ok: false,
-      response: NextResponse.json(
-        { error: 'Forbidden. Admin access required.' },
-        { status: 403 },
-      ),
+      response: NextResponse.json({ error: 'Forbidden. Admin access required.' }, { status: 403 }),
     }
   }
 

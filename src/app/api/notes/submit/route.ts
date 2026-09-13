@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient, type SupabaseClient } from '@supabase/supabase-js'
 import { createServerClient } from '@supabase/ssr'
-import { cookies } from 'next/headers'
 
 // Server-side client with service role — bypasses RLS.
 // Lazy, request-time init — module-scope createClient() throws at build when
@@ -14,30 +13,26 @@ function getSupabaseAdmin(): SupabaseClient {
   return _supabaseAdmin!
 }
 
-/** Build an SSR-aware server client that reads/writes cookies properly. */
-async function createSSRClient() {
-  const cookieStore = await cookies()
-  return createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    {
-      cookies: {
-        getAll() { return cookieStore.getAll() },
-        setAll(cookiesToSet) {
-          try {
-            cookiesToSet.forEach(({ name, value, options }) =>
-              cookieStore.set(name, value, options))
-          } catch {}
-        },
+/** Build an SSR-aware server client from request cookies (not next/headers). */
+function createSSRClient(request: NextRequest) {
+  return createServerClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!, {
+    cookies: {
+      getAll() {
+        return request.cookies.getAll()
+      },
+      setAll() {
+        // Route handlers cannot set cookies on the request — ignore.
+        // The middleware handles session refresh via response cookies.
       },
     },
-  )
+  })
 }
 
 export async function POST(request: NextRequest) {
   // ── Verify caller is authenticated ──────────────────────
-  // Use @supabase/ssr which correctly handles chunked auth cookies.
-  const supabase = await createSSRClient()
+  // Read cookies directly from request (not cookies() from next/headers)
+  // because the middleware's fire-and-forget getUser() may not have completed.
+  const supabase = createSSRClient(request)
 
   const {
     data: { user: authUser },
