@@ -80,8 +80,8 @@ export default function Layout({ children, user, profile }: { children: React.Re
     setMenuOpen(false)
   }, [pathname])
 
-  // Poll unread count — reduced frequency to save DB reads.
-  // On messages page we poll more often (10s); elsewhere every 60s is enough.
+  // Poll unread count — deferred 2s so the first query doesn't compete with
+  // the page's own data fetch. On messages page we poll more often (10s).
   React.useEffect(() => {
     if (!user) return
     const isMessagesPage = pathname.startsWith('/messages')
@@ -96,9 +96,13 @@ export default function Layout({ children, user, profile }: { children: React.Re
         .eq('is_read', false)
       setUnreadCount(count || 0)
     }
-    fetchUnread()
+    // Defer first fetch by 2s so page content loads first
+    const timer = setTimeout(fetchUnread, 2000)
     const interval = setInterval(fetchUnread, pollMs)
-    return () => clearInterval(interval)
+    return () => {
+      clearTimeout(timer)
+      clearInterval(interval)
+    }
   }, [user, pathname])
 
   // Global shortcut: Cmd/Ctrl + K toggles the command palette.
@@ -165,13 +169,7 @@ export default function Layout({ children, user, profile }: { children: React.Re
             gap: 10,
           }}
         >
-          <img
-            src={logoSrc}
-            alt="CTC"
-            width={36}
-            height={36}
-            style={{ flexShrink: 0, borderRadius: 11 }}
-          />
+          <img src={logoSrc} alt="CTC" width={36} height={36} style={{ flexShrink: 0, borderRadius: 11 }} />
           <div>
             <h1
               style={{
@@ -499,13 +497,7 @@ export default function Layout({ children, user, profile }: { children: React.Re
         >
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-              <img
-                src={logoSrc}
-                alt="CTC"
-                width={30}
-                height={30}
-                style={{ borderRadius: 9 }}
-              />
+              <img src={logoSrc} alt="CTC" width={30} height={30} style={{ borderRadius: 9 }} />
               <h1 style={{ fontSize: 17, fontWeight: 800, color: 'var(--text-primary)', margin: 0 }}>
                 Connect<span style={{ color: 'var(--accent)' }}>ToCampus</span>
               </h1>
@@ -579,9 +571,7 @@ export default function Layout({ children, user, profile }: { children: React.Re
           </div>
         </div>
 
-        <div key={pathname} className="page-enter">
-          {children}
-        </div>
+        <div className="page-enter">{children}</div>
       </main>
 
       {/* ── Mobile bottom nav (shared 4-tab bar) ── */}
