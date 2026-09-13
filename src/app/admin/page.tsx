@@ -407,9 +407,18 @@ export default function AdminPage() {
     if (!confirm('Revoke premium access?')) return
     setPremiumBusy(userId)
     try {
-      const { error } = await supabase.from('user_premium').delete().eq('user_id', userId)
-      if (error) throw new Error(error.message)
-      loadPremiumUsers()
+      const res = await fetch('/api/admin/users', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'revoke_premium', user_id: userId }),
+        credentials: 'include',
+      })
+      const data = await res.json().catch(() => ({}))
+      if (res.ok) {
+        loadPremiumUsers()
+      } else {
+        alert(`Failed: ${data.error || res.statusText}`)
+      }
     } catch (err: any) {
       alert(err.message || 'Failed')
     }
@@ -613,13 +622,16 @@ export default function AdminPage() {
         body: JSON.stringify({ type, ids }),
         credentials: 'include',
       })
+      const data = await res.json().catch(() => ({}))
       if (res.ok) {
         setContentMgrSelected(new Set())
         loadContentMgr()
         loadContentSummary()
+      } else {
+        alert(`Delete failed: ${data.error || res.statusText}`)
       }
-    } catch {
-      /* ignore */
+    } catch (err: any) {
+      alert(`Delete error: ${err.message || 'Network error'}`)
     }
     setContentMgrBusy(false)
   }
@@ -706,8 +718,22 @@ export default function AdminPage() {
 
   const deletePost = async (postId: string) => {
     if (!confirm('Delete this post?')) return
-    await supabase.from('posts').delete().eq('id', postId)
-    loadPosts()
+    try {
+      const res = await fetch('/api/admin/content', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ type: 'posts', ids: [postId] }),
+        credentials: 'include',
+      })
+      if (res.ok) {
+        loadPosts()
+      } else {
+        const data = await res.json().catch(() => ({}))
+        alert(`Delete failed: ${data.error || res.statusText}`)
+      }
+    } catch (err: any) {
+      alert(`Delete error: ${err.message || 'Network error'}`)
+    }
   }
 
   const postAnnouncement = async () => {

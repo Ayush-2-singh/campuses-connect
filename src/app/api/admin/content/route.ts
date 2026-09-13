@@ -148,15 +148,19 @@ export async function DELETE(request: NextRequest) {
   const { error } = await getSupabaseAdmin().from(type).delete().in('id', ids)
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
 
-  // Log
-  await getSupabaseAdmin()
-    .from('audit_log')
-    .insert({
-      actor_id: admin.userId,
-      action: `content.delete_${type}`,
-      entity_type: type,
-      metadata: { ids, count: ids.length },
-    })
+  // Log (best-effort — don't fail the delete if audit_log insert fails)
+  try {
+    await getSupabaseAdmin()
+      .from('audit_log')
+      .insert({
+        actor_id: admin.userId,
+        action: `content.delete_${type}`,
+        entity_type: type,
+        metadata: JSON.stringify({ ids, count: ids.length }),
+      })
+  } catch {
+    /* ignore audit_log errors */
+  }
 
   return NextResponse.json({ success: true, deleted: ids.length, type })
 }
