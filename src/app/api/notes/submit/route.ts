@@ -1,8 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createServerClient } from '@supabase/ssr'
 import { createClient, type SupabaseClient } from '@supabase/supabase-js'
+import { createServerClient } from '@supabase/ssr'
+import { cookies } from 'next/headers'
 
 // Server-side client with service role — bypasses RLS.
+// Lazy, request-time init — module-scope createClient() throws at build when
+// SUPABASE_SERVICE_ROLE_KEY is absent, and a shared client risks cross-user state.
 let _supabaseAdmin: SupabaseClient | null = null
 function getSupabaseAdmin(): SupabaseClient {
   if (!_supabaseAdmin) {
@@ -11,35 +14,41 @@ function getSupabaseAdmin(): SupabaseClient {
   return _supabaseAdmin!
 }
 
-export async function POST(request: NextRequest) {
-  // ── Verify caller is authenticated via SSR client (handles cookie format) ──
-  let supabaseResponse = NextResponse.next({ request })
-  const supabase = createServerClient(
+/** Build an SSR-aware server client that reads/writes cookies properly. */
+async function createSSRClient() {
+  const cookieStore = await cookies()
+  return createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
     {
       cookies: {
-        getAll() {
-          return request.cookies.getAll()
-        },
+        getAll() { return cookieStore.getAll() },
         setAll(cookiesToSet) {
-          cookiesToSet.forEach(({ name, value }) => request.cookies.set(name, value))
-          supabaseResponse = NextResponse.next({ request })
-          cookiesToSet.forEach(({ name, value, options }) =>
-            supabaseResponse.cookies.set(name, value, options)
-          )
+          try {
+            cookiesToSet.forEach(({ name, value, options }) =>
+              cookieStore.set(name, value, options))
+          } catch {}
         },
       },
-    }
+    },
   )
+}
+
+export async function POST(request: NextRequest) {
+  // ── Verify caller is authenticated ──────────────────────
+  // Use @supabase/ssr which correctly handles chunked auth cookies.
+  const supabase = await createSSRClient()
 
   const {
-    data: { user },
+    data: { user: authUser },
+    error: authError,
   } = await supabase.auth.getUser()
 
-  if (!user) {
+  if (authError || !authUser) {
     return NextResponse.json({ error: 'Not authenticated' }, { status: 401 })
   }
+
+  const user = authUser
 
   // ── Parse body ──────────────────────────────────────────
   const body = await request.json()
