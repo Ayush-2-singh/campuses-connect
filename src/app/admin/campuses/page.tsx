@@ -237,26 +237,49 @@ export default function AdminCampusesPage() {
   // ── Delete ────────────────────────────────────────────────
   const deleteCollege = async (c: College) => {
     if (!confirm(`Delete "${c.name}" and all its campuses & departments?`)) return
-    // Delete departments for all campuses of this college
-    const collegeCampuses = campuses.filter((camp) => camp.college_id === c.id)
-    for (const camp of collegeCampuses) {
-      await supabase.from('departments').delete().eq('campus_id', camp.id)
+    const res = await fetch('/api/admin/campus-management', {
+      method: 'DELETE',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'delete_college', id: c.id }),
+      credentials: 'include',
+    })
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({ error: 'Delete failed' }))
+      alert(err.error || 'Failed to delete college')
+      return
     }
-    await supabase.from('campuses').delete().eq('college_id', c.id)
-    await supabase.from('colleges').delete().eq('id', c.id)
     await loadData()
   }
 
   const deleteCampus = async (c: Campus) => {
     if (!confirm(`Delete campus "${c.name}" and its departments?`)) return
-    await supabase.from('departments').delete().eq('campus_id', c.id)
-    await supabase.from('campuses').delete().eq('id', c.id)
+    const res = await fetch('/api/admin/campus-management', {
+      method: 'DELETE',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'delete_campus', id: c.id }),
+      credentials: 'include',
+    })
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({ error: 'Delete failed' }))
+      alert(err.error || 'Failed to delete campus')
+      return
+    }
     await loadData()
   }
 
   const deleteDept = async (d: Department) => {
     if (!confirm(`Delete department "${d.name}"?`)) return
-    await supabase.from('departments').delete().eq('id', d.id)
+    const res = await fetch('/api/admin/campus-management', {
+      method: 'DELETE',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'delete_department', id: d.id }),
+      credentials: 'include',
+    })
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({ error: 'Delete failed' }))
+      alert(err.error || 'Failed to delete department')
+      return
+    }
     await loadData()
   }
 
