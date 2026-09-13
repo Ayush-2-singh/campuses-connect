@@ -143,10 +143,14 @@ export async function DELETE(request: NextRequest) {
   const validTypes = ['notes', 'posts', 'comments', 'events', 'polls']
   if (!validTypes.includes(type)) {
     return NextResponse.json({ error: `Invalid type. Must be one of: ${validTypes.join(', ')}` }, { status: 400 })
+  } // Delete the items
+  const { error: deleteError } = await getSupabaseAdmin().from(type).delete().in('id', ids)
+  if (deleteError) {
+    console.error(`[admin/content] Delete failed for ${type}:`, deleteError.message, 'ids:', ids)
+    return NextResponse.json({ error: deleteError.message }, { status: 500 })
   }
 
-  const { error } = await getSupabaseAdmin().from(type).delete().in('id', ids)
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+  console.log(`[admin/content] Deleted ${ids.length} ${type} items:`, ids)
 
   // Log (best-effort — don't fail the delete if audit_log insert fails)
   try {
@@ -156,10 +160,10 @@ export async function DELETE(request: NextRequest) {
         actor_id: admin.userId,
         action: `content.delete_${type}`,
         entity_type: type,
-        metadata: JSON.stringify({ ids, count: ids.length }),
+        metadata: { ids, count: ids.length } as any,
       })
-  } catch {
-    /* ignore audit_log errors */
+  } catch (auditErr) {
+    console.warn('[admin/content] audit_log insert failed:', auditErr)
   }
 
   return NextResponse.json({ success: true, deleted: ids.length, type })
