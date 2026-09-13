@@ -44,10 +44,16 @@ export default function CollegePage() {
 
   useEffect(() => {
     const load = async () => {
-      const { data: { user } } = await supabase.auth.getUser()
+      const {
+        data: { user },
+      } = await supabase.auth.getUser()
       if (user) {
         setUser(user)
-        const { data: prof } = await supabase.from('profiles').select('*, colleges(name), campuses(name)').eq('id', user.id).single()
+        const { data: prof } = await supabase
+          .from('profiles')
+          .select('*, colleges(name), campuses(name)')
+          .eq('id', user.id)
+          .single()
         setProfile(prof)
         await loadPosts()
       }
@@ -63,13 +69,34 @@ export default function CollegePage() {
           <h2 style={{ fontSize: 22, fontWeight: 700, color: 'var(--text-primary)', margin: '0 0 4px' }}>
             {profile?.colleges?.name || 'Your College'}
           </h2>
-          <p style={{ fontSize: 13, color: 'var(--text-muted)', margin: 0 }}>{profile?.campuses?.name || 'College space'} — clubs, events, hackathons, internships and more</p>
+          <p style={{ fontSize: 13, color: 'var(--text-muted)', margin: 0 }}>
+            {profile?.campuses?.name || 'College space'} — clubs, events, hackathons, internships and more
+          </p>
         </div>
 
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: 10, marginBottom: 20 }}>
-          {SECTIONS.map(s => (
-            <button key={s.href} onClick={() => router.push(s.href)}
-              style={{ background: 'var(--bg)', border: '1px solid var(--border)', borderRadius: 12, padding: '14px', textAlign: 'left', cursor: 'pointer', fontFamily: 'inherit', boxShadow: 'var(--shadow-sm)' }}>
+        <div
+          style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))',
+            gap: 10,
+            marginBottom: 20,
+          }}
+        >
+          {SECTIONS.map((s) => (
+            <button
+              key={s.href}
+              onClick={() => router.push(s.href)}
+              style={{
+                background: 'var(--bg)',
+                border: '1px solid var(--border)',
+                borderRadius: 12,
+                padding: '14px',
+                textAlign: 'left',
+                cursor: 'pointer',
+                fontFamily: 'inherit',
+                boxShadow: 'var(--shadow-sm)',
+              }}
+            >
               <span style={{ fontSize: 22, display: 'block', marginBottom: 6 }}>{s.icon}</span>
               <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-primary)' }}>{s.label}</span>
             </button>
@@ -81,21 +108,41 @@ export default function CollegePage() {
             userId={user.id}
             profile={profile}
             onPosted={loadPosts}
-            context={{ campusId: profile?.campus_id, collegeId: profile?.college_id, campusName: profile?.campuses?.name, collegeName: profile?.colleges?.name }}
+            context={{
+              campusId: profile?.campus_id,
+              collegeId: profile?.college_id,
+              campusName: profile?.campuses?.name,
+              collegeName: profile?.colleges?.name,
+            }}
             placeholder="Post to your college..."
           />
         )}
 
-        <h3 style={{ fontSize: 16, fontWeight: 700, color: 'var(--text-primary)', margin: '0 0 12px' }}>College Feed</h3>
+        <h3 style={{ fontSize: 16, fontWeight: 700, color: 'var(--text-primary)', margin: '0 0 12px' }}>
+          College Feed
+        </h3>
         {loading ? (
           <ListSkeleton count={2} />
         ) : (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
             {posts.length === 0 ? (
-              <EmptyState icon="book" title="No posts in your college yet" body="Admins can share announcements, events and resources right from this page." />
-            ) : posts.map((post: any) => (
-              <PostCard key={post.id} post={post} currentUserId={user?.id} canInteract={!!user} onChanged={loadPosts} />
-            ))}
+              <EmptyState
+                icon="book"
+                title="No posts in your college yet"
+                body="Admins can share announcements, events and resources right from this page."
+              />
+            ) : (
+              posts.map((post: any) => (
+                <PostCard
+                  key={post.id}
+                  post={post}
+                  currentUserId={user?.id}
+                  canInteract={!!user}
+                  onChanged={loadPosts}
+                  isAdmin={admin.isAdmin}
+                />
+              ))
+            )}
           </div>
         )}
       </div>

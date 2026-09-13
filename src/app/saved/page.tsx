@@ -7,6 +7,7 @@ import Layout from '@/components/Layout'
 import PostCard from '@/components/PostCard'
 import EmptyState from '@/components/EmptyState'
 import { ListSkeleton } from '@/components/Skeleton'
+import { useAdminContext } from '@/lib/permissions'
 
 export default function SavedPage() {
   const [user, setUser] = useState<any>(null)
@@ -15,11 +16,14 @@ export default function SavedPage() {
   const [loading, setLoading] = useState(true)
   const router = useRouter()
   const supabase = createClient()
+  const admin = useAdminContext(user?.id)
 
   const loadPosts = useCallback(async () => {
     const { data } = await supabase
       .from('saved_posts')
-      .select('posts(*, profiles!posts_author_id_fkey(full_name, username, is_verified), content_categories(key, label))')
+      .select(
+        'posts(*, profiles!posts_author_id_fkey(full_name, username, is_verified), content_categories(key, label))'
+      )
       .eq('user_id', user.id)
       .order('created_at', { ascending: false })
       .limit(50)
@@ -28,15 +32,24 @@ export default function SavedPage() {
 
   useEffect(() => {
     const load = async () => {
-      const { data: { user } } = await supabase.auth.getUser()
-      if (!user) { router.replace('/auth/login?redirect=' + encodeURIComponent(typeof window !== 'undefined' ? window.location.pathname : '')); return }
+      const {
+        data: { user },
+      } = await supabase.auth.getUser()
+      if (!user) {
+        router.replace(
+          '/auth/login?redirect=' + encodeURIComponent(typeof window !== 'undefined' ? window.location.pathname : '')
+        )
+        return
+      }
       setUser(user)
       const { data: prof } = await supabase.from('profiles').select('*').eq('id', user.id).single()
       setProfile(prof)
       // Use user.id directly (not from state) to avoid stale closure
       const { data } = await supabase
         .from('saved_posts')
-        .select('posts(*, profiles!posts_author_id_fkey(full_name, username, is_verified), content_categories(key, label))')
+        .select(
+          'posts(*, profiles!posts_author_id_fkey(full_name, username, is_verified), content_categories(key, label))'
+        )
         .eq('user_id', user.id)
         .order('created_at', { ascending: false })
         .limit(50)
@@ -55,11 +68,24 @@ export default function SavedPage() {
         {loading ? (
           <ListSkeleton count={3} />
         ) : posts.length === 0 ? (
-          <EmptyState icon="bookmark" title="Nothing saved yet" body="Tap Save on any post to find it here." cta="Browse the feed" onCta={() => router.push('/feed')} />
+          <EmptyState
+            icon="bookmark"
+            title="Nothing saved yet"
+            body="Tap Save on any post to find it here."
+            cta="Browse the feed"
+            onCta={() => router.push('/feed')}
+          />
         ) : (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
             {posts.map((post: any) => (
-              <PostCard key={post.id} post={post} currentUserId={user?.id} canInteract={!!user} onChanged={loadPosts} />
+              <PostCard
+                key={post.id}
+                post={post}
+                currentUserId={user?.id}
+                canInteract={!!user}
+                onChanged={loadPosts}
+                isAdmin={admin.isAdmin}
+              />
             ))}
           </div>
         )}
