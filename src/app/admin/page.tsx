@@ -240,7 +240,7 @@ export default function AdminPage() {
   const loadModeration = useCallback(async () => {
     setModLoading(true)
     try {
-      const res = await fetch('/api/admin/copilot/queue')
+      const res = await fetch('/api/admin/copilot/queue', { credentials: 'include' })
       if (res.ok) {
         const data = await res.json()
         setModItems(data.items || [])
@@ -254,7 +254,7 @@ export default function AdminPage() {
   const loadFeatures = useCallback(async () => {
     setFeaturesLoading(true)
     try {
-      const res = await fetch('/api/admin/feature-flags')
+      const res = await fetch('/api/admin/feature-flags', { credentials: 'include' })
       if (res.ok) {
         const data = await res.json()
         setFeatureFlags(data.flags || [])
@@ -268,7 +268,7 @@ export default function AdminPage() {
   const loadSettings = useCallback(async () => {
     setSettingsLoading(true)
     try {
-      const res = await fetch('/api/admin/platform-settings')
+      const res = await fetch('/api/admin/platform-settings', { credentials: 'include' })
       if (res.ok) {
         const data = await res.json()
         setPlatformSettings(data.settings || [])
@@ -290,7 +290,7 @@ export default function AdminPage() {
     try {
       let url = `/api/admin/audit-log?limit=50&offset=${offset}`
       if (actionFilter) url += `&action=${encodeURIComponent(actionFilter)}`
-      const res = await fetch(url)
+      const res = await fetch(url, { credentials: 'include' })
       if (res.ok) {
         const data = await res.json()
         setAuditEntries(data.entries || [])
@@ -307,7 +307,7 @@ export default function AdminPage() {
     async (search?: string) => {
       setVerifyLoading(true)
       try {
-        const res = await fetch(`/api/admin/verify?search=${encodeURIComponent(search || verifySearch)}`)
+        const res = await fetch(`/api/admin/verify?search=${encodeURIComponent(search || verifySearch)}`, { credentials: 'include' })
         if (res.ok) {
           const data = await res.json()
           setVerifyUsers(data.users || [])
@@ -323,7 +323,7 @@ export default function AdminPage() {
 
   const loadUserVerifications = async (userId: string) => {
     try {
-      const res = await fetch(`/api/admin/verify?user_id=${userId}`)
+      const res = await fetch(`/api/admin/verify?user_id=${userId}`, { credentials: 'include' })
       if (res.ok) {
         const data = await res.json()
         setVerifyUserVerifications(data.verifications || [])
@@ -431,7 +431,7 @@ export default function AdminPage() {
       setCampusChangesLoading(true)
       try {
         const s = status || campusChangeFilter
-        const res = await fetch(`/api/admin/campus-change?status=${s}`)
+        const res = await fetch(`/api/admin/campus-change?status=${s}`, { credentials: 'include' })
         if (res.ok) {
           const data = await res.json()
           setCampusChanges(data.requests || [])
@@ -450,7 +450,7 @@ export default function AdminPage() {
       setAdminConvLoading(true)
       try {
         const q = search !== undefined ? search : adminConvSearch
-        const res = await fetch(`/api/admin/messages?search=${encodeURIComponent(q)}`)
+        const res = await fetch(`/api/admin/messages?search=${encodeURIComponent(q)}`, { credentials: 'include' })
         if (res.ok) {
           const data = await res.json()
           setAdminConversations(data.conversations || [])
@@ -467,7 +467,7 @@ export default function AdminPage() {
   const loadAdminConvMessages = useCallback(async (convId: string) => {
     setAdminConvMsgLoading(true)
     try {
-      const res = await fetch(`/api/admin/messages?conversation_id=${convId}`)
+      const res = await fetch(`/api/admin/messages?conversation_id=${convId}`, { credentials: 'include' })
       if (res.ok) {
         const data = await res.json()
         setAdminConvMessages(data.messages || [])
@@ -586,7 +586,7 @@ export default function AdminPage() {
       const q = search !== undefined ? search : contentMgrSearch
       setContentMgrLoading(true)
       try {
-        const res = await fetch(`/api/admin/content?type=${t}&search=${encodeURIComponent(q)}`)
+        const res = await fetch(`/api/admin/content?type=${t}&search=${encodeURIComponent(q)}`, { credentials: 'include' })
         if (res.ok) {
           const data = await res.json()
           setContentMgrItems(data.items || [])
@@ -602,7 +602,7 @@ export default function AdminPage() {
 
   const loadContentSummary = useCallback(async () => {
     try {
-      const res = await fetch('/api/admin/content?type=summary')
+      const res = await fetch('/api/admin/content?type=summary', { credentials: 'include' })
       if (res.ok) {
         const data = await res.json()
         setContentMgrSummary(data.summary || {})
@@ -762,6 +762,7 @@ export default function AdminPage() {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ item_id: itemId, action }),
+      credentials: 'include',
     })
     setModBusy(null)
     loadModeration()
@@ -773,6 +774,7 @@ export default function AdminPage() {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ text: item.preview || '', contentType: item.content_type }),
+      credentials: 'include',
     })
     if (res.ok) {
       const data = await res.json()
@@ -790,6 +792,7 @@ export default function AdminPage() {
       body: JSON.stringify({
         items: modItems.map((i) => ({ type: i.content_type, preview: i.preview || '', reason: i.reason || '' })),
       }),
+      credentials: 'include',
     })
     if (res.ok) {
       const data = await res.json()
@@ -823,6 +826,7 @@ export default function AdminPage() {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ key, enabled: !currentEnabled }),
+        credentials: 'include',
       })
       if (res.ok) {
         setFeatureFlags((flags) => flags.map((f) => (f.key === key ? { ...f, enabled: !currentEnabled } : f)))
@@ -841,6 +845,7 @@ export default function AdminPage() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(newFeature),
+        credentials: 'include',
       })
       if (res.ok) {
         setNewFeature({ key: '', label: '', description: '', category: 'custom' })
@@ -859,7 +864,7 @@ export default function AdminPage() {
   const deleteFeature = async (key: string) => {
     if (!confirm(`Delete feature "${key}"? This cannot be undone.`)) return
     try {
-      await fetch(`/api/admin/feature-flags?key=${key}`, { method: 'DELETE' })
+      await fetch(`/api/admin/feature-flags?key=${key}`, { method: 'DELETE', credentials: 'include' })
       loadFeatures()
     } catch {
       /* ignore */
@@ -874,6 +879,7 @@ export default function AdminPage() {
         method: 'DELETE',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ key }),
+        credentials: 'include',
       })
       if (res.ok) {
         setPlatformSettings((settings) => settings.filter((s) => s.key !== key))
@@ -893,6 +899,7 @@ export default function AdminPage() {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ key, value: settingsDraft[key] }),
+        credentials: 'include',
       })
       if (res.ok) {
         setPlatformSettings((settings) =>

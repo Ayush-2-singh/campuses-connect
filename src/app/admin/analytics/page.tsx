@@ -257,7 +257,7 @@ export default function AnalyticsPage() {
     setSectionLoading(true)
     setError('')
     try {
-      const res = await fetch(`/api/admin/analytics?section=${section}`)
+      const res = await fetch(`/api/admin/analytics?section=${section}`, { credentials: 'include' })
       if (!res.ok) {
         const data = await res.json()
         throw new Error(data.error || 'Failed to fetch')
