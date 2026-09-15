@@ -114,7 +114,7 @@ export default function LandingPage() {
               style={{ borderRadius: 9 }}
             />
             <h1 style={{ fontSize: 19, fontWeight: 800, margin: 0, color: 'var(--text-primary)' }}>
-              Connect<span style={{ color: 'var(--accent)' }}>ToCampus</span>
+              Connect<span style={{ color: '#F59E0B' }}>ToCampus</span>
             </h1>
           </div>
           <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>

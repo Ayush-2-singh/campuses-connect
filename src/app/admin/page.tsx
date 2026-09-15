@@ -980,7 +980,7 @@ export default function AdminPage() {
         >
           <div>
             <h1 style={{ fontSize: 18, fontWeight: 800, color: 'var(--text-primary)', margin: '0 0 2px' }}>
-              Connect<span style={{ color: 'var(--accent)' }}>MyCampus</span> Admin
+              Connect<span style={{ color: '#F59E0B' }}>MyCampus</span> Admin
             </h1>
             <p style={{ fontSize: 12, color: 'var(--text-muted)', margin: 0 }}>
               {isPlatformAdmin ? '🛡️ Platform Admin' : '🏫 Campus Admin'} · {enabledCount}/{featureFlags.length}{' '}
