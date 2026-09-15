@@ -134,7 +134,8 @@ function CompetePageInner() {
     setRunning(true); setError(null); setResult(null)
     try {
       const res = await fetch('/api/compete/submit', {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        method: 'POST', headers: { 'Content-Type': 'application/json' ,
+        credentials: 'include',},
         body: JSON.stringify({ problem_id: daily.id, code, language: lang, contest_id: null }),
       })
       const data = await res.json()

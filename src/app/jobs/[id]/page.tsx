@@ -66,7 +66,8 @@ export default function JobDetailPage() {
     try {
       const res = await fetch('/api/applications', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json' ,
+        credentials: 'include',},
         body: JSON.stringify({ job_posting_id: jobId, cover_note: coverNote || undefined }),
       })
       const data = await res.json()

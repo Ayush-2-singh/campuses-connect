@@ -47,7 +47,7 @@ export default function CampusChangePage() {
       setProfile(prof)
       setCurrentCampus(prof?.campuses)
 
-      const res = await fetch('/api/campus-change')
+      const res = await fetch('/api/campus-change', { credentials: 'include' })
       if (res.ok) {
         const data = await res.json()
         setCooldown(data.cooldown)
@@ -121,7 +121,7 @@ export default function CampusChangePage() {
       setIdCardPreview('')
 
       // Reload requests
-      const r2 = await fetch('/api/campus-change')
+      const r2 = await fetch('/api/campus-change', { credentials: 'include' })
       if (r2.ok) {
         const d = await r2.json()
         setRequests(d.requests)
@@ -143,7 +143,7 @@ export default function CampusChangePage() {
         credentials: 'include',
       })
       // Reload
-      const r = await fetch('/api/campus-change')
+      const r = await fetch('/api/campus-change', { credentials: 'include' })
       if (r.ok) {
         const d = await r.json()
         setRequests(d.requests)

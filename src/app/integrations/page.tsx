@@ -67,7 +67,8 @@ export default function IntegrationsPage() {
     try {
       const res = await fetch(`/api/integrations/${platform}`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json' ,
+        credentials: 'include',},
         credentials: 'include',
         body: JSON.stringify({ username }),
       })

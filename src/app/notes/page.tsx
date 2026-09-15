@@ -49,7 +49,7 @@ export default function NotesPage() {
   const [aiLoading, setAiLoading] = useState(false)
   const [showPendingOnly, setShowPendingOnly] = useState(false)
 
-  const canSubmitLink = !!user // everyone can submit a link
+  const canSubmitLink = admin.isAdmin // only admins can submit a link
   const canVerify = admin.isPlatformAdmin || admin.isCampusAdmin // admin verifies notes
 
   const deleteNote = async (note: any) => {
@@ -60,7 +60,8 @@ export default function NotesPage() {
     } else {
       await fetch('/api/admin/content', {
         method: 'DELETE',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json' ,
+        credentials: 'include',},
         body: JSON.stringify({ type: 'notes', ids: [note.id] })
       })
     }
@@ -75,7 +76,8 @@ export default function NotesPage() {
   const verifyNote = async (noteId: string, approved: boolean) => {
     await fetch('/api/notes/verify', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'application/json' ,
+        credentials: 'include',},
       body: JSON.stringify({ note_id: noteId, is_verified: approved })
     })
     const { data } = await supabase
@@ -94,7 +96,8 @@ export default function NotesPage() {
     try {
       const res = await fetch('/api/notes/ask', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json' ,
+        credentials: 'include',},
         body: JSON.stringify({ question: q }),
       })
       const data = await res.json()
@@ -155,7 +158,8 @@ export default function NotesPage() {
       const res = await fetch('/api/notes/upload', {
         method: 'POST',
         body: formData,
-      })
+      
+        credentials: 'include',})
       const data = await res.json()
       if (!res.ok) throw new Error(data?.error || 'Failed to submit')
       alert(data?.message || 'Submitted!')
@@ -846,6 +850,24 @@ function NoteRow({
             </button>
           </div>
         )}
+        {canDelete && (
+          <button
+            onClick={() => onDelete?.(note)}
+            style={{
+              fontSize: 11,
+              padding: '4px 10px',
+              borderRadius: 6,
+              border: '1px solid var(--danger-border)',
+              background: 'var(--danger-light)',
+              color: 'var(--danger)',
+              cursor: 'pointer',
+              fontFamily: 'inherit',
+            }}
+          >
+            🗑 Delete
+          </button>
+        )}
+
         {/* Open button — priority: external_file_url > drive_link > external_link */}
         {note.external_file_url && (
           <a

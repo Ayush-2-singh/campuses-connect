@@ -33,7 +33,7 @@ export default function ApplicationsPage() {
       const { data } = await supabase.from('profiles').select('*').eq('id', authUser.id).single()
       setProfile(data)
 
-      const res = await fetch('/api/applications')
+      const res = await fetch('/api/applications', { credentials: 'include' })
       if (res.ok) {
         const d = await res.json()
         setApplications(d.applications || [])

@@ -30,7 +30,7 @@ export default function CompanyPage() {
         setProfile(data)
       }
       try {
-        const res = await fetch(`/api/companies/${slug}`)
+        const res = await fetch(`/api/companies/${slug}`, { credentials: 'include' })
         if (res.ok) {
           const data = await res.json()
           setCompany(data.company)

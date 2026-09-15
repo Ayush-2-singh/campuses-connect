@@ -37,7 +37,7 @@ export default function RemindersPage() {
         setPushEnabled(Notification.permission === 'granted')
       }
 
-      const res = await fetch('/api/reminders')
+      const res = await fetch('/api/reminders', { credentials: 'include' })
       if (res.ok) {
         const d = await res.json()
         setReminders(d.reminders || [])
@@ -62,7 +62,8 @@ export default function RemindersPage() {
         const sub = subscription.toJSON() as any
         await fetch('/api/notifications/push', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: { 'Content-Type': 'application/json' ,
+        credentials: 'include',},
           body: JSON.stringify({ endpoint: sub.endpoint, p256dh: sub.keys?.p256dh, auth: sub.keys?.auth }),
         })
       } catch { /* ignore */ }
@@ -76,7 +77,8 @@ export default function RemindersPage() {
     try {
       const res = await fetch('/api/reminders', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json' ,
+        credentials: 'include',},
         body: JSON.stringify(form),
       })
       const data = await res.json()
@@ -84,7 +86,7 @@ export default function RemindersPage() {
       setShowForm(false)
       setForm({ title: '', description: '', reminder_type: 'custom', remind_at: '', is_recurring: false, recurrence: '' })
       // Reload
-      const r2 = await fetch('/api/reminders')
+      const r2 = await fetch('/api/reminders', { credentials: 'include' })
       if (r2.ok) { const d = await r2.json(); setReminders(d.reminders || []) }
     } catch (err: any) {
       setError(err.message)
@@ -93,7 +95,8 @@ export default function RemindersPage() {
   }
 
   const deleteReminder = async (id: string) => {
-    await fetch(`/api/reminders?id=${id}`, { method: 'DELETE' })
+    await fetch(`/api/reminders?id=${id}`, { method: 'DELETE' ,
+        credentials: 'include',})
     setReminders(r => r.filter(x => x.id !== id))
   }
 

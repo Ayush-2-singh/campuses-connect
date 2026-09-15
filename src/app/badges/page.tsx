@@ -30,7 +30,7 @@ export default function BadgesPage() {
         const { data } = await supabase.from('profiles').select('*').eq('id', authUser.id).single()
         setProfile(data)
 
-        const res = await fetch('/api/badges')
+        const res = await fetch('/api/badges', { credentials: 'include' })
         if (res.ok) {
           const d = await res.json()
           setBadges(d.badges || [])

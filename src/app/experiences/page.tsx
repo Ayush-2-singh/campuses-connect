@@ -29,7 +29,7 @@ export default function ExperiencesPage() {
         const { data } = await supabase.from('profiles').select('*').eq('id', authUser.id).single()
         setProfile(data)
       }
-      const res = await fetch('/api/experiences')
+      const res = await fetch('/api/experiences', { credentials: 'include' })
       if (res.ok) {
         const d = await res.json()
         setExperiences(d.experiences || [])
@@ -52,7 +52,8 @@ export default function ExperiencesPage() {
     try {
       const res = await fetch('/api/experiences', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json' ,
+        credentials: 'include',},
         body: JSON.stringify({
           ...form,
           round_count: form.round_count ? parseInt(form.round_count) : undefined,
@@ -64,7 +65,7 @@ export default function ExperiencesPage() {
       setShowForm(false)
       setForm({ company_id: '', title: '', experience: '', role: '', round_count: '', result: '', difficulty: '', rating: '', tips: '' })
       // Reload
-      const r2 = await fetch('/api/experiences')
+      const r2 = await fetch('/api/experiences', { credentials: 'include' })
       if (r2.ok) { const d = await r2.json(); setExperiences(d.experiences || []) }
     } catch (err: any) {
       setError(err.message)
@@ -75,11 +76,12 @@ export default function ExperiencesPage() {
   const vote = async (expId: string, voteVal: number) => {
     await fetch('/api/experiences', {
       method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'application/json' ,
+        credentials: 'include',},
       body: JSON.stringify({ experience_id: expId, vote: voteVal }),
     })
     // Reload
-    const res = await fetch('/api/experiences')
+    const res = await fetch('/api/experiences', { credentials: 'include' })
     if (res.ok) { const d = await res.json(); setExperiences(d.experiences || []) }
   }
 

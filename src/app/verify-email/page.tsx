@@ -19,7 +19,8 @@ function VerifyInner() {
     }
     fetch('/api/verify-college-email', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'application/json' ,
+        credentials: 'include',},
       body: JSON.stringify({ token }),
     })
       .then((r) => r.json())
