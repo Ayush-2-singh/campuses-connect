@@ -1,12 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getVerifiedUser, getSupabaseAdmin } from '@/lib/auth'
+import { getSupabaseAdmin } from '@/lib/auth'
+import { requireAdmin } from '@/lib/api/middleware'
 
 export async function POST(request: NextRequest) {
-  // ── Verify caller is authenticated ──────────────────────
-  const user = await getVerifiedUser(request)
-  if (!user) {
-    return NextResponse.json({ error: 'Not authenticated' }, { status: 401 })
-  }
+  // ── Verify caller is an admin ───────────────────────────
+  const auth = await requireAdmin(request)
+  if (!auth.ok) return auth.response
+  const user = { id: auth.auth.userId } as any
 
   // ── Parse body ──────────────────────────────────────────
   let body: any
@@ -40,10 +40,8 @@ export async function POST(request: NextRequest) {
       .eq('id', user.id)
       .single()
 
-    // ── Check if user is admin (auto-verify) ────────────────
-    const { data: grants } = await admin.rpc('my_admin_grants')
-    const grantsArr = (grants as any[]) || []
-    const isAdmin = grantsArr.some((g: any) => g.admin_type === 'platform_admin' || g.admin_type === 'campus_admin')
+    // requireAdmin already verified admin status — auto-verify the note
+    const isAdmin = true
 
     // ── Insert note using service role (bypasses RLS) ───────
     const { data: noteRow, error: insertError } = await admin
