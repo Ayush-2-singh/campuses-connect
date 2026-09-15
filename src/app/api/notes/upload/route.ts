@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient, type SupabaseClient } from '@supabase/supabase-js'
-import { requireAuthLite } from '@/lib/api/middleware'
+import { requireAdmin } from '@/lib/api/middleware'
 
 let _supabaseAdmin: SupabaseClient | null = null
 
@@ -34,7 +34,7 @@ function generateFileName(originalName: string, userId: string): string {
 
 export async function POST(request: NextRequest) {
   try {
-    const auth = await requireAuthLite(request)
+    const auth = await requireAdmin(request)
     if (!auth.ok) return auth.response
     const user = { id: auth.auth.userId } as any
 
@@ -103,9 +103,7 @@ export async function POST(request: NextRequest) {
       .eq('id', user.id)
       .single()
 
-    const { data: grants } = await getSupabaseAdmin().rpc('my_admin_grants')
-    const grantsArr = (grants as any[]) || []
-    const isAdmin = grantsArr.length > 0
+    const isAdmin = true // requireAdmin already verified admin status
 
     const { data: noteRow, error: insertError } = await getSupabaseAdmin()
       .from('notes')

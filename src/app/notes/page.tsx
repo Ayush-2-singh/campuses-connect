@@ -55,16 +55,12 @@ export default function NotesPage() {
   const deleteNote = async (note: any) => {
     if (!window.confirm(`Delete "${note.title}"? This cannot be undone.`)) return
     
-    if (user?.id === note.uploaded_by) {
-      await supabase.from('notes').delete().eq('id', note.id)
-    } else {
-      await fetch('/api/admin/content', {
-        method: 'DELETE',
-        headers: { 'Content-Type': 'application/json' ,
+    await fetch('/api/admin/content', {
+      method: 'DELETE',
+      headers: { 'Content-Type': 'application/json' ,
         credentials: 'include',},
-        body: JSON.stringify({ type: 'notes', ids: [note.id] })
-      })
-    }
+      body: JSON.stringify({ type: 'notes', ids: [note.id] })
+    })
     const { data } = await supabase
       .from('notes')
       .select('*, profiles(full_name, username)')
@@ -697,7 +693,7 @@ export default function NotesPage() {
                       <NoteRow
                         key={note.id}
                         note={note}
-                        canDelete={note.uploaded_by === user?.id || canVerify}
+                        canDelete={canVerify}
                         onDelete={deleteNote}
                         canVerify={canVerify}
                         onVerify={verifyNote}
@@ -713,7 +709,7 @@ export default function NotesPage() {
                 <NoteRow
                   key={note.id}
                   note={note}
-                  canDelete={note.uploaded_by === user?.id || canVerify}
+                  canDelete={canVerify}
                   onDelete={deleteNote}
                   canVerify={canVerify}
                   onVerify={verifyNote}
