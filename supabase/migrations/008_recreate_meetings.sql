@@ -1,5 +1,5 @@
 -- ============================================================
--- CampusConnect — Recreate `meetings` table
+-- ConnectToCampus — Recreate `meetings` table
 -- The V3 migration (001_v3_core_schema.sql) dropped meetings
 -- ("Faculty feature removed"), which broke the /meetings page.
 -- Run this in the Supabase SQL Editor (or via `supabase db push`).

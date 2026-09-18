@@ -1,5 +1,5 @@
 -- ============================================================
--- CampusConnect — grant `users.manage` to platform admins
+-- ConnectToCampus — grant `users.manage` to platform admins
 -- The admin panel manages admin_grants, and the grants_write /
 -- grants_select RLS policies require
 --   has_mod_permission(auth.uid(), 'users.manage')

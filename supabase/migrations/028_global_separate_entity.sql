@@ -1,5 +1,5 @@
 -- ============================================================
--- CampusConnect — 028 GLOBAL AS A SEPARATE ENTITY
+-- ConnectToCampus — 028 GLOBAL AS A SEPARATE ENTITY
 -- Global posts belong to no college and no campus. They are the
 -- platform's own nationwide layer — not "a campus post shared
 -- wider". This migration cleans any campus/college references

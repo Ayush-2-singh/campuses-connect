@@ -1,5 +1,5 @@
 -- ============================================================
--- CampusConnect P0-3 — SECURITY DEFINER RPC hardening (migration 006)
+-- ConnectToCampus P0-3 — SECURITY DEFINER RPC hardening (migration 006)
 -- Never trust caller-supplied user ids. Identity is always auth.uid().
 -- * user_admin_type / has_mod_permission / can_create_post*  -> reject foreign ids
 -- * add_karma / update_streak / my_admin_grants              -> derive auth.uid()

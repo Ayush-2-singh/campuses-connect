@@ -1,5 +1,5 @@
 -- ============================================================
--- CampusConnect — 027 LIVE ALL CAMPUSES
+-- ConnectToCampus — 027 LIVE ALL CAMPUSES
 -- Noida / Bangalore / Pune (and any other) campuses were locked
 -- with is_active = false ("Coming Soon") AND had no departments —
 -- so students from those campuses got stuck on the empty

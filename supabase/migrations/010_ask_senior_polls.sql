@@ -1,5 +1,5 @@
 -- ============================================================
--- CampusConnect — Ask a Senior (Q&A) + Real-time Polls
+-- ConnectToCampus — Ask a Senior (Q&A) + Real-time Polls
 -- Run this in the Supabase SQL Editor (or via `supabase db push`).
 -- Idempotent — safe to re-run.
 -- ============================================================

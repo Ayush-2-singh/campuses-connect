@@ -1,5 +1,5 @@
 -- ============================================================
--- CampusConnect V3 — Seeds (migration 002)
+-- ConnectToCampus V3 — Seeds (migration 002)
 -- Categories, communities, admin types, default permission
 -- matrix, AI agents, demo college data, and data backfills.
 -- ============================================================

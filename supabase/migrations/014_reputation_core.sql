@@ -1,5 +1,5 @@
 -- ============================================================
--- CampusConnect — 014 REPUTATION CORE (fairness engine)
+-- ConnectToCampus — 014 REPUTATION CORE (fairness engine)
 -- Karma (lifetime trust) + Aura (seasonal score) on ONE ledger.
 -- Everything rewards-related must flow through award_karma() so
 -- caps, uniqueness and self-award rules are enforced centrally.

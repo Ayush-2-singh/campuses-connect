@@ -1,5 +1,5 @@
 -- ============================================================
--- CampusConnect — 017 PRIVACY, REPLIES, VERIFICATION
+-- ConnectToCampus — 017 PRIVACY, REPLIES, VERIFICATION
 --   • Communities: open / approval / private (+ password)
 --   • Comments: threaded replies (parent_id) + delete cascade
 --   • Opportunities: verified-by badge with admin approval

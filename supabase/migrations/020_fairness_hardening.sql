@@ -1,5 +1,5 @@
 -- ============================================================
--- CampusConnect — 020 FAIRNESS HARDENING
+-- ConnectToCampus — 020 FAIRNESS HARDENING
 -- Closes the karma farming gateway:
 --   • award_karma() becomes server-internal ONLY (revoked from clients)
 --   • validated per-action wrappers are the only client entry points

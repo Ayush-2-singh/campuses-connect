@@ -1,5 +1,5 @@
 -- ============================================================
--- CampusConnect — 031 PARTICIPANTS POLICY FIX
+-- ConnectToCampus — 031 PARTICIPANTS POLICY FIX
 -- The 030 participants_select policy self-referenced
 -- conversation_participants inside its own USING clause, which
 -- recursed forever (42P17). Replaced with a SECURITY DEFINER

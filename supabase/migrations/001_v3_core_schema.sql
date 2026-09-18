@@ -1,5 +1,5 @@
 -- ============================================================
--- CampusConnect V3 — Core Schema (migration 001)
+-- ConnectToCampus V3 — Core Schema (migration 001)
 -- Student-only, CSE-focused, RBAC + dynamic permission matrix
 -- Run in Supabase SQL Editor or via `supabase db push`
 -- ============================================================

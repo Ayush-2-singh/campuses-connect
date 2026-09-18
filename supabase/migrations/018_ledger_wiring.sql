@@ -1,5 +1,5 @@
 -- ============================================================
--- CampusConnect — 018 LEDGER WIRING
+-- ConnectToCampus — 018 LEDGER WIRING
 -- Every karma award must flow through award_karma() (the ledger
 -- gateway from 014). These rewrites replace the legacy direct
 -- profile updates so the ledger stays the single source of truth.

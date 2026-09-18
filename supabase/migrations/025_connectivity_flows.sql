@@ -1,5 +1,5 @@
 -- ============================================================
--- CampusConnect — 025 CONNECTIVITY FLOWS
+-- ConnectToCampus — 025 CONNECTIVITY FLOWS
 -- Makes the core loops logically complete:
 --   1. Students can post (discussion/resource/notes/hackathon/
 --      project/opportunity at campus scope) via the matrix.

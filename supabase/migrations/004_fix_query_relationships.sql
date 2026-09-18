@@ -1,5 +1,5 @@
 -- ============================================================
--- CampusConnect P0-1 — Fix broken query relationships (migration 004)
+-- ConnectToCampus P0-1 — Fix broken query relationships (migration 004)
 -- Issue: pages embed `profiles(...)` on tables that have no FK to
 -- public.profiles, so PostgREST returns HTTP 400 PGRST200 and the
 -- pages render empty. Adding explicit FKs lets the embeds resolve.

@@ -1,5 +1,5 @@
 -- ============================================================
--- CampusConnect — 029 DMS & CONNECTIONS
+-- ConnectToCampus — 029 DMS & CONNECTIONS
 -- Make "Connect" actually complete (accept/decline) and enable
 -- private messaging — but ONLY between accepted connections.
 --   1. respond_to_connection   — receiver accepts/declines a request

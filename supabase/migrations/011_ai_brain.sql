@@ -1,5 +1,5 @@
 -- ============================================================
--- CampusConnect — AI Brain (personal academic intelligence)
+-- ConnectToCampus — AI Brain (personal academic intelligence)
 -- Ported from the ai-brain-test prototype (RAG + memory engine).
 -- Run this in the Supabase SQL Editor (or via `supabase db push`).
 -- Idempotent — safe to re-run.

@@ -1,5 +1,5 @@
 -- ============================================================
--- CampusConnect — 016 EVENTS + GALLERY
+-- ConnectToCampus — 016 EVENTS + GALLERY
 -- Campus events with RSVP, attendance tracking, and per-event
 -- photo/video galleries (memories = retention + sharing).
 --

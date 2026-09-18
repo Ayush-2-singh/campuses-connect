@@ -1,5 +1,5 @@
 -- ============================================================
--- CampusConnect P0-5 — Repair notification triggers (migration 007)
+-- ConnectToCampus P0-5 — Repair notification triggers (migration 007)
 -- Legacy triggers referenced dropped columns (NEW.user_id, NEW.requested_id)
 -- so EVERY like and EVERY connection request failed with 42703.
 -- Rewritten against the current schema; SECURITY DEFINER so the

@@ -1,5 +1,5 @@
 -- ============================================================
--- CampusConnect — 015 DSA COMPETE
+-- ConnectToCampus — 015 DSA COMPETE
 -- Daily DSA challenges + fixed-time "Campus Clash" contests.
 -- Hidden test cases live server-side; the judge (API route) runs
 -- user code against them — never exposes expected outputs to UI.

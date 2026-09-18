@@ -1,5 +1,5 @@
 -- ============================================================
--- CampusConnect — 030 CHAT RLS FIX
+-- ConnectToCampus — 030 CHAT RLS FIX
 -- The 029 messages_insert policy joined conversation_participants
 -- from within the policy, but the participants SELECT policy only
 -- exposed your OWN row — so the peer row was invisible inside the

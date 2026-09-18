@@ -1,5 +1,5 @@
 -- ============================================================
--- CampusConnect — AI Admin Copilot (migration 012)
+-- ConnectToCampus — AI Admin Copilot (migration 012)
 -- Auto-moderates new content (Gemini verdict -> held posts),
 -- merges AI flags + user reports into one queue, and lets
 -- moderators approve/remove/dismiss with author notifications.

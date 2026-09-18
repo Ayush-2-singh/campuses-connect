@@ -1,5 +1,5 @@
 -- ============================================================
--- CampusConnect — Sprint 0 rollback reference (manual, in reverse order)
+-- ConnectToCampus — Sprint 0 rollback reference (manual, in reverse order)
 -- Run 007 → 006 → 005 → 004 rollbacks only if a Sprint-0 fix must be reverted.
 -- NOTE: reverting 007 restores the BROKEN trigger behavior (likes/connects
 -- fail); it is listed for completeness, not as a desirable state.

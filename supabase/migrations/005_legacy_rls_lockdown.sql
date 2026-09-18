@@ -1,5 +1,5 @@
 -- ============================================================
--- CampusConnect P0-2 / P0-4 — Legacy RLS lockdown (migration 005)
+-- ConnectToCampus P0-2 / P0-4 — Legacy RLS lockdown (migration 005)
 -- P0-2: anonymous users must not read or write any legacy table.
 -- P0-4: no client write path may bypass the permission matrix.
 --   * notes / opportunities  -> INSERT requires can_create_post (matrix)

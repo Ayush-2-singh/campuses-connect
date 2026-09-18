@@ -1,5 +1,5 @@
 -- ============================================================
--- CampusConnect V3 — Authorization Engine + RLS (migration 003)
+-- ConnectToCampus V3 — Authorization Engine + RLS (migration 003)
 -- Centralized, data-driven. UI and DB both consult these functions.
 -- ============================================================
 

@@ -1,5 +1,5 @@
 -- ============================================================
--- CampusConnect — AI Admin Copilot hardening (migration 013)
+-- ConnectToCampus — AI Admin Copilot hardening (migration 013)
 -- Fixes found in code review:
 --  1. notify_user was callable by any client (PostgREST) via the
 --     default PUBLIC execute grant → could forge notifications.

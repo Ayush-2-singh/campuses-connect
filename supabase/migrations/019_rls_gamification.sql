@@ -1,5 +1,5 @@
 -- ============================================================
--- CampusConnect — 019 RLS FOR GAMIFICATION
+-- ConnectToCampus — 019 RLS FOR GAMIFICATION
 -- Hardening: RLS on every new table + hidden test cases are NEVER
 -- readable by clients. The judge fetches them through a
 -- secret-gated SECURITY DEFINER RPC (secret = sha256 of the

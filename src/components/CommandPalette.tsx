@@ -14,11 +14,35 @@ interface CmdItem {
 
 const COMMANDS: CmdItem[] = [
   // AI-style quick actions — every one lands on a real page with a real feature.
-  { icon: 'briefcase', label: 'Find internships for me', hint: 'Opportunities', href: '/opportunities?type=internship', group: 'Ask Connect My Campus' },
-  { icon: 'zap', label: 'Find hackathons closing soon', hint: 'Opportunities', href: '/opportunities?type=hackathon', group: 'Ask Connect My Campus' },
-  { icon: 'notebook', label: 'Find notes about a subject', hint: 'Notes library', href: '/notes', group: 'Ask Connect My Campus' },
+  {
+    icon: 'briefcase',
+    label: 'Find internships for me',
+    hint: 'Opportunities',
+    href: '/opportunities?type=internship',
+    group: 'Ask Connect My Campus',
+  },
+  {
+    icon: 'zap',
+    label: 'Find hackathons closing soon',
+    hint: 'Opportunities',
+    href: '/opportunities?type=hackathon',
+    group: 'Ask Connect My Campus',
+  },
+  {
+    icon: 'notebook',
+    label: 'Find notes about a subject',
+    hint: 'Notes library',
+    href: '/notes',
+    group: 'Ask Connect My Campus',
+  },
   { icon: 'users', label: 'Find DSA students', hint: 'Talent', href: '/talent', group: 'Ask Connect My Campus' },
-  { icon: 'calendar', label: 'What is due this week?', hint: 'Classroom', href: '/college', group: 'Ask Connect My Campus' },
+  {
+    icon: 'calendar',
+    label: 'What is due this week?',
+    hint: 'Classroom',
+    href: '/college',
+    group: 'Ask Connect My Campus',
+  },
   { icon: 'grad', label: 'Talk to your AI Brain', hint: 'AI Brain', href: '/brain', group: 'Ask Connect My Campus' },
   // Navigation
   { icon: 'home', label: 'Home — Campus Pulse', href: '/feed', group: 'Navigate' },
@@ -53,7 +77,7 @@ export default function CommandPalette({ open, onClose }: { open: boolean; onClo
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase()
     if (!q) return COMMANDS
-    return COMMANDS.filter(c => c.label.toLowerCase().includes(q) || (c.hint || '').toLowerCase().includes(q))
+    return COMMANDS.filter((c) => c.label.toLowerCase().includes(q) || (c.hint || '').toLowerCase().includes(q))
   }, [query])
 
   const groups = useMemo(() => {
@@ -82,10 +106,10 @@ export default function CommandPalette({ open, onClose }: { open: boolean; onClo
   const onKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'ArrowDown') {
       e.preventDefault()
-      setActiveIndex(i => (i + 1) % Math.max(flatItems.length, 1))
+      setActiveIndex((i) => (i + 1) % Math.max(flatItems.length, 1))
     } else if (e.key === 'ArrowUp') {
       e.preventDefault()
-      setActiveIndex(i => (i - 1 + Math.max(flatItems.length, 1)) % Math.max(flatItems.length, 1))
+      setActiveIndex((i) => (i - 1 + Math.max(flatItems.length, 1)) % Math.max(flatItems.length, 1))
     } else if (e.key === 'Enter') {
       e.preventDefault()
       const item = flatItems[activeIndex]
@@ -102,20 +126,28 @@ export default function CommandPalette({ open, onClose }: { open: boolean; onClo
         className="cmd-panel"
         role="dialog"
         aria-modal="true"
-        aria-label="Ask Campus Connect"
-        onClick={e => e.stopPropagation()}
+        aria-label="Ask ConnectToCampus"
+        onClick={(e) => e.stopPropagation()}
         onKeyDown={onKeyDown}
       >
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '14px 16px', borderBottom: '1px solid var(--border)' }}>
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 10,
+            padding: '14px 16px',
+            borderBottom: '1px solid var(--border)',
+          }}
+        >
           <span style={{ color: 'var(--text-muted)', display: 'flex' }}>
             <Icon name="search" size={18} />
           </span>
           <input
             ref={inputRef}
             value={query}
-            onChange={e => setQuery(e.target.value)}
+            onChange={(e) => setQuery(e.target.value)}
             placeholder="Ask ConnectToCampus..."
-            aria-label="Ask Campus Connect"
+            aria-label="Ask ConnectToCampus"
             style={{
               flex: 1,
               border: 'none',
@@ -129,7 +161,19 @@ export default function CommandPalette({ open, onClose }: { open: boolean; onClo
           <button
             onClick={onClose}
             aria-label="Close"
-            style={{ display: 'flex', alignItems: 'center', gap: 6, background: 'var(--bg-tertiary)', border: '1px solid var(--border)', borderRadius: 8, padding: '4px 10px', fontSize: 11, color: 'var(--text-muted)', cursor: 'pointer', fontFamily: 'inherit' }}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 6,
+              background: 'var(--bg-tertiary)',
+              border: '1px solid var(--border)',
+              borderRadius: 8,
+              padding: '4px 10px',
+              fontSize: 11,
+              color: 'var(--text-muted)',
+              cursor: 'pointer',
+              fontFamily: 'inherit',
+            }}
           >
             ESC
           </button>
@@ -137,16 +181,27 @@ export default function CommandPalette({ open, onClose }: { open: boolean; onClo
 
         <div style={{ maxHeight: 360, overflowY: 'auto', padding: 6 }}>
           {flatItems.length === 0 && (
-            <p style={{ padding: '24px 16px', textAlign: 'center', fontSize: 13, color: 'var(--text-muted)', margin: 0 }}>
+            <p
+              style={{ padding: '24px 16px', textAlign: 'center', fontSize: 13, color: 'var(--text-muted)', margin: 0 }}
+            >
               No results for “{query}” — try a page name or a campus question.
             </p>
           )}
-          {groups.map(g => (
+          {groups.map((g) => (
             <div key={g.name}>
-              <p style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.06em', margin: '10px 16px 4px' }}>
+              <p
+                style={{
+                  fontSize: 11,
+                  fontWeight: 700,
+                  color: 'var(--text-muted)',
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.06em',
+                  margin: '10px 16px 4px',
+                }}
+              >
                 {g.name}
               </p>
-              {g.items.map(item => {
+              {g.items.map((item) => {
                 const idx = flatItems.indexOf(item)
                 return (
                   <button
@@ -158,7 +213,13 @@ export default function CommandPalette({ open, onClose }: { open: boolean; onClo
                     onPointerDown={() => setActiveIndex(idx)}
                     onClick={() => select(item)}
                   >
-                    <span style={{ display: 'flex', color: idx === activeIndex ? 'var(--accent-text)' : 'var(--text-muted)', width: 18 }}>
+                    <span
+                      style={{
+                        display: 'flex',
+                        color: idx === activeIndex ? 'var(--accent-text)' : 'var(--text-muted)',
+                        width: 18,
+                      }}
+                    >
                       <Icon name={item.icon} size={17} />
                     </span>
                     <span style={{ flex: 1 }}>{item.label}</span>

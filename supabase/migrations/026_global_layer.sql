@@ -1,5 +1,5 @@
 -- ============================================================
--- CampusConnect — 026 GLOBAL LAYER
+-- ConnectToCampus — 026 GLOBAL LAYER
 -- "Global is the default home; campus is an optional layer."
 --   1. Students can post at GLOBAL scope (discussion / resource /
 --      project / opportunity / hackathon) — no campus needed.
