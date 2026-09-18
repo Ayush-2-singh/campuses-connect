@@ -169,11 +169,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="en" dir="ltr" suppressHydrationWarning>
       <head>
-        {/* Preconnect to Supabase — only external API actually called from client */}
-        <link
-          rel="preconnect"
-          href={process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://tnlbqirrrjrkxkxlkpat.supabase.co'}
-        />
+        {/* Preconnect to Supabase — only external API actually called from client.
+            The project ref is never hardcoded here: it belongs in NEXT_PUBLIC_SUPABASE_URL. */}
+        {process.env.NEXT_PUBLIC_SUPABASE_URL && <link rel="preconnect" href={process.env.NEXT_PUBLIC_SUPABASE_URL} />}
 
         {/* JSON-LD Structured Data */}
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />

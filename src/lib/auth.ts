@@ -86,11 +86,14 @@ function parseCookieHeader(cookieHeader: string): Record<string, string> {
  *
  * We parse the raw Cookie header, find all chunks, reassemble,
  * parse JSON, and verify via the service-role client.
+ *
+ * NOTE: this module is also imported by client auth pages (getSafeRedirect,
+ * getAuthErrorMessage), so it must stay free of `next/headers`. The fallback
+ * for callers that don't pass a request lives in `@/lib/api/middleware`, which
+ * is server-only.
  */
-export async function getVerifiedUser(request: NextRequest) {
+export async function getVerifiedUserFromCookie(cookieHeader: string) {
   try {
-    // Parse the raw Cookie header directly — bypasses getAll()
-    const cookieHeader = request.headers.get('cookie') || ''
     const cookies = parseCookieHeader(cookieHeader)
     const cookieNames = Object.keys(cookies)
 
@@ -174,4 +177,10 @@ export async function getVerifiedUser(request: NextRequest) {
     console.error('[auth] getVerifiedUser error:', err)
     return null
   }
+}
+
+/** Wrapper for callers that already hold the incoming NextRequest. */
+export async function getVerifiedUser(request?: NextRequest) {
+  if (!request) return null
+  return getVerifiedUserFromCookie(request.headers.get('cookie') || '')
 }

@@ -45,6 +45,9 @@
 | Sep 2026 | **Admin Message Management** | View, search, delete all messages & conversations from admin panel |
 | Sep 2026 | **Notes Link Submission** | Everyone can submit notes via link; admin verifies before publishing |
 | Sep 2026 | **Google OAuth docs** | Full setup guide: Google Console + Supabase provider config |
+| Sep 2026 | **Admin moderation scope** | Post & comment deletes go through `/api/admin/content` with role + campus/community scope checks |
+| Sep 2026 | **Chunked-cookie API auth** | Shared API guards reassemble `@supabase/ssr` chunked cookies; passing the request is optional |
+| Sep 2026 | **AI Admin Copilot** | Gemini pre-publish screening, `held` posts and a moderator queue (see feature 28) |
 
 ---
 
@@ -265,12 +268,16 @@ A comprehensive platform management dashboard:
 - **Search & filter** — find any content by title, body, or subject
 - **Multi-select bulk delete** — select multiple items and delete at once
 - **Single delete** — delete any individual item with one click
-- **Full admin control** — delete anything, anywhere, no restrictions
+- **Scope-aware deletion** — platform admins anywhere; campus admins inside their campus/college; community admins inside their community
 
 #### 📝 Content Moderation
 - **Report queue** — review flagged content
 - **Auto-moderation** — spam detection
 - **Action buttons** — dismiss, warn, remove, ban
+- **AI Admin Copilot** — Gemini screens every new post before publishing (`/api/admin/copilot/check`, fail-open)
+- **Held posts** — flagged posts are stored with `status = held`: visible to the author + moderators only, and queued
+- **Moderation queue** — review, resolve, summarize and report endpoints under `/api/admin/copilot/*`
+- **Never-lost fallback** — if queueing through the API fails, the composer calls the `flag_content` RPC directly
 
 #### 💬 Message Management
 - **View all conversations** — browse every chat on the platform
@@ -281,6 +288,82 @@ A comprehensive platform management dashboard:
 - **Message detail view** — full conversation history with timestamps & sender info
 - **Soft delete safety** — deleted messages are marked, not permanently removed
 - **Admin audit logging** — every delete action is logged for traceability
+
+### 🤖 28. AI Admin Copilot
+A Gemini-backed moderation pipeline that screens content before it goes live:
+
+- **Pre-publish check** — every new post is reviewed by `/api/admin/copilot/check` (rate-limited, fail-open: an AI outage never blocks a student)
+- **Held state** — a flagged post is inserted with `status = 'held'` + a reason, so only its author and moderators can see it
+- **Moderation queue** — `GET /api/admin/copilot/queue` lists held content for anyone with the `content.moderation` permission
+- **Resolve & report** — `resolve`, `review`, `summarize` and `report` endpoints let moderators clear or escalate items
+- **Guaranteed queueing** — if the API call fails, the composer falls back to the `flag_content` RPC so a post is never invisible *and* unqueued
+
+---
+
+## 🔐 Auth, Roles & Moderation Process
+
+### 1. How an API request is authorised
+
+```
+browser — createBrowserClient() with the anon key + the user's session
+   │   Cookie: sb-<ref>-auth-token.0 … .N     (@supabase/ssr chunks long JWTs)
+   ▼
+route handler
+   ├─ requireAuthLite(request)  → session + profile (cheapest, no grants lookup)
+   ├─ requireAuth(request)      → session + profile + admin_grants
+   └─ requireAdmin(request)     → requireAuth + a platform_admin / campus_admin grant
+        │
+        ▼
+   scopeFilterFor(auth).canModerateRow(row)
+        │
+        ▼
+   service-role write + audit_log insert
+```
+
+`getVerifiedUser()` reassembles the chunked cookie from the raw `Cookie` header,
+verifies the JWT with the service-role client, then loads the profile. Always
+pass the request (`await requireAdmin(request)`); when a route omits it, the
+guards fall back to `next/headers` so the session still resolves.
+
+### 2. Moderation scopes
+
+| Role (from `admin_grants`) | May delete |
+|----------------------------|------------|
+| `platform_admin` | any post / comment / note / event / poll |
+| `campus_admin` | rows whose `campus_id` or `college_id` is one of their grants |
+| `community_admin` | rows whose `community_id` is one of their grants |
+| everyone else | their own content only (enforced by RLS) |
+
+Server-side grants are read straight from `admin_grants`, filtered by the
+verified user id. `my_admin_grants()` is a **client-only** RPC — it derives
+`auth.uid()`, which is NULL on a service-role client, so calling it server-side
+returns zero rows.
+
+### 3. Deleting a post as an admin
+
+1. `PostCard` sends `DELETE /api/admin/content` with `{ type: 'posts', ids: [...] }`.
+2. `requireAuth` loads the caller's grants; anyone without a moderator role gets `403`.
+3. Target rows are re-read with the service-role client and filtered through `scopeFilterFor` — out-of-scope ids are dropped, never deleted (the response reports `skipped`).
+4. Remaining ids are deleted (comments, reactions and saved posts cascade) and an `audit_log` row `content.delete_posts` is written.
+5. `PostCard` surfaces the API error whenever the response is not ok, so a rejected delete no longer looks like a success.
+
+### 4. Database migrations
+
+`supabase/migrations/*.sql` run in numeric order (001 → 041, plus
+`ROLLBACK_SPRINT0.sql` for reference). Add a new numbered file for every schema
+change and never edit an applied migration. Live schema state (functions,
+policies, triggers) can be diffed against `supabase/dumps/schema/`.
+
+### 5. Backups
+
+```bash
+SUPABASE_ACCESS_TOKEN='sbp_...' bash scripts/backup-db.sh <project-ref> supabase/dumps
+```
+
+Dumps every `public` table as JSON through the Management API SQL endpoint (it
+runs as postgres, so RLS never filters rows). `auth.users` is deliberately
+excluded — it holds password hashes. The project ref lives in
+`NEXT_PUBLIC_SUPABASE_URL` and is not committed anywhere.
 
 ---
 
@@ -413,7 +496,7 @@ To enable "Sign in with Google" on login/signup pages, follow these steps:
 ## 📁 Project Structure
 
 ```
-campus-connect/
+connect-to-campus/
 ├── src/
 │   ├── app/                    # Next.js App Router pages
 │   │   ├── feed/              # Campus feed
@@ -459,7 +542,7 @@ campus-connect/
 │   │   └── featureFlags.ts   # Feature flag utilities
 │   └── types/                 # TypeScript types
 ├── supabase/
-│   └── migrations/           # Database migrations (001-040)
+│   └── migrations/           # Database migrations (001-041 + rollback reference)
 ├── public/
 │   ├── sw.js                 # Service worker (PWA)
 │   └── manifest.json         # PWA manifest
@@ -490,9 +573,9 @@ campus-connect/
 
 ## 📊 Database
 
-- **40 migration files** — comprehensive schema
-- **30+ tables** — users, posts, events, jobs, integrations, etc.
-- **20+ RPC functions** — optimized database operations
+- **55 migration files** — comprehensive schema (001 → 041 plus a rollback reference)
+- **67 tables** — users, posts, events, jobs, integrations, etc.
+- **97 database functions** — optimized RPCs for authz, feeds and gamification
 - **Row Level Security (RLS)** — every table secured
 - **Real-time subscriptions** — live updates for chat & notifications
 

@@ -1,6 +1,7 @@
 # ConnectToCampus — Database Backups
 
-Full backup of the **live Supabase database** (project ref `tnlbqirrrjrkxkxlkpat`),
+Full backup of the **live Supabase database** (project ref `<project-ref>` — read it from
+`NEXT_PUBLIC_SUPABASE_URL`, it is deliberately not committed here),
 taken via the Management API SQL endpoint (runs as postgres — captures ALL rows,
 no RLS filtering).
 
@@ -44,7 +45,7 @@ or drop the FK constraints first if you need a different order.
 ## Re-run the backup
 
 ```bash
-SUPABASE_ACCESS_TOKEN='sbp_...' bash scripts/backup-db.sh tnlbqirrrjrkxkxlkpat supabase/dumps
+SUPABASE_ACCESS_TOKEN='sbp_...' bash scripts/backup-db.sh <project-ref> supabase/dumps
 ```
 
 Requires only the Management API token (no Docker, no DB password).

@@ -19,6 +19,7 @@ export default function PostComposer({
   placeholder?: string
 }) {
   const [creatable, setCreatable] = useState<CreatableCategory[]>([])
+  const [listError, setListError] = useState('')
   const [category, setCategory] = useState<CreatableCategory | null>(null)
   const [scope, setScope] = useState<PostScope>('campus')
   const [body, setBody] = useState('')
@@ -30,11 +31,18 @@ export default function PostComposer({
   const admin = useAdminContext(userId)
 
   useEffect(() => {
-    listCreatableCategories(userId, context).then(list => {
+    listCreatableCategories(userId, context).then((list) => {
       setCreatable(list)
       if (list.length) {
         setCategory(list[0])
         setScope((list[0].max_scope as PostScope) || 'campus')
+        setListError('')
+      } else {
+        // Previously this fell through to `return null` and the composer vanished
+        // with no explanation — it read as "posting is broken".
+        setListError(
+          'Posting is unavailable for your account right now. If this looks wrong, check that your campus is set on your profile.'
+        )
       }
     })
   }, [userId, context.communityId, context.campusId, context.collegeId])
@@ -42,19 +50,40 @@ export default function PostComposer({
   const scopeLevel = (s?: string) => (s === 'global' ? 3 : s === 'college_network' ? 2 : s === 'campus' ? 1 : 0)
   // Community posts are always global. Students get campus | global
   // (college_network stays admin territory).
-  const baseScopes = context.communityId ? (['global'] as PostScope[]) : (['campus', 'college_network', 'global'] as PostScope[])
+  const baseScopes = context.communityId
+    ? (['global'] as PostScope[])
+    : (['campus', 'college_network', 'global'] as PostScope[])
   // A scope is valid only if the actor may use it here: college_network is
   // admin-only, and 'campus' requires an actual campus/college context.
   const scopeUsable = (s: PostScope) =>
-    (admin.isAdmin || s !== 'college_network')
-    && (s !== 'campus' || !!(context.campusId || context.collegeId))
-  const hasValidScope = (c: CreatableCategory) => baseScopes.some(s => scopeLevel(c.max_scope) >= scopeLevel(s) && scopeUsable(s))
+    (admin.isAdmin || s !== 'college_network') && (s !== 'campus' || !!(context.campusId || context.collegeId))
+  const hasValidScope = (c: CreatableCategory) =>
+    baseScopes.some((s) => scopeLevel(c.max_scope) >= scopeLevel(s) && scopeUsable(s))
   const visibleCategories = creatable.filter(hasValidScope)
-  const current = visibleCategories.find(c => c.category_key === category?.category_key) || visibleCategories[0] || null
+  const current =
+    visibleCategories.find((c) => c.category_key === category?.category_key) || visibleCategories[0] || null
   const maxScope = current?.max_scope
-  const scopeOptions = baseScopes.filter(s => scopeLevel(maxScope) >= scopeLevel(s) && scopeUsable(s))
+  const scopeOptions = baseScopes.filter((s) => scopeLevel(maxScope) >= scopeLevel(s) && scopeUsable(s))
 
-  if (!current) return null // no posting rights in this context
+  if (!current) {
+    // No creatable categories here — say so instead of silently rendering nothing.
+    return (
+      <div
+        style={{
+          background: 'var(--bg-secondary)',
+          border: '1px solid var(--border)',
+          borderRadius: 14,
+          padding: '14px 16px',
+          marginBottom: 16,
+          fontSize: 13,
+          color: 'var(--text-muted)',
+          lineHeight: 1.5,
+        }}
+      >
+        {listError || 'You do not have permission to post in this space.'}
+      </div>
+    )
+  }
 
   const handlePost = async () => {
     if (!body.trim() || !current || posting) return
@@ -90,8 +119,8 @@ export default function PostComposer({
       category_id: current.category_id,
       scope,
       community_id: context.communityId || null,
-      college_id: isGlobal ? null : (context.collegeId || null),
-      campus_id: isGlobal ? null : (context.campusId || null),
+      college_id: isGlobal ? null : context.collegeId || null,
+      campus_id: isGlobal ? null : context.campusId || null,
       body: body.trim(),
       status: flagged ? 'held' : 'published',
     }
@@ -99,7 +128,9 @@ export default function PostComposer({
 
     const { data: inserted, error } = await supabase.from('posts').insert(insertPayload).select('id').single()
     if (error) {
-      setPostError('Could not post. Please try again.')
+      // Surface the database reason (RLS rejection, scope mismatch, …) instead of
+      // a generic message that hid every real cause of "can't send it".
+      setPostError(error.message ? `Could not post: ${error.message}` : 'Could not post. Please try again.')
       setChecking(false)
       setPosting(false)
       return
@@ -122,7 +153,9 @@ export default function PostComposer({
           }),
         })
         queued = res.ok
-      } catch { /* try direct RPC below */ }
+      } catch {
+        /* try direct RPC below */
+      }
       if (!queued) {
         try {
           await supabase.rpc('flag_content', {
@@ -153,42 +186,150 @@ export default function PostComposer({
   }
 
   return (
-    <div style={{ background: 'var(--bg)', border: '1px solid var(--border)', borderRadius: 14, padding: 14, marginBottom: 16, boxShadow: 'var(--shadow-sm)' }}>
+    <div
+      style={{
+        background: 'var(--bg)',
+        border: '1px solid var(--border)',
+        borderRadius: 14,
+        padding: 14,
+        marginBottom: 16,
+        boxShadow: 'var(--shadow-sm)',
+      }}
+    >
       {!open ? (
-        <div onClick={() => setOpen(true)} style={{ display: 'flex', alignItems: 'center', gap: 10, cursor: 'pointer' }}>
-          <div style={{ width: 36, height: 36, borderRadius: '50%', background: 'var(--accent)', color: 'var(--on-accent)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 15, fontWeight: 700, flexShrink: 0 }}>
+        <div
+          onClick={() => setOpen(true)}
+          style={{ display: 'flex', alignItems: 'center', gap: 10, cursor: 'pointer' }}
+        >
+          <div
+            style={{
+              width: 36,
+              height: 36,
+              borderRadius: '50%',
+              background: 'var(--accent)',
+              color: 'var(--on-accent)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              fontSize: 15,
+              fontWeight: 700,
+              flexShrink: 0,
+            }}
+          >
             {profile?.full_name?.[0] || 'A'}
           </div>
-          <div style={{ flex: 1, background: 'var(--bg-secondary)', borderRadius: 20, padding: '10px 16px', fontSize: 14, color: 'var(--text-muted)' }}>
+          <div
+            style={{
+              flex: 1,
+              background: 'var(--bg-secondary)',
+              borderRadius: 20,
+              padding: '10px 16px',
+              fontSize: 14,
+              color: 'var(--text-muted)',
+            }}
+          >
             {placeholder}
           </div>
         </div>
       ) : (
         <div>
-          <textarea autoFocus value={body} onChange={e => setBody(e.target.value)} rows={4}
+          <textarea
+            autoFocus
+            value={body}
+            onChange={(e) => setBody(e.target.value)}
+            rows={4}
             placeholder={placeholder}
-            style={{ width: '100%', border: '1px solid var(--border)', borderRadius: 10, padding: '10px 14px', fontSize: 14, outline: 'none', resize: 'none', fontFamily: 'inherit', marginBottom: 10, background: 'var(--bg-secondary)', boxSizing: 'border-box' }} />
-          <div className="scrollbar-hide chips-wrap" style={{ display: 'flex', gap: 6, paddingBottom: 4, marginBottom: 10 }} role="tablist" aria-label="Post category">
-            {visibleCategories.map(c => (
-              <button key={c.category_key} onClick={() => { setCategory(c); setScope((c.max_scope as PostScope) || 'campus') }}
-                style={{ flexShrink: 0, whiteSpace: 'nowrap', padding: '5px 12px', borderRadius: 20, fontSize: 12, fontWeight: 500, border: category?.category_key === c.category_key ? 'none' : '1px solid var(--border)', background: category?.category_key === c.category_key ? 'var(--accent)' : 'var(--bg)', color: category?.category_key === c.category_key ? 'var(--on-accent)' : 'var(--text-secondary)', cursor: 'pointer', fontFamily: 'inherit' }}>
+            style={{
+              width: '100%',
+              border: '1px solid var(--border)',
+              borderRadius: 10,
+              padding: '10px 14px',
+              fontSize: 14,
+              outline: 'none',
+              resize: 'none',
+              fontFamily: 'inherit',
+              marginBottom: 10,
+              background: 'var(--bg-secondary)',
+              boxSizing: 'border-box',
+            }}
+          />
+          <div
+            className="scrollbar-hide chips-wrap"
+            style={{ display: 'flex', gap: 6, paddingBottom: 4, marginBottom: 10 }}
+            role="tablist"
+            aria-label="Post category"
+          >
+            {visibleCategories.map((c) => (
+              <button
+                key={c.category_key}
+                onClick={() => {
+                  setCategory(c)
+                  setScope((c.max_scope as PostScope) || 'campus')
+                }}
+                style={{
+                  flexShrink: 0,
+                  whiteSpace: 'nowrap',
+                  padding: '5px 12px',
+                  borderRadius: 20,
+                  fontSize: 12,
+                  fontWeight: 500,
+                  border: category?.category_key === c.category_key ? 'none' : '1px solid var(--border)',
+                  background: category?.category_key === c.category_key ? 'var(--accent)' : 'var(--bg)',
+                  color: category?.category_key === c.category_key ? 'var(--on-accent)' : 'var(--text-secondary)',
+                  cursor: 'pointer',
+                  fontFamily: 'inherit',
+                }}
+              >
                 {c.label}
               </button>
             ))}
           </div>
           {heldNotice && (
-            <div style={{ background: 'var(--warning-light)', border: '1px solid var(--warning-border)', borderRadius: 10, padding: '10px 14px', fontSize: 13, color: 'var(--warning-text)', marginBottom: 10, lineHeight: 1.5 }}>
+            <div
+              style={{
+                background: 'var(--warning-light)',
+                border: '1px solid var(--warning-border)',
+                borderRadius: 10,
+                padding: '10px 14px',
+                fontSize: 13,
+                color: 'var(--warning-text)',
+                marginBottom: 10,
+                lineHeight: 1.5,
+              }}
+            >
               🛡️ {heldNotice}
             </div>
           )}
           {postError && (
-            <div style={{ background: 'var(--danger-light)', border: '1px solid var(--danger-border)', borderRadius: 10, padding: '10px 14px', fontSize: 13, color: 'var(--danger)', marginBottom: 10 }}>
+            <div
+              style={{
+                background: 'var(--danger-light)',
+                border: '1px solid var(--danger-border)',
+                borderRadius: 10,
+                padding: '10px 14px',
+                fontSize: 13,
+                color: 'var(--danger)',
+                marginBottom: 10,
+              }}
+            >
               {postError}
             </div>
           )}
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10 }}>
-            <select value={scope} onChange={e => setScope(e.target.value as PostScope)}
-              style={{ border: '1px solid var(--border)', borderRadius: 8, padding: '7px 10px', fontSize: 13, background: 'var(--bg)', outline: 'none', fontFamily: 'inherit', maxWidth: 170 }}>
+            <select
+              value={scope}
+              onChange={(e) => setScope(e.target.value as PostScope)}
+              style={{
+                border: '1px solid var(--border)',
+                borderRadius: 8,
+                padding: '7px 10px',
+                fontSize: 13,
+                background: 'var(--bg)',
+                outline: 'none',
+                fontFamily: 'inherit',
+                maxWidth: 170,
+              }}
+            >
               {/* Two top-level choices: Global, or Campus (with sub-options) */}
               {scopeOptions.includes('global') && (
                 <optgroup label="🌐 Global">
@@ -207,9 +348,36 @@ export default function PostComposer({
               )}
             </select>
             <div style={{ display: 'flex', gap: 8 }}>
-              <button onClick={() => setOpen(false)} style={{ padding: '7px 14px', borderRadius: 8, border: '1px solid var(--border)', background: 'var(--bg)', color: 'var(--text-secondary)', fontSize: 13, cursor: 'pointer', fontFamily: 'inherit' }}>Cancel</button>
-              <button onClick={handlePost} disabled={!body.trim() || posting || checking}
-                style={{ padding: '7px 14px', borderRadius: 8, border: 'none', background: !body.trim() || posting || checking ? 'var(--disabled)' : 'var(--accent)', color: 'var(--on-accent)', fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>
+              <button
+                onClick={() => setOpen(false)}
+                style={{
+                  padding: '7px 14px',
+                  borderRadius: 8,
+                  border: '1px solid var(--border)',
+                  background: 'var(--bg)',
+                  color: 'var(--text-secondary)',
+                  fontSize: 13,
+                  cursor: 'pointer',
+                  fontFamily: 'inherit',
+                }}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handlePost}
+                disabled={!body.trim() || posting || checking}
+                style={{
+                  padding: '7px 14px',
+                  borderRadius: 8,
+                  border: 'none',
+                  background: !body.trim() || posting || checking ? 'var(--disabled)' : 'var(--accent)',
+                  color: 'var(--on-accent)',
+                  fontSize: 13,
+                  fontWeight: 600,
+                  cursor: 'pointer',
+                  fontFamily: 'inherit',
+                }}
+              >
                 {checking ? '🛡️ Checking...' : posting ? 'Posting...' : 'Post'}
               </button>
             </div>

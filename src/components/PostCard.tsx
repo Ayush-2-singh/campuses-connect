@@ -66,6 +66,7 @@ export default function PostCard({
   const [joined, setJoined] = useState(false)
   const [joinCount, setJoinCount] = useState(0)
   const [joining, setJoining] = useState(false)
+  const [deleteError, setDeleteError] = useState('')
   const { show: toast } = useToast()
   const haptic = useHaptic()
 
@@ -260,12 +261,27 @@ export default function PostCard({
   const deleteComment = async (id: string) => {
     if (!currentUserId) return
     if (!window.confirm(isAdmin ? 'Delete this comment as admin?' : 'Delete this comment?')) return
+    setDeleteError('')
     const supabase = createClient()
     if (isAdmin) {
-      // Admin — delete via service role
-      await supabase.from('post_comments').delete().eq('id', id)
+      // Admin — moderation runs through the service-role API so RLS can't block it.
+      const res = await fetch('/api/admin/content', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ type: 'comments', ids: [id] }),
+        credentials: 'include',
+      })
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}))
+        setDeleteError((data as any)?.error || 'Could not delete this comment.')
+        return
+      }
     } else {
-      await supabase.from('post_comments').delete().eq('id', id).eq('author_id', currentUserId)
+      const { error } = await supabase.from('post_comments').delete().eq('id', id).eq('author_id', currentUserId)
+      if (error) {
+        setDeleteError(error.message || 'Could not delete this comment.')
+        return
+      }
     }
     setComments((cs) => cs.filter((c) => c.id !== id))
     setCommentCount((c) => Math.max(0, c - 1))
@@ -299,17 +315,33 @@ export default function PostCard({
       )
     )
       return
+    setDeleteError('')
     const supabase = createClient()
     if (isAdmin && !isAuthor) {
-      // Admin deleting someone else's post — service role via API
-      await fetch(`/api/admin/content`, {
+      // Admin deleting someone else's post — service role via API.
+      // The response MUST be checked: this used to refresh the feed regardless,
+      // so a 403 looked like a successful delete until the next load.
+      const res = await fetch('/api/admin/content', {
         method: 'DELETE',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ type: 'posts', ids: [post.id] }),
         credentials: 'include',
       })
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}))
+        setDeleteError((data as any)?.error || 'Could not delete this post.')
+        return
+      }
     } else {
-      await supabase.from('posts').update({ status: 'removed' }).eq('id', post.id).eq('author_id', currentUserId)
+      const { error } = await supabase
+        .from('posts')
+        .update({ status: 'removed' })
+        .eq('id', post.id)
+        .eq('author_id', currentUserId)
+      if (error) {
+        setDeleteError(error.message || 'Could not delete this post.')
+        return
+      }
     }
     onChanged?.()
   }
@@ -325,6 +357,22 @@ export default function PostCard({
         boxShadow: 'var(--shadow-sm)',
       }}
     >
+      {deleteError && (
+        <div
+          role="alert"
+          style={{
+            background: 'var(--danger-light)',
+            border: '1px solid var(--danger-border)',
+            borderRadius: 10,
+            padding: '10px 14px',
+            fontSize: 13,
+            color: 'var(--danger)',
+            marginBottom: 12,
+          }}
+        >
+          {deleteError}
+        </div>
+      )}
       <div
         style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 8, marginBottom: 10 }}
       >

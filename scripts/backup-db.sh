@@ -6,12 +6,12 @@
 #
 # Usage:
 #   SUPABASE_ACCESS_TOKEN='sbp_...' bash scripts/backup-db.sh <project-ref> [outdir]
-#   e.g. SUPABASE_ACCESS_TOKEN='sbp_...' bash scripts/backup-db.sh tnlbqirrrjrkxkxlkpat supabase/dumps
+#   e.g. SUPABASE_ACCESS_TOKEN='sbp_...' bash scripts/backup-db.sh <project-ref> supabase/dumps
 # ============================================================
 set -euo pipefail
 
 TOKEN="${SUPABASE_ACCESS_TOKEN:?SUPABASE_ACCESS_TOKEN env var required}"
-REF="${1:?project ref required (e.g. tnlbqirrrjrkxkxlkpat)}"
+REF="${1:?project ref required (e.g. abcdefghijklmnopqrst)}"
 OUT="${2:-supabase/dumps}"
 
 mkdir -p "$OUT/data" "$OUT/schema"
