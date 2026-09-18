@@ -26,6 +26,9 @@ jobs:
       - name: Typecheck
         run: npx tsc --noEmit
 
+      - name: Tests
+        run: npm test
+
       - name: Production build
         run: npm run build
         env:

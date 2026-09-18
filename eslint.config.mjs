@@ -29,6 +29,11 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // Unrelated side project checked out inside this repo (tsconfig.json
+    // excludes it too). Linting it failed CI before any other step ran.
+    "Adhyayan/**",
+    // Build output of the local Supabase backup script.
+    "supabase/dumps/**",
   ]),
 ]);
 
