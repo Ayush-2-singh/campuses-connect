@@ -1,6 +1,6 @@
 'use client'
 
-import { Suspense, useEffect, useState } from 'react'
+import { Suspense, useCallback, useEffect, useRef, useState } from 'react'
 import { useParams, useRouter, useSearchParams } from 'next/navigation'
 import { LiveKitRoom, RoomAudioRenderer, useLocalParticipant, useParticipants } from '@livekit/components-react'
 import { createClient } from '@/lib/supabase/client'
@@ -21,7 +21,12 @@ function CallRoom() {
   const router = useRouter()
 
   const [conn, setConn] = useState<{ token: string; url: string } | null>(null)
+  const [connected, setConnected] = useState(false)
   const [error, setError] = useState('')
+
+  // Guarantees the leave RPC runs at most once, whichever of connected-
+  // disconnect / explicit leave / unmount happens first.
+  const leftRef = useRef(false)
 
   useEffect(() => {
     async function getToken() {
@@ -44,11 +49,44 @@ function CallRoom() {
     getToken()
   }, [callId])
 
-  async function leave() {
-    if (callId) {
-      await supabase.rpc('leave_live_voice_chat_call', { p_call_id: callId })
+  const leave = useCallback(async () => {
+    if (!leftRef.current) {
+      leftRef.current = true
+      if (callId) {
+        await supabase.rpc('leave_live_voice_chat_call', { p_call_id: callId })
+      }
     }
     router.push(`/live-voice-chat/${groupId}`)
+  }, [callId, groupId, router])
+
+  /**
+   * Closing the tab, hitting back, or navigating away unmounts this page
+   * without ever firing onDisconnected. Without this the participant would
+   * stay in the participant row forever, so the room would show as LIVE with
+   * somebody who already left and the call would never be allowed to end.
+   */
+  useEffect(() => {
+    return () => {
+      if (callId && !leftRef.current) {
+        leftRef.current = true
+        void supabase.rpc('leave_live_voice_chat_call', { p_call_id: callId })
+      }
+    }
+  }, [callId])
+
+  /** Turn the SDK's raw text into something a student can act on. */
+  const describeError = (err: unknown) => {
+    const message = err instanceof Error ? err.message : String(err ?? '')
+    if (/permission|notallowed|denied/i.test(message)) {
+      return 'Microphone access was blocked. Allow the microphone for this site and join again.'
+    }
+    if (/token|unauthor|401|403/i.test(message)) {
+      return 'Your call token was rejected. Rejoin the room to get a new one.'
+    }
+    if (/network|disconnect|websocket/i.test(message)) {
+      return 'Lost the connection to the voice server. Check your internet and rejoin.'
+    }
+    return message || 'Could not connect to the voice room.'
   }
 
   if (error) return <p className="p-6 text-red-400">{error}</p>
@@ -61,10 +99,13 @@ function CallRoom() {
       connect
       audio
       video={false}
+      onConnected={() => setConnected(true)}
+      onError={(err) => setError(describeError(err))}
       onDisconnected={leave}
       className="mx-auto max-w-3xl p-4 md:p-6"
     >
       <RoomAudioRenderer />
+      <p className="mb-4 text-sm text-white/50">{connected ? '🟢 Connected' : 'Connecting…'}</p>
       <Participants />
       <Controls callId={callId!} onLeave={leave} />
     </LiveKitRoom>
