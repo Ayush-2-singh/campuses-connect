@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import Layout from '@/components/Layout'
@@ -57,7 +57,7 @@ export default function LiveVoiceChatPage() {
   const router = useRouter()
   const supabase = createClient()
 
-  const load = async () => {
+  const load = useCallback(async () => {
     const { data, error: groupsError } = await supabase
       .from('live_voice_chat_groups')
       .select('*')
@@ -76,7 +76,7 @@ export default function LiveVoiceChatPage() {
     // Active calls are RLS-filtered to groups the caller belongs to.
     const { data: calls } = await supabase.from('live_voice_chat_calls').select('id, group_id').eq('status', 'active')
     setLiveGroupIds((calls || []).map((c: any) => c.group_id))
-  }
+  }, [supabase])
 
   useEffect(() => {
     const init = async () => {
@@ -103,7 +103,7 @@ export default function LiveVoiceChatPage() {
       await load()
     }
     init()
-  }, [supabase])
+  }, [load, supabase])
 
   const requireLogin = () => {
     router.replace(
