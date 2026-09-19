@@ -24,6 +24,7 @@ const NAV_ITEMS = [
   { label: 'Compete', href: '/compete', icon: 'zap' },
   { label: 'Opportunities', href: '/opportunities', icon: 'briefcase' },
   { label: 'Connect', href: '/connections', icon: 'link' },
+  { label: 'GupShup', href: '/gupshup', icon: 'mic' },
 ]
 
 const SECONDARY_NAV = [
