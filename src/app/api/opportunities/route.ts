@@ -4,14 +4,14 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server'
-import { getVerifiedUser, getSupabaseAdmin } from '@/lib/auth'
+import { requireAuthLite } from '@/lib/api/middleware'
+import { getSupabaseAdmin } from '@/lib/auth'
 
 // ─── GET /api/opportunities ───────────────────────────────────────────────────
 export async function GET(request: NextRequest) {
-  const user = await getVerifiedUser(request)
-  if (!user) {
-    return NextResponse.json({ error: 'Unauthorized.' }, { status: 401 })
-  }
+  const authRes = await requireAuthLite(request)
+  if (!authRes.ok) return authRes.response
+  const user = { id: authRes.auth.userId }
 
   try {
     const admin = getSupabaseAdmin()
@@ -46,10 +46,9 @@ export async function GET(request: NextRequest) {
 
 // ─── POST /api/opportunities ──────────────────────────────────────────────────
 export async function POST(request: NextRequest) {
-  const user = await getVerifiedUser(request)
-  if (!user) {
-    return NextResponse.json({ error: 'Unauthorized.' }, { status: 401 })
-  }
+  const authRes = await requireAuthLite(request)
+  if (!authRes.ok) return authRes.response
+  const user = { id: authRes.auth.userId }
 
   try {
     const admin = getSupabaseAdmin()

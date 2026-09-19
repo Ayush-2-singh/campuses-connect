@@ -120,7 +120,7 @@ export async function GET(request: NextRequest) {
     const [notes, posts, comments, events, polls] = await Promise.all([
       getSupabaseAdmin().from('notes').select('*', { count: 'exact', head: true }),
       getSupabaseAdmin().from('posts').select('*', { count: 'exact', head: true }),
-      getSupabaseAdmin().from('comments').select('*', { count: 'exact', head: true }),
+      getSupabaseAdmin().from('post_comments').select('*', { count: 'exact', head: true }),
       getSupabaseAdmin().from('events').select('*', { count: 'exact', head: true }),
       getSupabaseAdmin().from('polls').select('*', { count: 'exact', head: true }),
     ])
@@ -163,11 +163,6 @@ export async function DELETE(request: NextRequest) {
   const validTypes = ['notes', 'posts', 'comments', 'events', 'polls']
   if (!validTypes.includes(type)) {
     return NextResponse.json({ error: `Invalid type. Must be one of: ${validTypes.join(', ')}` }, { status: 400 })
-  } // Delete the items
-  const { error: deleteError } = await getSupabaseAdmin().from(type).delete().in('id', ids)
-  if (deleteError) {
-    console.error(`[admin/content] Delete failed for ${type}:`, deleteError.message, 'ids:', ids)
-    return NextResponse.json({ error: deleteError.message }, { status: 500 })
   }
 
   const { isPlatform, canModerateRow } = scopeFilterFor(admin)

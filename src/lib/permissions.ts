@@ -41,38 +41,58 @@ export function useAdminContext(userId?: string): AdminContext {
       return
     }
     const supabase = createClient()
-    supabase
-      .rpc('my_admin_grants')
-      .then(({ data, error }) => {
-        if (!alive) return
-        if (error) {
-          setCtx({ ...EMPTY_CTX, loading: false })
-          return
-        }
-        const grants: AdminGrant[] = (data || []).map((g: any) => ({
-          id: '',
-          user_id: userId,
-          admin_type: g.admin_type as AdminTypeKey,
-          community_id: g.community_id,
-          college_id: g.college_id,
-          campus_id: g.campus_id,
-        }))
-        const has = (t: AdminTypeKey) => grants.some(g => g.admin_type === t)
-        const hasAny = grants.length > 0
-        setCtx({
-          loading: false,
-          adminType: hasAny ? 'platform_admin' : null,
-          isPlatformAdmin: hasAny,
-          isCampusAdmin: hasAny,
-          isCommunityAdmin: hasAny,
-          isAdmin: hasAny,
-          grants,
-          communityIds: grants.filter(g => g.admin_type === 'community_admin').map(g => g.community_id!).filter(Boolean),
-          campusIds: grants.filter(g => g.admin_type === 'campus_admin').map(g => g.campus_id!).filter(Boolean),
-          collegeIds: grants.filter(g => g.admin_type === 'campus_admin').map(g => g.college_id!).filter(Boolean),
-        })
+    supabase.rpc('my_admin_grants').then(({ data, error }) => {
+      if (!alive) return
+      if (error) {
+        setCtx({ ...EMPTY_CTX, loading: false })
+        return
+      }
+      const grants: AdminGrant[] = (data || []).map((g: any) => ({
+        id: '',
+        user_id: userId,
+        admin_type: g.admin_type as AdminTypeKey,
+        community_id: g.community_id,
+        college_id: g.college_id,
+        campus_id: g.campus_id,
+      }))
+      const has = (t: AdminTypeKey) => grants.some((g) => g.admin_type === t)
+
+      const isPlatformAdmin = has('platform_admin')
+      const isCampusAdmin = has('campus_admin')
+      const isCommunityAdmin = has('community_admin')
+      const isAdmin = isPlatformAdmin || isCampusAdmin || isCommunityAdmin
+
+      setCtx({
+        loading: false,
+        adminType: isPlatformAdmin
+          ? 'platform_admin'
+          : isCampusAdmin
+            ? 'campus_admin'
+            : isCommunityAdmin
+              ? 'community_admin'
+              : null,
+        isPlatformAdmin,
+        isCampusAdmin,
+        isCommunityAdmin,
+        isAdmin,
+        grants,
+        communityIds: grants
+          .filter((g) => g.admin_type === 'community_admin')
+          .map((g) => g.community_id!)
+          .filter(Boolean),
+        campusIds: grants
+          .filter((g) => g.admin_type === 'campus_admin')
+          .map((g) => g.campus_id!)
+          .filter(Boolean),
+        collegeIds: grants
+          .filter((g) => g.admin_type === 'campus_admin')
+          .map((g) => g.college_id!)
+          .filter(Boolean),
       })
-    return () => { alive = false }
+    })
+    return () => {
+      alive = false
+    }
   }, [userId])
 
   return ctx

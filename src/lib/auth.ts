@@ -135,24 +135,42 @@ export async function getVerifiedUserFromCookie(cookieHeader: string) {
       console.error('[auth] No auth cookie. Header names:', cookieNames.join(', '))
       return null
     }
-
-    // Parse the session to get access_token
+    // Parse the session to get access_token.
+    // @supabase/ssr stores the session as:
+    //   base64-<Base64URL encoded JSON>
+    // and may split the encoded value across multiple cookies.
     let accessToken: string | undefined
+
     try {
-      const decoded = decodeURIComponent(sessionValue)
-      const parsed = JSON.parse(decoded)
-      accessToken = parsed.access_token
-    } catch {
-      try {
-        // Try base64url decode
-        const base64 = sessionValue.replace(/-/g, '+').replace(/_/g, '/')
+      if (sessionValue.startsWith('base64-')) {
+        // Remove Supabase's encoding marker before Base64URL decoding.
+        const encoded = sessionValue.slice('base64-'.length)
+
+        // Convert Base64URL → standard Base64.
+        const base64 = encoded.replace(/-/g, '+').replace(/_/g, '/')
+
+        // Restore Base64 padding.
         const padded = base64 + '='.repeat((4 - (base64.length % 4)) % 4)
-        const json = atob(padded)
-        const parsed = JSON.parse(json)
+
+        // Decode UTF-8 safely.
+        const binary = atob(padded)
+        const bytes = Uint8Array.from(binary, (char) => char.charCodeAt(0))
+        const decoded = new TextDecoder().decode(bytes)
+
+        const parsed = JSON.parse(decoded)
         accessToken = parsed.access_token
-      } catch {
-        accessToken = sessionValue
+      } else {
+        // Backward compatibility with raw JSON cookie values.
+        try {
+          const parsed = JSON.parse(decodeURIComponent(sessionValue))
+          accessToken = parsed.access_token
+        } catch {
+          accessToken = undefined
+        }
       }
+    } catch (err) {
+      console.error('[auth] Failed to decode auth cookie:', err)
+      return null
     }
 
     if (!accessToken) {

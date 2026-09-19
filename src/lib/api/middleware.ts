@@ -19,9 +19,24 @@ import { getVerifiedUser, getVerifiedUserFromCookie, getSupabaseAdmin } from '@/
  * `@/lib/auth` (imported by client pages too).
  */
 async function resolveUser(request?: NextRequest) {
-  if (request) return getVerifiedUser(request)
   try {
-    return await getVerifiedUserFromCookie((await headers()).get('cookie') || '')
+    const headerList = await headers()
+    const authHeader = request ? request.headers.get('authorization') : headerList.get('authorization')
+
+    if (authHeader && authHeader.startsWith('Bearer ')) {
+      const token = authHeader.substring(7)
+      try {
+        const admin = getSupabaseAdmin()
+        const {
+          data: { user },
+        } = await admin.auth.getUser(token)
+        if (user) return user
+      } catch (err) {
+        console.error('[auth] Bearer token validation failed:', err)
+      }
+    }
+
+    return await getVerifiedUserFromCookie(headerList.get('cookie') || '')
   } catch {
     return null
   }
