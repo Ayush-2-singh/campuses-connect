@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { getAuthErrorMessage, getSafeRedirect } from '@/lib/auth'
 import { redirectToCanonicalOrigin } from '@/lib/canonical-origin'
+import { isNativePlatform, signInWithGoogleNative } from '@/lib/native'
 
 function GoogleG() {
   return (
@@ -42,6 +43,24 @@ export default function GoogleSignInButton({ label = 'Continue with Google' }: {
     if (loading) return // double-click guard
     setLoading(true)
     setError('')
+
+    // Android shell: Google refuses to render its consent screen inside an
+    // embedded WebView (`disallowed_useragent`), so the native flow opens the
+    // system browser and returns through a deep link. See src/lib/native/oauth.ts.
+    // The web flow below is completely unchanged.
+    if (isNativePlatform()) {
+      try {
+        const nativeNext = getSafeRedirect(new URLSearchParams(window.location.search).get('redirect'), '/feed')
+        await signInWithGoogleNative(nativeNext)
+        // The browser is now open — the deep link finishes the sign-in, so stay
+        // in the loading state until the app navigates away.
+      } catch (err) {
+        const message = err instanceof Error ? err.message : 'Google sign-in is unavailable. Please try again.'
+        setError(getAuthErrorMessage(message))
+        setLoading(false)
+      }
+      return
+    }
 
     // OAuth + PKCE cookies are origin-scoped: if the user opened the site on
     // the apex domain (or any non-canonical origin), bounce to www first so

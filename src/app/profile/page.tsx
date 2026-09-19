@@ -10,6 +10,7 @@ import Avatar from '@/components/Avatar'
 import { ListSkeleton } from '@/components/Skeleton'
 import { Icon } from '@/components/icons'
 import { useToast } from '@/components/Toast'
+import { isNativePlatform } from '@/lib/native'
 
 const AVATAR_BUCKET = 'avatars'
 
@@ -192,7 +193,22 @@ export default function ProfilePage() {
   }, [])
 
   // ── Photo upload: pick → preview → upload to storage → save avatar_url ───────
-  const pickPhoto = () => fileRef.current?.click()
+  const pickPhoto = async () => {
+    // Android shell: use the native sheet (Take photo / Choose from gallery).
+    // pickImageFile() resolves to a real File, so uploadPhoto() below — and the
+    // compress → storage → profiles update chain — is reused verbatim.
+    if (!isNativePlatform()) {
+      fileRef.current?.click()
+      return
+    }
+    try {
+      const { pickImageFile } = await import('@/lib/native')
+      const file = await pickImageFile()
+      if (file) await uploadPhoto(file)
+    } catch (e: any) {
+      toast(e?.message || 'Could not open the camera', { tone: 'danger' })
+    }
+  }
 
   const uploadPhoto = async (file: File) => {
     if (!user) return

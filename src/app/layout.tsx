@@ -1,10 +1,23 @@
-import type { Metadata } from 'next'
+import type { Metadata, Viewport } from 'next'
 import './globals.css'
 import { ToastProvider } from '@/components/Toast'
 import OfflineIndicator from '@/components/OfflineIndicator'
 import LoadingBar from '@/components/LoadingBar'
+import NativeShell from '@/components/NativeShell'
 
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL || 'https://www.connecttocampus.com'
+
+/**
+ * `viewportFit: 'cover'` is what makes the `env(safe-area-inset-*)` rules in
+ * globals.css resolve on Android and notched iOS. Without it those insets are
+ * 0, so the fixed bottom navigation sits under the gesture bar in the Android
+ * shell. Harmless on the web, and required there for notched phones too.
+ */
+export const viewport: Viewport = {
+  width: 'device-width',
+  initialScale: 1,
+  viewportFit: 'cover',
+}
 
 export const metadata: Metadata = {
   metadataBase: new URL(APP_URL),
@@ -201,6 +214,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <ToastProvider>
           <LoadingBar />
           <OfflineIndicator />
+          {/* Boots the Capacitor shell (status bar, back button, deep links,
+              session refresh). Renders nothing and no-ops on the web. */}
+          <NativeShell />
           {children}
         </ToastProvider>
       </body>

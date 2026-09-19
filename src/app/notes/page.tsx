@@ -8,6 +8,23 @@ import { ListSkeleton } from '@/components/Skeleton'
 import EmptyState from '@/components/EmptyState'
 import ErrorBoundary from '@/components/ErrorBoundary'
 import { Icon } from '@/components/icons'
+import { isNativePlatform } from '@/lib/native'
+
+/**
+ * Android: pull the file into the app and open Android's share/save sheet.
+ * On the web this returns immediately, leaving the anchor's normal behaviour
+ * (new tab) untouched.
+ */
+async function openNoteResource(event: React.MouseEvent<HTMLAnchorElement>, url: string, title?: string) {
+  if (!isNativePlatform()) return
+  event.preventDefault()
+  try {
+    const { openOrDownloadFile } = await import('@/lib/native')
+    await openOrDownloadFile(url, title)
+  } catch (err) {
+    console.error('[notes] could not open resource:', err)
+  }
+}
 
 const RESOURCE_TYPES = ['all', 'notes', 'pyq', 'assignment', 'book', 'cheatsheet', 'video_link']
 
@@ -54,12 +71,11 @@ export default function NotesPage() {
 
   const deleteNote = async (note: any) => {
     if (!window.confirm(`Delete "${note.title}"? This cannot be undone.`)) return
-    
+
     await fetch('/api/admin/content', {
       method: 'DELETE',
-      headers: { 'Content-Type': 'application/json' ,
-        credentials: 'include',},
-      body: JSON.stringify({ type: 'notes', ids: [note.id] })
+      headers: { 'Content-Type': 'application/json', credentials: 'include' },
+      body: JSON.stringify({ type: 'notes', ids: [note.id] }),
     })
     const { data } = await supabase
       .from('notes')
@@ -72,9 +88,8 @@ export default function NotesPage() {
   const verifyNote = async (noteId: string, approved: boolean) => {
     await fetch('/api/notes/verify', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' ,
-        credentials: 'include',},
-      body: JSON.stringify({ note_id: noteId, is_verified: approved })
+      headers: { 'Content-Type': 'application/json', credentials: 'include' },
+      body: JSON.stringify({ note_id: noteId, is_verified: approved }),
     })
     const { data } = await supabase
       .from('notes')
@@ -92,8 +107,7 @@ export default function NotesPage() {
     try {
       const res = await fetch('/api/notes/ask', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' ,
-        credentials: 'include',},
+        headers: { 'Content-Type': 'application/json', credentials: 'include' },
         body: JSON.stringify({ question: q }),
       })
       const data = await res.json()
@@ -154,8 +168,9 @@ export default function NotesPage() {
       const res = await fetch('/api/notes/upload', {
         method: 'POST',
         body: formData,
-      
-        credentials: 'include',})
+
+        credentials: 'include',
+      })
       const data = await res.json()
       if (!res.ok) throw new Error(data?.error || 'Failed to submit')
       alert(data?.message || 'Submitted!')
@@ -870,6 +885,7 @@ function NoteRow({
             href={note.external_file_url}
             target="_blank"
             rel="noopener noreferrer"
+            onClick={(e) => openNoteResource(e, note.external_file_url, note.title)}
             style={{
               background: 'var(--accent)',
               color: 'var(--on-accent)',

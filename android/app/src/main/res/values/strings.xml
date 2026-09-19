@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">CampusConnect</string>
+    <string name="title_activity_main">CampusConnect</string>
+    <string name="package_name">com.connecttocampus.app</string>
+    <string name="custom_url_scheme">com.connecttocampus.app</string>
+</resources>
