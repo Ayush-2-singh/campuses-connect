@@ -15,12 +15,10 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'callId missing' }, { status: 400 })
     }
 
-    // User ke token ke saath client banao, taaki RLS user pe lage
-    const supabase = createClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-      { global: { headers: { Authorization: `Bearer ${jwt}` } } }
-    )
+    // Scope the client to the caller's own JWT so RLS applies as that user.
+    const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!, {
+      global: { headers: { Authorization: `Bearer ${jwt}` } },
+    })
 
     const { data: userData, error: userErr } = await supabase.auth.getUser(jwt)
     if (userErr || !userData.user) {
@@ -28,9 +26,9 @@ export async function POST(req: NextRequest) {
     }
     const user = userData.user
 
-    // RLS ki wajah se call tabhi milegi jab user us group ka member ho
+    // RLS means the call is only visible when the caller is a group member.
     const { data: call } = await supabase
-      .from('gupshup_calls')
+      .from('live_voice_chat_calls')
       .select('id, group_id')
       .eq('id', callId)
       .maybeSingle()
@@ -38,17 +36,13 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Call not found or not allowed' }, { status: 403 })
     }
 
-    const at = new AccessToken(
-      process.env.LIVEKIT_API_KEY!,
-      process.env.LIVEKIT_API_SECRET!,
-      {
-        identity: user.id,
-        name: user.user_metadata?.full_name ?? user.email ?? 'Student',
-      }
-    )
+    const at = new AccessToken(process.env.LIVEKIT_API_KEY!, process.env.LIVEKIT_API_SECRET!, {
+      identity: user.id,
+      name: user.user_metadata?.full_name ?? user.email ?? 'Student',
+    })
     at.addGrant({
       roomJoin: true,
-      room: `gupshup-${call.id}`,
+      room: `live-voice-chat-${call.id}`,
       canPublish: true,
       canSubscribe: true,
     })

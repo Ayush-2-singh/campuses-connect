@@ -2,12 +2,7 @@
 
 import { Suspense, useEffect, useState } from 'react'
 import { useParams, useRouter, useSearchParams } from 'next/navigation'
-import {
-  LiveKitRoom,
-  RoomAudioRenderer,
-  useLocalParticipant,
-  useParticipants,
-} from '@livekit/components-react'
+import { LiveKitRoom, RoomAudioRenderer, useLocalParticipant, useParticipants } from '@livekit/components-react'
 import { createClient } from '@/lib/supabase/client'
 
 const supabase = createClient()
@@ -32,9 +27,9 @@ function CallRoom() {
     async function getToken() {
       const { data } = await supabase.auth.getSession()
       const jwt = data.session?.access_token
-      if (!jwt || !callId) return setError('Login ya callId missing hai.')
+      if (!jwt || !callId) return setError('Your session or the call id is missing.')
 
-      const res = await fetch('/api/gupshup-call/token', {
+      const res = await fetch('/api/live-voice-chat/token', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -43,7 +38,7 @@ function CallRoom() {
         body: JSON.stringify({ callId }),
       })
       const json = await res.json()
-      if (!res.ok) return setError(json.error ?? 'Token nahi mila')
+      if (!res.ok) return setError(json.error ?? 'Could not get a call token.')
       setConn(json)
     }
     getToken()
@@ -51,13 +46,13 @@ function CallRoom() {
 
   async function leave() {
     if (callId) {
-      await supabase.rpc('leave_gupshup_call', { p_call_id: callId })
+      await supabase.rpc('leave_live_voice_chat_call', { p_call_id: callId })
     }
-    router.push(`/gupshup/${groupId}`)
+    router.push(`/live-voice-chat/${groupId}`)
   }
 
   if (error) return <p className="p-6 text-red-400">{error}</p>
-  if (!conn) return <p className="p-6 text-white/50">Call se connect ho raha hai…</p>
+  if (!conn) return <p className="p-6 text-white/50">Connecting to the call…</p>
 
   return (
     <LiveKitRoom
@@ -106,8 +101,8 @@ function Controls({ callId, onLeave }: { callId: string; onLeave: () => void }) 
   async function toggleMic() {
     const nextEnabled = !isMicrophoneEnabled
     await localParticipant.setMicrophoneEnabled(nextEnabled)
-    // DB me mute state sync
-    await supabase.rpc('set_gupshup_call_mute', {
+    // Keep the DB's mute state in sync with the room.
+    await supabase.rpc('set_live_voice_chat_mute', {
       p_call_id: callId,
       p_muted: !nextEnabled,
     })
@@ -123,10 +118,7 @@ function Controls({ callId, onLeave }: { callId: string; onLeave: () => void }) 
       >
         {isMicrophoneEnabled ? 'Mute' : 'Unmute'}
       </button>
-      <button
-        onClick={onLeave}
-        className="rounded-full bg-red-600 px-6 py-3 text-sm font-medium text-white"
-      >
+      <button onClick={onLeave} className="rounded-full bg-red-600 px-6 py-3 text-sm font-medium text-white">
         Leave
       </button>
     </div>

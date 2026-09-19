@@ -24,7 +24,7 @@ const NAV_ITEMS = [
   { label: 'Compete', href: '/compete', icon: 'zap' },
   { label: 'Opportunities', href: '/opportunities', icon: 'briefcase' },
   { label: 'Connect', href: '/connections', icon: 'link' },
-  { label: 'GupShup', href: '/gupshup', icon: 'mic' },
+  { label: 'Live Voice Chat', href: '/live-voice-chat', icon: 'mic' },
 ]
 
 const SECONDARY_NAV = [
@@ -574,93 +574,105 @@ export default function Layout({ children, user, profile }: { children: React.Re
 
         <div className="page-enter">
           {/* No-campus banner */}
-          {user && profile && !profile.campus_id && profile.college_id && !pathname.startsWith('/onboarding') && !pathname.startsWith('/campus-change') && !pathname.startsWith('/admin') && (
-            <div
-              style={{
-                maxWidth: 680,
-                margin: '0 auto 16px',
-                padding: '14px 18px',
-                background: 'var(--accent-light)',
-                border: '1px solid var(--accent-border, var(--accent))',
-                borderRadius: 12,
-                display: 'flex',
-                alignItems: 'center',
-                gap: 12,
-                flexWrap: 'wrap',
-              }}
-            >
-              <span style={{ fontSize: 24, flexShrink: 0 }}>🏫</span>
-              <div style={{ flex: 1, minWidth: 200 }}>
-                <p style={{ fontSize: 13, fontWeight: 600, color: 'var(--accent)', margin: '0 0 2px' }}>
-                  You don&apos;t have a campus assigned yet
-                </p>
-                <p style={{ fontSize: 12, color: 'var(--accent-text)', margin: 0 }}>
-                  Request a campus to access campus-specific content and communities.
-                </p>
-              </div>
-              <button
-                onClick={() => router.push('/campus-change')}
+          {user &&
+            profile &&
+            !profile.campus_id &&
+            profile.college_id &&
+            !pathname.startsWith('/onboarding') &&
+            !pathname.startsWith('/campus-change') &&
+            !pathname.startsWith('/admin') && (
+              <div
                 style={{
-                  padding: '8px 16px',
-                  borderRadius: 8,
-                  border: 'none',
-                  background: 'var(--accent)',
-                  color: 'var(--on-accent)',
-                  fontSize: 12,
-                  fontWeight: 600,
-                  cursor: 'pointer',
-                  fontFamily: 'inherit',
-                  flexShrink: 0,
+                  maxWidth: 680,
+                  margin: '0 auto 16px',
+                  padding: '14px 18px',
+                  background: 'var(--accent-light)',
+                  border: '1px solid var(--accent-border, var(--accent))',
+                  borderRadius: 12,
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 12,
+                  flexWrap: 'wrap',
                 }}
               >
-                🏫 Request Campus
-              </button>
-            </div>
-          )}
+                <span style={{ fontSize: 24, flexShrink: 0 }}>🏫</span>
+                <div style={{ flex: 1, minWidth: 200 }}>
+                  <p style={{ fontSize: 13, fontWeight: 600, color: 'var(--accent)', margin: '0 0 2px' }}>
+                    You don&apos;t have a campus assigned yet
+                  </p>
+                  <p style={{ fontSize: 12, color: 'var(--accent-text)', margin: 0 }}>
+                    Request a campus to access campus-specific content and communities.
+                  </p>
+                </div>
+                <button
+                  onClick={() => router.push('/campus-change')}
+                  style={{
+                    padding: '8px 16px',
+                    borderRadius: 8,
+                    border: 'none',
+                    background: 'var(--accent)',
+                    color: 'var(--on-accent)',
+                    fontSize: 12,
+                    fontWeight: 600,
+                    cursor: 'pointer',
+                    fontFamily: 'inherit',
+                    flexShrink: 0,
+                  }}
+                >
+                  🏫 Request Campus
+                </button>
+              </div>
+            )}
           {/* No college banner - user joined globally */}
-          {user && profile && !profile.campus_id && !profile.college_id && !pathname.startsWith('/onboarding') && !pathname.startsWith('/campus-change') && !pathname.startsWith('/admin') && (
-            <div
-              style={{
-                maxWidth: 680,
-                margin: '0 auto 16px',
-                padding: '14px 18px',
-                background: 'var(--yellow-light, #fef3c7)',
-                border: '1px solid #fbbf24',
-                borderRadius: 12,
-                display: 'flex',
-                alignItems: 'center',
-                gap: 12,
-                flexWrap: 'wrap',
-              }}
-            >
-              <span style={{ fontSize: 24, flexShrink: 0 }}>🌐</span>
-              <div style={{ flex: 1, minWidth: 200 }}>
-                <p style={{ fontSize: 13, fontWeight: 600, color: '#92400e', margin: '0 0 2px' }}>
-                  You&apos;re in the Global Campus
-                </p>
-                <p style={{ fontSize: 12, color: '#78350f', margin: 0 }}>
-                  Join your college to connect with classmates and access campus resources.
-                </p>
-              </div>
-              <button
-                onClick={() => router.push('/onboarding')}
+          {user &&
+            profile &&
+            !profile.campus_id &&
+            !profile.college_id &&
+            !pathname.startsWith('/onboarding') &&
+            !pathname.startsWith('/campus-change') &&
+            !pathname.startsWith('/admin') && (
+              <div
                 style={{
-                  padding: '8px 16px',
-                  borderRadius: 8,
-                  border: 'none',
-                  background: '#d97706',
-                  color: '#fff',
-                  fontSize: 12,
-                  fontWeight: 600,
-                  cursor: 'pointer',
-                  fontFamily: 'inherit',
-                  flexShrink: 0,
+                  maxWidth: 680,
+                  margin: '0 auto 16px',
+                  padding: '14px 18px',
+                  background: 'var(--yellow-light, #fef3c7)',
+                  border: '1px solid #fbbf24',
+                  borderRadius: 12,
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 12,
+                  flexWrap: 'wrap',
                 }}
               >
-                🎓 Join Campus
-              </button>
-            </div>
-          )}
+                <span style={{ fontSize: 24, flexShrink: 0 }}>🌐</span>
+                <div style={{ flex: 1, minWidth: 200 }}>
+                  <p style={{ fontSize: 13, fontWeight: 600, color: '#92400e', margin: '0 0 2px' }}>
+                    You&apos;re in the Global Campus
+                  </p>
+                  <p style={{ fontSize: 12, color: '#78350f', margin: 0 }}>
+                    Join your college to connect with classmates and access campus resources.
+                  </p>
+                </div>
+                <button
+                  onClick={() => router.push('/onboarding')}
+                  style={{
+                    padding: '8px 16px',
+                    borderRadius: 8,
+                    border: 'none',
+                    background: '#d97706',
+                    color: '#fff',
+                    fontSize: 12,
+                    fontWeight: 600,
+                    cursor: 'pointer',
+                    fontFamily: 'inherit',
+                    flexShrink: 0,
+                  }}
+                >
+                  🎓 Join Campus
+                </button>
+              </div>
+            )}
           {children}
         </div>
       </main>
