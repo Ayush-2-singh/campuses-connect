@@ -2,6 +2,17 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient, type SupabaseClient } from '@supabase/supabase-js'
 import { requireAdmin } from '@/lib/api/middleware'
 
+/**
+ * POST /api/notes/upload — admins publish study material by LINK.
+ *
+ * There is deliberately no file-upload branch here. Notes are stored as a
+ * reference to a link the admin already hosts (Google Drive, YouTube, Notion…)
+ * and the UI opens that link directly. Dropping the Supabase Storage path also
+ * removes the largest and slowest failure mode on this route: a storage
+ * createBucket/upload call whose errors surfaced to the client as an opaque
+ * HTTP 500 after ~700ms, with the real cause only in the server log.
+ */
+
 let _supabaseAdmin: SupabaseClient | null = null
 
 function getSupabaseAdmin(): SupabaseClient {
@@ -11,144 +22,109 @@ function getSupabaseAdmin(): SupabaseClient {
   return _supabaseAdmin
 }
 
-const MAX_FILE_SIZE = 50 * 1024 * 1024 // 50MB
-const ALLOWED_TYPES = [
-  'application/pdf',
-  'application/msword',
-  'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-  'application/vnd.ms-powerpoint',
-  'application/vnd.openxmlformats-officedocument.presentationml.presentation',
-  'image/jpeg',
-  'image/png',
-  'image/webp',
-  'text/plain',
-]
-const BUCKET_NAME = 'campus-notes'
-
-function generateFileName(originalName: string, userId: string): string {
-  const ext = originalName.split('.').pop() || 'bin'
-  const timestamp = Date.now()
-  const random = Math.random().toString(36).substring(2, 8)
-  return `${userId}/${timestamp}-${random}.${ext}`
+/** Only real web links are accepted — never `javascript:` or a bare path. */
+function normaliseLink(raw: unknown): string | null {
+  if (typeof raw !== 'string') return null
+  const value = raw.trim()
+  if (!value) return null
+  try {
+    const url = new URL(value)
+    if (url.protocol !== 'http:' && url.protocol !== 'https:') return null
+    return url.toString()
+  } catch {
+    return null
+  }
 }
 
 export async function POST(request: NextRequest) {
+  const auth = await requireAdmin(request)
+  if (!auth.ok) return auth.response
+  const userId = auth.auth.userId
+
+  let formData: FormData
   try {
-    const auth = await requireAdmin(request)
-    if (!auth.ok) return auth.response
-    const user = { id: auth.auth.userId } as any
-
-    const formData = await request.formData()
-    const file = formData.get('file') as File | null
-    const title = formData.get('title') as string
-    const subject = formData.get('subject') as string
-    const resourceType = (formData.get('resource_type') as string) || 'notes'
-    const description = (formData.get('description') as string) || ''
-    const driveLink = (formData.get('drive_link') as string) || null
-    const externalLink = (formData.get('external_link') as string) || null
-    const visibility = (formData.get('visibility') as string) || 'campus'
-
-    if (!title?.trim() || !subject?.trim()) {
-      return NextResponse.json({ error: 'Title and subject are required' }, { status: 400 })
-    }
-
-    let storageProvider = 'link'
-    let externalFileUrl = driveLink || externalLink || null
-    let externalFileId = null
-    let fileSize = null
-    let mimeType = null
-
-    if (file && file.size > 0) {
-      if (file.size > MAX_FILE_SIZE) {
-        return NextResponse.json({ error: 'File too large. Maximum size is 50MB.' }, { status: 400 })
-      }
-
-      if (!ALLOWED_TYPES.includes(file.type)) {
-        return NextResponse.json(
-          { error: 'File type not allowed. Please upload PDF, DOC, DOCX, PPT, PPTX, JPEG, PNG, WebP, or TXT.' },
-          { status: 400 }
-        )
-      }
-
-      const fileName = generateFileName(file.name, user.id)
-      const fileBuffer = await file.arrayBuffer()
-      const admin = getSupabaseAdmin()
-
-      // Ensure bucket exists (best effort)
-      await admin.storage.createBucket(BUCKET_NAME, { public: true }).catch(() => {})
-
-      const { data, error } = await admin.storage
-        .from(BUCKET_NAME)
-        .upload(fileName, fileBuffer, {
-          contentType: file.type,
-          upsert: true
-        })
-
-      if (error) {
-        throw new Error('Supabase Storage Upload failed: ' + error.message)
-      }
-
-      const { data: publicUrlData } = admin.storage.from(BUCKET_NAME).getPublicUrl(fileName)
-
-      storageProvider = 'supabase'
-      externalFileUrl = publicUrlData.publicUrl
-      externalFileId = fileName
-      fileSize = file.size
-      mimeType = file.type
-    }
-
-    const { data: profile } = await getSupabaseAdmin()
-      .from('profiles')
-      .select('campus_id, college_id, department_id')
-      .eq('id', user.id)
-      .single()
-
-    const isAdmin = true // requireAdmin already verified admin status
-
-    const { data: noteRow, error: insertError } = await getSupabaseAdmin()
-      .from('notes')
-      .insert({
-        uploaded_by: user.id,
-        campus_id: profile?.campus_id || null,
-        college_id: profile?.college_id || null,
-        department_id: profile?.department_id || null,
-        title: title.trim(),
-        subject: subject.trim(),
-        resource_type: resourceType,
-        description: description || null,
-        drive_link: storageProvider === 'link' ? driveLink || null : null,
-        external_link: storageProvider === 'link' ? externalLink || null : null,
-        storage_provider: storageProvider,
-        external_file_url: externalFileUrl,
-        external_file_id: externalFileId,
-        file_size: fileSize,
-        mime_type: mimeType,
-        visibility: profile?.campus_id ? visibility : 'global',
-        is_verified: isAdmin,
-      })
-      .select('id')
-      .single()
-
-    if (insertError) {
-      if (storageProvider === 'supabase' && externalFileId) {
-        await getSupabaseAdmin().storage.from(BUCKET_NAME).remove([externalFileId]).catch(() => {})
-      }
-      return NextResponse.json({ error: insertError.message }, { status: 500 })
-    }
-
-    try {
-      await getSupabaseAdmin().rpc('reward_note_upload', { p_note_id: noteRow?.id })
-    } catch {}
-
-    return NextResponse.json({
-      success: true,
-      note_id: noteRow?.id,
-      storage_provider: storageProvider,
-      is_verified: isAdmin,
-      message: isAdmin ? 'Note uploaded and auto-verified!' : 'Note submitted! It will be visible after admin review.',
-    })
-  } catch (err: any) {
-    console.error('Upload error:', err)
-    return NextResponse.json({ error: err.message || 'Upload failed' }, { status: 500 })
+    formData = await request.formData()
+  } catch (err) {
+    console.error('[notes/upload] could not read form body:', err)
+    return NextResponse.json({ error: 'Could not read the submission. Please try again.' }, { status: 400 })
   }
+
+  const title = ((formData.get('title') as string) || '').trim()
+  const subject = ((formData.get('subject') as string) || '').trim()
+  const resourceType = (formData.get('resource_type') as string) || 'notes'
+  const description = ((formData.get('description') as string) || '').trim()
+  const driveLink = normaliseLink(formData.get('drive_link'))
+  const externalLink = normaliseLink(formData.get('external_link'))
+  const visibility = (formData.get('visibility') as string) || 'campus'
+
+  if (!title || !subject) {
+    return NextResponse.json({ error: 'Title and subject are required.' }, { status: 400 })
+  }
+
+  const link = driveLink || externalLink
+  if (!link) {
+    return NextResponse.json(
+      { error: 'A valid link is required (Google Drive, YouTube, Notion, etc.).' },
+      { status: 400 }
+    )
+  }
+
+  const admin = getSupabaseAdmin()
+
+  // Scope the note to the poster's own campus/college/department.
+  const { data: profile, error: profileError } = await admin
+    .from('profiles')
+    .select('campus_id, college_id, department_id')
+    .eq('id', userId)
+    .single()
+
+  if (profileError) {
+    console.error('[notes/upload] profile lookup failed:', profileError.message)
+    return NextResponse.json({ error: `Could not load your profile: ${profileError.message}` }, { status: 500 })
+  }
+
+  const { data: noteRow, error: insertError } = await admin
+    .from('notes')
+    .insert({
+      uploaded_by: userId,
+      campus_id: profile?.campus_id || null,
+      college_id: profile?.college_id || null,
+      department_id: profile?.department_id || null,
+      title,
+      subject,
+      resource_type: resourceType,
+      description: description || null,
+      drive_link: driveLink,
+      external_link: externalLink,
+      storage_provider: 'link',
+      external_file_url: link,
+      external_file_id: null,
+      file_size: null,
+      mime_type: null,
+      visibility: profile?.campus_id ? visibility : 'global',
+      // Only admins can reach this route, so their material is published
+      // immediately instead of waiting in the moderation queue.
+      is_verified: true,
+    })
+    .select('id')
+    .single()
+
+  if (insertError) {
+    console.error('[notes/upload] insert failed:', insertError.message)
+    return NextResponse.json({ error: `Could not save the note: ${insertError.message}` }, { status: 500 })
+  }
+
+  try {
+    await admin.rpc('reward_note_upload', { p_note_id: noteRow?.id })
+  } catch (err) {
+    console.warn('[notes/upload] reward_note_upload failed:', err)
+  }
+
+  return NextResponse.json({
+    success: true,
+    note_id: noteRow?.id,
+    storage_provider: 'link',
+    is_verified: true,
+    message: 'Material posted!',
+  })
 }

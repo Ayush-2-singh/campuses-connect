@@ -58,7 +58,6 @@ export default function NotesPage() {
     drive_link: '',
     external_link: '',
     visibility: 'campus' as 'global' | 'campus',
-    file: null as File | null,
   })
   const supabase = createClient()
   const admin = useAdminContext(user?.id)
@@ -66,15 +65,18 @@ export default function NotesPage() {
   const [aiLoading, setAiLoading] = useState(false)
   const [showPendingOnly, setShowPendingOnly] = useState(false)
 
-  const canSubmitLink = admin.isAdmin // only admins can submit a link
+  const canSubmitLink = admin.isAdmin // only admins can post material
   const canVerify = admin.isPlatformAdmin || admin.isCampusAdmin // admin verifies notes
+  // Material is published as a link, so at least one link is mandatory.
+  const hasLink = Boolean(form.drive_link.trim() || form.external_link.trim())
 
   const deleteNote = async (note: any) => {
     if (!window.confirm(`Delete "${note.title}"? This cannot be undone.`)) return
 
     await fetch('/api/admin/content', {
       method: 'DELETE',
-      headers: { 'Content-Type': 'application/json', credentials: 'include' },
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
       body: JSON.stringify({ type: 'notes', ids: [note.id] }),
     })
     const { data } = await supabase
@@ -88,7 +90,8 @@ export default function NotesPage() {
   const verifyNote = async (noteId: string, approved: boolean) => {
     await fetch('/api/notes/verify', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', credentials: 'include' },
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
       body: JSON.stringify({ note_id: noteId, is_verified: approved }),
     })
     const { data } = await supabase
@@ -152,7 +155,7 @@ export default function NotesPage() {
   }, [])
 
   const handlePost = async () => {
-    if (!form.title.trim() || !form.subject.trim()) return
+    if (!form.title.trim() || !form.subject.trim() || !hasLink) return
     setPosting(true)
     try {
       const formData = new FormData()
@@ -160,15 +163,13 @@ export default function NotesPage() {
       formData.append('subject', form.subject)
       formData.append('resource_type', form.resource_type)
       formData.append('description', form.description)
-      if (form.drive_link) formData.append('drive_link', form.drive_link)
-      if (form.external_link) formData.append('external_link', form.external_link)
-      if (form.file) formData.append('file', form.file)
+      formData.append('drive_link', form.drive_link.trim())
+      formData.append('external_link', form.external_link.trim())
       formData.append('visibility', profile?.campus_id ? form.visibility : 'global')
 
       const res = await fetch('/api/notes/upload', {
         method: 'POST',
         body: formData,
-
         credentials: 'include',
       })
       const data = await res.json()
@@ -185,7 +186,6 @@ export default function NotesPage() {
       drive_link: '',
       external_link: '',
       visibility: 'campus',
-      file: null,
     })
     setShowCompose(false)
     const { data } = await supabase
@@ -484,7 +484,7 @@ export default function NotesPage() {
             </div>
           )}
 
-          {/* Upload/Submit form — admin upload OR user link submission */}
+          {/* Post material — admin only, link based (no file upload) */}
           {showCompose && canSubmitLink && (
             <div
               style={{
@@ -497,15 +497,9 @@ export default function NotesPage() {
               }}
             >
               <h3 style={{ fontSize: 16, fontWeight: 700, color: 'var(--text-primary)', margin: '0 0 16px' }}>
-                Upload Note or Submit Link
+                Post Study Material
               </h3>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-                <input
-                  type="file"
-                  onChange={(e) => setForm((f) => ({ ...f, file: e.target.files?.[0] || null }))}
-                  style={{ ...inputStyle, background: 'var(--bg-secondary)', padding: '12px' }}
-                  accept=".pdf,.doc,.docx,.ppt,.pptx,.jpg,.jpeg,.png,.webp,.txt"
-                />
                 <input
                   type="text"
                   value={form.title}
@@ -554,14 +548,14 @@ export default function NotesPage() {
                   type="url"
                   value={form.drive_link}
                   onChange={(e) => setForm((f) => ({ ...f, drive_link: e.target.value }))}
-                  placeholder="Google Drive / Drive Link"
+                  placeholder="Google Drive link *"
                   style={inputStyle}
                 />
                 <input
                   type="url"
                   value={form.external_link}
                   onChange={(e) => setForm((f) => ({ ...f, external_link: e.target.value }))}
-                  placeholder="Other Link (YouTube, Notion, etc.)"
+                  placeholder="Other link — YouTube, Notion, etc."
                   style={inputStyle}
                 />
                 <div
@@ -574,7 +568,8 @@ export default function NotesPage() {
                     lineHeight: 1.5,
                   }}
                 >
-                  📌 Your submission will be reviewed by an admin before it becomes visible to others.
+                  🔗 One of the two links above is required. Students are sent straight to it — nothing is uploaded
+                  here, so share the link as “anyone with the link”.
                 </div>
               </div>
               <div style={{ display: 'flex', gap: 8, marginTop: 14 }}>
@@ -596,7 +591,7 @@ export default function NotesPage() {
                 </button>
                 <button
                   onClick={handlePost}
-                  disabled={!form.title.trim() || !form.subject.trim() || posting}
+                  disabled={!form.title.trim() || !form.subject.trim() || !hasLink || posting}
                   style={{
                     flex: 1,
                     background: posting ? 'var(--disabled)' : 'var(--accent)',
@@ -610,7 +605,7 @@ export default function NotesPage() {
                     fontFamily: 'inherit',
                   }}
                 >
-                  {posting ? 'Uploading...' : 'Upload'}
+                  {posting ? 'Posting...' : 'Post material'}
                 </button>
               </div>
             </div>
