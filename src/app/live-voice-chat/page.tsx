@@ -175,7 +175,10 @@ export default function LiveVoiceChatPage() {
   return (
     <Layout user={user} profile={profile}>
       <div style={{ maxWidth: 720, margin: '0 auto', padding: '24px 20px' }}>
-        <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 18 }}>
+        <div
+          className="lvc-header"
+          style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 18 }}
+        >
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
             <div>
               <h2 style={{ fontSize: 22, fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>
@@ -188,6 +191,7 @@ export default function LiveVoiceChatPage() {
           </div>
           {user && (
             <button
+              className="lvc-newroom"
               onClick={() => setShowCreate((s) => !s)}
               style={{
                 background: 'var(--accent)',
@@ -362,6 +366,7 @@ export default function LiveVoiceChatPage() {
               return (
                 <div
                   key={g.id}
+                  className="lvc-room"
                   style={{
                     background: 'var(--bg)',
                     border: '1px solid var(--border)',
@@ -373,8 +378,8 @@ export default function LiveVoiceChatPage() {
                     boxShadow: 'var(--shadow-sm)',
                   }}
                 >
-                  <span style={{ fontSize: 30 }}>{g.icon || '🎙️'}</span>
-                  <div style={{ flex: 1, minWidth: 0 }}>
+                  <span style={{ fontSize: 30, flexShrink: 0 }}>{g.icon || '🎙️'}</span>
+                  <div className="lvc-info" style={{ flex: 1, minWidth: 0 }}>
                     <p
                       style={{
                         fontSize: 14,
@@ -405,13 +410,14 @@ export default function LiveVoiceChatPage() {
                         </span>
                       )}
                     </p>
-                    <p style={{ fontSize: 12, color: 'var(--text-muted)', margin: 0 }}>
+                    <p className="lvc-desc" style={{ fontSize: 12, color: 'var(--text-muted)', margin: 0 }}>
                       {(SECTIONS.find((s) => s.key === g.section)?.label || 'Random') +
                         (g.scope === 'global' ? ' · 🌐 Global' : ' · 🏫 Campus')}
                       {g.description ? ` · ${g.description}` : ''}
                     </p>
                   </div>
                   <button
+                    className="lvc-join"
                     onClick={() => join(g.id)}
                     disabled={busy}
                     style={{

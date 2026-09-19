@@ -59,6 +59,13 @@
     <!-- Permissions -->
 
     <uses-permission android:name="android.permission.INTERNET" />
+    <!--
+      Microphone — required for Live Voice Chat. The Capacitor WebView forwards
+      getUserMedia({ audio }) as a WebView AUDIO_CAPTURE permission request,
+      which Android can only grant when RECORD_AUDIO is declared here.
+      Without it, joining any voice room fails to open audio.
+    -->
+    <uses-permission android:name="android.permission.RECORD_AUDIO" />
 
     <!--
       Camera / gallery access is intentionally NOT requested.

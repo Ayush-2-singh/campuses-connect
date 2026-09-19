@@ -1207,16 +1207,70 @@ html.nav-hidden .fab-wrap {
   }
 }
 
+/* ───────────────────────── Live Voice Chat — mobile layout ───────────────────────── */
+/* The header (title + New Room) and room rows (icon + text + Join) are single-row
+   flex layouts that overflow a 320–430px viewport: the Join button is pushed past
+   the right edge and the New Room button gets squeezed. Stack them on mobile. */
+@media (max-width: 560px) {
+  .lvc-header {
+    flex-wrap: wrap;
+  }
+  .lvc-newroom {
+    order: 2;
+    width: 100%;
+    margin-top: 10px;
+    padding: 11px 18px !important;
+  }
+  /* order: 2 pushes the button after the title block visually */
+  .lvc-header > div {
+    order: 1;
+    width: 100%;
+  }
+  .lvc-room {
+    flex-wrap: wrap;
+    row-gap: 10px;
+  }
+  .lvc-info {
+    flex-basis: calc(100% - 46px);
+  }
+  .lvc-join {
+    margin-left: 46px; /* aligns under the room text, clear of the icon */
+    flex: 1;
+    padding: 9px 16px !important;
+    min-height: 40px;
+  }
+  .lvc-desc {
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+}
+
 /* ───────────────────────── Layout responsive rules ───────────────────────── */
 /* Moved from inline <style> in Layout.tsx — avoids DOM churn on every render. */
-.app-topbar { display: none; }
+.app-topbar {
+  display: none;
+}
 @media (min-width: 769px) {
-  .app-topbar { display: block !important; }
+  .app-topbar {
+    display: block !important;
+  }
 }
 @media (max-width: 768px) {
-  .desktop-sidebar { display: none !important; }
-  .main-content { margin-left: 0 !important; }
-  .mobile-topbar { display: block !important; }
-  .mobile-bottomnav { display: block !important; }
-  .app-topbar { display: none !important; }
+  .desktop-sidebar {
+    display: none !important;
+  }
+  .main-content {
+    margin-left: 0 !important;
+  }
+  .mobile-topbar {
+    display: block !important;
+  }
+  .mobile-bottomnav {
+    display: block !important;
+  }
+  .app-topbar {
+    display: none !important;
+  }
 }
