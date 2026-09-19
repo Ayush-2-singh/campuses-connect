@@ -41,6 +41,13 @@ const ICON_PATHS: Record<string, React.ReactNode> = {
       <path d="M16 3.13a4 4 0 0 1 0 7.75" />
     </>
   ),
+  mic: (
+    <>
+      <rect x="9" y="2" width="6" height="12" rx="3" />
+      <path d="M5 10v1a7 7 0 0 0 14 0v-1" />
+      <path d="M12 19v3" />
+    </>
+  ),
   user: (
     <>
       <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
@@ -156,15 +163,7 @@ const ICON_PATHS: Record<string, React.ReactNode> = {
   ),
 }
 
-export function Icon({
-  name,
-  size = 18,
-  strokeWidth = 2,
-}: {
-  name: string
-  size?: number
-  strokeWidth?: number
-}) {
+export function Icon({ name, size = 18, strokeWidth = 2 }: { name: string; size?: number; strokeWidth?: number }) {
   return (
     <svg
       width={size}

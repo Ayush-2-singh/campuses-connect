@@ -18,5 +18,6 @@ export const MOBILE_MENU_NAV = [
   { label: 'Opportunities', href: '/opportunities', icon: 'briefcase' },
   { label: 'Talent', href: '/talent', icon: 'star' },
   { label: 'Communities', href: '/communities', icon: 'users' },
+  { label: 'Live Voice Chat', href: '/live-voice-chat', icon: 'mic' },
   { label: 'Profile', href: '/profile', icon: 'user' },
 ]

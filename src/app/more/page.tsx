@@ -11,6 +11,12 @@ const SECTIONS = [
   { icon: '🎪', label: 'Events', desc: 'Campus events, hackathons & memories', href: '/events' },
   { icon: '🤝', label: 'Find Teammates', desc: 'Post or join hackathon teams', href: '/teams' },
   { icon: '🤝', label: 'My Network', desc: 'Chats, connections, requests & DMs — like LinkedIn', href: '/connections' },
+  {
+    icon: '🎙️',
+    label: 'Live Voice Chat',
+    desc: 'Join live voice rooms with your campusmates',
+    href: '/live-voice-chat',
+  },
   { icon: '📚', label: 'Notes Library', desc: 'Subject-wise notes, PYQs and resources', href: '/notes' },
   { icon: '⭐', label: 'Talent', desc: 'Discover students by skill', href: '/talent' },
   { icon: '🧠', label: 'AI Brain', desc: 'Your personal academic memory — ask your notes anything', href: '/brain' },
