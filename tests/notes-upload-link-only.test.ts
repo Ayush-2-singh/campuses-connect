@@ -8,8 +8,11 @@
  * real cause only in the server log. Meanwhile the UI still offered a file
  * picker, so the admin had no way to post material at all.
  *
- * The contract now: no file ever reaches storage, at least one validated
- * http(s) link is required, and only admins may post.
+ * The contract now: no file ever reaches storage, and at least one validated
+ * http(s) link is required. The Library is community-owned, so ANY signed-in
+ * student may contribute — but an admin's material publishes immediately while
+ * a student's is stored unverified and waits for review. `is_verified` is
+ * derived from the caller's real grants, never read from the request body.
  *
  * The fake Supabase client deliberately exposes ONLY `from()` — no `storage`
  * and no `rpc()`. Re-introducing a storage upload makes these tests throw
@@ -234,13 +237,40 @@ describe('POST /api/notes/upload — validation', () => {
 })
 
 describe('POST /api/notes/upload — authorization', () => {
-  it('refuses a signed-in user with no admin grant', async () => {
+  it('lets a signed-in student contribute, but holds it for review', async () => {
     signIn('student-1')
 
     const res = await POST(request(validFields))
 
-    expect(res.status).toBe(403)
-    expect(mock.state.inserts).toEqual([])
+    expect(res.status).toBe(200)
+    expect(mock.state.inserts).toHaveLength(1)
+    // The submission must be unverified and attributed to the caller.
+    expect(mock.state.inserts[0].row).toMatchObject({
+      uploaded_by: 'student-1',
+      is_verified: false,
+    })
+    await expect(res.json()).resolves.toMatchObject({ is_verified: false })
+  })
+
+  it('auto-publishes an admin contribution', async () => {
+    signIn('admin-1', [{ admin_type: 'platform_admin' }])
+
+    const res = await POST(request(validFields))
+
+    expect(res.status).toBe(200)
+    expect(mock.state.inserts[0].row).toMatchObject({
+      uploaded_by: 'admin-1',
+      is_verified: true,
+    })
+  })
+
+  it('ignores a client-supplied is_verified flag', async () => {
+    signIn('student-1')
+
+    const res = await POST(request({ ...validFields, is_verified: 'true' } as any))
+
+    expect(res.status).toBe(200)
+    expect(mock.state.inserts[0].row.is_verified).toBe(false)
   })
 
   it('refuses an unauthenticated caller', async () => {

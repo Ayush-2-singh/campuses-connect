@@ -1077,6 +1077,126 @@ a:active,
   mask-image: linear-gradient(90deg, transparent 0, #000 14px, #000 calc(100% - 14px), transparent 100%);
 }
 
+/* ───────────────────────── Live Chat ───────────────────────── */
+/* The composer must never end up underneath the on-screen keyboard. It is
+   sticky, not fixed, so it rides the natural document flow. On phones it sits
+   above the fixed bottom navigation; the moment the composer's own input gets
+   focus the shell adds `nav-hidden` (see MobileBottomNav) which hides that
+   navigation — so the composer drops to the very bottom, directly above the
+   keyboard. Reusing the existing mechanism avoids a second keyboard hack. */
+.chat-composer {
+  position: sticky;
+  bottom: 0;
+  z-index: 20;
+}
+
+/* Long words — URLs, stack traces, code — must never create horizontal
+   overflow. 360px is the narrowest target. */
+.chat-thread {
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+/* The room's own sticky header must clear the shell's sticky top bar (z-index
+   30 sits above this one). Erring a few pixels low only leaves a hairline gap;
+   erring high would tuck the header underneath the bar. */
+.chat-room-header {
+  position: sticky;
+  top: 60px;
+  z-index: 15;
+}
+
+/* The global FAB overlaps the chat composer, so it is hidden on this screen.
+   The attribute is set/removed by the room page itself. */
+html[data-chat-room] .fab-wrap {
+  display: none;
+}
+
+/* Bottom sheet used for message actions and moderation. */
+.chat-sheet-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.45);
+  z-index: 200;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  animation: chatFadeIn 0.15s ease;
+}
+.chat-sheet {
+  width: 100%;
+  max-width: 520px;
+  max-height: 82vh;
+  overflow-y: auto;
+  background: var(--bg);
+  border-top-left-radius: 18px;
+  border-top-right-radius: 18px;
+  border: 1px solid var(--border);
+  border-bottom: none;
+  padding: 8px 0 calc(12px + env(safe-area-inset-bottom));
+  animation: chatSheetUp 0.2s ease;
+}
+@keyframes chatSheetUp {
+  from {
+    transform: translateY(24px);
+    opacity: 0.6;
+  }
+  to {
+    transform: none;
+    opacity: 1;
+  }
+}
+@keyframes chatFadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+/* Sheet rows are full-width tap targets — 48px minimum, not desktop menu rows. */
+.chat-sheet-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  min-height: 48px;
+  padding: 10px 20px;
+  background: none;
+  border: none;
+  text-align: left;
+  font-family: inherit;
+  font-size: 15px;
+  color: var(--text-primary);
+  cursor: pointer;
+}
+.chat-sheet-row:active {
+  background: var(--bg-secondary);
+}
+
+@media (max-width: 768px) {
+  .chat-composer {
+    bottom: calc(72px + env(safe-area-inset-bottom));
+  }
+  html.nav-hidden .chat-composer {
+    bottom: 0;
+  }
+  .chat-room-header {
+    top: calc(66px + env(safe-area-inset-top));
+  }
+}
+
+/* Two columns of category rows on wide screens, so desktop does not render one
+   oversize stretched column. Mobile keeps the single column from the inline
+   flex styles. */
+@media (min-width: 900px) {
+  .chat-cat-grid {
+    display: grid !important;
+    grid-template-columns: 1fr 1fr;
+    align-items: start;
+  }
+}
+
 /* ───────────────────────── Toasts ───────────────────────── */
 .toast-viewport {
   position: fixed;

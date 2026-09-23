@@ -1,16 +1,25 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient, type SupabaseClient } from '@supabase/supabase-js'
-import { requireAdmin } from '@/lib/api/middleware'
+import { requireAuth } from '@/lib/api/middleware'
 
 /**
- * POST /api/notes/upload — admins publish study material by LINK.
+ * POST /api/notes/upload — anyone signed in can contribute Library material by LINK.
  *
- * There is deliberately no file-upload branch here. Notes are stored as a
- * reference to a link the admin already hosts (Google Drive, YouTube, Notion…)
- * and the UI opens that link directly. Dropping the Supabase Storage path also
- * removes the largest and slowest failure mode on this route: a storage
- * createBucket/upload call whose errors surfaced to the client as an opaque
- * HTTP 500 after ~700ms, with the real cause only in the server log.
+ * The Library is community-owned (Phase 3): students add books / notes / PYQs /
+ * links, edit and delete their own. Admins keep every power and their material
+ * is published immediately; a student's contribution is stored unverified and
+ * is visible to the contributor and to admins until an admin verifies it.
+ * `is_verified` is decided here, from the caller's real grants — it is NEVER
+ * read from the request body.
+ *
+ * There is deliberately no file-upload branch here. Resources are stored as a
+ * reference to a link the contributor already hosts (Google Drive, YouTube,
+ * Notion…) and the UI opens that link directly. Dropping the Supabase Storage
+ * path also removes the largest and slowest failure mode on this route: a
+ * storage createBucket/upload call whose errors surfaced to the client as an
+ * opaque HTTP 500 after ~700ms, with the real cause only in the server log.
+ * Academic PDFs stay on external storage (Google Drive / R2) — never in
+ * Supabase Storage.
  */
 
 let _supabaseAdmin: SupabaseClient | null = null
@@ -37,9 +46,11 @@ function normaliseLink(raw: unknown): string | null {
 }
 
 export async function POST(request: NextRequest) {
-  const auth = await requireAdmin(request)
+  const auth = await requireAuth(request)
   if (!auth.ok) return auth.response
   const userId = auth.auth.userId
+  // Any admin grant publishes immediately; a plain student goes to review.
+  const isAdmin = auth.auth.adminTypes.length > 0
 
   let formData: FormData
   try {
@@ -56,6 +67,9 @@ export async function POST(request: NextRequest) {
   const driveLink = normaliseLink(formData.get('drive_link'))
   const externalLink = normaliseLink(formData.get('external_link'))
   const visibility = (formData.get('visibility') as string) || 'campus'
+  // Optional attribution fields (book author, discussion category).
+  const author = ((formData.get('author') as string) || '').trim() || null
+  const discussCategory = ((formData.get('discuss_category') as string) || '').trim() || null
 
   if (!title || !subject) {
     return NextResponse.json({ error: 'Title and subject are required.' }, { status: 400 })
@@ -101,10 +115,14 @@ export async function POST(request: NextRequest) {
       external_file_id: null,
       file_size: null,
       mime_type: null,
+      author,
+      discuss_category: discussCategory,
       visibility: profile?.campus_id ? visibility : 'global',
-      // Only admins can reach this route, so their material is published
-      // immediately instead of waiting in the moderation queue.
-      is_verified: true,
+      // Admins publish immediately; students wait in the moderation queue.
+      // Derived from real grants above, not from the request.
+      is_verified: isAdmin,
+      verified_by: isAdmin ? userId : null,
+      verified_at: isAdmin ? new Date().toISOString() : null,
     })
     .select('id')
     .single()
@@ -124,7 +142,9 @@ export async function POST(request: NextRequest) {
     success: true,
     note_id: noteRow?.id,
     storage_provider: 'link',
-    is_verified: true,
-    message: 'Material posted!',
+    is_verified: isAdmin,
+    message: isAdmin
+      ? 'Material posted!'
+      : 'Thanks! Your resource is pending admin review and will appear in the Library shortly.',
   })
 }

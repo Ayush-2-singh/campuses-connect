@@ -19,9 +19,13 @@ const CommandPalette = dynamic(() => import('@/components/CommandPalette'), { ss
 
 const NAV_ITEMS = [
   { label: 'Home', href: '/feed', icon: 'home' },
+  // Live Chat is a primary surface (global rooms), so it sits directly under
+  // Home — matching the mobile bar in mobileNav.ts.
+  { label: 'Live Chat', href: '/chat', icon: 'message' },
   { label: 'Classroom', href: '/college', icon: 'book' },
   { label: 'Library', href: '/notes', icon: 'notebook' },
   { label: 'Compete', href: '/compete', icon: 'zap' },
+  { label: 'Discover', href: '/discover', icon: 'flame' },
   { label: 'Opportunities', href: '/opportunities', icon: 'briefcase' },
   { label: 'Connect', href: '/connections', icon: 'link' },
   { label: 'Live Voice Chat', href: '/live-voice-chat', icon: 'mic' },

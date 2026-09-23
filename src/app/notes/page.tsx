@@ -28,6 +28,36 @@ async function openNoteResource(event: React.MouseEvent<HTMLAnchorElement>, url:
 
 const RESOURCE_TYPES = ['all', 'notes', 'pyq', 'assignment', 'book', 'cheatsheet', 'video_link']
 
+/** Live Chat categories a resource can be discussed in (communities.key). */
+const DISCUSS_CATEGORIES = [
+  { key: '', label: 'Auto (from subject)' },
+  { key: 'dsa', label: 'DSA' },
+  { key: 'web-development', label: 'Web Development' },
+  { key: 'ai-ml', label: 'AI / ML' },
+  { key: 'academics', label: 'Academics' },
+  { key: 'career', label: 'Career' },
+  { key: 'compete', label: 'Compete' },
+  { key: 'general', label: 'General' },
+]
+
+/**
+ * Pick a sensible Live Chat category for a resource when the contributor did
+ * not choose one, so `[ Discuss ]` never lands the user in an unrelated room.
+ */
+function defaultDiscussCategory(note: {
+  discuss_category?: string | null
+  subject?: string | null
+  resource_type?: string | null
+}) {
+  if (note.discuss_category) return note.discuss_category
+  const s = (note.subject || '').toLowerCase()
+  if (/dsa|data structure|algorithm|\bcpp\b|java|python|competitive/.test(s)) return 'dsa'
+  if (/web|react|node|javascript|css|html|frontend|backend/.test(s)) return 'web-development'
+  if (/\bai\b|machine learning|\bml\b|deep learning|neural|nlp/.test(s)) return 'ai-ml'
+  if (/placement|intern|resume|interview|aptitude/.test(s)) return 'career'
+  return 'academics'
+}
+
 const EXAMPLE_PROMPTS = ['Explain deadlock simply', 'Find notes about normalization', 'What matters for my DBMS exam?']
 
 const typeIcon: Record<string, string> = {
@@ -55,6 +85,8 @@ export default function NotesPage() {
     subject: '',
     resource_type: 'notes',
     description: '',
+    author: '',
+    discuss_category: '',
     drive_link: '',
     external_link: '',
     visibility: 'campus' as 'global' | 'campus',
@@ -65,7 +97,9 @@ export default function NotesPage() {
   const [aiLoading, setAiLoading] = useState(false)
   const [showPendingOnly, setShowPendingOnly] = useState(false)
 
-  const canSubmitLink = admin.isAdmin // only admins can post material
+  // Phase 3: the Library is community-owned. Any signed-in student contributes;
+  // their material is queued for review, admins publish immediately.
+  const canSubmitLink = Boolean(user)
   const canVerify = admin.isPlatformAdmin || admin.isCampusAdmin // admin verifies notes
   // Material is published as a link, so at least one link is mandatory.
   const hasLink = Boolean(form.drive_link.trim() || form.external_link.trim())
@@ -163,6 +197,8 @@ export default function NotesPage() {
       formData.append('subject', form.subject)
       formData.append('resource_type', form.resource_type)
       formData.append('description', form.description)
+      formData.append('author', form.author.trim())
+      formData.append('discuss_category', form.discuss_category)
       formData.append('drive_link', form.drive_link.trim())
       formData.append('external_link', form.external_link.trim())
       formData.append('visibility', profile?.campus_id ? form.visibility : 'global')
@@ -183,6 +219,8 @@ export default function NotesPage() {
       subject: '',
       resource_type: 'notes',
       description: '',
+      author: '',
+      discuss_category: '',
       drive_link: '',
       external_link: '',
       visibility: 'campus',
@@ -201,16 +239,20 @@ export default function NotesPage() {
   const searchFiltered = useMemo(() => {
     const q = query.trim().toLowerCase()
     let list = notes.filter((n) => filter === 'all' || n.resource_type === filter)
-    // Regular users only see verified notes; admins see all
-    if (!canVerify) list = list.filter((n) => n.is_verified !== false)
+    // Regular users see verified material plus their OWN pending contributions
+    // (so a contributor gets feedback that their upload is in review).
+    if (!canVerify) list = list.filter((n) => n.is_verified !== false || n.uploaded_by === user?.id)
     // Admin 'pending' filter
     if (showPendingOnly && canVerify) list = list.filter((n) => n.is_verified === false)
     if (q)
       list = list.filter(
-        (n) => (n.title || '').toLowerCase().includes(q) || (n.subject || '').toLowerCase().includes(q)
+        (n) =>
+          (n.title || '').toLowerCase().includes(q) ||
+          (n.subject || '').toLowerCase().includes(q) ||
+          (n.author || '').toLowerCase().includes(q)
       )
     return list
-  }, [notes, filter, query, canVerify, showPendingOnly])
+  }, [notes, filter, query, canVerify, showPendingOnly, user?.id])
 
   const byTab = useMemo(() => {
     if (tab === 'popular') return [...searchFiltered].sort((a, b) => (b.download_count || 0) - (a.download_count || 0))
@@ -259,10 +301,10 @@ export default function NotesPage() {
           <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 18 }}>
             <div>
               <h2 style={{ fontSize: 24, fontWeight: 800, color: 'var(--text-primary)', margin: '0 0 4px' }}>
-                Notes Library
+                Library
               </h2>
               <p style={{ fontSize: 13, color: 'var(--text-muted)', margin: 0 }}>
-                Subject-wise notes, PYQs and resources from your campus
+                Books, notes, PYQs and resources — contributed by students everywhere
               </p>
               {canVerify && notes.filter((n) => n.is_verified === false).length > 0 && (
                 <button
@@ -303,7 +345,7 @@ export default function NotesPage() {
                     fontFamily: 'inherit',
                   }}
                 >
-                  🔗 Upload Note
+                  ＋ Add Resource
                 </button>
               )}
             </div>
@@ -484,7 +526,7 @@ export default function NotesPage() {
             </div>
           )}
 
-          {/* Post material — admin only, link based (no file upload) */}
+          {/* Add a resource — link based, no file upload. Anyone signed in. */}
           {showCompose && canSubmitLink && (
             <div
               style={{
@@ -497,8 +539,23 @@ export default function NotesPage() {
               }}
             >
               <h3 style={{ fontSize: 16, fontWeight: 700, color: 'var(--text-primary)', margin: '0 0 16px' }}>
-                Post Study Material
+                Add a resource
               </h3>
+              {!admin.isAdmin && (
+                <div
+                  style={{
+                    background: 'var(--accent-light)',
+                    borderRadius: 10,
+                    padding: '8px 12px',
+                    fontSize: 12,
+                    color: 'var(--accent-text)',
+                    marginBottom: 12,
+                    lineHeight: 1.5,
+                  }}
+                >
+                  You’re a contributor 💚 — your resource is reviewed by an admin before it appears for everyone.
+                </div>
+              )}
               <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
                 <input
                   type="text"
@@ -537,6 +594,24 @@ export default function NotesPage() {
                     <option value="global">🌐 Global — every student in India</option>
                   </select>
                 )}
+                <input
+                  type="text"
+                  value={form.author}
+                  onChange={(e) => setForm((f) => ({ ...f, author: e.target.value }))}
+                  placeholder="Author / publisher (optional)"
+                  style={inputStyle}
+                />
+                <select
+                  value={form.discuss_category}
+                  onChange={(e) => setForm((f) => ({ ...f, discuss_category: e.target.value }))}
+                  style={{ ...inputStyle, padding: '10px 12px' }}
+                >
+                  {DISCUSS_CATEGORIES.map((c) => (
+                    <option key={c.key} value={c.key}>
+                      Discuss in: {c.label}
+                    </option>
+                  ))}
+                </select>
                 <textarea
                   value={form.description}
                   onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))}
@@ -605,7 +680,7 @@ export default function NotesPage() {
                     fontFamily: 'inherit',
                   }}
                 >
-                  {posting ? 'Posting...' : 'Post material'}
+                  {posting ? 'Submitting...' : 'Publish resource'}
                 </button>
               </div>
             </div>
@@ -703,7 +778,7 @@ export default function NotesPage() {
                       <NoteRow
                         key={note.id}
                         note={note}
-                        canDelete={canVerify}
+                        canDelete={canVerify || note.uploaded_by === user?.id}
                         onDelete={deleteNote}
                         canVerify={canVerify}
                         onVerify={verifyNote}
@@ -719,7 +794,7 @@ export default function NotesPage() {
                 <NoteRow
                   key={note.id}
                   note={note}
-                  canDelete={canVerify}
+                  canDelete={canVerify || note.uploaded_by === user?.id}
                   onDelete={deleteNote}
                   canVerify={canVerify}
                   onVerify={verifyNote}
@@ -813,14 +888,53 @@ function NoteRow({
         >
           {note.title}
         </p>
-        <p style={{ fontSize: 11.5, color: 'var(--text-muted)', margin: 0 }}>
-          @{note.profiles?.username}
+        {note.author && (
+          <p style={{ fontSize: 11.5, color: 'var(--text-muted)', margin: '0 0 3px' }}>by {note.author}</p>
+        )}
+        {/* Contributor identity — deliberately prominent, never buried metadata. */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
+          {note.profiles?.username ? (
+            <a
+              href={`/profile/${note.profiles.username}`}
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: 4,
+                fontSize: 11.5,
+                fontWeight: 600,
+                color: 'var(--accent-text)',
+                textDecoration: 'none',
+              }}
+            >
+              👤 {note.profiles.full_name || note.profiles.username}
+              <span style={{ fontWeight: 500, color: 'var(--text-muted)' }}>· contributor</span>
+            </a>
+          ) : null}
           {(note.download_count || 0) > 0 && (
-            <span style={{ marginLeft: 8, color: 'var(--text-secondary)' }}>↓ {note.download_count}</span>
+            <span style={{ fontSize: 11.5, color: 'var(--text-secondary)' }}>↓ {note.download_count}</span>
           )}
-        </p>
+        </div>
       </div>
       <div style={{ display: 'flex', flexDirection: 'column', gap: 6, flexShrink: 0 }}>
+        {/* Library -> Chat: every resource has a home to discuss it in. */}
+        {note.is_verified !== false && (
+          <a
+            href={`/chat/${defaultDiscussCategory(note)}?resource=${note.id}`}
+            style={{
+              fontSize: 11,
+              padding: '4px 10px',
+              borderRadius: 6,
+              border: '1px solid var(--border)',
+              background: 'var(--bg-secondary)',
+              color: 'var(--text-secondary)',
+              textDecoration: 'none',
+              textAlign: 'center',
+              whiteSpace: 'nowrap',
+            }}
+          >
+            💬 Discuss
+          </a>
+        )}
         {canVerify && isPending && (
           <div style={{ display: 'flex', gap: 4 }}>
             <button

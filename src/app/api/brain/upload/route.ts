@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { createHash } from 'node:crypto'
 import { createClient } from '@/lib/supabase/server'
 import { requireAuthLite } from '@/lib/api/middleware'
 import { chunkText, embedGemini, ocrImageViaGemini } from '@/lib/brain'
@@ -41,6 +42,34 @@ export async function POST(request: NextRequest) {
 
   const bytes = Buffer.from(await file.arrayBuffer())
 
+  const supabase = await createClient()
+
+  // 0. Content hash — the same bytes for the same user are processed exactly
+  //    once. This is what keeps OCR and embedding cost bounded: re-uploading a
+  //    file (or uploading it again under a different name) costs zero AI calls.
+  //    Only a document that finished processing is reusable; a half-finished
+  //    one is left to be retried rather than half-served.
+  const contentHash = createHash('sha256').update(bytes).digest('hex')
+
+  const { data: existing } = await supabase
+    .from('brain_documents')
+    .select('id, title, chunk_count')
+    .eq('user_id', userId)
+    .eq('content_hash', contentHash)
+    .eq('processing_status', 'ready')
+    .maybeSingle()
+
+  if (existing) {
+    return NextResponse.json(
+      {
+        document: { id: existing.id, title: existing.title },
+        chunkCount: existing.chunk_count ?? 0,
+        deduplicated: true,
+      },
+      { status: 200 }
+    )
+  }
+
   // 1. Extract text
   let text = ''
   try {
@@ -70,12 +99,18 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'The file is empty.' }, { status: 422 })
   }
 
-  const supabase = await createClient()
-
-  // 3. Create the document row
+  // 3. Create the document row. It stays 'processing' until every chunk has
+  //    landed, so a failed upload is never mistaken for a reusable document.
   const { data: doc, error: docErr } = await supabase
     .from('brain_documents')
-    .insert({ user_id: userId, title: fileName, file_type: ext, char_count: text.length })
+    .insert({
+      user_id: userId,
+      title: fileName,
+      file_type: ext,
+      char_count: text.length,
+      content_hash: contentHash,
+      processing_status: 'processing',
+    })
     .select('id, title')
     .single()
   if (docErr || !doc) {
@@ -99,6 +134,17 @@ export async function POST(request: NextRequest) {
       if (error) throw new Error(`Chunk insert failed: ${error.message}`)
       inserted.push(...(data || []))
     }
+    // Every chunk landed — flip the document to reusable, so the next upload
+    // of these exact bytes short-circuits before any AI call.
+    await supabase
+      .from('brain_documents')
+      .update({
+        processing_status: 'ready',
+        processed_at: new Date().toISOString(),
+        chunk_count: inserted.length,
+      })
+      .eq('id', doc.id)
+
     // New knowledge landed — invalidate this user's cached answers
     clearUserBrainCache(userId)
   } catch (e: any) {
