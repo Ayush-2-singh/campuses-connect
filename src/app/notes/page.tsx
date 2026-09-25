@@ -115,7 +115,7 @@ export default function NotesPage() {
     })
     const { data } = await supabase
       .from('notes')
-      .select('*, profiles(full_name, username)')
+      .select('*, profiles!notes_uploaded_by_fkey(full_name, username)')
       .order('created_at', { ascending: false })
       .limit(100)
     setNotes(data || [])
@@ -130,7 +130,7 @@ export default function NotesPage() {
     })
     const { data } = await supabase
       .from('notes')
-      .select('*, profiles(full_name, username)')
+      .select('*, profiles!notes_uploaded_by_fkey(full_name, username)')
       .order('created_at', { ascending: false })
       .limit(100)
     setNotes(data || [])
@@ -165,7 +165,7 @@ export default function NotesPage() {
         supabase.auth.getUser(),
         supabase
           .from('notes')
-          .select('*, profiles(full_name, username)')
+          .select('*, profiles!notes_uploaded_by_fkey(full_name, username)')
           .order('created_at', { ascending: false })
           .limit(100),
       ])
@@ -228,7 +228,7 @@ export default function NotesPage() {
     setShowCompose(false)
     const { data } = await supabase
       .from('notes')
-      .select('*, profiles(full_name, username)')
+      .select('*, profiles!notes_uploaded_by_fkey(full_name, username)')
       .order('created_at', { ascending: false })
       .limit(100)
     setNotes(data || [])

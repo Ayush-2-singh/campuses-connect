@@ -43,7 +43,7 @@ export async function GET(request: NextRequest) {
   if (type === 'notes') {
     let query = getSupabaseAdmin()
       .from('notes')
-      .select('*, profiles(full_name, username)')
+      .select('*, profiles!notes_uploaded_by_fkey(full_name, username)')
       .order('created_at', { ascending: false })
 
     if (search) {
@@ -58,7 +58,7 @@ export async function GET(request: NextRequest) {
   if (type === 'posts') {
     let query = getSupabaseAdmin()
       .from('posts')
-      .select('*, profiles(full_name, username)')
+      .select('*, profiles!posts_author_id_fkey(full_name, username)')
       .order('created_at', { ascending: false })
 
     if (search) {

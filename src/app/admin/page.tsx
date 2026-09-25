@@ -36,7 +36,18 @@ interface AuditEntry {
 // ── Permission-based tab access ──────────────────────────
 // Platform Admin: full access to everything
 // Campus Admin: only data feeding (Overview, Content, Verify)
-const PLATFORM_ONLY_TABS = ['Analytics', 'Features', 'Settings', 'Users', 'Premium', 'Messages', 'Moderation', 'Colleges', 'Campus Changes', 'Audit Log'] as const
+const PLATFORM_ONLY_TABS = [
+  'Analytics',
+  'Features',
+  'Settings',
+  'Users',
+  'Premium',
+  'Messages',
+  'Moderation',
+  'Colleges',
+  'Campus Changes',
+  'Audit Log',
+] as const
 const CAMPUS_ACCESSIBLE_TABS = ['Overview', 'Content', 'Verify'] as const
 const ALL_TABS = [...CAMPUS_ACCESSIBLE_TABS, ...PLATFORM_ONLY_TABS] as const
 
@@ -200,9 +211,7 @@ export default function AdminPage() {
   const isCampusAdmin = grants.some((g: any) => g.admin_type === 'campus_admin') && !isPlatformAdmin
 
   // Filter tabs based on admin type
-  const availableTabs = isPlatformAdmin
-    ? [...ALL_TABS]
-    : [...CAMPUS_ACCESSIBLE_TABS]
+  const availableTabs = isPlatformAdmin ? [...ALL_TABS] : [...CAMPUS_ACCESSIBLE_TABS]
 
   // Redirect campus admins away from restricted tabs
   React.useEffect(() => {
@@ -226,7 +235,7 @@ export default function AdminPage() {
   const loadPosts = useCallback(async () => {
     const { data } = await supabase
       .from('posts')
-      .select('*, profiles(full_name, username)')
+      .select('*, profiles!posts_author_id_fkey(full_name, username)')
       .order('created_at', { ascending: false })
       .limit(50)
     setPosts(data || [])
@@ -307,7 +316,9 @@ export default function AdminPage() {
     async (search?: string) => {
       setVerifyLoading(true)
       try {
-        const res = await fetch(`/api/admin/verify?search=${encodeURIComponent(search || verifySearch)}`, { credentials: 'include' })
+        const res = await fetch(`/api/admin/verify?search=${encodeURIComponent(search || verifySearch)}`, {
+          credentials: 'include',
+        })
         if (res.ok) {
           const data = await res.json()
           setVerifyUsers(data.users || [])
@@ -586,7 +597,9 @@ export default function AdminPage() {
       const q = search !== undefined ? search : contentMgrSearch
       setContentMgrLoading(true)
       try {
-        const res = await fetch(`/api/admin/content?type=${t}&search=${encodeURIComponent(q)}`, { credentials: 'include' })
+        const res = await fetch(`/api/admin/content?type=${t}&search=${encodeURIComponent(q)}`, {
+          credentials: 'include',
+        })
         if (res.ok) {
           const data = await res.json()
           setContentMgrItems(data.items || [])
@@ -1213,11 +1226,20 @@ export default function AdminPage() {
                 marginTop: 16,
                 boxShadow: 'var(--shadow-sm)',
               }}
-            >            <p style={{ fontSize: 14, color: 'var(--text-secondary)', lineHeight: 1.7, margin: 0 }}>
+            >
+              {' '}
+              <p style={{ fontSize: 14, color: 'var(--text-secondary)', lineHeight: 1.7, margin: 0 }}>
                 {isPlatformAdmin ? (
-                  <>Welcome to the <strong>full admin panel</strong>. You can manage <strong>Features</strong>, <strong>Settings</strong>, <strong>Users</strong>, <strong>Moderation</strong>, and more.</>
+                  <>
+                    Welcome to the <strong>full admin panel</strong>. You can manage <strong>Features</strong>,{' '}
+                    <strong>Settings</strong>, <strong>Users</strong>, <strong>Moderation</strong>, and more.
+                  </>
                 ) : (
-                  <>Welcome, <strong>Campus Admin</strong>. You can manage <strong>Content</strong> (notes, posts) and <strong>Verify</strong> users for your campus. Sensitive operations are restricted to Platform Admin.</>
+                  <>
+                    Welcome, <strong>Campus Admin</strong>. You can manage <strong>Content</strong> (notes, posts) and{' '}
+                    <strong>Verify</strong> users for your campus. Sensitive operations are restricted to Platform
+                    Admin.
+                  </>
                 )}
               </p>
             </div>
