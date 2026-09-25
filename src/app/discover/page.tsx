@@ -42,7 +42,7 @@ import {
   type DiscoveryFeedCard,
   type IncomingInterest,
 } from '@/lib/discovery'
-import SwipeDeck from '@/components/discovery/SwipeDeck'
+import DiscoverBoard from '@/components/discovery/DiscoverBoard'
 import DiscoveryBlogs from '@/components/discovery/DiscoveryBlogs'
 import DiscoveryPeople from '@/components/discovery/DiscoveryPeople'
 
@@ -627,14 +627,15 @@ export default function DiscoverPage() {
               Confessions live in Community; Library and Leaderboard have
               their own pillars.) */}
 
-              {/* Content — public-first: the queue is readable logged-out */}
+              {/* Content — public-first: the queue is readable logged-out.
+                  Queue tabs render the BLUEPRINT BOARD (featured banner +
+                  orange pills + idea grid); Blogs/People keep their surfaces.
+                  The classic SwipeDeck stays one toggle away inside the board. */}
               {tab === 'blogs' ? (
                 <DiscoveryBlogs />
               ) : tab === 'people' ? (
                 <DiscoveryPeople />
-              ) : !booted ? (
-                <ListSkeleton count={2} />
-              ) : loading ? (
+              ) : !booted || loading ? (
                 <ListSkeleton count={2} />
               ) : error ? (
                 <EmptyState
@@ -648,14 +649,21 @@ export default function DiscoverPage() {
                   }}
                 />
               ) : (
-                <>
-                  <SwipeDeck cards={cards} onAction={handleAction} busy={busy} />
-                  {cards.length === 0 && (
-                    <p style={{ textAlign: 'center', fontSize: 12, color: 'var(--text-muted)', marginTop: 6 }}>
-                      No ideas in this tab yet — be the first to post one.
-                    </p>
-                  )}
-                </>
+                <DiscoverBoard
+                  tab={tab === 'foryou' ? 'startup' : (tab as 'startup' | 'project' | 'hackathon' | 'collab')}
+                  onTabChange={(t) => setTab(t)}
+                  cards={cards}
+                  loading={loading}
+                  error={error}
+                  busy={busy}
+                  onAction={handleAction}
+                  onRetry={() => {
+                    setLoading(true)
+                    loadQueue({ fresh: true }).finally(() => setLoading(false))
+                  }}
+                  signedIn={!!user}
+                  onCreate={() => (user ? setShowCreate(true) : router.push('/auth/login?redirect=/discover'))}
+                />
               )}
             </>
           )}
