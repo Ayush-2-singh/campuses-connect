@@ -63,6 +63,23 @@ const TABS: { key: Tab; label: string }[] = [
 
 const PAGE = 10
 
+// HUB — the Discovery landing cards (spec): every card leads to a real,
+// existing feature. No placeholders, no duplicates.
+const HUB_ITEMS: { key: Tab; title: string; desc: string; icon: string }[] = [
+  { key: 'foryou', title: 'For You', desc: 'Personalized ideas, projects and builders worth discovering', icon: '🚀' },
+  { key: 'startup', title: 'Startups & Ideas', desc: 'Discover startup ideas and concepts worth building', icon: '💡' },
+  { key: 'project', title: 'Projects', desc: 'Discover projects and the people building them', icon: '🛠' },
+  {
+    key: 'hackathon',
+    title: 'Hackathons',
+    desc: 'Discover hackathons, competitions and upcoming opportunities',
+    icon: '⚡',
+  },
+  { key: 'collab', title: 'Collaboration', desc: 'Find builders and projects looking for collaborators', icon: '🤝' },
+  { key: 'blogs', title: 'Developer Blogs', desc: 'Read what students are building, learning and sharing', icon: '✍️' },
+  { key: 'people', title: 'People & Builders', desc: 'Discover students, developers and builders', icon: '👥' },
+]
+
 export default function DiscoverPage() {
   const supabase = createClient()
   const toast = useToast()
@@ -104,13 +121,19 @@ export default function DiscoverPage() {
 
   // ---- queue state ----
   const [tab, setTab] = useState<Tab>('foryou')
+  // Discovery opens as a HUB first (like Community); ?tab= deep links land
+  // straight in the deck experience.
+  const [view, setView] = useState<'hub' | 'deck'>('hub')
 
   // Deep links: /discover?tab=startup etc. (used by /opportunities redirect,
   // feed pulse cards and the command palette). Read once at boot from the URL.
   useEffect(() => {
     const q = new URLSearchParams(window.location.search).get('tab')
     const valid = TABS.some((t) => t.key === q)
-    if (q && valid) setTab(q as Tab)
+    if (q && valid) {
+      setTab(q as Tab)
+      setView('deck')
+    }
   }, [])
   const [cards, setCards] = useState<DiscoveryFeedCard[]>([])
   const [loading, setLoading] = useState(true)
@@ -364,62 +387,144 @@ export default function DiscoverPage() {
             Find ideas worth building and people worth building with.
           </p>
 
-          {/* Tabs */}
-          <div style={{ display: 'flex', gap: 7, flexWrap: 'wrap', marginBottom: 16 }}>
-            {TABS.map((t) => (
-              <button
-                key={t.key}
-                onClick={() => setTab(t.key)}
-                style={{
-                  minHeight: 36,
-                  padding: '6px 13px',
-                  borderRadius: 18,
-                  border: tab === t.key ? 'none' : '1px solid var(--border)',
-                  background: tab === t.key ? 'var(--accent)' : 'var(--bg)',
-                  color: tab === t.key ? 'var(--on-accent)' : 'var(--text-secondary)',
-                  fontSize: 13,
-                  fontWeight: 600,
-                  cursor: 'pointer',
-                  fontFamily: 'inherit',
-                }}
-              >
-                {t.label}
-              </button>
-            ))}
-          </div>
+          {/* HUB — Discovery landing (spec): every card opens a real,
+              existing feature. The deck/tabs remain one click away. */}
+          {view === 'hub' ? (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+              {HUB_ITEMS.map((item) => {
+                const open = () => {
+                  setTab(item.key)
+                  setView('deck')
+                  window.scrollTo({ top: 0 })
+                }
+                return (
+                  <button
+                    key={item.key}
+                    onClick={open}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 12,
+                      background: 'var(--bg)',
+                      border: '1px solid var(--border)',
+                      borderRadius: 14,
+                      padding: 14,
+                      cursor: 'pointer',
+                      width: '100%',
+                      textAlign: 'left',
+                      fontFamily: 'inherit',
+                      boxShadow: 'var(--shadow-sm)',
+                    }}
+                  >
+                    <span
+                      style={{
+                        width: 42,
+                        height: 42,
+                        borderRadius: 12,
+                        background: 'var(--accent-light)',
+                        color: 'var(--accent-text)',
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        fontSize: 19,
+                        flexShrink: 0,
+                      }}
+                    >
+                      {item.icon}
+                    </span>
+                    <span style={{ flex: 1, minWidth: 0 }}>
+                      <span style={{ display: 'block', fontSize: 15, fontWeight: 700, color: 'var(--text-primary)' }}>
+                        {item.title}
+                      </span>
+                      <span style={{ display: 'block', fontSize: 12.5, color: 'var(--text-muted)', marginTop: 2 }}>
+                        {item.desc}
+                      </span>
+                    </span>
+                    <span style={{ color: 'var(--text-muted)', fontSize: 16 }}>→</span>
+                  </button>
+                )
+              })}
+            </div>
+          ) : (
+            <>
+              {/* Tabs (deck view) — with a way back to the hub */}
+              <div style={{ display: 'flex', gap: 7, flexWrap: 'wrap', marginBottom: 16 }}>
+                <button
+                  onClick={() => {
+                    setView('hub')
+                    window.scrollTo({ top: 0 })
+                  }}
+                  style={{
+                    minHeight: 36,
+                    padding: '6px 13px',
+                    borderRadius: 18,
+                    border: '1px solid var(--border)',
+                    background: 'var(--bg-secondary)',
+                    color: 'var(--text-secondary)',
+                    fontSize: 13,
+                    fontWeight: 600,
+                    cursor: 'pointer',
+                    fontFamily: 'inherit',
+                  }}
+                >
+                  ← All Discovery
+                </button>
+                {TABS.map((t) => (
+                  <button
+                    key={t.key}
+                    onClick={() => setTab(t.key)}
+                    style={{
+                      minHeight: 36,
+                      padding: '6px 13px',
+                      borderRadius: 18,
+                      border: tab === t.key ? 'none' : '1px solid var(--border)',
+                      background: tab === t.key ? 'var(--accent)' : 'var(--bg)',
+                      color: tab === t.key ? 'var(--on-accent)' : 'var(--text-secondary)',
+                      fontSize: 13,
+                      fontWeight: 600,
+                      cursor: 'pointer',
+                      fontFamily: 'inherit',
+                    }}
+                  >
+                    {t.label}
+                  </button>
+                ))}
+              </div>
 
-          {/* (Shortcut pills removed — spec: Discovery shows discoverable
+              {/* (Shortcut pills removed — spec: Discovery shows discoverable
               content, not a links dashboard. Blogs/People are tabs above;
               Confessions live in Community; Library and Leaderboard have
               their own pillars.) */}
 
-          {/* Content — public-first: the queue is readable logged-out */}
-          {tab === 'blogs' ? (
-            <DiscoveryBlogs />
-          ) : tab === 'people' ? (
-            <DiscoveryPeople />
-          ) : !booted ? (
-            <ListSkeleton count={2} />
-          ) : loading ? (
-            <ListSkeleton count={2} />
-          ) : error ? (
-            <EmptyState
-              icon="⚠️"
-              title="Could not load ideas"
-              body={error}
-              cta="Retry"
-              onCta={() => {
-                setLoading(true)
-                loadQueue({ fresh: true }).finally(() => setLoading(false))
-              }}
-            />
-          ) : (
-            <>
-              <SwipeDeck cards={cards} onAction={handleAction} busy={busy} />
-              {cards.length === 0 && (
-                <p style={{ textAlign: 'center', fontSize: 12, color: 'var(--text-muted)', marginTop: 6 }}>
-                  No ideas in this tab yet — be the first to post one.
-                </p>
+              {/* Content — public-first: the queue is readable logged-out */}
+              {tab === 'blogs' ? (
+                <DiscoveryBlogs />
+              ) : tab === 'people' ? (
+                <DiscoveryPeople />
+              ) : !booted ? (
+                <ListSkeleton count={2} />
+              ) : loading ? (
+                <ListSkeleton count={2} />
+              ) : error ? (
+                <EmptyState
+                  icon="⚠️"
+                  title="Could not load ideas"
+                  body={error}
+                  cta="Retry"
+                  onCta={() => {
+                    setLoading(true)
+                    loadQueue({ fresh: true }).finally(() => setLoading(false))
+                  }}
+                />
+              ) : (
+                <>
+                  <SwipeDeck cards={cards} onAction={handleAction} busy={busy} />
+                  {cards.length === 0 && (
+                    <p style={{ textAlign: 'center', fontSize: 12, color: 'var(--text-muted)', marginTop: 6 }}>
+                      No ideas in this tab yet — be the first to post one.
+                    </p>
+                  )}
+                </>
               )}
             </>
           )}
