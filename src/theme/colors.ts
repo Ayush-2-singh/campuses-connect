@@ -9,7 +9,7 @@
 
 export const PALETTE = {
   // Surfaces
-  bg: '#0F1115',
+  bg: '#0D1116',
   panel: '#171A21',
   panelSecondary: '#1E222B',
   border: '#2A2F3A',
@@ -20,7 +20,7 @@ export const PALETTE = {
   textMuted: '#697383',
 
   // Accents (contextual)
-  gold: '#E0A83C',
+  gold: '#FD8F01',
   cyan: '#41C8D8',
   purple: '#A97BF0',
   green: '#4CBF7A',

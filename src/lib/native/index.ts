@@ -87,7 +87,7 @@ async function setupStatusBar(): Promise<() => void> {
     try {
       // Style.Dark = light text/icons, for dark backgrounds.
       await StatusBar.setStyle({ style: isDark ? Style.Dark : Style.Light })
-      await StatusBar.setBackgroundColor({ color: isDark ? '#0F1115' : '#FFFFFF' })
+      await StatusBar.setBackgroundColor({ color: isDark ? '#0D1116' : '#FFFFFF' })
     } catch {
       /* unsupported on this Android version — cosmetic only */
     }

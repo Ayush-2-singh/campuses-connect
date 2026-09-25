@@ -993,7 +993,7 @@ export default function AdminPage() {
         >
           <div>
             <h1 style={{ fontSize: 18, fontWeight: 800, color: 'var(--text-primary)', margin: '0 0 2px' }}>
-              Connect<span style={{ color: '#F59E0B' }}>MyCampus</span> Admin
+              Connect<span style={{ color: '#FD8F01' }}>MyCampus</span> Admin
             </h1>
             <p style={{ fontSize: 12, color: 'var(--text-muted)', margin: 0 }}>
               {isPlatformAdmin ? '🛡️ Platform Admin' : '🏫 Campus Admin'} · {enabledCount}/{featureFlags.length}{' '}
@@ -2447,7 +2447,7 @@ export default function AdminPage() {
                   textAlign: 'center',
                 }}
               >
-                <p style={{ fontSize: 24, fontWeight: 800, color: '#f59e0b', margin: '0 0 2px' }}>
+                <p style={{ fontSize: 24, fontWeight: 800, color: '#fd8f01', margin: '0 0 2px' }}>
                   👑 {premiumUsers.length}
                 </p>
                 <p style={{ fontSize: 11, color: 'var(--text-muted)', margin: 0 }}>Premium Users</p>
@@ -2518,7 +2518,7 @@ export default function AdminPage() {
                               fontSize: 10,
                               padding: '1px 6px',
                               borderRadius: 6,
-                              background: 'linear-gradient(135deg, #fbbf24, #f59e0b)',
+                              background: 'linear-gradient(135deg, #fbbf24, #fd8f01)',
                               color: '#fff',
                               fontWeight: 700,
                             }}
@@ -3798,7 +3798,7 @@ export default function AdminPage() {
                   const fromCampus = req.campuses?.name || 'Unknown'
                   const toCampus = req['campuses']?.name || 'Unknown'
                   const statusColors: Record<string, string> = {
-                    pending: '#f59e0b',
+                    pending: '#fd8f01',
                     approved: '#16a34a',
                     rejected: '#ef4444',
                     cancelled: '#6b7280',

@@ -432,7 +432,7 @@ export default function ProfilePage() {
           <div
             style={{
               height: 84,
-              background: 'linear-gradient(120deg, #E0A83C 0%, #41C8D8 55%, #A97BF0 100%)',
+              background: 'linear-gradient(120deg, #FD8F01 0%, #41C8D8 55%, #A97BF0 100%)',
               position: 'relative',
             }}
           >

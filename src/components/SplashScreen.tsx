@@ -9,7 +9,10 @@ export default function SplashScreen() {
   useEffect(() => {
     const fadeTimer = setTimeout(() => setFading(true), 1200)
     const hideTimer = setTimeout(() => setVisible(false), 1800)
-    return () => { clearTimeout(fadeTimer); clearTimeout(hideTimer) }
+    return () => {
+      clearTimeout(fadeTimer)
+      clearTimeout(hideTimer)
+    }
   }, [])
 
   if (!visible) return null
@@ -23,7 +26,7 @@ export default function SplashScreen() {
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        background: '#0F1115',
+        background: '#0D1116',
         opacity: fading ? 0 : 1,
         transition: 'opacity 0.6s ease-out',
         pointerEvents: fading ? 'none' : 'auto',
@@ -36,7 +39,7 @@ export default function SplashScreen() {
             width: 72,
             height: 72,
             borderRadius: 20,
-            background: 'linear-gradient(135deg, #F59E0B 0%, #8B5CF6 100%)',
+            background: 'linear-gradient(135deg, #FD8F01 0%, #8B5CF6 100%)',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
@@ -60,7 +63,7 @@ export default function SplashScreen() {
             letterSpacing: '-0.02em',
           }}
         >
-          Connect<span style={{ color: '#F59E0B' }}>MyCampus</span>
+          Connect<span style={{ color: '#FD8F01' }}>MyCampus</span>
         </h1>
 
         {/* Tagline */}
@@ -83,14 +86,14 @@ export default function SplashScreen() {
             marginTop: 24,
           }}
         >
-          {[0, 1, 2].map(i => (
+          {[0, 1, 2].map((i) => (
             <span
               key={i}
               style={{
                 width: 6,
                 height: 6,
                 borderRadius: '50%',
-                background: '#F59E0B',
+                background: '#FD8F01',
                 animation: `splashDot 1.2s ease-in-out ${i * 0.15}s infinite`,
               }}
             />

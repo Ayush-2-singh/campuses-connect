@@ -135,7 +135,7 @@ export function timeRemaining(startedAt: string, durationMs: number): number {
  * Score color based on position.
  */
 export function rankColor(rank: number): string {
-  if (rank === 0) return '#f59e0b' // gold
+  if (rank === 0) return '#fd8f01' // gold
   if (rank === 1) return '#9ca3af' // silver
   if (rank === 2) return '#ea580c' // bronze
   return 'var(--text-muted)'

@@ -601,7 +601,7 @@ export default function LeaderboardPage() {
               <div
                 style={{
                   height: 80,
-                  background: 'linear-gradient(180deg, #fde68a, #f59e0b)',
+                  background: 'linear-gradient(180deg, #fde68a, #fd8f01)',
                   borderRadius: '8px 8px 0 0',
                   marginTop: 4,
                 }}

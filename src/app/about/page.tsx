@@ -121,7 +121,7 @@ export default function AboutPage() {
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
             <img src={logoSrc} alt="CTC" width={32} height={32} style={{ borderRadius: 9 }} />
             <h1 style={{ fontSize: 19, fontWeight: 800, margin: 0, color: 'var(--text-primary)' }}>
-              Connect<span style={{ color: '#F59E0B' }}>ToCampus</span>
+              Connect<span style={{ color: '#FD8F01' }}>ToCampus</span>
             </h1>
           </div>
           <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>

@@ -57,7 +57,7 @@ const config: CapacitorConfig = {
       // first paint. See src/components/NativeShell.tsx.
       launchAutoHide: false,
       launchShowDuration: 0,
-      backgroundColor: '#0F1115',
+      backgroundColor: '#0D1116',
       androidScaleType: 'CENTER_CROP',
       showSpinner: false,
       splashFullScreen: true,

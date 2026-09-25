@@ -240,7 +240,7 @@ export default function Layout({ children, user, profile }: { children: React.Re
                 letterSpacing: '-0.02em',
               }}
             >
-              Connect<span style={{ color: '#F59E0B' }}>ToCampus</span>
+              Connect<span style={{ color: '#FD8F01' }}>ToCampus</span>
             </h1>
             <p style={{ fontSize: 10.5, color: 'var(--text-muted)', margin: 0 }}>Your campus, connected.</p>
           </div>
@@ -756,7 +756,7 @@ export default function Layout({ children, user, profile }: { children: React.Re
             <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
               <img src={logoSrc} alt="CTC" width={30} height={30} style={{ borderRadius: 9 }} />
               <h1 style={{ fontSize: 17, fontWeight: 800, color: 'var(--text-primary)', margin: 0 }}>
-                Connect<span style={{ color: '#F59E0B' }}>ToCampus</span>
+                Connect<span style={{ color: '#FD8F01' }}>ToCampus</span>
               </h1>
             </div>
             <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>

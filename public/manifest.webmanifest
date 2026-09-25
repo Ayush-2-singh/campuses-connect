@@ -4,8 +4,8 @@
   "description": "The community platform for Computer Science students in Indian colleges.",
   "start_url": "/feed",
   "display": "standalone",
-  "background_color": "#0F1115",
-  "theme_color": "#0F1115",
+  "background_color": "#0D1116",
+  "theme_color": "#0D1116",
   "orientation": "portrait-primary",
   "icons": [
     {

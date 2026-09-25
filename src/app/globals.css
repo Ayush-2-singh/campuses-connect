@@ -1,9 +1,10 @@
 @import 'tailwindcss';
 
 /* ═══════════════════════════════════════════════════════════════════════════
-   CONNECT MY CAMPUS — DYNAMIC COLOR SYSTEM
-   One dark design system; every section gets its own subtle contextual
-   accent identity (gold · blue · cyan · purple · green).
+   CONNECTTOCAMPUS — DYNAMIC COLOR SYSTEM (blueprint v2)
+   Brand ORANGE #FD8F01 (extracted from the Sep 2026 reference blueprints)
+   on deep charcoal #0D1116. The 'gold' token name is kept as an alias so
+   every component recolors from this one variable.
 
    Component code consumes semantic tokens (var(--accent), var(--panel)…).
    Sections override the *accent family* via `data-accent`, so every button,
@@ -15,7 +16,8 @@
 /* Single source of truth for accent hues. Semantic tokens below alias these. */
 
 :root {
-  --accent-gold: #e0a83c;
+  /* Brand orange (blueprint accent) — 'gold' alias kept for compat */
+  --accent-gold: #fd8f01;
   --accent-cyan: #41c8d8;
   --accent-purple: #a97bf0;
   --accent-green: #4cbf7a;
@@ -32,14 +34,14 @@
   color-scheme: dark;
   -webkit-color-scheme: dark;
 
-  /* Surfaces */
-  --bg: #0f1115;
-  --bg-secondary: #171a21;
-  --bg-tertiary: #1e222b;
+  /* Surfaces — blueprint charcoal (dark mockup background) */
+  --bg: #0d1116;
+  --bg-secondary: #15161f;
+  --bg-tertiary: #1c1f28;
 
-  /* Borders */
-  --border: #2a2f3a;
-  --border-strong: #3a4150;
+  /* Borders — cool gray-blue, slightly cooler than before */
+  --border: #262b36;
+  --border-strong: #39404e;
 
   /* Text */
   --text-primary: #e8e9ed;
@@ -49,7 +51,7 @@
   /* Brand — gold by default; sections override via [data-accent] */
   --accent: var(--accent-gold);
   --accent-light: color-mix(in srgb, var(--accent) 14%, transparent);
-  --accent-text: #f2c96b;
+  --accent-text: #ffab47;
   --accent-border: color-mix(in srgb, var(--accent) 42%, transparent);
   --accent-glow: 0 0 22px color-mix(in srgb, var(--accent) 22%, transparent);
 
@@ -89,7 +91,7 @@
   --orange-text: #fdba74;
   --orange-border: color-mix(in srgb, var(--warning) 40%, transparent);
   --yellow-light: color-mix(in srgb, var(--accent-gold) 16%, transparent);
-  --yellow-text: #f5c56b;
+  --yellow-text: #ffcf8a;
   --gray-soft: #1e222b;
   --disabled: color-mix(in srgb, var(--accent) 32%, var(--bg-tertiary));
 
@@ -138,9 +140,10 @@
   color-scheme: light;
   -webkit-color-scheme: light;
 
-  --bg: #fafafb;
-  --bg-secondary: #f2f3f5;
-  --bg-tertiary: #eaebef;
+  /* Light blueprint surfaces: #F8F8FB page, #FEFEFE cards */
+  --bg: #f8f8fb;
+  --bg-secondary: #fefefe;
+  --bg-tertiary: #f0f1f6;
 
   --border: #e3e5ea;
   --border-strong: #cfd3db;
@@ -151,7 +154,7 @@
 
   --accent: var(--accent-gold);
   --accent-light: color-mix(in srgb, var(--accent) 14%, white);
-  --accent-text: #8a6418;
+  --accent-text: #b35c00;
   --accent-border: color-mix(in srgb, var(--accent) 46%, white);
   --accent-glow: 0 0 18px color-mix(in srgb, var(--accent) 18%, transparent);
 
@@ -206,7 +209,7 @@
 [data-accent='gold'] {
   --accent: var(--accent-gold);
   --accent-light: color-mix(in srgb, var(--accent-gold) 14%, transparent);
-  --accent-text: #f2c96b;
+  --accent-text: #ffab47;
   --accent-border: color-mix(in srgb, var(--accent-gold) 42%, transparent);
   --accent-glow: 0 0 22px color-mix(in srgb, var(--accent-gold) 22%, transparent);
 }
@@ -242,7 +245,7 @@
 /* Light-mode adjustments for section accents (darker text on pale surfaces) */
 [data-theme='light'] [data-accent='gold'] {
   --accent-light: color-mix(in srgb, var(--accent-gold) 14%, white);
-  --accent-text: #8a6418;
+  --accent-text: #b35c00;
   --accent-border: color-mix(in srgb, var(--accent-gold) 46%, white);
 }
 [data-theme='light'] [data-accent='cyan'] {
@@ -285,7 +288,7 @@
 
 /* Brand gradient — gold → light gold */
 .grad-gold {
-  background: linear-gradient(135deg, var(--accent-gold) 0%, #f2c96b 100%) !important;
+  background: linear-gradient(135deg, var(--accent-gold) 0%, #ffb45e 100%) !important;
   border: none !important;
 }
 

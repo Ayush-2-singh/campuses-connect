@@ -70,7 +70,8 @@ export default function GameResults({
         </p>
         {winner && winner.total_answered > 0 && (
           <p style={{ fontSize: 13, color: 'var(--text-muted)', margin: '4px 0 0' }}>
-            {Math.round((winner.correct_count / winner.total_answered) * 100)}% accuracy · {winner.correct_count}/{winner.total_answered} correct
+            {Math.round((winner.correct_count / winner.total_answered) * 100)}% accuracy · {winner.correct_count}/
+            {winner.total_answered} correct
           </p>
         )}
       </div>
@@ -91,7 +92,7 @@ export default function GameResults({
             const h = pos === 0 ? 80 : pos === 1 ? 60 : 44
             const grad =
               pos === 0
-                ? 'linear-gradient(180deg, #fde68a, #f59e0b)'
+                ? 'linear-gradient(180deg, #fde68a, #fd8f01)'
                 : pos === 1
                   ? 'linear-gradient(180deg, #d1d5db, #9ca3af)'
                   : 'linear-gradient(180deg, #fed7aa, #ea580c)'
@@ -172,7 +173,8 @@ export default function GameResults({
               You placed {myRank + 1} of {sorted.length}
             </p>
             <p style={{ fontSize: 12, color: 'var(--text-muted)', margin: 0 }}>
-              ⚡ {me.score} points · {me.correct_count}/{me.total_answered} correct ({me.total_answered > 0 ? Math.round((me.correct_count / me.total_answered) * 100) : 0}%)
+              ⚡ {me.score} points · {me.correct_count}/{me.total_answered} correct (
+              {me.total_answered > 0 ? Math.round((me.correct_count / me.total_answered) * 100) : 0}%)
             </p>
           </div>
         </div>
