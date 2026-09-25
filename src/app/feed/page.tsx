@@ -211,7 +211,7 @@ export default function FeedPage() {
   return (
     <Layout user={user} profile={profile}>
       <ErrorBoundary pageName="feed">
-        <div className="ambient" style={{ maxWidth: 680, margin: '0 auto', padding: '28px 20px 40px' }}>
+        <div className="ambient" style={{ maxWidth: 1200, margin: '0 auto', padding: '28px 24px 40px' }}>
           {/* Campus Pulse header */}
           <div style={{ marginBottom: 22 }}>
             <h2 style={{ fontSize: 26, fontWeight: 800, color: 'var(--text-primary)', margin: '0 0 4px' }}>
@@ -226,7 +226,6 @@ export default function FeedPage() {
 
           {/* HOME DASHBOARD — global, public strip (spec §3/§24): compact
               previews with See-all links; no page duplication. */}
-          <HomeDashboard />
 
           {/* Pulse stats — real counts from the database, full grid (no scroll cut-off) */}
           <div className="stat-grid" style={{ marginBottom: 24 }}>
@@ -270,128 +269,133 @@ export default function FeedPage() {
               </button>
             ))}
           </div>
+          <HomeDashboard />
 
-          {user && (
-            <PostComposer
-              userId={user.id}
-              profile={profile}
-              onPosted={() => {
-                fetchPosts(0)
-                fetchPulseData().then(setPulse)
-              }}
-              context={{
-                campusId: profile?.campus_id,
-                collegeId: profile?.college_id,
-                campusName: profile?.campuses?.name,
-                collegeName: profile?.colleges?.name,
-              }}
-            />
-          )}
+          {/* Feed column stays narrow for readability; the dashboard above
+              uses the full desktop width. */}
+          <div style={{ maxWidth: 720, margin: '0 auto' }}>
+            {user && (
+              <PostComposer
+                userId={user.id}
+                profile={profile}
+                onPosted={() => {
+                  fetchPosts(0)
+                  fetchPulseData().then(setPulse)
+                }}
+                context={{
+                  campusId: profile?.campus_id,
+                  collegeId: profile?.college_id,
+                  campusName: profile?.campuses?.name,
+                  collegeName: profile?.colleges?.name,
+                }}
+              />
+            )}
 
-          {!user && (
-            <div
-              style={{
-                background: 'var(--bg)',
-                border: '1px solid var(--border)',
-                borderRadius: 'var(--radius)',
-                padding: '14px 16px',
-                marginBottom: 16,
-              }}
-            >
-              <p style={{ fontWeight: 600, fontSize: 14, color: 'var(--text-primary)', margin: '0 0 4px' }}>
-                Browse ConnectToCampus
-              </p>
-              <p style={{ fontSize: 13, color: 'var(--text-secondary)', margin: 0 }}>
-                Join your campus community to like, comment and save — or browse the{' '}
-                <span
-                  style={{ color: 'var(--accent)', fontWeight: 600, cursor: 'pointer' }}
-                  onClick={() => router.push('/global')}
-                >
-                  Global
-                </span>{' '}
-                feed.
-              </p>
-            </div>
-          )}
-
-          {/* Category filters */}
-          <div
-            className="scrollbar-hide fade-x chips-wrap"
-            style={{ display: 'flex', gap: 6, paddingBottom: 4, marginBottom: 16 }}
-            role="tablist"
-            aria-label="Filter posts"
-          >
-            {FILTERS.map((type) => (
-              <button
-                key={type}
-                onClick={() => setFilter(type)}
+            {!user && (
+              <div
                 style={{
-                  flexShrink: 0,
-                  padding: '6px 14px',
-                  borderRadius: 20,
-                  fontSize: 12,
-                  fontWeight: 500,
-                  border: filter === type ? 'none' : '1px solid var(--border)',
-                  background: filter === type ? 'var(--accent)' : 'var(--bg)',
-                  color: filter === type ? 'var(--on-accent)' : 'var(--text-secondary)',
-                  cursor: 'pointer',
-                  fontFamily: 'inherit',
+                  background: 'var(--bg)',
+                  border: '1px solid var(--border)',
+                  borderRadius: 'var(--radius)',
+                  padding: '14px 16px',
+                  marginBottom: 16,
                 }}
               >
-                {FILTER_LABELS[type] || type}
-              </button>
-            ))}
-          </div>
+                <p style={{ fontWeight: 600, fontSize: 14, color: 'var(--text-primary)', margin: '0 0 4px' }}>
+                  Browse ConnectToCampus
+                </p>
+                <p style={{ fontSize: 13, color: 'var(--text-secondary)', margin: 0 }}>
+                  Join your campus community to like, comment and save — or browse the{' '}
+                  <span
+                    style={{ color: 'var(--accent)', fontWeight: 600, cursor: 'pointer' }}
+                    onClick={() => router.push('/global')}
+                  >
+                    Global
+                  </span>{' '}
+                  feed.
+                </p>
+              </div>
+            )}
 
-          {loading ? (
-            <ListSkeleton count={3} />
-          ) : posts.length === 0 ? (
-            <EmptyState
-              icon="message"
-              title={filter === 'all' ? 'No posts yet' : `No ${FILTER_LABELS[filter]?.toLowerCase()} posts yet`}
-              body={
-                user
-                  ? 'Be the first to post — use the composer above.'
-                  : 'Join your campus to post and discuss. Try a different category.'
-              }
-              cta={filter !== 'all' ? 'View all posts' : undefined}
-              onCta={filter !== 'all' ? () => setFilter('all') : undefined}
-            />
-          ) : (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-              {posts.map((post) => (
-                <PostCard
-                  key={post.id}
-                  post={post}
-                  currentUserId={user?.id}
-                  canInteract={!!user}
-                  onChanged={() => fetchPosts(0)}
-                  isAdmin={admin.isAdmin}
-                />
-              ))}
-              {hasMore && (
+            {/* Category filters */}
+            <div
+              className="scrollbar-hide fade-x chips-wrap"
+              style={{ display: 'flex', gap: 6, paddingBottom: 4, marginBottom: 16 }}
+              role="tablist"
+              aria-label="Filter posts"
+            >
+              {FILTERS.map((type) => (
                 <button
-                  onClick={loadMore}
-                  disabled={loadingMore}
+                  key={type}
+                  onClick={() => setFilter(type)}
                   style={{
-                    width: '100%',
-                    padding: '12px',
-                    borderRadius: 10,
-                    border: '1px solid var(--border)',
-                    background: 'var(--bg)',
-                    color: loadingMore ? 'var(--text-muted)' : 'var(--accent)',
-                    fontSize: 14,
-                    fontWeight: 600,
-                    cursor: loadingMore ? 'default' : 'pointer',
+                    flexShrink: 0,
+                    padding: '6px 14px',
+                    borderRadius: 20,
+                    fontSize: 12,
+                    fontWeight: 500,
+                    border: filter === type ? 'none' : '1px solid var(--border)',
+                    background: filter === type ? 'var(--accent)' : 'var(--bg)',
+                    color: filter === type ? 'var(--on-accent)' : 'var(--text-secondary)',
+                    cursor: 'pointer',
                     fontFamily: 'inherit',
-                    marginTop: 4,
                   }}
                 >
-                  {loadingMore ? 'Loading…' : 'Load more posts'}
+                  {FILTER_LABELS[type] || type}
                 </button>
-              )}
+              ))}
             </div>
-          )}
+
+            {loading ? (
+              <ListSkeleton count={3} />
+            ) : posts.length === 0 ? (
+              <EmptyState
+                icon="message"
+                title={filter === 'all' ? 'No posts yet' : `No ${FILTER_LABELS[filter]?.toLowerCase()} posts yet`}
+                body={
+                  user
+                    ? 'Be the first to post — use the composer above.'
+                    : 'Join your campus to post and discuss. Try a different category.'
+                }
+                cta={filter !== 'all' ? 'View all posts' : undefined}
+                onCta={filter !== 'all' ? () => setFilter('all') : undefined}
+              />
+            ) : (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                {posts.map((post) => (
+                  <PostCard
+                    key={post.id}
+                    post={post}
+                    currentUserId={user?.id}
+                    canInteract={!!user}
+                    onChanged={() => fetchPosts(0)}
+                    isAdmin={admin.isAdmin}
+                  />
+                ))}
+                {hasMore && (
+                  <button
+                    onClick={loadMore}
+                    disabled={loadingMore}
+                    style={{
+                      width: '100%',
+                      padding: '12px',
+                      borderRadius: 10,
+                      border: '1px solid var(--border)',
+                      background: 'var(--bg)',
+                      color: loadingMore ? 'var(--text-muted)' : 'var(--accent)',
+                      fontSize: 14,
+                      fontWeight: 600,
+                      cursor: loadingMore ? 'default' : 'pointer',
+                      fontFamily: 'inherit',
+                      marginTop: 4,
+                    }}
+                  >
+                    {loadingMore ? 'Loading…' : 'Load more posts'}
+                  </button>
+                )}
+              </div>
+            )}
+          </div>
         </div>
       </ErrorBoundary>
     </Layout>
