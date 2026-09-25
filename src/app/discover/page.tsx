@@ -42,24 +42,29 @@ import {
   type IncomingInterest,
 } from '@/lib/discovery'
 import SwipeDeck from '@/components/discovery/SwipeDeck'
+import DiscoveryBlogs from '@/components/discovery/DiscoveryBlogs'
+import DiscoveryPeople from '@/components/discovery/DiscoveryPeople'
 
-type Tab = 'foryou' | DiscoveryCategory
+type Tab = 'foryou' | DiscoveryCategory | 'blogs' | 'people'
 
-// Confessions no longer live here — their entry point moved to
-// Community → Confessions (the backend, anonymity and RPCs are unchanged).
+// Blogs and People surface the EXISTING blog/talent systems inside Discovery
+// (spec §6/§9/§17). Confessions moved to Community → Confessions (backend
+// unchanged). Category tabs filter the swipe queue; blogs/people render
+// their own linked surfaces.
 const TABS: { key: Tab; label: string }[] = [
   { key: 'foryou', label: 'For You' },
   { key: 'startup', label: '🚀 Startups' },
   { key: 'project', label: '🛠 Projects' },
   { key: 'hackathon', label: '⚡ Hackathons' },
   { key: 'collab', label: '🤝 Collab' },
+  { key: 'blogs', label: '✍️ Blogs' },
+  { key: 'people', label: '👥 People' },
 ]
 
 const SECONDARY_LINKS = [
-  { label: 'Blogs', href: '/blog', icon: '✍️' },
   { label: 'Library', href: '/notes', icon: '📚' },
-  { label: 'Top Contributors', href: '/compete?tab=rankings', icon: '🏆' },
-  { label: 'People', href: '/talent', icon: '👥' },
+  { label: 'Top Contributors', href: '/leaderboard', icon: '🏆' },
+  { label: 'Confessions', href: '/community', icon: '🕵️' },
 ]
 
 const PAGE = 10
@@ -121,7 +126,9 @@ export default function DiscoverPage() {
   const loadingMoreRef = useRef(false)
   const loadedTabsRef = useRef<Set<string>>(new Set())
 
-  const category: DiscoveryCategory | null = tab === 'foryou' ? null : (tab as DiscoveryCategory)
+  // Blogs/People tabs are linked surfaces, not swipe-queue filters.
+  const isQueueTab = tab !== 'blogs' && tab !== 'people'
+  const category: DiscoveryCategory | null = !isQueueTab || tab === 'foryou' ? null : (tab as DiscoveryCategory)
 
   const loadQueue = useCallback(
     async (opts: { fresh?: boolean; cursorCreated?: string | null; cursorId?: string | null } = {}) => {
@@ -143,14 +150,14 @@ export default function DiscoverPage() {
 
   // (Re)load when the tab changes; per-tab caching keeps swipes snappy.
   useEffect(() => {
-    if (!booted) return
+    if (!booted || !isQueueTab) return
     if (loadedTabsRef.current.has(tab)) {
       return
     }
     loadedTabsRef.current.add(tab)
     setLoading(true)
     loadQueue({ fresh: true }).finally(() => setLoading(false))
-  }, [tab, booted, user, loadQueue])
+  }, [tab, booted, user, loadQueue, isQueueTab])
 
   // Prefetch the next batch when the user reaches the 7th card (STEP 12).
   useEffect(() => {
@@ -408,7 +415,11 @@ export default function DiscoverPage() {
           </div>
 
           {/* Content — public-first: the queue is readable logged-out */}
-          {!booted ? (
+          {tab === 'blogs' ? (
+            <DiscoveryBlogs />
+          ) : tab === 'people' ? (
+            <DiscoveryPeople />
+          ) : !booted ? (
             <ListSkeleton count={2} />
           ) : loading ? (
             <ListSkeleton count={2} />

@@ -5,6 +5,7 @@ import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
 import Layout from '@/components/Layout'
 import Avatar from '@/components/Avatar'
+import RegionPicker, { type Scope } from '@/components/RegionPicker'
 
 type Tab = 'overall' | 'github' | 'leetcode' | 'karma'
 
@@ -34,10 +35,15 @@ export default function LeaderboardPage() {
   const [showUserDetail, setShowUserDetail] = useState<string | null>(null)
   const [hasMore, setHasMore] = useState(true)
   const [loadingMore, setLoadingMore] = useState(false)
+  // Leaderboard-only regional scope (spec §14): defaults to Global; regional
+  // scopes are opt-in via the selector and never affect any other surface.
+  const [scope, setScope] = useState<Scope>('global')
+  const [regionId, setRegionId] = useState<string | null>(null)
+  const [regionLabel, setRegionLabel] = useState<string>('')
   const router = useRouter()
   const supabase = createClient()
 
-  // ── Load enhanced leaderboard ────────────────────────────
+  // ── Load leaderboard (scope-aware) ────────────────────
   const loadLeaderboard = useCallback(async () => {
     setLoading(true)
     try {
@@ -48,6 +54,30 @@ export default function LeaderboardPage() {
         setUser(authUser)
         const { data: prof } = await supabase.from('profiles').select('*').eq('id', authUser.id).single()
         setProfile(prof)
+      }
+
+      // Regional scopes use the dedicated RPC; Global keeps the enhanced one.
+      if (scope !== 'global' && regionId) {
+        const { data: regionalData, error: regionalError } = await supabase.rpc('get_regional_leaderboard', {
+          p_scope: scope,
+          p_region_id: regionId,
+          p_limit: 50,
+        })
+        if (!regionalError && regionalData) {
+          setLeaders(
+            (regionalData as any[]).map((r) => ({
+              ...r,
+              github_repos: 0,
+              github_contributions: 0,
+              leetcode_solved: 0,
+              leetcode_rating: 0,
+              department: undefined,
+            }))
+          )
+          setHasMore(false)
+          setLoading(false)
+          return
+        }
       }
 
       const { data, error } = await supabase.rpc('get_enhanced_leaderboard', {
@@ -107,11 +137,11 @@ export default function LeaderboardPage() {
       )
     }
     setLoading(false)
-  }, [supabase, profile?.campus_id])
+  }, [supabase, profile?.campus_id, scope, regionId])
 
   useEffect(() => {
     loadLeaderboard()
-  }, [activeTab])
+  }, [activeTab, scope, regionId])
 
   const loadMore = async () => {
     setLoadingMore(true)
@@ -405,6 +435,75 @@ export default function LeaderboardPage() {
               })}
             </div>
           </div>
+        )}
+
+        {/* ── Region scope (spec §14-§16): leaderboard-only concept.
+            Default Global; College/City/State are optional scopes answered
+            by get_regional_leaderboard. Never a content filter. ── */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
+          <select
+            value={`${scope}:${regionId || ''}`}
+            onChange={(e) => {
+              const [s, r] = e.target.value.split(':')
+              setScope(s as Scope)
+              setRegionId(r || null)
+            }}
+            aria-label="Leaderboard scope"
+            style={{
+              minHeight: 38,
+              padding: '6px 12px',
+              borderRadius: 10,
+              border: '1px solid var(--border)',
+              background: 'var(--bg)',
+              color: 'var(--text-primary)',
+              fontSize: 13,
+              fontWeight: 600,
+              fontFamily: 'inherit',
+            }}
+          >
+            <option value="global:">🌍 Global</option>
+            {scope === 'college' || scope === 'city' || scope === 'state' ? (
+              <option value={`${scope}:${regionId || ''}`}>
+                {scope === 'college' ? '🎓' : scope === 'city' ? '🏙' : '🗺'} {regionLabel || scope}
+              </option>
+            ) : (
+              <>
+                <option value="college:">🎓 College…</option>
+                <option value="city:">🏙 City…</option>
+                <option value="state:">🗺 State…</option>
+              </>
+            )}
+          </select>
+          {scope !== 'global' && (
+            <button
+              onClick={() => {
+                setScope('global')
+                setRegionId(null)
+              }}
+              style={{
+                minHeight: 34,
+                padding: '5px 12px',
+                borderRadius: 9,
+                border: '1px solid var(--border)',
+                background: 'var(--bg)',
+                color: 'var(--text-muted)',
+                fontSize: 12,
+                cursor: 'pointer',
+                fontFamily: 'inherit',
+              }}
+            >
+              Reset
+            </button>
+          )}
+        </div>
+        {scope !== 'global' && !regionId && (
+          <RegionPicker
+            scope={scope}
+            onPick={(id, label) => {
+              setRegionId(id)
+              setRegionLabel(label)
+            }}
+          />
         )}
 
         {/* ── Tabs ────────────────────────────────────── */}

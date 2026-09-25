@@ -10,6 +10,7 @@ import { useAdminContext } from '@/lib/permissions'
 import { ListSkeleton } from '@/components/Skeleton'
 import EmptyState from '@/components/EmptyState'
 import ErrorBoundary from '@/components/ErrorBoundary'
+import HomeDashboard from '@/components/home/HomeDashboard'
 import { Icon } from '@/components/icons'
 import type { Post } from '@/types'
 
@@ -214,12 +215,18 @@ export default function FeedPage() {
           {/* Campus Pulse header */}
           <div style={{ marginBottom: 22 }}>
             <h2 style={{ fontSize: 26, fontWeight: 800, color: 'var(--text-primary)', margin: '0 0 4px' }}>
-              {mounted ? (firstName ? `${greeting()}, ${firstName} 👋` : greeting()) : 'Welcome 👋'}
+              {mounted && firstName ? `${greeting()}, ${firstName} 👋` : 'CampusConnect'}
             </h2>
             <p style={{ fontSize: 13.5, color: 'var(--text-muted)', margin: 0 }}>
-              Here&apos;s what&apos;s happening around your campus. For everything nationwide, open the 🌐 Global feed.
+              {mounted && firstName
+                ? "Here's what's happening on CampusConnect."
+                : "What's happening? Browse freely — sign in to join in."}
             </p>
           </div>
+
+          {/* HOME DASHBOARD — global, public strip (spec §3/§24): compact
+              previews with See-all links; no page duplication. */}
+          <HomeDashboard />
 
           {/* Pulse stats — real counts from the database, full grid (no scroll cut-off) */}
           <div className="stat-grid" style={{ marginBottom: 24 }}>
