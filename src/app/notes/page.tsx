@@ -296,25 +296,88 @@ export default function NotesPage() {
   return (
     <Layout user={user} profile={profile}>
       <ErrorBoundary pageName="notes">
-        <div style={{ maxWidth: 720, margin: '0 auto', padding: '28px 20px 40px' }}>
-          {/* Header */}
-          <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 18 }}>
-            <div>
-              <h2 style={{ fontSize: 24, fontWeight: 800, color: 'var(--text-primary)', margin: '0 0 4px' }}>
+        <div className="ambient" style={{ maxWidth: 1200, margin: '0 auto', padding: '22px 24px 48px' }}>
+          {/* Header strip — homepage SectionShell pattern */}
+          <div
+            style={{
+              background: 'var(--bg)',
+              border: '1px solid var(--border)',
+              borderRadius: 14,
+              boxShadow: 'var(--shadow-sm)',
+              padding: '14px 18px',
+              display: 'flex',
+              alignItems: 'center',
+              gap: 14,
+              flexWrap: 'wrap',
+              marginBottom: 16,
+            }}
+          >
+            <span
+              style={{
+                width: 42,
+                height: 42,
+                borderRadius: 12,
+                background: 'var(--accent-light)',
+                color: 'var(--accent-text)',
+                display: 'inline-flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                flexShrink: 0,
+              }}
+            >
+              <Icon name="notebook" size={20} />
+            </span>
+            <div style={{ minWidth: 0 }}>
+              <h2 style={{ fontSize: 19, fontWeight: 800, color: 'var(--text-primary)', margin: 0, lineHeight: 1.2 }}>
                 Library
               </h2>
-              <p style={{ fontSize: 13, color: 'var(--text-muted)', margin: 0 }}>
+              <p style={{ fontSize: 12, color: 'var(--text-muted)', margin: '2px 0 0' }}>
                 Books, notes, PYQs and resources — contributed by students everywhere
               </p>
+            </div>
+            <span style={{ flex: 1 }} />
+            <span style={{ display: 'flex', gap: 16 }}>
+              <span style={{ textAlign: 'center' }}>
+                <span
+                  style={{
+                    display: 'block',
+                    fontSize: 16,
+                    fontWeight: 800,
+                    color: 'var(--text-primary)',
+                    lineHeight: 1.15,
+                  }}
+                >
+                  {notes.length}
+                </span>
+                <span style={{ fontSize: 10, color: 'var(--text-muted)' }}>Resources</span>
+              </span>
+              {canVerify && notes.filter((n) => n.is_verified === false).length > 0 && (
+                <span style={{ textAlign: 'center' }}>
+                  <span
+                    style={{
+                      display: 'block',
+                      fontSize: 16,
+                      fontWeight: 800,
+                      color: 'var(--orange-text)',
+                      lineHeight: 1.15,
+                    }}
+                  >
+                    {notes.filter((n) => n.is_verified === false).length}
+                  </span>
+                  <span style={{ fontSize: 10, color: 'var(--text-muted)' }}>Pending</span>
+                </span>
+              )}
+            </span>
+            <div style={{ display: 'flex', gap: 8 }}>
               {canVerify && notes.filter((n) => n.is_verified === false).length > 0 && (
                 <button
                   onClick={() => setShowPendingOnly(!showPendingOnly)}
                   style={{
-                    marginTop: 6,
-                    padding: '4px 12px',
-                    borderRadius: 20,
+                    minHeight: 38,
+                    padding: '0 14px',
+                    borderRadius: 10,
                     fontSize: 12,
-                    fontWeight: 600,
+                    fontWeight: 700,
                     border: showPendingOnly ? 'none' : '1px solid var(--orange-text)',
                     background: showPendingOnly ? 'var(--orange-text)' : 'var(--orange-light)',
                     color: showPendingOnly ? '#fff' : 'var(--orange-text)',
@@ -322,11 +385,9 @@ export default function NotesPage() {
                     fontFamily: 'inherit',
                   }}
                 >
-                  ⏳ {notes.filter((n) => n.is_verified === false).length} Pending Review
+                  ⏳ Pending Review
                 </button>
               )}
-            </div>
-            <div style={{ display: 'flex', gap: 8 }}>
               {canSubmitLink && (
                 <button
                   onClick={() => {
@@ -334,13 +395,14 @@ export default function NotesPage() {
                     setForm((f) => ({ ...f, resource_type: 'notes' }))
                   }}
                   style={{
-                    background: 'var(--bg)',
-                    color: 'var(--text-secondary)',
-                    border: '1px solid var(--border)',
-                    padding: '9px 18px',
-                    borderRadius: 'var(--radius-sm)',
-                    fontSize: 14,
-                    fontWeight: 600,
+                    background: 'var(--accent)',
+                    color: 'var(--on-accent)',
+                    border: 'none',
+                    minHeight: 38,
+                    padding: '0 16px',
+                    borderRadius: 10,
+                    fontSize: 12.5,
+                    fontWeight: 700,
                     cursor: 'pointer',
                     fontFamily: 'inherit',
                   }}

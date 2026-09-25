@@ -420,11 +420,62 @@ export default function DiscoverPage() {
   return (
     <Layout user={user} profile={profile}>
       <ErrorBoundary pageName="discover">
-        <div style={{ maxWidth: 720, margin: '0 auto', padding: '20px 16px 96px' }}>
-          {/* Header */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 2 }}>
-            <h2 style={{ fontSize: 24, fontWeight: 800, color: 'var(--text-primary)', margin: 0 }}>Discover</h2>
-            <div style={{ flex: 1 }} />
+        <div className="ambient" style={{ maxWidth: 1200, margin: '0 auto', padding: '22px 24px 96px' }}>
+          {/* Header strip — homepage SectionShell pattern, full width */}
+          <div
+            style={{
+              background: 'var(--bg)',
+              border: '1px solid var(--border)',
+              borderRadius: 14,
+              boxShadow: 'var(--shadow-sm)',
+              padding: '14px 18px',
+              display: 'flex',
+              alignItems: 'center',
+              gap: 14,
+              flexWrap: 'wrap',
+              marginBottom: 16,
+            }}
+          >
+            <span
+              style={{
+                width: 42,
+                height: 42,
+                borderRadius: 12,
+                background: 'var(--accent-light)',
+                color: 'var(--accent-text)',
+                display: 'inline-flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                flexShrink: 0,
+              }}
+            >
+              <Icon name="flame" size={20} />
+            </span>
+            <div style={{ minWidth: 0 }}>
+              <h2 style={{ fontSize: 19, fontWeight: 800, color: 'var(--text-primary)', margin: 0, lineHeight: 1.2 }}>
+                Discover
+              </h2>
+              <p style={{ fontSize: 12, color: 'var(--text-muted)', margin: '2px 0 0' }}>
+                Find ideas worth building and people worth building with.
+              </p>
+            </div>
+            <span style={{ flex: 1 }} />
+            {user && inbox.length > 0 && (
+              <span style={{ textAlign: 'center' }}>
+                <span
+                  style={{
+                    display: 'block',
+                    fontSize: 16,
+                    fontWeight: 800,
+                    color: 'var(--danger-text)',
+                    lineHeight: 1.15,
+                  }}
+                >
+                  {inbox.length}
+                </span>
+                <span style={{ fontSize: 10, color: 'var(--text-muted)' }}>Interests</span>
+              </span>
+            )}
             {user && (
               <>
                 <button
@@ -433,13 +484,13 @@ export default function DiscoverPage() {
                   style={{
                     position: 'relative',
                     minHeight: 38,
-                    padding: '6px 12px',
+                    padding: '0 14px',
                     borderRadius: 10,
                     border: '1px solid var(--border)',
                     background: 'var(--bg)',
                     color: 'var(--text-secondary)',
-                    fontSize: 13,
-                    fontWeight: 600,
+                    fontSize: 12.5,
+                    fontWeight: 700,
                     cursor: 'pointer',
                     fontFamily: 'inherit',
                   }}
@@ -472,12 +523,12 @@ export default function DiscoverPage() {
                   onClick={() => setShowCreate(true)}
                   style={{
                     minHeight: 38,
-                    padding: '6px 14px',
+                    padding: '0 16px',
                     borderRadius: 10,
                     border: 'none',
                     background: 'var(--accent)',
                     color: 'var(--on-accent)',
-                    fontSize: 13,
+                    fontSize: 12.5,
                     fontWeight: 700,
                     cursor: 'pointer',
                     fontFamily: 'inherit',
@@ -488,185 +539,183 @@ export default function DiscoverPage() {
               </>
             )}
           </div>
-          <p style={{ fontSize: 13, color: 'var(--text-muted)', margin: '0 0 14px' }}>
-            Find ideas worth building and people worth building with.
-          </p>
-
-          {/* HUB — Discovery landing (spec): every card opens a real,
+          <div style={{ maxWidth: 900, margin: '0 auto' }}>
+            {/* HUB — Discovery landing (spec): every card opens a real,
               existing feature. The deck/tabs remain one click away. Cards
               mirror the Community hub (colored tile + chevron). */}
-          {view === 'hub' ? (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-              {HUB_ITEMS.map((item) => {
-                const open = () => {
-                  // Preload the deck payload the instant a card is tapped —
-                  // the deck view then renders with data already in hand.
-                  if (item.key !== 'blogs' && item.key !== 'people' && !loadedTabsRef.current.has(item.key)) {
-                    loadedTabsRef.current.add(item.key)
-                    reqTabRef.current = item.key
-                    setLoading(true)
-                    fetchDiscoveryFeed({
-                      category: item.key === 'foryou' ? 'all' : item.key,
-                      limit: PAGE,
-                      cursorCreated: null,
-                      cursorId: null,
-                    })
-                      .then((res) => {
-                        if (reqTabRef.current !== item.key) return
-                        if (res.error) {
-                          setError(res.error)
-                          return
-                        }
-                        setError(null)
-                        setCards(res.cards)
+            {view === 'hub' ? (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                {HUB_ITEMS.map((item) => {
+                  const open = () => {
+                    // Preload the deck payload the instant a card is tapped —
+                    // the deck view then renders with data already in hand.
+                    if (item.key !== 'blogs' && item.key !== 'people' && !loadedTabsRef.current.has(item.key)) {
+                      loadedTabsRef.current.add(item.key)
+                      reqTabRef.current = item.key
+                      setLoading(true)
+                      fetchDiscoveryFeed({
+                        category: item.key === 'foryou' ? 'all' : item.key,
+                        limit: PAGE,
+                        cursorCreated: null,
+                        cursorId: null,
                       })
-                      .finally(() => {
-                        if (reqTabRef.current === item.key) setLoading(false)
-                      })
+                        .then((res) => {
+                          if (reqTabRef.current !== item.key) return
+                          if (res.error) {
+                            setError(res.error)
+                            return
+                          }
+                          setError(null)
+                          setCards(res.cards)
+                        })
+                        .finally(() => {
+                          if (reqTabRef.current === item.key) setLoading(false)
+                        })
+                    }
+                    setTab(item.key)
+                    setView('deck')
+                    window.scrollTo({ top: 0 })
                   }
-                  setTab(item.key)
-                  setView('deck')
-                  window.scrollTo({ top: 0 })
-                }
-                return (
-                  <button
-                    key={item.key}
-                    onClick={open}
-                    style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: 12,
-                      background: 'var(--bg)',
-                      border: '1px solid var(--border)',
-                      borderRadius: 14,
-                      padding: 14,
-                      cursor: 'pointer',
-                      width: '100%',
-                      textAlign: 'left',
-                      fontFamily: 'inherit',
-                      boxShadow: 'var(--shadow-sm)',
-                    }}
-                  >
-                    <span
+                  return (
+                    <button
+                      key={item.key}
+                      onClick={open}
                       style={{
-                        width: 42,
-                        height: 42,
-                        borderRadius: 12,
-                        background: item.accent,
-                        color: item.accentText,
-                        display: 'inline-flex',
+                        display: 'flex',
                         alignItems: 'center',
-                        justifyContent: 'center',
-                        fontSize: 19,
-                        flexShrink: 0,
+                        gap: 12,
+                        background: 'var(--bg)',
+                        border: '1px solid var(--border)',
+                        borderRadius: 14,
+                        padding: 14,
+                        cursor: 'pointer',
+                        width: '100%',
+                        textAlign: 'left',
+                        fontFamily: 'inherit',
+                        boxShadow: 'var(--shadow-sm)',
                       }}
                     >
-                      {item.icon}
-                    </span>
-                    <span style={{ flex: 1, minWidth: 0 }}>
-                      <span style={{ display: 'block', fontSize: 15, fontWeight: 700, color: 'var(--text-primary)' }}>
-                        {item.title}
+                      <span
+                        style={{
+                          width: 42,
+                          height: 42,
+                          borderRadius: 12,
+                          background: item.accent,
+                          color: item.accentText,
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          fontSize: 19,
+                          flexShrink: 0,
+                        }}
+                      >
+                        {item.icon}
                       </span>
-                      <span style={{ display: 'block', fontSize: 12.5, color: 'var(--text-muted)', marginTop: 2 }}>
-                        {item.desc}
+                      <span style={{ flex: 1, minWidth: 0 }}>
+                        <span style={{ display: 'block', fontSize: 15, fontWeight: 700, color: 'var(--text-primary)' }}>
+                          {item.title}
+                        </span>
+                        <span style={{ display: 'block', fontSize: 12.5, color: 'var(--text-muted)', marginTop: 2 }}>
+                          {item.desc}
+                        </span>
                       </span>
-                    </span>
-                    <Icon name="chevron" size={16} />
-                  </button>
-                )
-              })}
-            </div>
-          ) : (
-            <>
-              {/* Tabs (deck view) — with a way back to the hub */}
-              <div style={{ display: 'flex', gap: 7, flexWrap: 'wrap', marginBottom: 16 }}>
-                <button
-                  onClick={() => {
-                    setView('hub')
-                    window.scrollTo({ top: 0 })
-                  }}
-                  style={{
-                    minHeight: 36,
-                    padding: '6px 13px',
-                    borderRadius: 18,
-                    border: '1px solid var(--border)',
-                    background: 'var(--bg-secondary)',
-                    color: 'var(--text-secondary)',
-                    fontSize: 13,
-                    fontWeight: 600,
-                    cursor: 'pointer',
-                    fontFamily: 'inherit',
-                  }}
-                >
-                  ← All Discovery
-                </button>
-                {TABS.map((t) => (
+                      <Icon name="chevron" size={16} />
+                    </button>
+                  )
+                })}
+              </div>
+            ) : (
+              <>
+                {/* Tabs (deck view) — with a way back to the hub */}
+                <div style={{ display: 'flex', gap: 7, flexWrap: 'wrap', marginBottom: 16 }}>
                   <button
-                    key={t.key}
-                    onClick={() => setTab(t.key)}
+                    onClick={() => {
+                      setView('hub')
+                      window.scrollTo({ top: 0 })
+                    }}
                     style={{
                       minHeight: 36,
                       padding: '6px 13px',
                       borderRadius: 18,
-                      border: tab === t.key ? 'none' : '1px solid var(--border)',
-                      background: tab === t.key ? 'var(--accent)' : 'var(--bg)',
-                      color: tab === t.key ? 'var(--on-accent)' : 'var(--text-secondary)',
+                      border: '1px solid var(--border)',
+                      background: 'var(--bg-secondary)',
+                      color: 'var(--text-secondary)',
                       fontSize: 13,
                       fontWeight: 600,
                       cursor: 'pointer',
                       fontFamily: 'inherit',
                     }}
                   >
-                    {t.label}
+                    ← All Discovery
                   </button>
-                ))}
-              </div>
+                  {TABS.map((t) => (
+                    <button
+                      key={t.key}
+                      onClick={() => setTab(t.key)}
+                      style={{
+                        minHeight: 36,
+                        padding: '6px 13px',
+                        borderRadius: 18,
+                        border: tab === t.key ? 'none' : '1px solid var(--border)',
+                        background: tab === t.key ? 'var(--accent)' : 'var(--bg)',
+                        color: tab === t.key ? 'var(--on-accent)' : 'var(--text-secondary)',
+                        fontSize: 13,
+                        fontWeight: 600,
+                        cursor: 'pointer',
+                        fontFamily: 'inherit',
+                      }}
+                    >
+                      {t.label}
+                    </button>
+                  ))}
+                </div>
 
-              {/* (Shortcut pills removed — spec: Discovery shows discoverable
+                {/* (Shortcut pills removed — spec: Discovery shows discoverable
               content, not a links dashboard. Blogs/People are tabs above;
               Confessions live in Community; Library and Leaderboard have
               their own pillars.) */}
 
-              {/* Content — public-first: the queue is readable logged-out.
+                {/* Content — public-first: the queue is readable logged-out.
                   Queue tabs render the BLUEPRINT BOARD (featured banner +
                   orange pills + idea grid); Blogs/People keep their surfaces.
                   The classic SwipeDeck stays one toggle away inside the board. */}
-              {tab === 'blogs' ? (
-                <DiscoveryBlogs />
-              ) : tab === 'people' ? (
-                <DiscoveryPeople />
-              ) : !booted || loading ? (
-                <ListSkeleton count={2} />
-              ) : error ? (
-                <EmptyState
-                  icon="⚠️"
-                  title="Could not load ideas"
-                  body={error}
-                  cta="Retry"
-                  onCta={() => {
-                    setLoading(true)
-                    loadQueue({ fresh: true }).finally(() => setLoading(false))
-                  }}
-                />
-              ) : (
-                <DiscoverBoard
-                  tab={tab === 'foryou' ? 'startup' : (tab as 'startup' | 'project' | 'hackathon' | 'collab')}
-                  onTabChange={(t) => setTab(t)}
-                  cards={cards}
-                  loading={loading}
-                  error={error}
-                  busy={busy}
-                  onAction={handleAction}
-                  onRetry={() => {
-                    setLoading(true)
-                    loadQueue({ fresh: true }).finally(() => setLoading(false))
-                  }}
-                  signedIn={!!user}
-                  onCreate={() => (user ? setShowCreate(true) : router.push('/auth/login?redirect=/discover'))}
-                />
-              )}
-            </>
-          )}
+                {tab === 'blogs' ? (
+                  <DiscoveryBlogs />
+                ) : tab === 'people' ? (
+                  <DiscoveryPeople />
+                ) : !booted || loading ? (
+                  <ListSkeleton count={2} />
+                ) : error ? (
+                  <EmptyState
+                    icon="⚠️"
+                    title="Could not load ideas"
+                    body={error}
+                    cta="Retry"
+                    onCta={() => {
+                      setLoading(true)
+                      loadQueue({ fresh: true }).finally(() => setLoading(false))
+                    }}
+                  />
+                ) : (
+                  <DiscoverBoard
+                    tab={tab === 'foryou' ? 'startup' : (tab as 'startup' | 'project' | 'hackathon' | 'collab')}
+                    onTabChange={(t) => setTab(t)}
+                    cards={cards}
+                    loading={loading}
+                    error={error}
+                    busy={busy}
+                    onAction={handleAction}
+                    onRetry={() => {
+                      setLoading(true)
+                      loadQueue({ fresh: true }).finally(() => setLoading(false))
+                    }}
+                    signedIn={!!user}
+                    onCreate={() => (user ? setShowCreate(true) : router.push('/auth/login?redirect=/discover'))}
+                  />
+                )}
+              </>
+            )}
+          </div>
         </div>
 
         {/* Create idea sheet (STEP 11) */}

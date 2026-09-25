@@ -124,129 +124,184 @@ export default function CommunityHubPage() {
 
   return (
     <Layout user={user} profile={profile}>
-      {/* Confessions surface — full experience opens in place (spec: Community → Confessions) */}
-      {showConfessions ? (
-        <div style={{ maxWidth: 720, margin: '0 auto', padding: '20px 16px 96px' }}>
-          <button
-            onClick={() => setShowConfessions(false)}
-            style={{
-              fontSize: 13,
-              color: 'var(--text-muted)',
-              textDecoration: 'none',
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: 6,
-              background: 'none',
-              border: 'none',
-              cursor: 'pointer',
-              fontFamily: 'inherit',
-              padding: 0,
-              marginBottom: 14,
-            }}
-          >
-            ← Community
-          </button>
-          <h2 style={{ fontSize: 24, fontWeight: 800, color: 'var(--text-primary)', margin: '0 0 2px' }}>
-            Confessions
-          </h2>
-          <p style={{ fontSize: 13, color: 'var(--text-muted)', margin: '0 0 18px' }}>
-            Anonymous by design — read freely, sign in to react or post.
-          </p>
-          <ConfessionsTab userId={user?.id ?? null} />
-        </div>
-      ) : (
-        <div style={{ maxWidth: 720, margin: '0 auto', padding: '20px 16px 96px' }}>
-          <h2 style={{ fontSize: 24, fontWeight: 800, color: 'var(--text-primary)', margin: '0 0 2px' }}>Community</h2>
-          <p style={{ fontSize: 13, color: 'var(--text-muted)', margin: '0 0 18px' }}>
-            Everything social — communities, confessions, chat, compete and live voice.
-          </p>
-
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-            {HUB_ITEMS.map((item) => {
-              const inner = (
-                <>
-                  <span
-                    style={{
-                      width: 42,
-                      height: 42,
-                      borderRadius: 12,
-                      background: item.accent,
-                      color: item.accentText,
-                      display: 'inline-flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      flexShrink: 0,
-                    }}
-                  >
-                    <Icon name={item.icon} size={20} />
-                  </span>
-                  <span style={{ flex: 1, minWidth: 0 }}>
-                    <span
-                      style={{
-                        display: 'block',
-                        fontSize: 15,
-                        fontWeight: 700,
-                        color: 'var(--text-primary)',
-                      }}
-                    >
-                      {item.title}
-                    </span>
-                    <span
-                      style={{
-                        display: 'block',
-                        fontSize: 12.5,
-                        color: 'var(--text-muted)',
-                        marginTop: 2,
-                      }}
-                    >
-                      {item.desc}
-                    </span>
-                  </span>
-                  <Icon name="chevron" size={16} />
-                </>
-              )
-              const wrapperStyle: React.CSSProperties = {
-                display: 'flex',
+      <div className="ambient" style={{ maxWidth: 1200, margin: '0 auto', padding: '22px 24px 96px' }}>
+        {/* Confessions surface — full experience opens in place (spec: Community → Confessions) */}
+        {showConfessions ? (
+          <div style={{ maxWidth: 720, margin: '0 auto' }}>
+            <button
+              onClick={() => setShowConfessions(false)}
+              style={{
+                fontSize: 13,
+                color: 'var(--text-muted)',
+                textDecoration: 'none',
+                display: 'inline-flex',
                 alignItems: 'center',
-                gap: 12,
+                gap: 6,
+                background: 'none',
+                border: 'none',
+                cursor: 'pointer',
+                fontFamily: 'inherit',
+                padding: 0,
+                marginBottom: 14,
+              }}
+            >
+              ← Community
+            </button>
+            <h2 style={{ fontSize: 24, fontWeight: 800, color: 'var(--text-primary)', margin: '0 0 2px' }}>
+              Confessions
+            </h2>
+            <p style={{ fontSize: 13, color: 'var(--text-muted)', margin: '0 0 18px' }}>
+              Anonymous by design — read freely, sign in to react or post.
+            </p>
+            <ConfessionsTab userId={user?.id ?? null} />
+          </div>
+        ) : (
+          <>
+            {/* Header strip — homepage SectionShell pattern (icon tile + title,
+              actions right); hub cards below in the wide equal grid. */}
+            <div
+              style={{
                 background: 'var(--bg)',
                 border: '1px solid var(--border)',
                 borderRadius: 14,
-                padding: 14,
-                cursor: 'pointer',
-                width: '100%',
-                textAlign: 'left',
-                fontFamily: 'inherit',
-                textDecoration: 'none',
-              }
-              // Client-side navigation (NOT <a href>, which forces a full
-              // page reload — the #1 speed killer). Hover prefetch makes the
-              // target page render instantly.
-              const href = item.href
-              return href ? (
-                <button
-                  key={item.key}
-                  onClick={() => router.push(href)}
-                  onMouseEnter={() => {
-                    try {
-                      router.prefetch(href)
-                    } catch {
-                      /* ignore */
-                    }
-                  }}
-                  style={wrapperStyle}
-                >
-                  {inner}
-                </button>
-              ) : (
-                <button key={item.key} onClick={() => setShowConfessions(true)} style={wrapperStyle}>
-                  {inner}
-                </button>
-              )
-            })}
-          </div>
-        </div>
-      )}
+                boxShadow: 'var(--shadow-sm)',
+                padding: '14px 18px',
+                display: 'flex',
+                alignItems: 'center',
+                gap: 14,
+                flexWrap: 'wrap',
+                marginBottom: 16,
+              }}
+            >
+              <span
+                style={{
+                  width: 42,
+                  height: 42,
+                  borderRadius: 12,
+                  background: 'var(--accent-light)',
+                  color: 'var(--accent-text)',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  flexShrink: 0,
+                }}
+              >
+                <Icon name="users" size={20} />
+              </span>
+              <div style={{ minWidth: 0 }}>
+                <h2 style={{ fontSize: 19, fontWeight: 800, color: 'var(--text-primary)', margin: 0, lineHeight: 1.2 }}>
+                  Community
+                </h2>
+                <p style={{ fontSize: 12, color: 'var(--text-muted)', margin: '2px 0 0' }}>
+                  Everything social — communities, confessions, chat, compete and live voice.
+                </p>
+              </div>
+              <span style={{ flex: 1 }} />
+              <span style={{ display: 'flex', gap: 16 }}>
+                <span style={{ textAlign: 'center' }}>
+                  <span
+                    style={{
+                      display: 'block',
+                      fontSize: 16,
+                      fontWeight: 800,
+                      color: 'var(--text-primary)',
+                      lineHeight: 1.15,
+                    }}
+                  >
+                    {HUB_ITEMS.length}
+                  </span>
+                  <span style={{ fontSize: 10, color: 'var(--text-muted)' }}>Sections</span>
+                </span>
+              </span>
+            </div>
+
+            <div className="section-grid" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))' }}>
+              {HUB_ITEMS.map((item) => {
+                const inner = (
+                  <>
+                    <span
+                      style={{
+                        width: 42,
+                        height: 42,
+                        borderRadius: 12,
+                        background: item.accent,
+                        color: item.accentText,
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        flexShrink: 0,
+                      }}
+                    >
+                      <Icon name={item.icon} size={20} />
+                    </span>
+                    <span style={{ flex: 1, minWidth: 0 }}>
+                      <span
+                        style={{
+                          display: 'block',
+                          fontSize: 15,
+                          fontWeight: 700,
+                          color: 'var(--text-primary)',
+                        }}
+                      >
+                        {item.title}
+                      </span>
+                      <span
+                        style={{
+                          display: 'block',
+                          fontSize: 12.5,
+                          color: 'var(--text-muted)',
+                          marginTop: 2,
+                        }}
+                      >
+                        {item.desc}
+                      </span>
+                    </span>
+                    <Icon name="chevron" size={16} />
+                  </>
+                )
+                const wrapperStyle: React.CSSProperties = {
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 12,
+                  background: 'var(--bg)',
+                  border: '1px solid var(--border)',
+                  borderRadius: 14,
+                  padding: 14,
+                  cursor: 'pointer',
+                  width: '100%',
+                  textAlign: 'left',
+                  fontFamily: 'inherit',
+                  textDecoration: 'none',
+                }
+                // Client-side navigation (NOT <a href>, which forces a full
+                // page reload — the #1 speed killer). Hover prefetch makes the
+                // target page render instantly.
+                const href = item.href
+                return href ? (
+                  <button
+                    key={item.key}
+                    onClick={() => router.push(href)}
+                    onMouseEnter={() => {
+                      try {
+                        router.prefetch(href)
+                      } catch {
+                        /* ignore */
+                      }
+                    }}
+                    style={wrapperStyle}
+                  >
+                    {inner}
+                  </button>
+                ) : (
+                  <button key={item.key} onClick={() => setShowConfessions(true)} style={wrapperStyle}>
+                    {inner}
+                  </button>
+                )
+              })}
+            </div>
+          </>
+        )}
+      </div>
     </Layout>
   )
 }
