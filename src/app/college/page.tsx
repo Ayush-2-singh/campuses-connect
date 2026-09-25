@@ -18,7 +18,6 @@ const SECTIONS = [
   { icon: '❓', label: 'Ask a Senior', href: '/ask' },
   { icon: '📊', label: 'Campus Polls', href: '/polls' },
   { icon: '⏰', label: 'Reminders', href: '/reminders' },
-  { icon: '🔍', label: 'Lost & Found', href: '/lost-found' },
 ]
 
 export default function CollegePage() {

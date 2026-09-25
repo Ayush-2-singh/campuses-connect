@@ -79,7 +79,12 @@ export default function CommunityPage() {
         const { data: prof } = await supabase.from('profiles').select('*').eq('id', user.id).single()
         setProfile(prof)
       }
-      const { data: comm } = await supabase.from('communities').select('*').eq('key', slug).single()
+      const { data: comm } = await supabase
+        .from('communities')
+        .select('*')
+        .eq('key', slug)
+        .eq('is_active', true)
+        .single()
       if (!comm) {
         router.push('/communities')
         return

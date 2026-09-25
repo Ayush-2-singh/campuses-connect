@@ -94,14 +94,21 @@ export default function PostComposer({
     const supabase = createClient()
 
     // 1. AI Admin Copilot pre-check — Gemini never blocks; on failure we allow.
+    // Bounded by a 6s timeout: the check is advisory (fail-open), so a hung
+    // Gemini call must never hold the Post button forever — that hang is what
+    // made "post creation not working" for some users. Aborted → post as-is.
     let flagged = false
     let aiVerdict: any = null
     try {
+      const ctrl = new AbortController()
+      const timer = setTimeout(() => ctrl.abort(), 6000)
       const res = await fetch('/api/admin/copilot/check', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ text: body.trim(), contentType: current.category_key }),
+        signal: ctrl.signal,
       })
+      clearTimeout(timer)
       if (res.ok) {
         const data = await res.json()
         flagged = !!data.verdict?.flagged

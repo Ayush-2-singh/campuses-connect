@@ -34,7 +34,7 @@ export default function FeedPage() {
   const [user, setUser] = useState<any>(null)
   const [profile, setProfile] = useState<any>(null)
   const [posts, setPosts] = useState<Post[]>([])
-  const [filter, setFilter] = useState('all')
+  const [filter, setFilter] = useState('announcement')
   const [loading, setLoading] = useState(true)
   const [pulse, setPulse] = useState<{ opportunities: number; notes: number; discussions: number; hackathons: number }>(
     { opportunities: 0, notes: 0, discussions: 0, hackathons: 0 }
@@ -59,7 +59,11 @@ export default function FeedPage() {
         .select(
           `*, profiles!posts_author_id_fkey(full_name, username, is_verified), content_categories${inner}(key, label)`
         )
-        .in('scope', ['campus', 'college_network'])
+        // Global posts belong here too: students without a campus can ONLY post
+        // globally (the composer defaults them to it), so excluding 'global'
+        // made every post they wrote invisible on the home feed while the pulse
+        // count — which counts all published posts — kept rising.
+        .in('scope', ['campus', 'college_network', 'global'])
         .order('is_pinned', { ascending: false })
         .order('created_at', { ascending: false })
         .range(offset, offset + PAGE_SIZE - 1)
@@ -264,7 +268,10 @@ export default function FeedPage() {
             <PostComposer
               userId={user.id}
               profile={profile}
-              onPosted={fetchPosts}
+              onPosted={() => {
+                fetchPosts(0)
+                fetchPulseData().then(setPulse)
+              }}
               context={{
                 campusId: profile?.campus_id,
                 collegeId: profile?.college_id,

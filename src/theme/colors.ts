@@ -73,8 +73,6 @@ export const ACCENT_BY_ROUTE: Record<string, AccentName> = {
   '/compete': 'green',
   '/opportunities': 'cyan',
   '/polls': 'cyan',
-  '/lost-found': 'cyan',
-  '/travel': 'cyan',
 
   '/notes': 'purple',
   '/brain': 'purple',
@@ -88,8 +86,6 @@ export const ACCENT_BY_ROUTE: Record<string, AccentName> = {
 
 /** Resolve the accent for a path (falls back to the brand gold). */
 export function accentForPath(pathname: string): AccentName {
-  const match = Object.keys(ACCENT_BY_ROUTE).find(
-    (route) => pathname === route || pathname.startsWith(route + '/')
-  )
+  const match = Object.keys(ACCENT_BY_ROUTE).find((route) => pathname === route || pathname.startsWith(route + '/'))
   return match ? ACCENT_BY_ROUTE[match] : 'gold'
 }

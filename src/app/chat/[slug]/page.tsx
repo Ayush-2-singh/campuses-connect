@@ -69,6 +69,7 @@ interface Community {
   name: string
   icon: string | null
   tagline: string | null
+  is_active: boolean
   chat_enabled: boolean
 }
 
@@ -161,7 +162,7 @@ export default function ChatRoomPage() {
     supabase
       .from('notes')
       .select(
-        'id, title, resource_type, author, external_file_url, drive_link, external_link, profiles(full_name, username)'
+        'id, title, resource_type, author, external_file_url, drive_link, external_link, profiles!notes_uploaded_by_fkey(full_name, username)'
       )
       .eq('id', id)
       .maybeSingle()
@@ -221,7 +222,7 @@ export default function ChatRoomPage() {
 
     const { data: comm, error: commErr } = await supabase
       .from('communities')
-      .select('id, key, name, icon, tagline, chat_enabled')
+      .select('id, key, name, icon, tagline, is_active, chat_enabled')
       .eq('key', slug)
       .maybeSingle()
 
@@ -231,6 +232,12 @@ export default function ChatRoomPage() {
       return
     }
     if (!comm) {
+      setNotFound(true)
+      setLoading(false)
+      return
+    }
+    // Archived/inactive rooms are unreachable by URL, not merely hidden.
+    if (!comm.is_active) {
       setNotFound(true)
       setLoading(false)
       return

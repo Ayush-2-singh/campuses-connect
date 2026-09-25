@@ -165,7 +165,11 @@ export default function PostCard({
         .delete()
         .eq('post_id', post.id)
         .eq('profile_id', currentUserId)
-      if (error) return
+      if (error) {
+        console.error('[post] unlike failed:', error.message)
+        toast('Could not remove your like. Try again.', { tone: 'danger' })
+        return
+      }
       setLiked(false)
       setLikeCount((c) => Math.max(0, c - 1))
       haptic.tap()
@@ -173,7 +177,19 @@ export default function PostCard({
       const { error } = await supabase
         .from('post_reactions')
         .upsert({ post_id: post.id, profile_id: currentUserId, reaction: 'like' }, { onConflict: 'post_id,profile_id' })
-      if (error) return
+      if (error) {
+        // Silent failure here is why likes sometimes appeared to "not increase":
+        // the optimistic UI said nothing while the insert was rejected (RLS,
+        // expired session…). Surface it and re-sync the real count.
+        console.error('[post] like failed:', error.message)
+        toast('Could not like right now. Try again.', { tone: 'danger' })
+        const { count } = await supabase
+          .from('post_reactions')
+          .select('id', { count: 'exact', head: true })
+          .eq('post_id', post.id)
+        setLikeCount(count || 0)
+        return
+      }
       setLiked(true)
       setLikeCount((c) => c + 1)
       haptic.medium()
@@ -333,13 +349,23 @@ export default function PostCard({
         return
       }
     } else {
-      const { error } = await supabase
+      // Author deleting their own post: a soft-delete via status update.
+      // The UPDATE runs under posts_update RLS, which requires author_id =
+      // auth.uid() — a silently expired session matches 0 rows and reports
+      // NO error, which read as "delete does nothing". select() forces the
+      // affected row back so a 0-row result can be detected and reported.
+      const { data, error } = await supabase
         .from('posts')
         .update({ status: 'removed' })
         .eq('id', post.id)
         .eq('author_id', currentUserId)
+        .select('id')
       if (error) {
         setDeleteError(error.message || 'Could not delete this post.')
+        return
+      }
+      if (!data || data.length === 0) {
+        setDeleteError('Could not delete this post — your session may have expired. Sign in again and retry.')
         return
       }
     }

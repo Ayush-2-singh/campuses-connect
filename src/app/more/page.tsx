@@ -26,8 +26,6 @@ const SECTIONS = [
   { icon: '📊', label: 'Campus Polls', desc: 'Vote on what matters — live results', href: '/polls' },
   { icon: '🌐', label: 'Global Communities', desc: 'DSA, Web Development & Startups', href: '/communities' },
   { icon: '🔖', label: 'Saved', desc: 'Posts you bookmarked', href: '/saved' },
-  { icon: '🔍', label: 'Lost & Found', desc: 'Report lost items or return found ones', href: '/lost-found' },
-  { icon: '🚂', label: 'Travel Buddies', desc: 'Find campus mates on the same route', href: '/travel' },
   {
     icon: '🏫',
     label: 'Change Campus',
