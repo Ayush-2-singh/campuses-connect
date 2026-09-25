@@ -1,11 +1,15 @@
-import { redirect } from 'next/navigation'
+import FeedView from '@/components/feed/FeedView'
 
 /**
- * The root route now opens directly into the product (spec §2): no
- * marketing/intro wall before the real Home experience. The old landing
- * page stays available at /about — reachable from the footer/help — so the
- * "What is CampusConnect?" explanation isn't lost, it's just not the gate.
+ * `/` — the default homepage.
+ *
+ * Renders the SAME Feed UI as `/feed` (spec: the product IS the homepage —
+ * no marketing wall, no redirect). Opening connecttocampus.com shows the
+ * Feed while the address bar stays clean at `/`.
+ *
+ * Both routes share the single FeedView component, so auth, layout and
+ * behavior are identical; there is no redirect and no duplicated code.
  */
-export default function RootPage() {
-  redirect('/feed')
+export default function Home() {
+  return <FeedView />
 }

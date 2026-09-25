@@ -17,12 +17,20 @@ import { accentForPath } from '@/theme/colors'
 // its code on every page navigation.
 const CommandPalette = dynamic(() => import('@/components/CommandPalette'), { ssr: false })
 
-// Final desktop IA: five pillars, with Community (and Classroom-inside-
-// Library) expandable so secondary features live under their pillar instead
-// of crowding the sidebar. Mirrors the mobile bar in mobileNav.ts.
-const NAV_ITEMS = [
-  { label: 'Home', href: '/feed', icon: 'home' },
-  { label: 'Discovery', href: '/discover', icon: 'flame' },
+// Final desktop IA: five pillars, with Discovery/Community (and Classroom-
+// inside-Library) expandable so secondary features live under their pillar
+// instead of crowding the sidebar. Mirrors the mobile bar in mobileNav.ts.
+const NAV_ITEMS = [{ label: 'Home', href: '/feed', icon: 'home' }]
+
+// Discovery pillar children — the hub's surfaces, one tap deeper.
+const DISCOVERY_CHILDREN = [
+  { label: 'For You', href: '/discover?tab=foryou', icon: 'flame' },
+  { label: 'Startups & Ideas', href: '/discover?tab=startup', icon: 'flame' },
+  { label: 'Projects', href: '/discover?tab=project', icon: 'flame' },
+  { label: 'Hackathons', href: '/discover?tab=hackathon', icon: 'flame' },
+  { label: 'Collaboration', href: '/discover?tab=collab', icon: 'flame' },
+  { label: 'Blogs', href: '/discover?tab=blogs', icon: 'book' },
+  { label: 'People', href: '/discover?tab=people', icon: 'users' },
 ]
 
 // Community pillar children — existing systems, relinked (no rebuilds).
@@ -39,6 +47,9 @@ const COMMUNITY_CHILDREN = [
 const LIBRARY_CHILDREN = [{ label: 'Classroom', href: '/college', icon: 'grad' }]
 
 const PROFILE_NAV = [{ label: 'Profile', href: '/profile', icon: 'user' }]
+
+// Warmed right after mount — first click on any pillar is instant.
+const PREFETCH_ROUTES = ['/feed', '/discover', '/community', '/notes', '/profile']
 
 const FAB_ACTIONS = [
   { label: 'Ask ConnectToCampus', desc: 'Search, shortcuts & questions', icon: 'sparkles', action: 'cmd' as const },
@@ -74,7 +85,8 @@ export default function Layout({ children, user, profile }: { children: React.Re
   const [cmdOpen, setCmdOpen] = React.useState(false)
   const [fabOpen, setFabOpen] = React.useState(false)
   const [menuOpen, setMenuOpen] = React.useState(false)
-  // Desktop sidebar expandable pillars (Community, Library).
+  // Desktop sidebar expandable pillars (Discovery, Community, Library).
+  const [discoveryOpen, setDiscoveryOpen] = React.useState(false)
   const [communityOpen, setCommunityOpen] = React.useState(false)
   const [libraryOpen, setLibraryOpen] = React.useState(false)
   const [logoSrc, setLogoSrc] = React.useState('/connect-to-campus-logo-light.png')
@@ -139,14 +151,18 @@ export default function Layout({ children, user, profile }: { children: React.Re
 
   const isActive = (href: string) => pathname === href || pathname.startsWith(href + '/')
   // A pillar reads active when any of its children is the current page.
+  // Discovery children are ?tab= variants of the same route — the tab is
+  // matched via query, so just check the path.
+  const discoveryActive = pathname === '/discover' || pathname.startsWith('/discover/')
   const communityActive =
     COMMUNITY_CHILDREN.some((c) => isActive(c.href)) || pathname === '/community' || pathname.startsWith('/community/')
   const libraryActive = LIBRARY_CHILDREN.some((c) => isActive(c.href)) || pathname.startsWith('/notes')
-  // Landing on a Community/Library page auto-expands its group.
+  // Landing on a Discovery/Community/Library page auto-expands its group.
   React.useEffect(() => {
+    if (discoveryActive) setDiscoveryOpen(true)
     if (communityActive) setCommunityOpen(true)
     if (libraryActive) setLibraryOpen(true)
-  }, [communityActive, libraryActive])
+  }, [discoveryActive, communityActive, libraryActive])
 
   // Prefetch pages on hover for instant navigation
   const prefetch = (href: string) => {
@@ -156,6 +172,28 @@ export default function Layout({ children, user, profile }: { children: React.Re
       /* ignore */
     }
   }
+
+  // Navigating to the SAME path with only a ?query change does not remount
+  // the page component (Next reuses it), so pages wouldn't react to e.g.
+  // /community?view=confessions while already on /community. Dispatch a
+  // soft-navigate event those pages listen for.
+  const navigate = (href: string) => {
+    const path = href.split('?')[0]
+    if (path === pathname) {
+      window.dispatchEvent(new CustomEvent('cc-soft-navigate', { detail: { href } }))
+    }
+    router.push(href)
+  }
+
+  // SPEED: prefetch the five primary destinations right after mount so the
+  // first navigation to each is instant (chunks land while the user reads).
+  React.useEffect(() => {
+    const t = setTimeout(() => {
+      PREFETCH_ROUTES.forEach((href) => prefetch(href))
+    }, 1200)
+    return () => clearTimeout(t)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   // Contextual accent for the current section — recolors the whole shell
   // (sidebar active states, FAB, bottom nav) to match the page identity.
@@ -242,13 +280,80 @@ export default function Layout({ children, user, profile }: { children: React.Re
             )
           })}
 
+          {/* Discovery pillar — expandable, mirrors the Community/Library
+              pillars. Children deep-link into the hub's ?tab= surfaces. */}
+          <div>
+            <button
+              onClick={() => {
+                setDiscoveryOpen((v) => !v)
+                navigate('/discover')
+              }}
+              style={{
+                width: '100%',
+                textAlign: 'left',
+                padding: '9px 12px',
+                borderRadius: 'var(--radius-sm)',
+                background: discoveryActive
+                  ? 'linear-gradient(90deg, var(--accent-light), transparent)'
+                  : 'transparent',
+                color: discoveryActive ? 'var(--accent-text)' : 'var(--text-secondary)',
+                border: 'none',
+                fontSize: 14,
+                fontWeight: discoveryActive ? 600 : 500,
+                cursor: 'pointer',
+                marginBottom: 2,
+                fontFamily: 'inherit',
+                display: 'flex',
+                alignItems: 'center',
+                gap: 12,
+                boxShadow: discoveryActive ? 'inset 2px 0 0 var(--accent)' : 'none',
+              }}
+              className="nav-pill"
+            >
+              <NavIcon icon="flame" active={discoveryActive} />
+              <span style={{ flex: 1 }}>Discovery</span>
+              <span style={{ fontSize: 10, color: 'var(--text-muted)' }}>{discoveryOpen ? '▾' : '▸'}</span>
+            </button>
+            {discoveryOpen &&
+              DISCOVERY_CHILDREN.map((item) => {
+                const active = isActive(item.href)
+                return (
+                  <button
+                    key={item.href}
+                    onClick={() => router.push(item.href)}
+                    onMouseEnter={() => prefetch(item.href)}
+                    style={{
+                      width: '100%',
+                      textAlign: 'left',
+                      padding: '7px 12px 7px 40px',
+                      borderRadius: 'var(--radius-sm)',
+                      background: active ? 'linear-gradient(90deg, var(--accent-light), transparent)' : 'transparent',
+                      color: active ? 'var(--accent-text)' : 'var(--text-muted)',
+                      border: 'none',
+                      fontSize: 13,
+                      fontWeight: active ? 600 : 500,
+                      cursor: 'pointer',
+                      marginBottom: 2,
+                      fontFamily: 'inherit',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 10,
+                    }}
+                  >
+                    <NavIcon icon={item.icon} active={active} />
+                    {item.label}
+                  </button>
+                )
+              })}
+          </div>
+
           {/* Community pillar — expandable on desktop (spec: secondary nav
               exposed through the sidebar; Live Chat etc. are NOT top-level). */}
           <div>
             <button
               onClick={() => {
                 setCommunityOpen((v) => !v)
-                router.push('/community')
+                navigate('/community')
               }}
               style={{
                 width: '100%',
@@ -314,7 +419,7 @@ export default function Layout({ children, user, profile }: { children: React.Re
             <button
               onClick={() => {
                 setLibraryOpen((v) => !v)
-                router.push('/notes')
+                navigate('/notes')
               }}
               style={{
                 width: '100%',

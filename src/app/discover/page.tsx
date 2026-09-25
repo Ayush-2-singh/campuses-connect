@@ -18,10 +18,11 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { createClient } from '@/lib/supabase/client'
+import { createClient, getBootUser } from '@/lib/supabase/client'
 import Layout from '@/components/Layout'
 import ErrorBoundary from '@/components/ErrorBoundary'
 import EmptyState from '@/components/EmptyState'
+import { Icon } from '@/components/icons'
 import { ListSkeleton } from '@/components/Skeleton'
 import { useToast } from '@/components/Toast'
 import { useHaptic } from '@/hooks/useMobile'
@@ -64,20 +65,72 @@ const TABS: { key: Tab; label: string }[] = [
 const PAGE = 10
 
 // HUB — the Discovery landing cards (spec): every card leads to a real,
-// existing feature. No placeholders, no duplicates.
-const HUB_ITEMS: { key: Tab; title: string; desc: string; icon: string }[] = [
-  { key: 'foryou', title: 'For You', desc: 'Personalized ideas, projects and builders worth discovering', icon: '🚀' },
-  { key: 'startup', title: 'Startups & Ideas', desc: 'Discover startup ideas and concepts worth building', icon: '💡' },
-  { key: 'project', title: 'Projects', desc: 'Discover projects and the people building them', icon: '🛠' },
+// existing feature. No placeholders, no duplicates. Cards mirror the
+// Community hub: colored icon tile + title + desc + chevron.
+const HUB_ITEMS: {
+  key: Tab
+  title: string
+  desc: string
+  icon: string
+  accent: string
+  accentText: string
+}[] = [
+  {
+    key: 'foryou',
+    title: 'For You',
+    desc: 'Personalized ideas, projects and builders worth discovering',
+    icon: '🚀',
+    accent: 'var(--accent-light)',
+    accentText: 'var(--accent-text)',
+  },
+  {
+    key: 'startup',
+    title: 'Startups & Ideas',
+    desc: 'Discover startup ideas and concepts worth building',
+    icon: '💡',
+    accent: 'var(--orange-light)',
+    accentText: 'var(--orange-text)',
+  },
+  {
+    key: 'project',
+    title: 'Projects',
+    desc: 'Discover projects and the people building them',
+    icon: '🛠',
+    accent: 'var(--blue-light)',
+    accentText: 'var(--blue-text)',
+  },
   {
     key: 'hackathon',
     title: 'Hackathons',
     desc: 'Discover hackathons, competitions and upcoming opportunities',
     icon: '⚡',
+    accent: 'var(--success-light)',
+    accentText: 'var(--success-text)',
   },
-  { key: 'collab', title: 'Collaboration', desc: 'Find builders and projects looking for collaborators', icon: '🤝' },
-  { key: 'blogs', title: 'Developer Blogs', desc: 'Read what students are building, learning and sharing', icon: '✍️' },
-  { key: 'people', title: 'People & Builders', desc: 'Discover students, developers and builders', icon: '👥' },
+  {
+    key: 'collab',
+    title: 'Collaboration',
+    desc: 'Find builders and projects looking for collaborators',
+    icon: '🤝',
+    accent: 'var(--purple-light)',
+    accentText: 'var(--purple-text)',
+  },
+  {
+    key: 'blogs',
+    title: 'Developer Blogs',
+    desc: 'Read what students are building, learning and sharing',
+    icon: '✍️',
+    accent: 'var(--yellow-light)',
+    accentText: 'var(--yellow-text)',
+  },
+  {
+    key: 'people',
+    title: 'People & Builders',
+    desc: 'Discover students, developers and builders',
+    icon: '👥',
+    accent: 'var(--cyan-light)',
+    accentText: 'var(--cyan-text)',
+  },
 ]
 
 export default function DiscoverPage() {
@@ -87,6 +140,8 @@ export default function DiscoverPage() {
   const router = useRouter()
 
   // ---- auth/profile: loaded ONCE, independent of tab/sort (audit fix #1) ----
+  // SPEED: getBootUser() serves the local session instantly (no network
+  // round-trip before first render); validation continues in the background.
   const [user, setUser] = useState<{ id: string } | null>(null)
   const [profile, setProfile] = useState<{
     id: string
@@ -99,11 +154,13 @@ export default function DiscoverPage() {
   useEffect(() => {
     let cancelled = false
     const boot = async () => {
-      const { data: auth } = await supabase.auth.getUser()
+      const u = await getBootUser(supabase)
       if (cancelled) return
-      const u = auth.user
       setUser(u ? { id: u.id } : null)
+      setBooted(true)
       if (u) {
+        // Profile is not needed for the first paint — fetch it after the
+        // user is set so the header/actions render immediately.
         const { data: prof } = await supabase
           .from('profiles')
           .select('id, full_name, username, avatar_url')
@@ -111,7 +168,6 @@ export default function DiscoverPage() {
           .single()
         if (!cancelled) setProfile(prof)
       }
-      if (!cancelled) setBooted(true)
     }
     boot()
     return () => {
@@ -125,16 +181,6 @@ export default function DiscoverPage() {
   // straight in the deck experience.
   const [view, setView] = useState<'hub' | 'deck'>('hub')
 
-  // Deep links: /discover?tab=startup etc. (used by /opportunities redirect,
-  // feed pulse cards and the command palette). Read once at boot from the URL.
-  useEffect(() => {
-    const q = new URLSearchParams(window.location.search).get('tab')
-    const valid = TABS.some((t) => t.key === q)
-    if (q && valid) {
-      setTab(q as Tab)
-      setView('deck')
-    }
-  }, [])
   const [cards, setCards] = useState<DiscoveryFeedCard[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -142,6 +188,61 @@ export default function DiscoverPage() {
   const [actingId, setActingId] = useState<string | null>(null)
   const loadingMoreRef = useRef(false)
   const loadedTabsRef = useRef<Set<string>>(new Set())
+  // Last-request-wins guard: parallel prefetches (mount, hub card preload,
+  // tab switch) may resolve out of order — only the most recent one may
+  // write into the cards queue.
+  const reqTabRef = useRef<string>('foryou')
+
+  // Deep links: /discover?tab=startup etc. (used by /opportunities redirect,
+  // feed pulse cards and the command palette). Reactive: clicking a sidebar
+  // Discovery child while ALREADY on /discover only changes the query (no
+  // remount), so also listen for the shell's soft-navigate event.
+  useEffect(() => {
+    const applyFromUrl = () => {
+      const q = new URLSearchParams(window.location.search).get('tab')
+      const valid = TABS.some((t) => t.key === q)
+      if (q && valid) {
+        setTab(q as Tab)
+        setView('deck')
+      }
+    }
+    const onSoft = (e: Event) => {
+      const href = (e as CustomEvent<{ href: string }>).detail?.href || ''
+      const q = new URLSearchParams(href.split('?')[1] || '').get('tab')
+      const valid = TABS.some((t) => t.key === q)
+      if (q && valid) {
+        setTab(q as Tab)
+        setView('deck')
+        window.scrollTo({ top: 0 })
+      }
+    }
+    applyFromUrl()
+    window.addEventListener('popstate', applyFromUrl)
+    window.addEventListener('cc-soft-navigate', onSoft)
+    return () => {
+      window.removeEventListener('popstate', applyFromUrl)
+      window.removeEventListener('cc-soft-navigate', onSoft)
+    }
+  }, [])
+
+  // SPEED: fire the For You fetch IMMEDIATELY on mount, in parallel with
+  // auth — previously it waited for the auth round-trip to finish first.
+  useEffect(() => {
+    loadedTabsRef.current.add('foryou')
+    reqTabRef.current = 'foryou'
+    fetchDiscoveryFeed({ category: 'all', limit: PAGE, cursorCreated: null, cursorId: null })
+      .then((res) => {
+        if (reqTabRef.current !== 'foryou') return
+        if (res.error) {
+          setError(res.error)
+          return
+        }
+        setError(null)
+        setCards(res.cards)
+        setLoading(false)
+      })
+      .catch(() => setLoading(false))
+  }, [])
 
   // Blogs/People tabs are linked surfaces, not swipe-queue filters.
   const isQueueTab = tab !== 'blogs' && tab !== 'people'
@@ -149,12 +250,16 @@ export default function DiscoverPage() {
 
   const loadQueue = useCallback(
     async (opts: { fresh?: boolean; cursorCreated?: string | null; cursorId?: string | null } = {}) => {
+      const key = category ?? 'foryou'
+      reqTabRef.current = key
       const res = await fetchDiscoveryFeed({
         category: category ?? 'all',
         limit: PAGE,
         cursorCreated: opts.cursorCreated ?? null,
         cursorId: opts.cursorId ?? null,
       })
+      // A newer request (another tab/prefetch) superseded this one.
+      if (reqTabRef.current !== key) return
       if (res.error) {
         setError(res.error)
         return
@@ -162,7 +267,7 @@ export default function DiscoverPage() {
       setError(null)
       setCards((prev) => (opts.fresh ? res.cards : [...prev, ...res.cards]))
     },
-    [category, tab]
+    [category]
   )
 
   // (Re)load when the tab changes; per-tab caching keeps swipes snappy.
@@ -174,7 +279,7 @@ export default function DiscoverPage() {
     loadedTabsRef.current.add(tab)
     setLoading(true)
     loadQueue({ fresh: true }).finally(() => setLoading(false))
-  }, [tab, booted, user, loadQueue, isQueueTab])
+  }, [tab, booted, loadQueue, isQueueTab])
 
   // Prefetch the next batch when the user reaches the 7th card (STEP 12).
   useEffect(() => {
@@ -227,7 +332,7 @@ export default function DiscoverPage() {
         toast.show('Interest sent — the builder will see it', { tone: 'success' })
       }
     },
-    [user, actingId, toast, haptic, tab, loadQueue]
+    [user, actingId, toast, haptic, router, tab, loadQueue]
   )
 
   // ---- create idea (STEP 11) ----
@@ -388,11 +493,37 @@ export default function DiscoverPage() {
           </p>
 
           {/* HUB — Discovery landing (spec): every card opens a real,
-              existing feature. The deck/tabs remain one click away. */}
+              existing feature. The deck/tabs remain one click away. Cards
+              mirror the Community hub (colored tile + chevron). */}
           {view === 'hub' ? (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
               {HUB_ITEMS.map((item) => {
                 const open = () => {
+                  // Preload the deck payload the instant a card is tapped —
+                  // the deck view then renders with data already in hand.
+                  if (item.key !== 'blogs' && item.key !== 'people' && !loadedTabsRef.current.has(item.key)) {
+                    loadedTabsRef.current.add(item.key)
+                    reqTabRef.current = item.key
+                    setLoading(true)
+                    fetchDiscoveryFeed({
+                      category: item.key === 'foryou' ? 'all' : item.key,
+                      limit: PAGE,
+                      cursorCreated: null,
+                      cursorId: null,
+                    })
+                      .then((res) => {
+                        if (reqTabRef.current !== item.key) return
+                        if (res.error) {
+                          setError(res.error)
+                          return
+                        }
+                        setError(null)
+                        setCards(res.cards)
+                      })
+                      .finally(() => {
+                        if (reqTabRef.current === item.key) setLoading(false)
+                      })
+                  }
                   setTab(item.key)
                   setView('deck')
                   window.scrollTo({ top: 0 })
@@ -421,8 +552,8 @@ export default function DiscoverPage() {
                         width: 42,
                         height: 42,
                         borderRadius: 12,
-                        background: 'var(--accent-light)',
-                        color: 'var(--accent-text)',
+                        background: item.accent,
+                        color: item.accentText,
                         display: 'inline-flex',
                         alignItems: 'center',
                         justifyContent: 'center',
@@ -440,7 +571,7 @@ export default function DiscoverPage() {
                         {item.desc}
                       </span>
                     </span>
-                    <span style={{ color: 'var(--text-muted)', fontSize: 16 }}>→</span>
+                    <Icon name="chevron" size={16} />
                   </button>
                 )
               })}

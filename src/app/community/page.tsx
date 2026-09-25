@@ -12,7 +12,7 @@
 
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { createClient } from '@/lib/supabase/client'
+import { createClient, getBootUser } from '@/lib/supabase/client'
 import Layout from '@/components/Layout'
 import { Icon } from '@/components/icons'
 import ConfessionsTab from '@/components/discovery/ConfessionsTab'
@@ -87,16 +87,24 @@ export default function CommunityHubPage() {
   const [showConfessions, setShowConfessions] = useState(false)
 
   // Deep link: /community?view=confessions (used by the desktop sidebar's
-  // Confessions child and any legacy /discover confessions links).
+  // Confessions child and any legacy /discover confessions links). Also
+  // listens for soft-navigates — clicking the sidebar child while already on
+  // /community only changes the query, which doesn't remount the page.
   useEffect(() => {
-    if (new URLSearchParams(window.location.search).get('view') === 'confessions') setShowConfessions(true)
+    const apply = () => {
+      if (new URLSearchParams(window.location.search).get('view') === 'confessions') setShowConfessions(true)
+    }
+    apply()
+    window.addEventListener('cc-soft-navigate', apply)
+    return () => window.removeEventListener('cc-soft-navigate', apply)
   }, [])
 
+  // SPEED: local-session user on the next tick (no auth network round-trip
+  // blocking first paint); validation continues in the background.
   useEffect(() => {
     let cancelled = false
     const boot = async () => {
-      const { data: auth } = await supabase.auth.getUser()
-      const u = auth.user
+      const u = await getBootUser(supabase)
       if (cancelled) return
       setUser(u ? { id: u.id } : null)
       if (u) {
@@ -211,10 +219,25 @@ export default function CommunityHubPage() {
                 fontFamily: 'inherit',
                 textDecoration: 'none',
               }
-              return item.href ? (
-                <a key={item.key} href={item.href} style={wrapperStyle}>
+              // Client-side navigation (NOT <a href>, which forces a full
+              // page reload — the #1 speed killer). Hover prefetch makes the
+              // target page render instantly.
+              const href = item.href
+              return href ? (
+                <button
+                  key={item.key}
+                  onClick={() => router.push(href)}
+                  onMouseEnter={() => {
+                    try {
+                      router.prefetch(href)
+                    } catch {
+                      /* ignore */
+                    }
+                  }}
+                  style={wrapperStyle}
+                >
                   {inner}
-                </a>
+                </button>
               ) : (
                 <button key={item.key} onClick={() => setShowConfessions(true)} style={wrapperStyle}>
                   {inner}

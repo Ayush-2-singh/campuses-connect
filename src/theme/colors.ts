@@ -72,6 +72,7 @@ export const ACCENT_BY_ROUTE: Record<string, AccentName> = {
 
   '/compete': 'green',
   '/opportunities': 'cyan',
+  '/discover': 'cyan',
   '/polls': 'cyan',
 
   '/notes': 'purple',
