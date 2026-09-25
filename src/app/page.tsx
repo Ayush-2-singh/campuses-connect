@@ -12,7 +12,7 @@ export default function LandingPage() {
   const [pulse, setPulse] = useState({ notes: 0, opportunities: 0, discussions: 0, hackathons: 0 })
   const [liveColleges, setLiveColleges] = useState<{ name: string; campuses: string[] }[]>([])
   const [guestOpen, setGuestOpen] = useState(false)
-  const [logoSrc, setLogoSrc] = useState('/ctc-logo.svg')
+  const [logoSrc, setLogoSrc] = useState('/connect-to-campus-logo-light.png')
   const router = useRouter()
   const supabase = createClient()
 
@@ -35,28 +35,41 @@ export default function LandingPage() {
     // Fire ALL 6 queries simultaneously — no waterfall
     Promise.all([
       supabase.auth.getUser(),
-      supabase.from('colleges').select('id, name, campuses!inner(name)').eq('is_active', true).eq('campuses.is_active', true),
+      supabase
+        .from('colleges')
+        .select('id, name, campuses!inner(name)')
+        .eq('is_active', true)
+        .eq('campuses.is_active', true),
       supabase.from('notes').select('id', { count: 'exact', head: true }),
       supabase.from('opportunities').select('id', { count: 'exact', head: true }).eq('is_active', true),
       supabase.from('posts').select('id', { count: 'exact', head: true }).eq('status', 'published'),
-      supabase.from('opportunities').select('id', { count: 'exact', head: true }).eq('opp_type', 'hackathon').gte('deadline', now).lte('deadline', week),
-    ]).then(([authRes, collegesRes, notesRes, oppsRes, postsRes, hacksRes]) => {
-      if (cancelled) return
-      if (authRes.data.user) setUser(authRes.data.user)
-      setLiveColleges(
-        (collegesRes.data || []).map((c: any) => ({
-          name: c.name,
-          campuses: (c.campuses || []).map((x: any) => x.name),
-        }))
-      )
-      setPulse({
-        notes: notesRes.count || 0,
-        opportunities: oppsRes.count || 0,
-        discussions: postsRes.count || 0,
-        hackathons: hacksRes.count || 0,
+      supabase
+        .from('opportunities')
+        .select('id', { count: 'exact', head: true })
+        .eq('opp_type', 'hackathon')
+        .gte('deadline', now)
+        .lte('deadline', week),
+    ])
+      .then(([authRes, collegesRes, notesRes, oppsRes, postsRes, hacksRes]) => {
+        if (cancelled) return
+        if (authRes.data.user) setUser(authRes.data.user)
+        setLiveColleges(
+          (collegesRes.data || []).map((c: any) => ({
+            name: c.name,
+            campuses: (c.campuses || []).map((x: any) => x.name),
+          }))
+        )
+        setPulse({
+          notes: notesRes.count || 0,
+          opportunities: oppsRes.count || 0,
+          discussions: postsRes.count || 0,
+          hackathons: hacksRes.count || 0,
+        })
       })
-    }).catch(() => {})
-    return () => { cancelled = true }
+      .catch(() => {})
+    return () => {
+      cancelled = true
+    }
   }, [supabase])
 
   const features = [
@@ -106,13 +119,7 @@ export default function LandingPage() {
           }}
         >
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-            <img
-              src={logoSrc}
-              alt="CTC"
-              width={32}
-              height={32}
-              style={{ borderRadius: 9 }}
-            />
+            <img src={logoSrc} alt="CTC" width={32} height={32} style={{ borderRadius: 9 }} />
             <h1 style={{ fontSize: 19, fontWeight: 800, margin: 0, color: 'var(--text-primary)' }}>
               Connect<span style={{ color: '#F59E0B' }}>ToCampus</span>
             </h1>
@@ -806,7 +813,10 @@ export default function LandingPage() {
             maxWidth: 540,
           }}
         >
-          When you sign in with Google, we only access your <strong>name</strong>, <strong>email address</strong>, and <strong>profile picture</strong> to create and verify your ConnectToCampus account. We do not access your Google Drive, Gmail, contacts, or any other Google data. This information is used solely for authentication and to personalize your campus profile.
+          When you sign in with Google, we only access your <strong>name</strong>, <strong>email address</strong>, and{' '}
+          <strong>profile picture</strong> to create and verify your ConnectToCampus account. We do not access your
+          Google Drive, Gmail, contacts, or any other Google data. This information is used solely for authentication
+          and to personalize your campus profile.
         </p>
         <div style={{ display: 'flex', gap: 16, justifyContent: 'center', flexWrap: 'wrap' }}>
           <a
@@ -839,9 +849,13 @@ export default function LandingPage() {
         <p style={{ fontSize: 12, color: 'var(--text-muted)', margin: 0 }}>
           ConnectToCampus is an independent student networking platform. Not affiliated with or endorsed by any
           educational institution.{' '}
-          <a href="/privacy" style={{ color: 'var(--text-muted)', textDecoration: 'underline' }}>Privacy</a>
+          <a href="/privacy" style={{ color: 'var(--text-muted)', textDecoration: 'underline' }}>
+            Privacy
+          </a>
           {' · '}
-          <a href="/terms" style={{ color: 'var(--text-muted)', textDecoration: 'underline' }}>Terms</a>
+          <a href="/terms" style={{ color: 'var(--text-muted)', textDecoration: 'underline' }}>
+            Terms
+          </a>
         </p>
       </div>
 

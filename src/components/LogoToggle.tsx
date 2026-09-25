@@ -4,15 +4,14 @@ import React from 'react'
 
 const THEME_CHANGE_EVENT = 'cc-theme-change'
 
-// Dark mode → dark variants (white left C), Light mode → default variants
+// Dark mode → dark variant logo, Light mode → light variant logo
 function getLogoForTheme(): string {
-  if (typeof window === 'undefined') return '/ctc-logo.svg'
+  if (typeof window === 'undefined') return '/connect-to-campus-logo-light.png'
   const theme = document.documentElement.getAttribute('data-theme')
   if (theme === 'dark') {
-    // Dark: white left C + golden T + golden C
-    return '/ctc-logo-dark.svg'
+    return '/connect-to-campus-logo-dark.png'
   }
-  return '/ctc-logo.svg'
+  return '/connect-to-campus-logo-light.png'
 }
 
 export function getLogoSrc(): string {
@@ -20,7 +19,7 @@ export function getLogoSrc(): string {
 }
 
 export default function LogoToggle({ size = 36 }: { size?: number }) {
-  const [logoSrc, setLogoSrc] = React.useState('/ctc-logo.svg')
+  const [logoSrc, setLogoSrc] = React.useState('/connect-to-campus-logo-light.png')
   const [mounted, setMounted] = React.useState(false)
   const [flash, setFlash] = React.useState(false)
 

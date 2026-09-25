@@ -70,7 +70,7 @@ export default function Layout({ children, user, profile }: { children: React.Re
   const [cmdOpen, setCmdOpen] = React.useState(false)
   const [fabOpen, setFabOpen] = React.useState(false)
   const [menuOpen, setMenuOpen] = React.useState(false)
-  const [logoSrc, setLogoSrc] = React.useState('/ctc-logo.svg')
+  const [logoSrc, setLogoSrc] = React.useState('/connect-to-campus-logo-light.png')
 
   // Sync logo with theme changes
   React.useEffect(() => {
