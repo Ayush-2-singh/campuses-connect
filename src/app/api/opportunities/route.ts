@@ -4,7 +4,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server'
-import { requireAuthLite } from '@/lib/api/middleware'
+import { requireAuthLite, requireAdmin } from '@/lib/api/middleware'
 import { getSupabaseAdmin } from '@/lib/auth'
 
 // ─── GET /api/opportunities ───────────────────────────────────────────────────
@@ -46,20 +46,15 @@ export async function GET(request: NextRequest) {
 
 // ─── POST /api/opportunities ──────────────────────────────────────────────────
 export async function POST(request: NextRequest) {
-  const authRes = await requireAuthLite(request)
+  // Admin-only route — use requireAdmin() which reads the admin_grants table.
+  // (my_admin_grants() RPC filters on auth.uid(), which is NULL on the
+  // service-role client, so it always returned zero rows → 403 for everyone.)
+  const authRes = await requireAdmin(request)
   if (!authRes.ok) return authRes.response
   const user = { id: authRes.auth.userId }
 
   try {
     const admin = getSupabaseAdmin()
-
-    // Check admin status
-    const { data: grants } = await admin.rpc('my_admin_grants')
-    const grantsArr = (grants as any[]) || []
-    const isAdmin = grantsArr.some((g: any) => g.admin_type === 'platform_admin' || g.admin_type === 'campus_admin')
-    if (!isAdmin) {
-      return NextResponse.json({ error: 'Forbidden. Admin access required.' }, { status: 403 })
-    }
 
     const { data: profile } = await admin.from('profiles').select('campus_id, college_id').eq('id', user.id).single()
 
