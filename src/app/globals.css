@@ -865,6 +865,58 @@ a,
   }
 }
 
+/* ───────────────────────── HOME REDESIGN grid ───────────────────────── */
+/* Main content (≈72%) + right sidebar (≈28%) on desktop; single column
+   below 1024px. Rows inside main: 3 equal cells (stats/features) that
+   collapse to 2 columns ≤900px and 1 column ≤640px. Announcements: 4
+   equal cards on desktop, 2 on tablet, horizontal snap-scroll strip on
+   mobile (equal widths, page never overflows). */
+.home-redesign-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 72fr) minmax(0, 28fr);
+  gap: 14px;
+}
+.home-row-3 {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14px;
+}
+.home-announcements {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 14px;
+}
+@media (max-width: 1024px) {
+  .home-redesign-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+@media (max-width: 900px) {
+  .home-row-3 {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .home-announcements {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+@media (max-width: 640px) {
+  .home-row-3 {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  /* Horizontal snap-scroll strip — equal-width cards, no page overflow */
+  .home-announcements {
+    display: flex;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scroll-snap-type: x mandatory;
+    padding-bottom: 4px;
+  }
+  .home-announcements > * {
+    flex: 0 0 78%;
+    scroll-snap-align: start;
+  }
+}
+
 /* Filter/tab chip rows — one scrollable row on desktop (when they don't fit),
    but on mobile the chips WRAP so every option is visible like on a tablet —
    nothing hidden behind a scroll. */

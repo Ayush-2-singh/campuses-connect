@@ -21,7 +21,7 @@ import { useAdminContext } from '@/lib/permissions'
 import { ListSkeleton } from '@/components/Skeleton'
 import EmptyState from '@/components/EmptyState'
 import ErrorBoundary from '@/components/ErrorBoundary'
-import HomeDashboard from '@/components/home/HomeDashboard'
+import HomeRedesign from '@/components/home/HomeRedesign'
 import { Icon } from '@/components/icons'
 import type { Post } from '@/types'
 
@@ -280,7 +280,11 @@ export default function FeedView() {
               </button>
             ))}
           </div>
-          <HomeDashboard />
+          {/* HOME REDESIGN — reference-blueprint homepage (stats, feature
+              grid, hero, announcements, quick actions, what's new).
+              Replaces the old HomeDashboard cards (spec §13); the Feed
+              itself stays right below, fully intact. */}
+          <HomeRedesign signedIn={!!user} />
 
           {/* Feed column stays narrow for readability; the dashboard above
               uses the full desktop width. */}
