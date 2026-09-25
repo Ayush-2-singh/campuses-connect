@@ -17,21 +17,28 @@ import { accentForPath } from '@/theme/colors'
 // its code on every page navigation.
 const CommandPalette = dynamic(() => import('@/components/CommandPalette'), { ssr: false })
 
-// Final IA: the five primary sections. Secondary features (Chat, Compete,
-// Leaderboard, Blogs, Live Voice…) surface INSIDE these — see /community for
-// the community grouping and mobileNav.ts for the mobile mirror.
+// Final desktop IA: five pillars, with Community (and Classroom-inside-
+// Library) expandable so secondary features live under their pillar instead
+// of crowding the sidebar. Mirrors the mobile bar in mobileNav.ts.
 const NAV_ITEMS = [
   { label: 'Home', href: '/feed', icon: 'home' },
   { label: 'Discovery', href: '/discover', icon: 'flame' },
-  { label: 'Community', href: '/community', icon: 'users' },
-  { label: 'Library', href: '/notes', icon: 'notebook' },
-  { label: 'Profile', href: '/profile', icon: 'user' },
 ]
 
-const SECONDARY_NAV = [
-  { label: 'More', href: '/more', icon: 'more' },
-  { label: 'Profile', href: '/profile', icon: 'user' },
+// Community pillar children — existing systems, relinked (no rebuilds).
+const COMMUNITY_CHILDREN = [
+  { label: 'Communities', href: '/communities', icon: 'users' },
+  { label: 'Live Chat', href: '/chat', icon: 'message' },
+  { label: 'Confessions', href: '/community?view=confessions', icon: 'eyeOff' },
+  { label: 'Compete', href: '/compete', icon: 'zap' },
+  { label: 'Live Voice', href: '/live-voice-chat', icon: 'mic' },
+  { label: 'Connect', href: '/connections', icon: 'link' },
 ]
+
+// Library = academic/resources; Classroom is academic, so it nests here.
+const LIBRARY_CHILDREN = [{ label: 'Classroom', href: '/college', icon: 'grad' }]
+
+const PROFILE_NAV = [{ label: 'Profile', href: '/profile', icon: 'user' }]
 
 const FAB_ACTIONS = [
   { label: 'Ask ConnectToCampus', desc: 'Search, shortcuts & questions', icon: 'sparkles', action: 'cmd' as const },
@@ -67,6 +74,9 @@ export default function Layout({ children, user, profile }: { children: React.Re
   const [cmdOpen, setCmdOpen] = React.useState(false)
   const [fabOpen, setFabOpen] = React.useState(false)
   const [menuOpen, setMenuOpen] = React.useState(false)
+  // Desktop sidebar expandable pillars (Community, Library).
+  const [communityOpen, setCommunityOpen] = React.useState(false)
+  const [libraryOpen, setLibraryOpen] = React.useState(false)
   const [logoSrc, setLogoSrc] = React.useState('/connect-to-campus-logo-light.png')
 
   // Sync logo with theme changes
@@ -128,6 +138,15 @@ export default function Layout({ children, user, profile }: { children: React.Re
   }, [cmdOpen])
 
   const isActive = (href: string) => pathname === href || pathname.startsWith(href + '/')
+  // A pillar reads active when any of its children is the current page.
+  const communityActive =
+    COMMUNITY_CHILDREN.some((c) => isActive(c.href)) || pathname === '/community' || pathname.startsWith('/community/')
+  const libraryActive = LIBRARY_CHILDREN.some((c) => isActive(c.href)) || pathname.startsWith('/notes')
+  // Landing on a Community/Library page auto-expands its group.
+  React.useEffect(() => {
+    if (communityActive) setCommunityOpen(true)
+    if (libraryActive) setLibraryOpen(true)
+  }, [communityActive, libraryActive])
 
   // Prefetch pages on hover for instant navigation
   const prefetch = (href: string) => {
@@ -223,9 +242,140 @@ export default function Layout({ children, user, profile }: { children: React.Re
             )
           })}
 
+          {/* Community pillar — expandable on desktop (spec: secondary nav
+              exposed through the sidebar; Live Chat etc. are NOT top-level). */}
+          <div>
+            <button
+              onClick={() => {
+                setCommunityOpen((v) => !v)
+                router.push('/community')
+              }}
+              style={{
+                width: '100%',
+                textAlign: 'left',
+                padding: '9px 12px',
+                borderRadius: 'var(--radius-sm)',
+                background: communityActive
+                  ? 'linear-gradient(90deg, var(--accent-light), transparent)'
+                  : 'transparent',
+                color: communityActive ? 'var(--accent-text)' : 'var(--text-secondary)',
+                border: 'none',
+                fontSize: 14,
+                fontWeight: communityActive ? 600 : 500,
+                cursor: 'pointer',
+                marginBottom: 2,
+                fontFamily: 'inherit',
+                display: 'flex',
+                alignItems: 'center',
+                gap: 12,
+                boxShadow: communityActive ? 'inset 2px 0 0 var(--accent)' : 'none',
+              }}
+              className="nav-pill"
+            >
+              <NavIcon icon="users" active={communityActive} />
+              <span style={{ flex: 1 }}>Community</span>
+              <span style={{ fontSize: 10, color: 'var(--text-muted)' }}>{communityOpen ? '▾' : '▸'}</span>
+            </button>
+            {communityOpen &&
+              COMMUNITY_CHILDREN.map((item) => {
+                const active = isActive(item.href)
+                return (
+                  <button
+                    key={item.href}
+                    onClick={() => router.push(item.href)}
+                    onMouseEnter={() => prefetch(item.href)}
+                    style={{
+                      width: '100%',
+                      textAlign: 'left',
+                      padding: '7px 12px 7px 40px',
+                      borderRadius: 'var(--radius-sm)',
+                      background: active ? 'linear-gradient(90deg, var(--accent-light), transparent)' : 'transparent',
+                      color: active ? 'var(--accent-text)' : 'var(--text-muted)',
+                      border: 'none',
+                      fontSize: 13,
+                      fontWeight: active ? 600 : 500,
+                      cursor: 'pointer',
+                      marginBottom: 2,
+                      fontFamily: 'inherit',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 10,
+                    }}
+                  >
+                    <NavIcon icon={item.icon} active={active} />
+                    {item.label}
+                  </button>
+                )
+              })}
+          </div>
+
+          {/* Library pillar — Classroom nests here (academic purpose). */}
+          <div>
+            <button
+              onClick={() => {
+                setLibraryOpen((v) => !v)
+                router.push('/notes')
+              }}
+              style={{
+                width: '100%',
+                textAlign: 'left',
+                padding: '9px 12px',
+                borderRadius: 'var(--radius-sm)',
+                background: libraryActive ? 'linear-gradient(90deg, var(--accent-light), transparent)' : 'transparent',
+                color: libraryActive ? 'var(--accent-text)' : 'var(--text-secondary)',
+                border: 'none',
+                fontSize: 14,
+                fontWeight: libraryActive ? 600 : 500,
+                cursor: 'pointer',
+                marginBottom: 2,
+                fontFamily: 'inherit',
+                display: 'flex',
+                alignItems: 'center',
+                gap: 12,
+                boxShadow: libraryActive ? 'inset 2px 0 0 var(--accent)' : 'none',
+              }}
+              className="nav-pill"
+            >
+              <NavIcon icon="notebook" active={libraryActive} />
+              <span style={{ flex: 1 }}>Library</span>
+              <span style={{ fontSize: 10, color: 'var(--text-muted)' }}>{libraryOpen ? '▾' : '▸'}</span>
+            </button>
+            {libraryOpen &&
+              LIBRARY_CHILDREN.map((item) => {
+                const active = isActive(item.href)
+                return (
+                  <button
+                    key={item.href}
+                    onClick={() => router.push(item.href)}
+                    onMouseEnter={() => prefetch(item.href)}
+                    style={{
+                      width: '100%',
+                      textAlign: 'left',
+                      padding: '7px 12px 7px 40px',
+                      borderRadius: 'var(--radius-sm)',
+                      background: active ? 'linear-gradient(90deg, var(--accent-light), transparent)' : 'transparent',
+                      color: active ? 'var(--accent-text)' : 'var(--text-muted)',
+                      border: 'none',
+                      fontSize: 13,
+                      fontWeight: active ? 600 : 500,
+                      cursor: 'pointer',
+                      marginBottom: 2,
+                      fontFamily: 'inherit',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 10,
+                    }}
+                  >
+                    <NavIcon icon={item.icon} active={active} />
+                    {item.label}
+                  </button>
+                )
+              })}
+          </div>
+
           <div style={{ height: 1, background: 'var(--border)', margin: '12px 10px' }} />
 
-          {SECONDARY_NAV.map((item) => {
+          {PROFILE_NAV.map((item) => {
             const active = isActive(item.href)
             return (
               <button
@@ -625,55 +775,6 @@ export default function Layout({ children, user, profile }: { children: React.Re
               </div>
             )}
           {/* No college banner - user joined globally */}
-          {user &&
-            profile &&
-            !profile.campus_id &&
-            !profile.college_id &&
-            !pathname.startsWith('/onboarding') &&
-            !pathname.startsWith('/campus-change') &&
-            !pathname.startsWith('/admin') && (
-              <div
-                style={{
-                  maxWidth: 680,
-                  margin: '0 auto 16px',
-                  padding: '14px 18px',
-                  background: 'var(--yellow-light, #fef3c7)',
-                  border: '1px solid #fbbf24',
-                  borderRadius: 12,
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 12,
-                  flexWrap: 'wrap',
-                }}
-              >
-                <span style={{ fontSize: 24, flexShrink: 0 }}>🌐</span>
-                <div style={{ flex: 1, minWidth: 200 }}>
-                  <p style={{ fontSize: 13, fontWeight: 600, color: '#92400e', margin: '0 0 2px' }}>
-                    You&apos;re in the Global Campus
-                  </p>
-                  <p style={{ fontSize: 12, color: '#78350f', margin: 0 }}>
-                    Join your college to connect with classmates and access campus resources.
-                  </p>
-                </div>
-                <button
-                  onClick={() => router.push('/onboarding')}
-                  style={{
-                    padding: '8px 16px',
-                    borderRadius: 8,
-                    border: 'none',
-                    background: '#d97706',
-                    color: '#fff',
-                    fontSize: 12,
-                    fontWeight: 600,
-                    cursor: 'pointer',
-                    fontFamily: 'inherit',
-                    flexShrink: 0,
-                  }}
-                >
-                  🎓 Join Campus
-                </button>
-              </div>
-            )}
           {children}
         </div>
       </main>

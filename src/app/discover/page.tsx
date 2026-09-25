@@ -61,12 +61,6 @@ const TABS: { key: Tab; label: string }[] = [
   { key: 'people', label: '👥 People' },
 ]
 
-const SECONDARY_LINKS = [
-  { label: 'Library', href: '/notes', icon: '📚' },
-  { label: 'Top Contributors', href: '/leaderboard', icon: '🏆' },
-  { label: 'Confessions', href: '/community', icon: '🕵️' },
-]
-
 const PAGE = 10
 
 export default function DiscoverPage() {
@@ -394,25 +388,10 @@ export default function DiscoverPage() {
             ))}
           </div>
 
-          {/* Secondary links — demoted, small (STEP 3) */}
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 18 }}>
-            {SECONDARY_LINKS.map((l) => (
-              <a
-                key={l.href}
-                href={l.href}
-                style={{
-                  fontSize: 11.5,
-                  color: 'var(--text-muted)',
-                  border: '1px solid var(--border)',
-                  borderRadius: 14,
-                  padding: '4px 10px',
-                  textDecoration: 'none',
-                }}
-              >
-                {l.icon} {l.label}
-              </a>
-            ))}
-          </div>
+          {/* (Shortcut pills removed — spec: Discovery shows discoverable
+              content, not a links dashboard. Blogs/People are tabs above;
+              Confessions live in Community; Library and Leaderboard have
+              their own pillars.) */}
 
           {/* Content — public-first: the queue is readable logged-out */}
           {tab === 'blogs' ? (

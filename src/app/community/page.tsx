@@ -86,6 +86,12 @@ export default function CommunityHubPage() {
   } | null>(null)
   const [showConfessions, setShowConfessions] = useState(false)
 
+  // Deep link: /community?view=confessions (used by the desktop sidebar's
+  // Confessions child and any legacy /discover confessions links).
+  useEffect(() => {
+    if (new URLSearchParams(window.location.search).get('view') === 'confessions') setShowConfessions(true)
+  }, [])
+
   useEffect(() => {
     let cancelled = false
     const boot = async () => {

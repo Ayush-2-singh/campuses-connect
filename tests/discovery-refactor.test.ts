@@ -90,18 +90,34 @@ describe('discovery refactor guard', () => {
     expect(lib).toContain('accept_discovery_interest')
   })
 
-  it('discovery page no longer shows the four explore cards as the hero', () => {
+  it('discovery page is a content surface, not a shortcut dashboard', () => {
     const page = read('app/discover/page.tsx')
     expect(page).toContain('SwipeDeck')
-    // The old static explore grid icons must not dominate: they may appear
-    // only as small secondary links.
-    const secondaryIdx = page.indexOf('SECONDARY_LINKS')
-    expect(secondaryIdx).toBeGreaterThan(-1)
+    // Shortcut pill navigation was removed (spec): Blogs/People are tabs,
+    // Confessions live in Community, Library/Leaderboard have their pillars.
+    expect(page).not.toContain('SECONDARY_LINKS')
+    expect(page).not.toContain('exploreCards')
+  })
+
+  it('desktop sidebar groups secondary features under their pillars', () => {
+    const layout = read('components/Layout.tsx')
+    expect(layout).toContain('COMMUNITY_CHILDREN')
+    expect(layout).toContain("href: '/chat'")
+    expect(layout).toContain("href: '/connections'")
+    expect(layout).toContain("href: '/compete'")
+    expect(layout).toContain("href: '/live-voice-chat'")
+    // Live Chat must NOT be a top-level primary item anymore.
+    const primaryBlock = layout.slice(layout.indexOf('const NAV_ITEMS'), layout.indexOf('COMMUNITY_CHILDREN'))
+    expect(primaryBlock).not.toContain("href: '/chat'")
+  })
+
+  it('no "Join Campus" segmentation banner remains in Layout', () => {
+    expect(read('components/Layout.tsx')).not.toContain('Join Campus')
   })
 
   it('mobile bottom bar is exactly the five primary destinations (final IA)', () => {
     const navSrc = fs.readFileSync(path.join(SRC, 'components/mobileNav.ts'), 'utf8')
-     
+
     const mod: Record<string, unknown> = {}
     const navMatch = navSrc.match(/export const MOBILE_NAV = (\[[\s\S]*?\])/)
     expect(navMatch).toBeTruthy()
