@@ -173,10 +173,9 @@ function AnnouncementCard({ a }: { a: Announcement }) {
       className="card-hover"
       style={{
         ...CARD,
-        padding: 14,
+        padding: 12,
         display: 'flex',
         flexDirection: 'column',
-        gap: 8,
         textDecoration: 'none',
         minWidth: 0,
       }}
@@ -187,8 +186,15 @@ function AnnouncementCard({ a }: { a: Announcement }) {
           alt=""
           width={320}
           height={110}
-          sizes="320px"
-          style={{ width: '100%', height: 92, objectFit: 'cover', borderRadius: 9, border: '1px solid var(--border)' }}
+          sizes="(max-width: 900px) 78vw, 320px"
+          style={{
+            width: '100%',
+            height: 110,
+            objectFit: 'cover',
+            borderRadius: 9,
+            border: '1px solid var(--border)',
+            flexShrink: 0,
+          }}
         />
       )}
       <span
@@ -202,29 +208,46 @@ function AnnouncementCard({ a }: { a: Announcement }) {
           borderRadius: 6,
           background: cat.bg,
           color: cat.fg,
+          marginTop: 10,
         }}
       >
         {a.category}
       </span>
       <span
-        style={{ display: 'block', fontSize: 13.5, fontWeight: 700, color: 'var(--text-primary)', lineHeight: 1.3 }}
+        style={{
+          display: 'block',
+          fontSize: 13.5,
+          fontWeight: 700,
+          color: 'var(--text-primary)',
+          lineHeight: 1.3,
+          marginTop: 6,
+        }}
       >
         {a.title}
       </span>
       <span
         style={{
           display: '-webkit-box',
-          WebkitLineClamp: 3,
+          WebkitLineClamp: 2,
           WebkitBoxOrient: 'vertical',
           overflow: 'hidden',
           fontSize: 11.5,
           color: 'var(--text-muted)',
           lineHeight: 1.45,
+          marginTop: 4,
         }}
       >
         {a.body}
       </span>
-      <span style={{ marginTop: 'auto', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+      <span
+        style={{
+          marginTop: 'auto',
+          paddingTop: 10,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+        }}
+      >
         <span style={{ fontSize: 10.5, color: 'var(--text-muted)' }}>{a.time}</span>
         <span style={{ fontSize: 12, color: 'var(--accent)', fontWeight: 700 }}>→</span>
       </span>
@@ -324,121 +347,133 @@ export default function HomeRedesign({ signedIn }: { signedIn: boolean }) {
       <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr)', gap: 14 }} className="home-redesign-grid">
         {/* ---------------- LEFT / MAIN column ---------------- */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: 14, minWidth: 0 }}>
-          {/* Row 1: stats + first two feature cards (§6 + §7) */}
-          <div className="home-row-3">
-            {/* Platform stats / intro card */}
-            <div style={{ ...CARD, padding: 18, display: 'flex', flexDirection: 'column', gap: 8 }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+          {/* Platform stats strip (§6) — full-width horizontal bar */}
+          <div
+            style={{
+              ...CARD,
+              padding: '14px 18px',
+              display: 'flex',
+              alignItems: 'center',
+              gap: 14,
+              flexWrap: 'wrap',
+            }}
+          >
+            <span
+              style={{
+                width: 40,
+                height: 40,
+                borderRadius: 11,
+                background: 'var(--accent-light)',
+                color: 'var(--accent-text)',
+                display: 'inline-flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                flexShrink: 0,
+              }}
+            >
+              <Icon name="globe" size={19} />
+            </span>
+            <div style={{ display: 'flex', gap: 18, flexWrap: 'wrap' }}>
+              <span>
                 <span
                   style={{
-                    width: 40,
-                    height: 40,
-                    borderRadius: 11,
-                    background: 'var(--accent-light)',
-                    color: 'var(--accent-text)',
-                    display: 'inline-flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    flexShrink: 0,
+                    display: 'block',
+                    fontSize: 17,
+                    fontWeight: 800,
+                    color: 'var(--text-primary)',
+                    lineHeight: 1.1,
                   }}
                 >
-                  <Icon name="globe" size={19} />
+                  50K+
                 </span>
-                <div style={{ display: 'flex', gap: 14, flexWrap: 'wrap' }}>
-                  <span>
-                    <span
-                      style={{
-                        display: 'block',
-                        fontSize: 17,
-                        fontWeight: 800,
-                        color: 'var(--text-primary)',
-                        lineHeight: 1.1,
-                      }}
-                    >
-                      50K+
-                    </span>
-                    <span style={{ fontSize: 10.5, color: 'var(--text-muted)' }}>Students</span>
-                  </span>
-                  <span>
-                    <span
-                      style={{
-                        display: 'block',
-                        fontSize: 17,
-                        fontWeight: 800,
-                        color: 'var(--text-primary)',
-                        lineHeight: 1.1,
-                      }}
-                    >
-                      All
-                    </span>
-                    <span style={{ fontSize: 10.5, color: 'var(--text-muted)' }}>Colleges</span>
-                  </span>
-                  <span>
-                    <span
-                      style={{
-                        display: 'block',
-                        fontSize: 17,
-                        fontWeight: 800,
-                        color: 'var(--text-primary)',
-                        lineHeight: 1.1,
-                      }}
-                    >
-                      {stats.communities}
-                    </span>
-                    <span style={{ fontSize: 10.5, color: 'var(--text-muted)' }}>Communities</span>
-                  </span>
-                </div>
-              </div>
-              <p style={{ fontSize: 12, color: 'var(--text-secondary)', lineHeight: 1.5, margin: 0 }}>
-                An open community for all CS students — learn, collaborate and grow together.
-              </p>
-              <button
-                onClick={() => go(signedIn ? '/feed' : '/auth/signup')}
-                style={{
-                  minHeight: 38,
-                  borderRadius: 10,
-                  border: 'none',
-                  background: 'var(--accent)',
-                  color: 'var(--on-accent)',
-                  fontSize: 13,
-                  fontWeight: 700,
-                  cursor: 'pointer',
-                  fontFamily: 'inherit',
-                }}
-              >
-                {signedIn ? 'Go to Feed →' : 'Join ConnectToCampus →'}
-              </button>
-              <p
-                style={{
-                  fontSize: 10.5,
-                  color: 'var(--text-muted)',
-                  margin: 0,
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 5,
-                }}
-              >
-                <Icon name="globe" size={11} /> Open for all colleges and universities
-              </p>
+                <span style={{ fontSize: 10.5, color: 'var(--text-muted)' }}>Students</span>
+              </span>
+              <span>
+                <span
+                  style={{
+                    display: 'block',
+                    fontSize: 17,
+                    fontWeight: 800,
+                    color: 'var(--text-primary)',
+                    lineHeight: 1.1,
+                  }}
+                >
+                  All
+                </span>
+                <span style={{ fontSize: 10.5, color: 'var(--text-muted)' }}>Colleges</span>
+              </span>
+              <span>
+                <span
+                  style={{
+                    display: 'block',
+                    fontSize: 17,
+                    fontWeight: 800,
+                    color: 'var(--text-primary)',
+                    lineHeight: 1.1,
+                  }}
+                >
+                  {stats.communities}
+                </span>
+                <span style={{ fontSize: 10.5, color: 'var(--text-muted)' }}>Communities</span>
+              </span>
             </div>
-
-            <FeatureCard f={FEATURES[0]} />
-            <FeatureCard f={FEATURES[1]} />
+            <p
+              className="home-stats-tagline"
+              style={{
+                fontSize: 12,
+                color: 'var(--text-secondary)',
+                lineHeight: 1.45,
+                margin: 0,
+                flex: 1,
+                minWidth: 180,
+              }}
+            >
+              An open community for all CS students — learn, collaborate and grow together.
+            </p>
+            <button
+              onClick={() => go(signedIn ? '/feed' : '/auth/signup')}
+              style={{
+                minHeight: 38,
+                padding: '0 16px',
+                borderRadius: 10,
+                border: 'none',
+                background: 'var(--accent)',
+                color: 'var(--on-accent)',
+                fontSize: 13,
+                fontWeight: 700,
+                cursor: 'pointer',
+                fontFamily: 'inherit',
+                flexShrink: 0,
+              }}
+            >
+              {signedIn ? 'Go to Feed →' : 'Join ConnectToCampus →'}
+            </button>
+            <span
+              style={{
+                fontSize: 10.5,
+                color: 'var(--text-muted)',
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: 5,
+                flexShrink: 0,
+              }}
+            >
+              <Icon name="globe" size={11} /> Open for all colleges
+            </span>
           </div>
 
-          {/* Row 2: remaining three feature cards (§7) */}
+          {/* Row 1: Communities · Live Voice · Compete (§7) */}
+          <div className="home-row-3">
+            <FeatureCard f={FEATURES[0]} />
+            <FeatureCard f={FEATURES[1]} />
+            <FeatureCard f={FEATURES[2]} />
+          </div>
+
+          {/* Row 2: Library · Opportunities · Talent (§7) */}
           <div className="home-row-3">
             <FeatureCard f={FEATURES[3]} />
             <FeatureCard f={FEATURES[4]} />
             <FeatureCard f={FEATURES[5]} />
-          </div>
-
-          {/* Row 3: Compete feature card + secondary CTA (keeps 6 equal cards) */}
-          <div className="home-row-3">
-            <FeatureCard f={FEATURES[2]} />
-            {/* Announcement teaser card fills the grid cell to keep the row balanced */}
-            <AnnouncementCard a={announcements[0]} />
-            <AnnouncementCard a={announcements[1]} />
           </div>
 
           {/* ---------------- ANNOUNCEMENTS (§9) ---------------- */}
