@@ -4,9 +4,13 @@
  * DISCOVERY — find ideas worth building and people worth building with.
  *
  * Primary loop: swipe the idea queue → interested → author accepts → MATCH →
- * existing CampusConnect chat (/messages/:id). Confessions live here as a
- * secondary tab (anonymity preserved — see ConfessionsTab). Blogs / Library /
- * People are demoted to small secondary links; those surfaces own themselves.
+ * existing CampusConnect chat (/messages/:id). Blogs / Library / People are
+ * small secondary links; those surfaces own themselves. Confessions moved to
+ * Community → Confessions (backend untouched).
+ *
+ * PUBLIC-FIRST (spec): browsing works logged-out; the queue is readable
+ * without an account. Sign-in is required at the interaction layer only —
+ * swipe/interested, create, inbox.
  *
  * Steps 8/9/12/17 of the spec are enforced by the RPC layer (one action layer,
  * state persistence, cursor pagination, idempotency) — see 20261024 migration.
@@ -38,17 +42,17 @@ import {
   type IncomingInterest,
 } from '@/lib/discovery'
 import SwipeDeck from '@/components/discovery/SwipeDeck'
-import ConfessionsTab from '@/components/discovery/ConfessionsTab'
 
-type Tab = 'foryou' | DiscoveryCategory | 'confessions'
+type Tab = 'foryou' | DiscoveryCategory
 
+// Confessions no longer live here — their entry point moved to
+// Community → Confessions (the backend, anonymity and RPCs are unchanged).
 const TABS: { key: Tab; label: string }[] = [
   { key: 'foryou', label: 'For You' },
   { key: 'startup', label: '🚀 Startups' },
   { key: 'project', label: '🛠 Projects' },
   { key: 'hackathon', label: '⚡ Hackathons' },
   { key: 'collab', label: '🤝 Collab' },
-  { key: 'confessions', label: '🕵️ Confessions' },
 ]
 
 const SECONDARY_LINKS = [
@@ -117,12 +121,10 @@ export default function DiscoverPage() {
   const loadingMoreRef = useRef(false)
   const loadedTabsRef = useRef<Set<string>>(new Set())
 
-  const category: DiscoveryCategory | null =
-    tab === 'foryou' ? null : tab === 'confessions' ? null : (tab as DiscoveryCategory)
+  const category: DiscoveryCategory | null = tab === 'foryou' ? null : (tab as DiscoveryCategory)
 
   const loadQueue = useCallback(
     async (opts: { fresh?: boolean; cursorCreated?: string | null; cursorId?: string | null } = {}) => {
-      if (tab === 'confessions') return
       const res = await fetchDiscoveryFeed({
         category: category ?? 'all',
         limit: PAGE,
@@ -141,11 +143,7 @@ export default function DiscoverPage() {
 
   // (Re)load when the tab changes; per-tab caching keeps swipes snappy.
   useEffect(() => {
-    if (!booted || tab === 'confessions') return
-    if (!user) {
-      setLoading(false)
-      return
-    }
+    if (!booted) return
     if (loadedTabsRef.current.has(tab)) {
       return
     }
@@ -156,7 +154,7 @@ export default function DiscoverPage() {
 
   // Prefetch the next batch when the user reaches the 7th card (STEP 12).
   useEffect(() => {
-    if (tab === 'confessions' || cards.length === 0) return
+    if (cards.length === 0) return
     if (cards.length < 7 || loadingMoreRef.current) return
     const seen = new Set(cards.map((c) => c.id))
     const last = cards[cards.length - 1]
@@ -179,7 +177,9 @@ export default function DiscoverPage() {
   const handleAction = useCallback(
     async (postId: string, action: 'interested' | 'passed') => {
       if (!user) {
-        toast.show('Sign in to swipe on ideas', { tone: 'danger' })
+        // Interaction gate (spec): browsing is public, acting is not — send
+        // the user to sign in and return them here afterwards.
+        router.push('/auth/login?redirect=' + encodeURIComponent('/discover'))
         return
       }
       if (actingId) return
@@ -252,11 +252,9 @@ export default function DiscoverPage() {
       looking_for: [],
     })
     loadedTabsRef.current.clear()
-    if (tab !== 'confessions') {
-      setLoading(true)
-      await loadQueue({ fresh: true })
-      setLoading(false)
-    }
+    setLoading(true)
+    await loadQueue({ fresh: true })
+    setLoading(false)
   }
 
   // ---- incoming interests inbox + accept→match (STEP 10) ----
@@ -409,17 +407,9 @@ export default function DiscoverPage() {
             ))}
           </div>
 
-          {/* Content */}
-          {tab === 'confessions' ? (
-            <ConfessionsTab userId={user?.id ?? null} />
-          ) : !booted ? (
+          {/* Content — public-first: the queue is readable logged-out */}
+          {!booted ? (
             <ListSkeleton count={2} />
-          ) : !user ? (
-            <EmptyState
-              icon="💡"
-              title="Sign in to discover"
-              body="Swipe through ideas and find people to build with."
-            />
           ) : loading ? (
             <ListSkeleton count={2} />
           ) : error ? (

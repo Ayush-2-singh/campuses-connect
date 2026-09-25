@@ -98,6 +98,57 @@ describe('discovery refactor guard', () => {
     const secondaryIdx = page.indexOf('SECONDARY_LINKS')
     expect(secondaryIdx).toBeGreaterThan(-1)
   })
+
+  it('mobile bottom bar is exactly the five primary destinations (final IA)', () => {
+    const navSrc = fs.readFileSync(path.join(SRC, 'components/mobileNav.ts'), 'utf8')
+     
+    const mod: Record<string, unknown> = {}
+    const navMatch = navSrc.match(/export const MOBILE_NAV = (\[[\s\S]*?\])/)
+    expect(navMatch).toBeTruthy()
+    const nav = eval(navMatch![1]) as { label: string; href: string }[]
+    expect(nav.map((i) => i.href)).toEqual(['/feed', '/discover', '/community', '/notes', '/profile'])
+    void mod
+    // Secondary features must NOT be bottom tabs.
+    for (const banned of [
+      '/opportunities',
+      '/confessions',
+      '/compete',
+      '/talent',
+      '/blog',
+      '/live-voice-chat',
+      '/communities',
+      '/chat',
+    ]) {
+      expect(
+        nav.some((i) => i.href === banned),
+        `bottom bar must not contain ${banned}`
+      ).toBe(false)
+    }
+  })
+
+  it('confessions entry point lives in Community, not Discovery', () => {
+    const discover = read('app/discover/page.tsx')
+    // No confession UI wiring in Discovery (comments pointing at Community are fine).
+    expect(discover).not.toContain('ConfessionsTab')
+    expect(discover).not.toContain("key: 'confessions'")
+    const hub = read('app/community/page.tsx')
+    expect(hub).toContain('ConfessionsTab')
+  })
+
+  it('community hub exists and groups the secondary social features', () => {
+    const hub = read('app/community/page.tsx')
+    for (const expected of ['/communities', '/chat', '/compete', '/live-voice-chat']) {
+      expect(hub).toContain(expected)
+    }
+  })
+
+  it('anon-read migration exists for the public-first requirement', () => {
+    const sql = fs.readFileSync(path.join(__dirname, '../supabase/migrations/20261025_discovery_anon_read.sql'), 'utf8')
+    expect(sql).toContain('GRANT EXECUTE ON FUNCTION public.discovery_feed')
+    expect(sql).toMatch(/TO anon;/)
+    // Write RPCs stay auth-only.
+    expect(sql).toMatch(/REVOKE ALL ON FUNCTION public\.record_discovery_action\(UUID, TEXT\) FROM PUBLIC, anon;/)
+  })
 })
 
 function offRel(paths: string[]): string {

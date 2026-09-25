@@ -82,6 +82,8 @@ export const ACCENT_BY_ROUTE: Record<string, AccentName> = {
 
   '/talent': 'green',
   '/teams': 'green',
+
+  '/community': 'purple',
 }
 
 /** Resolve the accent for a path (falls back to the brand gold). */

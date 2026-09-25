@@ -17,17 +17,15 @@ import { accentForPath } from '@/theme/colors'
 // its code on every page navigation.
 const CommandPalette = dynamic(() => import('@/components/CommandPalette'), { ssr: false })
 
+// Final IA: the five primary sections. Secondary features (Chat, Compete,
+// Leaderboard, Blogs, Live Voice…) surface INSIDE these — see /community for
+// the community grouping and mobileNav.ts for the mobile mirror.
 const NAV_ITEMS = [
   { label: 'Home', href: '/feed', icon: 'home' },
-  // Live Chat is a primary surface (global rooms), so it sits directly under
-  // Home — matching the mobile bar in mobileNav.ts.
-  { label: 'Live Chat', href: '/chat', icon: 'message' },
-  { label: 'Classroom', href: '/college', icon: 'book' },
+  { label: 'Discovery', href: '/discover', icon: 'flame' },
+  { label: 'Community', href: '/community', icon: 'users' },
   { label: 'Library', href: '/notes', icon: 'notebook' },
-  { label: 'Compete', href: '/compete', icon: 'zap' },
-  { label: 'Discover', href: '/discover', icon: 'flame' },
-  { label: 'Connect', href: '/connections', icon: 'link' },
-  { label: 'Live Voice Chat', href: '/live-voice-chat', icon: 'mic' },
+  { label: 'Profile', href: '/profile', icon: 'user' },
 ]
 
 const SECONDARY_NAV = [

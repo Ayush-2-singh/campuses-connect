@@ -15,6 +15,7 @@
  */
 
 import { useCallback, useEffect, useState } from 'react'
+import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import EmptyState from '@/components/EmptyState'
 import { ListSkeleton } from '@/components/Skeleton'
@@ -54,6 +55,7 @@ export default function ConfessionsTab({ userId }: { userId: string | null }) {
   const supabase = createClient()
   const toast = useToast()
   const haptic = useHaptic()
+  const router = useRouter()
 
   const [confessions, setConfessions] = useState<Confession[]>([])
   const [myReactions, setMyReactions] = useState<Set<string>>(new Set())
@@ -132,7 +134,16 @@ export default function ConfessionsTab({ userId }: { userId: string | null }) {
     await load(0)
   }
 
+  const requireAuth = () => {
+    router.push('/auth/login?redirect=' + encodeURIComponent(window.location.pathname))
+  }
+
   const react = async (c: Confession) => {
+    // Interaction gate: reading is public, reacting needs an account.
+    if (!userId) {
+      requireAuth()
+      return
+    }
     // Optimistic — the toggle RPC reconciles with the true count.
     const reacted = myReactions.has(c.id)
     setMyReactions((prev) => {
@@ -153,6 +164,10 @@ export default function ConfessionsTab({ userId }: { userId: string | null }) {
 
   const report = async (reason: string) => {
     if (!reportTarget || reportBusy) return
+    if (!userId) {
+      requireAuth()
+      return
+    }
     setReportBusy(true)
     const { error } = await supabase.rpc('report_confession', {
       p_confession_id: reportTarget.id,
@@ -170,7 +185,44 @@ export default function ConfessionsTab({ userId }: { userId: string | null }) {
 
   return (
     <div>
-      {/* Composer */}
+      {/* Composer — or, logged out, a sign-in CTA (read is still public) */}
+      {!userId && (
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            gap: 10,
+            background: 'var(--bg)',
+            border: '1px solid var(--border)',
+            borderRadius: 14,
+            padding: '12px 14px',
+            marginBottom: 16,
+          }}
+        >
+          <p style={{ fontSize: 13, color: 'var(--text-secondary)', margin: 0 }}>
+            🕵️ Reading is public — <strong>sign in to confess or react.</strong>
+          </p>
+          <button
+            onClick={requireAuth}
+            style={{
+              minHeight: 38,
+              padding: '7px 16px',
+              borderRadius: 10,
+              border: 'none',
+              background: 'var(--accent)',
+              color: 'var(--on-accent)',
+              fontSize: 13,
+              fontWeight: 700,
+              cursor: 'pointer',
+              fontFamily: 'inherit',
+              flexShrink: 0,
+            }}
+          >
+            Sign in
+          </button>
+        </div>
+      )}
       {userId && (
         <div
           style={{
@@ -289,8 +341,7 @@ export default function ConfessionsTab({ userId }: { userId: string | null }) {
                   <button
                     onClick={() => react(c)}
                     aria-pressed={reacted}
-                    aria-label={reacted ? 'Remove reaction' : 'React'}
-                    disabled={!userId}
+                    aria-label={reacted ? 'Remove reaction' : 'React — sign in required'}
                     style={{
                       minHeight: 36,
                       minWidth: 62,
@@ -305,7 +356,7 @@ export default function ConfessionsTab({ userId }: { userId: string | null }) {
                       color: reacted ? 'var(--accent-text)' : 'var(--text-secondary)',
                       fontSize: 13,
                       fontWeight: 600,
-                      cursor: userId ? 'pointer' : 'default',
+                      cursor: 'pointer',
                       fontFamily: 'inherit',
                     }}
                   >
@@ -317,9 +368,9 @@ export default function ConfessionsTab({ userId }: { userId: string | null }) {
 
                   <div style={{ flex: 1 }} />
 
-                  {userId && (
+                  {
                     <button
-                      onClick={() => setReportTarget(c)}
+                      onClick={() => (userId ? setReportTarget(c) : requireAuth())}
                       aria-label="Report confession"
                       style={{
                         minHeight: 36,
@@ -334,7 +385,7 @@ export default function ConfessionsTab({ userId }: { userId: string | null }) {
                     >
                       🚩
                     </button>
-                  )}
+                  }
                 </div>
               </div>
             )
