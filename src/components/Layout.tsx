@@ -34,11 +34,13 @@ const DISCOVERY_CHILDREN = [
 ]
 
 // Community pillar children — existing systems, relinked (no rebuilds).
+// Games & Clash surfaced as its own child (was hidden inside Compete tabs).
 const COMMUNITY_CHILDREN = [
   { label: 'Communities', href: '/communities', icon: 'users' },
   { label: 'Live Chat', href: '/chat', icon: 'message' },
   { label: 'Confessions', href: '/community?view=confessions', icon: 'eyeOff' },
-  { label: 'Compete', href: '/compete', icon: 'zap' },
+  { label: 'Games & Clash', href: '/compete?tab=clash', icon: 'zap' },
+  { label: 'Compete & Rankings', href: '/compete', icon: 'star' },
   { label: 'Live Voice', href: '/live-voice-chat', icon: 'mic' },
   { label: 'Connect', href: '/connections', icon: 'link' },
 ]

@@ -6,6 +6,7 @@ import Layout from '@/components/Layout'
 import ErrorBoundary from '@/components/ErrorBoundary'
 import { useRouter, useSearchParams } from 'next/navigation'
 import ScoreHeader from '@/components/ScoreHeader'
+import { Icon } from '@/components/icons'
 import RankingsTab from './RankingsTab'
 import ChallengeTab from './ChallengeTab'
 import ClashTab from './ClashTab'
@@ -210,24 +211,148 @@ function CompetePageInner() {
   return (
     <Layout user={user} profile={profile}>
       <ErrorBoundary pageName="compete">
-        <div style={{ maxWidth: 760, margin: '0 auto', padding: '24px 20px 48px' }}>
-          {/* Header */}
+        <div className="ambient" style={{ maxWidth: 1100, margin: '0 auto', padding: '22px 24px 48px' }}>
+          {/* Header strip — homepage pattern (green compete accent) */}
+          <div
+            style={{
+              background: 'var(--bg)',
+              border: '1px solid var(--border)',
+              borderRadius: 14,
+              boxShadow: 'var(--shadow-sm)',
+              padding: '14px 18px',
+              display: 'flex',
+              alignItems: 'center',
+              gap: 14,
+              flexWrap: 'wrap',
+              marginBottom: 16,
+            }}
+          >
+            <span
+              style={{
+                width: 42,
+                height: 42,
+                borderRadius: 12,
+                background: 'var(--success-light)',
+                color: 'var(--success-text)',
+                display: 'inline-flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                flexShrink: 0,
+              }}
+            >
+              <Icon name="zap" size={20} />
+            </span>
+            <div style={{ minWidth: 0 }}>
+              <h2 style={{ fontSize: 19, fontWeight: 800, color: 'var(--text-primary)', margin: 0, lineHeight: 1.2 }}>
+                Compete
+              </h2>
+              <p style={{ fontSize: 12, color: 'var(--text-muted)', margin: '2px 0 0' }}>Rank. Play. Win. Earn Aura.</p>
+            </div>
+            <span style={{ flex: 1 }} />
+            {contest && (
+              <span style={{ textAlign: 'center' }}>
+                <span
+                  style={{
+                    display: 'block',
+                    fontSize: 16,
+                    fontWeight: 800,
+                    color: 'var(--success-text)',
+                    lineHeight: 1.15,
+                  }}
+                >
+                  {registered ? 'In' : 'Open'}
+                </span>
+                <span style={{ fontSize: 10, color: 'var(--text-muted)' }}>Clash</span>
+              </span>
+            )}
+            {problems.length > 0 && (
+              <span style={{ textAlign: 'center' }}>
+                <span
+                  style={{
+                    display: 'block',
+                    fontSize: 16,
+                    fontWeight: 800,
+                    color: 'var(--text-primary)',
+                    lineHeight: 1.15,
+                  }}
+                >
+                  {problems.length}
+                </span>
+                <span style={{ fontSize: 10, color: 'var(--text-muted)' }}>Problems</span>
+              </span>
+            )}
+            {user && (
+              <button
+                onClick={() => changeTab('clash')}
+                style={{
+                  minHeight: 38,
+                  padding: '0 16px',
+                  borderRadius: 10,
+                  border: 'none',
+                  background: 'var(--accent)',
+                  color: 'var(--on-accent)',
+                  fontSize: 12.5,
+                  fontWeight: 700,
+                  cursor: 'pointer',
+                  fontFamily: 'inherit',
+                }}
+              >
+                🎮 Play Games
+              </button>
+            )}
+          </div>
+          {/* Karma / XP / Aura / Rating definitions — visible text (user request) */}
           <div
             style={{
               display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-              marginBottom: 18,
+              gap: 8,
               flexWrap: 'wrap',
-              gap: 10,
+              marginBottom: 16,
+              fontSize: 11.5,
+              color: 'var(--text-muted)',
             }}
           >
-            <div>
-              <h2 style={{ fontSize: 22, fontWeight: 800, color: 'var(--text-primary)', margin: '0 0 2px' }}>
-                ⚔️ Compete
-              </h2>
-              <p style={{ fontSize: 13, color: 'var(--text-muted)', margin: 0 }}>Rank. Play. Win. Earn Aura.</p>
-            </div>
+            <span
+              style={{
+                background: 'var(--bg)',
+                border: '1px solid var(--border)',
+                borderRadius: 8,
+                padding: '5px 10px',
+              }}
+            >
+              🏆 <strong style={{ color: 'var(--text-secondary)' }}>Karma</strong> — lifetime contribution points
+            </span>
+            <span
+              style={{
+                background: 'var(--bg)',
+                border: '1px solid var(--border)',
+                borderRadius: 8,
+                padding: '5px 10px',
+              }}
+            >
+              📈 <strong style={{ color: 'var(--text-secondary)' }}>XP</strong> — progress from solving & playing
+            </span>
+            <span
+              style={{
+                background: 'var(--bg)',
+                border: '1px solid var(--border)',
+                borderRadius: 8,
+                padding: '5px 10px',
+              }}
+            >
+              ✨ <strong style={{ color: 'var(--text-secondary)' }}>Aura</strong> — today&apos;s competitive momentum,
+              resets daily
+            </span>
+            <span
+              style={{
+                background: 'var(--bg)',
+                border: '1px solid var(--border)',
+                borderRadius: 8,
+                padding: '5px 10px',
+              }}
+            >
+              ⭐ <strong style={{ color: 'var(--text-secondary)' }}>Rating</strong> — skill per season, grows win by win
+            </span>
           </div>
 
           {/* The four metrics, kept separate: Rating / Aura / XP / Karma.

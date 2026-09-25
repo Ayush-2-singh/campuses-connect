@@ -41,6 +41,7 @@ const FEATURES: {
   href: string
   accent: string
   accentText: string
+  img: string
 }[] = [
   {
     key: 'communities',
@@ -50,6 +51,7 @@ const FEATURES: {
     href: '/communities',
     accent: 'var(--purple-light)',
     accentText: 'var(--purple-text)',
+    img: '/images/community.webp',
   },
   {
     key: 'live',
@@ -59,15 +61,17 @@ const FEATURES: {
     href: '/live-voice-chat',
     accent: 'var(--danger-light)',
     accentText: 'var(--danger-text)',
+    img: '/images/live-voice.webp',
   },
   {
     key: 'compete',
     title: 'Compete',
-    subtitle: 'Maths • Contests • Leaderboard',
+    subtitle: 'Games • Contests • Leaderboard',
     icon: 'zap',
-    href: '/compete',
+    href: '/compete?tab=clash',
     accent: 'var(--success-light)',
     accentText: 'var(--success-text)',
+    img: '/images/compete.webp',
   },
   {
     key: 'library',
@@ -75,8 +79,9 @@ const FEATURES: {
     subtitle: 'Notes • PYQs • Resources',
     icon: 'notebook',
     href: '/notes',
-    accent: 'var(--blue-light)',
-    accentText: 'var(--blue-text)',
+    accent: 'var(--purple-light)',
+    accentText: 'var(--purple-text)',
+    img: '/images/notes.webp',
   },
   {
     key: 'opportunities',
@@ -84,8 +89,9 @@ const FEATURES: {
     subtitle: 'Internships • Jobs • Projects',
     icon: 'briefcase',
     href: '/opportunities',
-    accent: 'var(--cyan-light)',
-    accentText: 'var(--cyan-text)',
+    accent: 'var(--blue-light)',
+    accentText: 'var(--blue-text)',
+    img: '/images/jobs-internships.webp',
   },
   {
     key: 'talent',
@@ -93,8 +99,9 @@ const FEATURES: {
     subtitle: 'Showcase • Network • Grow',
     icon: 'star',
     href: '/talent',
-    accent: 'var(--orange-light)',
-    accentText: 'var(--orange-text)',
+    accent: 'var(--cyan-light)',
+    accentText: 'var(--cyan-text)',
+    img: '/images/talent.webp',
   },
 ]
 
@@ -139,27 +146,86 @@ function FeatureCard({ f }: { f: (typeof FEATURES)[number] }) {
     <Link
       href={f.href}
       aria-label={f.title}
-      className="card-hover"
-      style={{ ...CARD, padding: 18, display: 'flex', flexDirection: 'column', gap: 10, textDecoration: 'none' }}
+      className="feature-card"
+      data-accent={
+        f.key === 'opportunities'
+          ? 'blue'
+          : f.key === 'compete'
+            ? 'green'
+            : f.key === 'library' || f.key === 'communities'
+              ? 'purple'
+              : f.key === 'talent'
+                ? 'cyan'
+                : 'gold'
+      }
+      style={{
+        ...CARD,
+        padding: 0,
+        display: 'flex',
+        flexDirection: 'column',
+        overflow: 'hidden',
+        textDecoration: 'none',
+        minWidth: 0,
+      }}
     >
+      {/* banner image — top half of the card */}
       <span
         style={{
-          width: 40,
-          height: 40,
-          borderRadius: 11,
-          background: f.accent,
-          color: f.accentText,
-          display: 'inline-flex',
-          alignItems: 'center',
-          justifyContent: 'center',
+          position: 'relative',
+          display: 'block',
+          width: '100%',
+          aspectRatio: '376 / 190',
+          overflow: 'hidden',
           flexShrink: 0,
         }}
       >
-        <Icon name={f.icon} size={19} />
+        <Image
+          src={f.img}
+          alt=""
+          width={376}
+          height={190}
+          sizes="(max-width: 900px) 50vw, 280px"
+          style={{
+            width: '100%',
+            height: '100%',
+            objectFit: 'cover',
+            display: 'block',
+            transition: 'transform 0.25s ease',
+          }}
+        />
+        <span
+          style={{
+            position: 'absolute',
+            top: 8,
+            left: 8,
+            width: 32,
+            height: 32,
+            borderRadius: 10,
+            background: 'var(--bg)',
+            border: '1px solid var(--border)',
+            color: 'var(--accent-text)',
+            display: 'inline-flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+          }}
+        >
+          <Icon name={f.icon} size={16} />
+        </span>
       </span>
-      <span style={{ display: 'block', fontSize: 15, fontWeight: 700, color: 'var(--text-primary)' }}>{f.title}</span>
-      <span style={{ display: 'block', fontSize: 12, color: 'var(--text-muted)', lineHeight: 1.45 }}>{f.subtitle}</span>
-      <span style={{ marginTop: 'auto', fontSize: 13, fontWeight: 600, color: 'var(--accent)' }}>→</span>
+      <span style={{ padding: '12px 14px 14px', display: 'flex', flexDirection: 'column', gap: 4, flex: 1 }}>
+        <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+          <span style={{ fontSize: 14.5, fontWeight: 800, color: 'var(--text-primary)' }}>{f.title}</span>
+          <span
+            className="feature-arrow"
+            style={{ marginLeft: 'auto', fontSize: 13, fontWeight: 700, color: 'var(--accent)' }}
+          >
+            →
+          </span>
+        </span>
+        <span style={{ display: 'block', fontSize: 11.5, color: 'var(--text-muted)', lineHeight: 1.45 }}>
+          {f.subtitle}
+        </span>
+      </span>
     </Link>
   )
 }
@@ -462,18 +528,212 @@ export default function HomeRedesign({ signedIn }: { signedIn: boolean }) {
             </span>
           </div>
 
-          {/* Row 1: Communities · Live Voice · Compete (§7) */}
+          {/* SPOTLIGHT — Confessions & Games/Compete (user request: these two
+              must dominate attention; everything else is one click away). */}
+          <div className="home-row-3" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))' }}>
+            {/* Confessions spotlight */}
+            <Link
+              href="/community?view=confessions"
+              aria-label="Confessions"
+              className="feature-card spotlight-card"
+              style={{
+                ...CARD,
+                padding: 0,
+                display: 'flex',
+                flexDirection: 'column',
+                overflow: 'hidden',
+                textDecoration: 'none',
+                minWidth: 0,
+                borderColor: 'var(--danger-border, var(--border))',
+              }}
+            >
+              <span
+                style={{
+                  position: 'relative',
+                  display: 'block',
+                  width: '100%',
+                  aspectRatio: '376 / 170',
+                  overflow: 'hidden',
+                  flexShrink: 0,
+                }}
+              >
+                <Image
+                  src="/images/confession.webp"
+                  alt=""
+                  width={376}
+                  height={170}
+                  sizes="(max-width: 900px) 50vw, 320px"
+                  style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
+                />
+                <span
+                  style={{
+                    position: 'absolute',
+                    top: 10,
+                    left: 10,
+                    fontSize: 10,
+                    fontWeight: 800,
+                    letterSpacing: 0.6,
+                    textTransform: 'uppercase',
+                    padding: '3px 10px',
+                    borderRadius: 7,
+                    background: 'var(--danger)',
+                    color: '#fff',
+                  }}
+                >
+                  🔥 Anonymous · Live
+                </span>
+              </span>
+              <span style={{ padding: '13px 16px 15px', display: 'flex', flexDirection: 'column', gap: 4 }}>
+                <span style={{ fontSize: 16, fontWeight: 800, color: 'var(--text-primary)' }}>Confessions</span>
+                <span style={{ fontSize: 12, color: 'var(--text-secondary)', lineHeight: 1.45 }}>
+                  Speak your mind — 100% anonymous. React, share, unburden.
+                </span>
+              </span>
+            </Link>
+
+            {/* Games & Clash spotlight */}
+            <Link
+              href="/compete?tab=clash"
+              aria-label="Games and Clash"
+              className="feature-card spotlight-card"
+              style={{
+                ...CARD,
+                padding: 0,
+                display: 'flex',
+                flexDirection: 'column',
+                overflow: 'hidden',
+                textDecoration: 'none',
+                minWidth: 0,
+                borderColor: 'var(--success-border, var(--border))',
+              }}
+            >
+              <span
+                style={{
+                  position: 'relative',
+                  display: 'block',
+                  width: '100%',
+                  aspectRatio: '376 / 170',
+                  overflow: 'hidden',
+                  flexShrink: 0,
+                }}
+              >
+                <Image
+                  src="/images/compete.webp"
+                  alt=""
+                  width={376}
+                  height={170}
+                  sizes="(max-width: 900px) 50vw, 320px"
+                  style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
+                />
+                <span
+                  style={{
+                    position: 'absolute',
+                    top: 10,
+                    left: 10,
+                    fontSize: 10,
+                    fontWeight: 800,
+                    letterSpacing: 0.6,
+                    textTransform: 'uppercase',
+                    padding: '3px 10px',
+                    borderRadius: 7,
+                    background: 'var(--success)',
+                    color: '#fff',
+                  }}
+                >
+                  🎮 Play · Win Aura
+                </span>
+              </span>
+              <span style={{ padding: '13px 16px 15px', display: 'flex', flexDirection: 'column', gap: 4 }}>
+                <span style={{ fontSize: 16, fontWeight: 800, color: 'var(--text-primary)' }}>Games &amp; Clash</span>
+                <span style={{ fontSize: 12, color: 'var(--text-secondary)', lineHeight: 1.45 }}>
+                  Solve, battle and climb — daily games and campus clashes.
+                </span>
+              </span>
+            </Link>
+
+            {/* Games teaser fills the third cell: mini leaderboard pull */}
+            <Link
+              href="/leaderboard"
+              aria-label="Leaderboard"
+              className="feature-card"
+              style={{
+                ...CARD,
+                padding: 0,
+                display: 'flex',
+                flexDirection: 'column',
+                overflow: 'hidden',
+                textDecoration: 'none',
+                minWidth: 0,
+              }}
+            >
+              <span
+                style={{
+                  position: 'relative',
+                  display: 'block',
+                  width: '100%',
+                  aspectRatio: '376 / 170',
+                  overflow: 'hidden',
+                  flexShrink: 0,
+                }}
+              >
+                <Image
+                  src="/images/leaderboard.webp"
+                  alt=""
+                  width={376}
+                  height={170}
+                  sizes="(max-width: 900px) 50vw, 320px"
+                  style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
+                />
+                <span
+                  style={{
+                    position: 'absolute',
+                    top: 10,
+                    left: 10,
+                    fontSize: 10,
+                    fontWeight: 800,
+                    letterSpacing: 0.6,
+                    textTransform: 'uppercase',
+                    padding: '3px 10px',
+                    borderRadius: 7,
+                    background: 'var(--accent)',
+                    color: 'var(--on-accent)',
+                  }}
+                >
+                  ⭐ Top builders
+                </span>
+              </span>
+              <span style={{ padding: '13px 16px 15px', display: 'flex', flexDirection: 'column', gap: 4 }}>
+                <span style={{ fontSize: 16, fontWeight: 800, color: 'var(--text-primary)' }}>Leaderboard</span>
+                <span style={{ fontSize: 12, color: 'var(--text-secondary)', lineHeight: 1.45 }}>
+                  Karma, GitHub & LeetCode — see who&apos;s leading this week.
+                </span>
+              </span>
+            </Link>
+          </div>
+
+          {/* Row 1: Communities · Live Voice · Compete & Rankings (§7) */}
           <div className="home-row-3">
             <FeatureCard f={FEATURES[0]} />
             <FeatureCard f={FEATURES[1]} />
-            <FeatureCard f={FEATURES[2]} />
+            <FeatureCard f={FEATURES[5]} />
           </div>
 
-          {/* Row 2: Library · Opportunities · Talent (§7) */}
+          {/* Row 2: Library · Opportunities · Discover ideas (§7) */}
           <div className="home-row-3">
             <FeatureCard f={FEATURES[3]} />
             <FeatureCard f={FEATURES[4]} />
-            <FeatureCard f={FEATURES[5]} />
+            <FeatureCard
+              f={{
+                key: 'discover',
+                title: 'Startup Ideas',
+                subtitle: 'Swipe ideas • Find collaborators',
+                icon: 'flame',
+                href: '/discover',
+                accent: 'var(--accent-light)',
+                accentText: 'var(--accent-text)',
+                img: '/images/ideas.webp',
+              }}
+            />
           </div>
 
           {/* ---------------- ANNOUNCEMENTS (§9) ---------------- */}

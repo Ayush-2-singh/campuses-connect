@@ -18,10 +18,14 @@ export const MOBILE_NAV = [
 ]
 
 export const MOBILE_MENU_NAV = [
+  // Games & Clash — surfaced OUT of the compete tabs (user request: games
+  // section was hiding inside Compete; it now gets its own direct entry).
+  { label: 'Games & Clash', href: '/compete?tab=clash', icon: 'zap' },
   // Secondary destinations — one ☰ tap away from any of the five tabs.
-  { label: 'Chat', href: '/chat', icon: 'message' },
-  { label: 'Compete', href: '/compete', icon: 'zap' },
+  { label: 'Compete & Rankings', href: '/compete', icon: 'zap' },
   { label: 'Leaderboard', href: '/leaderboard', icon: 'star' },
+  { label: 'Chat', href: '/chat', icon: 'message' },
+  { label: 'Confessions', href: '/community?view=confessions', icon: 'eyeOff' },
   { label: 'Blogs', href: '/blog', icon: 'book' },
   { label: 'Connections', href: '/connections', icon: 'link' },
   { label: 'Communities', href: '/communities', icon: 'users' },

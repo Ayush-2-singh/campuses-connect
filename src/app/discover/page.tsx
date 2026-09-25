@@ -18,6 +18,7 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
+import Image from 'next/image'
 import { createClient, getBootUser } from '@/lib/supabase/client'
 import Layout from '@/components/Layout'
 import ErrorBoundary from '@/components/ErrorBoundary'
@@ -63,6 +64,13 @@ const TABS: { key: Tab; label: string }[] = [
 ]
 
 const PAGE = 10
+
+/* Card token shared with the homepage design system */
+const CARD = {
+  background: 'var(--bg)',
+  border: '1px solid var(--border)',
+  borderRadius: 14,
+} as const
 
 // HUB — the Discovery landing cards (spec): every card leads to a real,
 // existing feature. No placeholders, no duplicates. Cards mirror the
@@ -540,89 +548,216 @@ export default function DiscoverPage() {
             )}
           </div>
           <div style={{ maxWidth: 900, margin: '0 auto' }}>
-            {/* HUB — Discovery landing (spec): every card opens a real,
-              existing feature. The deck/tabs remain one click away. Cards
-              mirror the Community hub (colored tile + chevron). */}
+            {/* HUB — swap-first: the swipe deck of startup ideas & projects
+                IS the front door (user request). Everything else (blogs,
+                people, hackathons, collab) hides behind a More ▾ dropdown
+                until clicked. */}
             {view === 'hub' ? (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-                {HUB_ITEMS.map((item) => {
-                  const open = () => {
-                    // Preload the deck payload the instant a card is tapped —
-                    // the deck view then renders with data already in hand.
-                    if (item.key !== 'blogs' && item.key !== 'people' && !loadedTabsRef.current.has(item.key)) {
-                      loadedTabsRef.current.add(item.key)
-                      reqTabRef.current = item.key
-                      setLoading(true)
-                      fetchDiscoveryFeed({
-                        category: item.key === 'foryou' ? 'all' : item.key,
-                        limit: PAGE,
-                        cursorCreated: null,
-                        cursorId: null,
-                      })
-                        .then((res) => {
-                          if (reqTabRef.current !== item.key) return
-                          if (res.error) {
-                            setError(res.error)
-                            return
-                          }
-                          setError(null)
-                          setCards(res.cards)
-                        })
-                        .finally(() => {
-                          if (reqTabRef.current === item.key) setLoading(false)
-                        })
-                    }
-                    setTab(item.key)
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                {/* SWAP FRONT DOOR — big image banner straight into the deck */}
+                <button
+                  onClick={() => {
+                    setTab('foryou')
                     setView('deck')
                     window.scrollTo({ top: 0 })
-                  }
-                  return (
-                    <button
-                      key={item.key}
-                      onClick={open}
+                  }}
+                  className="feature-card"
+                  style={{
+                    ...CARD,
+                    padding: 0,
+                    display: 'flex',
+                    flexDirection: 'column',
+                    overflow: 'hidden',
+                    width: '100%',
+                    textAlign: 'left',
+                    cursor: 'pointer',
+                    fontFamily: 'inherit',
+                  }}
+                >
+                  <span
+                    style={{
+                      position: 'relative',
+                      display: 'block',
+                      width: '100%',
+                      aspectRatio: '836 / 300',
+                      overflow: 'hidden',
+                    }}
+                  >
+                    <Image
+                      src="/images/ideas.webp"
+                      alt=""
+                      width={836}
+                      height={300}
+                      sizes="(max-width: 900px) 100vw, 900px"
+                      style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
+                    />
+                    <span
                       style={{
+                        position: 'absolute',
+                        inset: 0,
                         display: 'flex',
-                        alignItems: 'center',
-                        gap: 12,
-                        background: 'var(--bg)',
-                        border: '1px solid var(--border)',
-                        borderRadius: 14,
-                        padding: 14,
-                        cursor: 'pointer',
-                        width: '100%',
-                        textAlign: 'left',
-                        fontFamily: 'inherit',
-                        boxShadow: 'var(--shadow-sm)',
+                        flexDirection: 'column',
+                        justifyContent: 'flex-end',
+                        padding: 20,
+                        background: 'linear-gradient(180deg, transparent 30%, rgba(0,0,0,0.72))',
                       }}
                     >
                       <span
                         style={{
-                          width: 42,
-                          height: 42,
-                          borderRadius: 12,
-                          background: item.accent,
-                          color: item.accentText,
-                          display: 'inline-flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          fontSize: 19,
-                          flexShrink: 0,
+                          alignSelf: 'flex-start',
+                          fontSize: 10,
+                          fontWeight: 800,
+                          letterSpacing: 0.6,
+                          textTransform: 'uppercase',
+                          padding: '3px 10px',
+                          borderRadius: 7,
+                          background: 'var(--accent)',
+                          color: 'var(--on-accent)',
+                          marginBottom: 8,
                         }}
                       >
-                        {item.icon}
+                        🔥 Swipe • Match • Build
                       </span>
-                      <span style={{ flex: 1, minWidth: 0 }}>
-                        <span style={{ display: 'block', fontSize: 15, fontWeight: 700, color: 'var(--text-primary)' }}>
-                          {item.title}
-                        </span>
-                        <span style={{ display: 'block', fontSize: 12.5, color: 'var(--text-muted)', marginTop: 2 }}>
-                          {item.desc}
-                        </span>
+                      <span style={{ fontSize: 21, fontWeight: 800, color: '#fff', lineHeight: 1.2 }}>
+                        Swap Startup Ideas &amp; Projects
                       </span>
-                      <Icon name="chevron" size={16} />
-                    </button>
-                  )
-                })}
+                      <span style={{ fontSize: 12.5, color: 'rgba(255,255,255,0.85)', marginTop: 3 }}>
+                        Swipe right on ideas you&apos;d build — find who&apos;s in. Blogs, people &amp; more below.
+                      </span>
+                    </span>
+                  </span>
+                </button>
+
+                {/* MORE ▾ — collapsed secondary surfaces (blogs, people,
+                    hackathons, collab) — expands on click */}
+                <details
+                  style={{
+                    background: 'var(--bg)',
+                    border: '1px solid var(--border)',
+                    borderRadius: 14,
+                    boxShadow: 'var(--shadow-sm)',
+                    overflow: 'hidden',
+                  }}
+                >
+                  <summary
+                    style={{
+                      padding: '13px 16px',
+                      cursor: 'pointer',
+                      fontSize: 13,
+                      fontWeight: 700,
+                      color: 'var(--text-secondary)',
+                      listStyle: 'none',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 8,
+                      userSelect: 'none',
+                    }}
+                  >
+                    <span style={{ fontSize: 15, color: 'var(--accent)' }}>More ways to discover ▾</span>
+                    <span style={{ flex: 1 }} />
+                    <span style={{ fontSize: 11, color: 'var(--text-muted)' }}>
+                      Blogs · People · Hackathons · Collab
+                    </span>
+                  </summary>
+                  <div
+                    style={{
+                      padding: '0 12px 12px',
+                      display: 'grid',
+                      gap: 8,
+                      gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))',
+                    }}
+                  >
+                    {HUB_ITEMS.filter((it) => it.key !== 'foryou' && it.key !== 'startup' && it.key !== 'project').map(
+                      (item) => {
+                        const open = () => {
+                          // Preload the deck payload the instant a card is tapped —
+                          // the deck view then renders with data already in hand.
+                          if (item.key !== 'blogs' && item.key !== 'people' && !loadedTabsRef.current.has(item.key)) {
+                            loadedTabsRef.current.add(item.key)
+                            reqTabRef.current = item.key
+                            setLoading(true)
+                            fetchDiscoveryFeed({
+                              category: item.key === 'foryou' ? 'all' : item.key,
+                              limit: PAGE,
+                              cursorCreated: null,
+                              cursorId: null,
+                            })
+                              .then((res) => {
+                                if (reqTabRef.current !== item.key) return
+                                if (res.error) {
+                                  setError(res.error)
+                                  return
+                                }
+                                setError(null)
+                                setCards(res.cards)
+                              })
+                              .finally(() => {
+                                if (reqTabRef.current === item.key) setLoading(false)
+                              })
+                          }
+                          setTab(item.key)
+                          setView('deck')
+                          window.scrollTo({ top: 0 })
+                        }
+                        return (
+                          <button
+                            key={item.key}
+                            onClick={open}
+                            style={{
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: 12,
+                              background: 'var(--bg)',
+                              border: '1px solid var(--border)',
+                              borderRadius: 14,
+                              padding: 14,
+                              cursor: 'pointer',
+                              width: '100%',
+                              textAlign: 'left',
+                              fontFamily: 'inherit',
+                              boxShadow: 'var(--shadow-sm)',
+                            }}
+                          >
+                            <span
+                              style={{
+                                width: 42,
+                                height: 42,
+                                borderRadius: 12,
+                                background: item.accent,
+                                color: item.accentText,
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                fontSize: 19,
+                                flexShrink: 0,
+                              }}
+                            >
+                              {item.icon}
+                            </span>
+                            <span style={{ flex: 1, minWidth: 0 }}>
+                              <span
+                                style={{
+                                  display: 'block',
+                                  fontSize: 15,
+                                  fontWeight: 700,
+                                  color: 'var(--text-primary)',
+                                }}
+                              >
+                                {item.title}
+                              </span>
+                              <span
+                                style={{ display: 'block', fontSize: 12.5, color: 'var(--text-muted)', marginTop: 2 }}
+                              >
+                                {item.desc}
+                              </span>
+                            </span>
+                            <Icon name="chevron" size={16} />
+                          </button>
+                        )
+                      }
+                    )}
+                  </div>
+                </details>
               </div>
             ) : (
               <>
