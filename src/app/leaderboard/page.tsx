@@ -4,6 +4,7 @@ import { useEffect, useState, useCallback, useMemo } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
 import Layout from '@/components/Layout'
+import SectionShell from '@/components/SectionShell'
 import Avatar from '@/components/Avatar'
 import RegionPicker, { type Scope } from '@/components/RegionPicker'
 
@@ -214,18 +215,15 @@ export default function LeaderboardPage() {
 
   return (
     <Layout user={user} profile={profile}>
-      <div style={{ maxWidth: 720, margin: '0 auto', padding: '20px 16px' }}>
-        {/* ── Header ──────────────────────────────────── */}
-        <div style={{ textAlign: 'center', marginBottom: 20 }}>
-          <div style={{ fontSize: 40, marginBottom: 4 }}>🏆</div>
-          <h1 style={{ fontSize: 24, fontWeight: 800, color: 'var(--text-primary)', margin: '0 0 4px' }}>
-            Leaderboard
-          </h1>
-          <p style={{ fontSize: 13, color: 'var(--text-muted)', margin: 0 }}>
-            Karma + GitHub + LeetCode — combined ranking
-          </p>
-        </div>
-
+      <SectionShell
+        icon="star"
+        title="Leaderboard"
+        subtitle="Karma + GitHub + LeetCode — combined ranking"
+        stats={leaders.length ? [{ value: leaders.length, label: 'Ranked' }] : undefined}
+        actions={[
+          { label: 'Connect accounts', icon: 'link', primary: true, onClick: () => router.push('/integrations') },
+        ]}
+      >
         {/* ── Connect CTA ─────────────────────────────── */}
         <button
           onClick={() => router.push('/integrations')}
@@ -981,7 +979,7 @@ export default function LeaderboardPage() {
             🔗 Connect Profiles
           </button>
         </div>
-      </div>
+      </SectionShell>
     </Layout>
   )
 }

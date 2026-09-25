@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import Layout from '@/components/Layout'
+import SectionShell from '@/components/SectionShell'
 
 /**
  * Live Voice Chat — student-created voice groups, filed under a section.
@@ -174,43 +175,24 @@ export default function LiveVoiceChatPage() {
 
   return (
     <Layout user={user} profile={profile}>
-      <div style={{ maxWidth: 720, margin: '0 auto', padding: '24px 20px' }}>
-        <div
-          className="lvc-header"
-          style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 18 }}
-        >
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-            <div>
-              <h2 style={{ fontSize: 22, fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>
-                Live Voice Chat
-              </h2>
-              <p style={{ fontSize: 13, color: 'var(--text-muted)', margin: 0 }}>
-                Jump into a room and talk with students
-              </p>
-            </div>
-          </div>
-          {user && (
-            <button
-              className="lvc-newroom"
-              onClick={() => setShowCreate((s) => !s)}
-              style={{
-                background: 'var(--accent)',
-                color: 'var(--on-accent)',
-                border: 'none',
-                padding: '9px 18px',
-                borderRadius: 10,
-                fontSize: 14,
-                fontWeight: 600,
-                cursor: 'pointer',
-                fontFamily: 'inherit',
-                flexShrink: 0,
-              }}
-            >
-              {showCreate ? 'Cancel' : '+ New Room'}
-            </button>
-          )}
-        </div>
-
+      <SectionShell
+        icon="mic"
+        title="Live Voice Chat"
+        subtitle="Jump into a room and talk with students"
+        stats={[{ value: groups.length, label: 'Rooms' }]}
+        actions={
+          user
+            ? [
+                {
+                  label: showCreate ? 'Cancel' : '+ New Room',
+                  primary: true,
+                  icon: 'plus',
+                  onClick: () => setShowCreate((s) => !s),
+                },
+              ]
+            : undefined
+        }
+      >
         {/* Section filter — the sections the product asked for, in order. */}
         <div
           className="scrollbar-hide chip-scroll"
@@ -440,7 +422,7 @@ export default function LiveVoiceChatPage() {
             })
           )}
         </div>
-      </div>
+      </SectionShell>
     </Layout>
   )
 }

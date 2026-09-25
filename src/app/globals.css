@@ -920,6 +920,22 @@ a,
   }
 }
 
+/* ───────────────── Section page cards (homepage pattern) ─────────────── */
+/* SectionShell pages render their lists as wide homepage-style cards:
+   equal 3-up grid on desktop, 2-up on tablet, 1-up on mobile. Pages wrap
+   their EXISTING card components in .section-grid — only position changes,
+   all data/logic untouched. */
+.section-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 14px;
+}
+@media (max-width: 700px) {
+  .section-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
 /* Filter/tab chip rows — one scrollable row on desktop (when they don't fit),
    but on mobile the chips WRAP so every option is visible like on a tablet —
    nothing hidden behind a scroll. */
