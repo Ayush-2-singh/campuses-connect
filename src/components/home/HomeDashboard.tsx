@@ -193,6 +193,18 @@ export default function HomeDashboard() {
         </div>
 
         <div style={{ display: 'flex' }}>
+          <SectionCard icon="💭" title="Confessions" href="/community?view=confessions">
+            {data.confessions.length === 0 ? (
+              <p style={{ fontSize: 12.5, color: 'var(--text-muted)', margin: '4px 0' }}>Nothing confessed yet.</p>
+            ) : (
+              data.confessions.map((c) => (
+                <Row key={c.id} primary={c.body.slice(0, 70)} meta={`❤️ ${c.reaction_count}`} />
+              ))
+            )}
+          </SectionCard>
+        </div>
+
+        <div style={{ display: 'flex' }}>
           <SectionCard icon="🔎" title="Discovery" href="/discover">
             {data.ideas.length === 0 ? (
               <p style={{ fontSize: 12.5, color: 'var(--text-muted)', margin: '4px 0' }}>
@@ -217,18 +229,6 @@ export default function HomeDashboard() {
                 <Link key={r.id} href="/notes" style={{ textDecoration: 'none', display: 'block' }}>
                   <Row primary={r.title} secondary={r.subject} />
                 </Link>
-              ))
-            )}
-          </SectionCard>
-        </div>
-
-        <div style={{ display: 'flex' }}>
-          <SectionCard icon="💭" title="Confessions" href="/community?view=confessions">
-            {data.confessions.length === 0 ? (
-              <p style={{ fontSize: 12.5, color: 'var(--text-muted)', margin: '4px 0' }}>Nothing confessed yet.</p>
-            ) : (
-              data.confessions.map((c) => (
-                <Row key={c.id} primary={c.body.slice(0, 70)} meta={`❤️ ${c.reaction_count}`} />
               ))
             )}
           </SectionCard>
