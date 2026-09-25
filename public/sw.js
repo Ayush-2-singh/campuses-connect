@@ -2,11 +2,11 @@
    fallback, cache-first static assets, auth pages always network. */
 
 const CACHE_NAME = 'connecttocampus-v3'
-// Cache version bumped to v7: auth pages (/auth/*) are now NEVER cached and
-// navigations are network-first, so users always get the current login UI
-// and the newest app bundles after a deploy (no stale-offline code).
-const STATIC_CACHE = 'campus-static-v7'
-const DYNAMIC_CACHE = 'campus-dynamic-v7'
+// Cache version bumped to v8: new brand icon set (dark tile + bright logo
+// art replaces the old dark-square favicon that read as a blob in tabs).
+// Bumping flushes the stale cached favicon/icons from every client.
+const STATIC_CACHE = 'campus-static-v8'
+const DYNAMIC_CACHE = 'campus-dynamic-v8'
 
 // Pages to pre-cache for offline access. NOTE: auth pages (/auth/*) are
 // NEVER cached (see fetch handler) and personal pages (e.g. /feed,

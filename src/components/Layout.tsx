@@ -89,7 +89,7 @@ export default function Layout({ children, user, profile }: { children: React.Re
   const [discoveryOpen, setDiscoveryOpen] = React.useState(false)
   const [communityOpen, setCommunityOpen] = React.useState(false)
   const [libraryOpen, setLibraryOpen] = React.useState(false)
-  const [logoSrc, setLogoSrc] = React.useState('/connect-to-campus-logo-light.png')
+  const [logoSrc, setLogoSrc] = React.useState('/connect-to-campus-logo-dark.png')
 
   // Sync logo with theme changes
   React.useEffect(() => {

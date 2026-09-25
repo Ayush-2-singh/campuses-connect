@@ -12,7 +12,7 @@ export default function AboutPage() {
   const [pulse, setPulse] = useState({ notes: 0, opportunities: 0, discussions: 0, hackathons: 0 })
   const [liveColleges, setLiveColleges] = useState<{ name: string; campuses: string[] }[]>([])
   const [guestOpen, setGuestOpen] = useState(false)
-  const [logoSrc, setLogoSrc] = useState('/connect-to-campus-logo-light.png')
+  const [logoSrc, setLogoSrc] = useState('/connect-to-campus-logo-dark.png')
   const router = useRouter()
   const supabase = createClient()
 

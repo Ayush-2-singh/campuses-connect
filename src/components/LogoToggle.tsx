@@ -4,14 +4,17 @@ import React from 'react'
 
 const THEME_CHANGE_EVENT = 'cc-theme-change'
 
-// Dark mode → dark variant logo, Light mode → light variant logo
+// Dark mode → dark variant logo (bright art for dark backgrounds),
+// Light mode → light variant logo (deep art for white backgrounds).
+// Default is the DARK variant: the app is dark-first, so the very first
+// paint (before the theme attribute is read) must stay visible.
 function getLogoForTheme(): string {
-  if (typeof window === 'undefined') return '/connect-to-campus-logo-light.png'
+  if (typeof window === 'undefined') return '/connect-to-campus-logo-dark.png'
   const theme = document.documentElement.getAttribute('data-theme')
-  if (theme === 'dark') {
-    return '/connect-to-campus-logo-dark.png'
+  if (theme === 'light') {
+    return '/connect-to-campus-logo-light.png'
   }
-  return '/connect-to-campus-logo-light.png'
+  return '/connect-to-campus-logo-dark.png'
 }
 
 export function getLogoSrc(): string {
@@ -19,7 +22,7 @@ export function getLogoSrc(): string {
 }
 
 export default function LogoToggle({ size = 36 }: { size?: number }) {
-  const [logoSrc, setLogoSrc] = React.useState('/connect-to-campus-logo-light.png')
+  const [logoSrc, setLogoSrc] = React.useState('/connect-to-campus-logo-dark.png')
   const [mounted, setMounted] = React.useState(false)
   const [flash, setFlash] = React.useState(false)
 
