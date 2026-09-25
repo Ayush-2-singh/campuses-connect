@@ -15,17 +15,17 @@ interface CmdItem {
 const COMMANDS: CmdItem[] = [
   // AI-style quick actions — every one lands on a real page with a real feature.
   {
-    icon: 'briefcase',
-    label: 'Find internships for me',
-    hint: 'Opportunities',
-    href: '/opportunities?type=internship',
+    icon: 'flame',
+    label: 'Find ideas to build with',
+    hint: 'Discovery',
+    href: '/discover',
     group: 'Ask Connect My Campus',
   },
   {
     icon: 'zap',
-    label: 'Find hackathons closing soon',
-    hint: 'Opportunities',
-    href: '/opportunities?type=hackathon',
+    label: 'Find hackathon teams',
+    hint: 'Discovery',
+    href: '/discover?tab=hackathon',
     group: 'Ask Connect My Campus',
   },
   {
@@ -49,7 +49,7 @@ const COMMANDS: CmdItem[] = [
   { icon: 'globe', label: 'Global — connect everywhere', href: '/global', group: 'Navigate' },
   { icon: 'link', label: 'Connections — chats, requests & network', href: '/connections', group: 'Navigate' },
   { icon: 'book', label: 'Classroom', href: '/college', group: 'Navigate' },
-  { icon: 'briefcase', label: 'Opportunities', href: '/opportunities', group: 'Navigate' },
+  { icon: 'flame', label: 'Discover — ideas, builders & collabs', href: '/discover', group: 'Navigate' },
   { icon: 'notebook', label: 'Notes', href: '/notes', group: 'Navigate' },
   { icon: 'users', label: 'Communities', href: '/communities', group: 'Navigate' },
   { icon: 'star', label: 'Talent', href: '/talent', group: 'Navigate' },

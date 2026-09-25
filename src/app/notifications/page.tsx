@@ -12,10 +12,14 @@ type NotifGroup = { label: string; icon: string; items: any[] }
 /** Derive a meaningful type from the notification's own text — no fake metadata. */
 function classify(body: string): { label: string; icon: string; tone: string } {
   const t = (body || '').toLowerCase()
-  if (/(accepted|connection|request|follow)/.test(t)) return { label: 'Network', icon: 'users', tone: 'var(--accent-text)' }
-  if (/(due|assignment|class|lesson|deadline)/.test(t)) return { label: 'Classroom', icon: 'book', tone: 'var(--purple-text)' }
-  if (/(replied|comment|answered|discussion|question)/.test(t)) return { label: 'Discussion', icon: 'message', tone: 'var(--success-text)' }
-  if (/(internship|hackathon|opportunity|scholarship|job|closes|opens)/.test(t)) return { label: 'Opportunity', icon: 'briefcase', tone: 'var(--orange-text)' }
+  if (/(accepted|connection|request|follow)/.test(t))
+    return { label: 'Network', icon: 'users', tone: 'var(--accent-text)' }
+  if (/(due|assignment|class|lesson|deadline)/.test(t))
+    return { label: 'Classroom', icon: 'book', tone: 'var(--purple-text)' }
+  if (/(replied|comment|answered|discussion|question)/.test(t))
+    return { label: 'Discussion', icon: 'message', tone: 'var(--success-text)' }
+  if (/(internship|hackathon|opportunity|scholarship|job|closes|opens)/.test(t))
+    return { label: 'Opportunity', icon: 'briefcase', tone: 'var(--orange-text)' }
   return { label: 'Update', icon: 'bell', tone: 'var(--text-secondary)' }
 }
 
@@ -50,8 +54,15 @@ export default function NotificationsPage() {
   useEffect(() => {
     const load = async () => {
       try {
-        const { data: { user } } = await supabase.auth.getUser()
-        if (!user) { router.replace('/auth/login?redirect=' + encodeURIComponent(typeof window !== 'undefined' ? window.location.pathname : '')); return }
+        const {
+          data: { user },
+        } = await supabase.auth.getUser()
+        if (!user) {
+          router.replace(
+            '/auth/login?redirect=' + encodeURIComponent(typeof window !== 'undefined' ? window.location.pathname : '')
+          )
+          return
+        }
         setUser(user)
         const { data: prof } = await supabase.from('profiles').select('*').eq('id', user.id).single()
         setProfile(prof)
@@ -62,7 +73,9 @@ export default function NotificationsPage() {
           .order('created_at', { ascending: false })
           .limit(30)
         setNotifications(data || [])
-      } catch { /* page shows empty state */ }
+      } catch {
+        /* page shows empty state */
+      }
       setLoading(false)
     }
     load()
@@ -71,10 +84,16 @@ export default function NotificationsPage() {
   const markAllRead = async () => {
     if (!user) return
     try {
-      const { error } = await supabase.from('notifications').update({ is_read: true }).eq('recipient_id', user.id).eq('is_read', false)
+      const { error } = await supabase
+        .from('notifications')
+        .update({ is_read: true })
+        .eq('recipient_id', user.id)
+        .eq('is_read', false)
       if (error) return // silently fail — UI stays in current state
-    } catch { /* ignore */ }
-    setNotifications(ns => ns.map(n => ({ ...n, is_read: true })))
+    } catch {
+      /* ignore */
+    }
+    setNotifications((ns) => ns.map((n) => ({ ...n, is_read: true })))
   }
 
   /** Where does this notification point? null = no destination. */
@@ -82,10 +101,17 @@ export default function NotificationsPage() {
     if (n.ref_type === 'post' && n.ref_id) return `/post/${n.ref_id}`
     if (n.ref_type === 'team_request') return '/teams'
     switch (n.type) {
-      case 'answer': return '/ask'
-      case 'new_opportunity': return '/opportunities'
-      case 'new_event': return '/events'
-      case 'new_note': return '/notes'
+      case 'answer':
+        return '/ask'
+      case 'new_opportunity':
+        return '/opportunities'
+      case 'discovery_interest':
+      case 'discovery_match':
+        return '/discover'
+      case 'new_event':
+        return '/events'
+      case 'new_note':
+        return '/notes'
       case 'connection_request':
       case 'connection_accepted':
         return n.profiles?.username ? `/profile/${n.profiles.username}` : '/profile'
@@ -100,7 +126,7 @@ export default function NotificationsPage() {
     // Mark as read first (fire-and-forget) so the badge clears.
     if (!n.is_read) {
       supabase.from('notifications').update({ is_read: true }).eq('id', n.id)
-      setNotifications(ns => ns.map(x => x.id === n.id ? { ...x, is_read: true } : x))
+      setNotifications((ns) => ns.map((x) => (x.id === n.id ? { ...x, is_read: true } : x)))
     }
     const target = targetFor(n)
     if (target) router.push(target)
@@ -113,22 +139,54 @@ export default function NotificationsPage() {
       earlier: { label: 'Earlier', icon: 'bell', items: [] },
     }
     for (const n of notifications) g[groupLabel(n.created_at)].items.push(n)
-    return Object.values(g).filter(gr => gr.items.length > 0)
+    return Object.values(g).filter((gr) => gr.items.length > 0)
   }, [notifications])
 
-  const unreadCount = notifications.filter(n => !n.is_read).length
+  const unreadCount = notifications.filter((n) => !n.is_read).length
 
   return (
     <Layout user={user} profile={profile}>
       <div style={{ maxWidth: 680, margin: '0 auto', padding: '28px 20px 40px' }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-            <button onClick={() => router.push('/more')} aria-label="Back" style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 18, color: 'var(--text-muted)', width: 44, height: 44, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', borderRadius: 10, margin: '-10px 0 -10px -12px', flexShrink: 0 }}>←</button>
+            <button
+              onClick={() => router.push('/more')}
+              aria-label="Back"
+              style={{
+                background: 'none',
+                border: 'none',
+                cursor: 'pointer',
+                fontSize: 18,
+                color: 'var(--text-muted)',
+                width: 44,
+                height: 44,
+                display: 'inline-flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                borderRadius: 10,
+                margin: '-10px 0 -10px -12px',
+                flexShrink: 0,
+              }}
+            >
+              ←
+            </button>
             <h2 style={{ fontSize: 24, fontWeight: 800, color: 'var(--text-primary)', margin: 0 }}>Notifications</h2>
           </div>
           {unreadCount > 0 && (
-            <button onClick={markAllRead}
-              style={{ background: 'var(--accent-light)', color: 'var(--accent-text)', border: 'none', borderRadius: 20, padding: '6px 14px', fontSize: 12, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>
+            <button
+              onClick={markAllRead}
+              style={{
+                background: 'var(--accent-light)',
+                color: 'var(--accent-text)',
+                border: 'none',
+                borderRadius: 20,
+                padding: '6px 14px',
+                fontSize: 12,
+                fontWeight: 600,
+                cursor: 'pointer',
+                fontFamily: 'inherit',
+              }}
+            >
               Mark all as read
             </button>
           )}
@@ -153,14 +211,27 @@ export default function NotificationsPage() {
           />
         ) : (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
-            {groups.map(gr => (
+            {groups.map((gr) => (
               <div key={gr.label}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 8 }}>
-                  <span style={{ display: 'flex', color: 'var(--text-muted)' }}><Icon name={gr.icon} size={13} /></span>
-                  <h3 style={{ fontSize: 12, fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em', margin: 0 }}>{gr.label}</h3>
+                  <span style={{ display: 'flex', color: 'var(--text-muted)' }}>
+                    <Icon name={gr.icon} size={13} />
+                  </span>
+                  <h3
+                    style={{
+                      fontSize: 12,
+                      fontWeight: 700,
+                      color: 'var(--text-muted)',
+                      textTransform: 'uppercase',
+                      letterSpacing: '0.05em',
+                      margin: 0,
+                    }}
+                  >
+                    {gr.label}
+                  </h3>
                 </div>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                  {gr.items.map(n => {
+                  {gr.items.map((n) => {
                     const cls = classify(n.body || n.title || '')
                     const target = targetFor(n)
                     return (
@@ -169,22 +240,87 @@ export default function NotificationsPage() {
                         role={target ? 'button' : undefined}
                         tabIndex={target ? 0 : undefined}
                         onClick={() => openNotification(n)}
-                        onKeyDown={e => { if (target && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); openNotification(n) } }}
+                        onKeyDown={(e) => {
+                          if (target && (e.key === 'Enter' || e.key === ' ')) {
+                            e.preventDefault()
+                            openNotification(n)
+                          }
+                        }}
                         className="card-hover"
-                        style={{ background: n.is_read ? 'var(--bg)' : 'var(--accent-light)', border: '1px solid var(--border)', borderRadius: 'var(--radius)', padding: '13px 16px', boxShadow: 'var(--shadow-sm)', cursor: target ? 'pointer' : 'default' }}
+                        style={{
+                          background: n.is_read ? 'var(--bg)' : 'var(--accent-light)',
+                          border: '1px solid var(--border)',
+                          borderRadius: 'var(--radius)',
+                          padding: '13px 16px',
+                          boxShadow: 'var(--shadow-sm)',
+                          cursor: target ? 'pointer' : 'default',
+                        }}
                       >
                         <div style={{ display: 'flex', alignItems: 'flex-start', gap: 12 }}>
-                          <span style={{ width: 32, height: 32, borderRadius: 10, background: 'var(--bg)', border: '1px solid var(--border)', color: cls.tone, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                          <span
+                            style={{
+                              width: 32,
+                              height: 32,
+                              borderRadius: 10,
+                              background: 'var(--bg)',
+                              border: '1px solid var(--border)',
+                              color: cls.tone,
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              flexShrink: 0,
+                            }}
+                          >
                             <Icon name={cls.icon} size={15} />
                           </span>
                           <div style={{ flex: 1, minWidth: 0 }}>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 3, flexWrap: 'wrap' }}>
+                            <div
+                              style={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: 8,
+                                marginBottom: 3,
+                                flexWrap: 'wrap',
+                              }}
+                            >
                               <span style={{ fontSize: 10.5, fontWeight: 700, color: cls.tone }}>{cls.label}</span>
-                              {!n.is_read && <span style={{ width: 7, height: 7, borderRadius: '50%', background: 'var(--accent)', flexShrink: 0 }} />}
-                              {target && <span style={{ fontSize: 10.5, color: 'var(--accent)', marginLeft: 'auto', fontWeight: 700 }}>Open →</span>}
+                              {!n.is_read && (
+                                <span
+                                  style={{
+                                    width: 7,
+                                    height: 7,
+                                    borderRadius: '50%',
+                                    background: 'var(--accent)',
+                                    flexShrink: 0,
+                                  }}
+                                />
+                              )}
+                              {target && (
+                                <span
+                                  style={{
+                                    fontSize: 10.5,
+                                    color: 'var(--accent)',
+                                    marginLeft: 'auto',
+                                    fontWeight: 700,
+                                  }}
+                                >
+                                  Open →
+                                </span>
+                              )}
                             </div>
-                            <p style={{ fontSize: 13.5, color: 'var(--text-primary)', margin: '0 0 3px', lineHeight: 1.5 }}>{n.body || n.title || 'New notification'}</p>
-                            <p style={{ fontSize: 11, color: 'var(--text-muted)', margin: 0 }}>{timeAgo(n.created_at)}</p>
+                            <p
+                              style={{
+                                fontSize: 13.5,
+                                color: 'var(--text-primary)',
+                                margin: '0 0 3px',
+                                lineHeight: 1.5,
+                              }}
+                            >
+                              {n.body || n.title || 'New notification'}
+                            </p>
+                            <p style={{ fontSize: 11, color: 'var(--text-muted)', margin: 0 }}>
+                              {timeAgo(n.created_at)}
+                            </p>
                           </div>
                         </div>
                       </div>

@@ -179,7 +179,7 @@ export default function FeedPage() {
       label: 'opportunities',
       desc: 'open right now',
       value: pulse.opportunities,
-      href: '/opportunities',
+      href: '/discover',
     },
     {
       key: 'notes',
@@ -203,7 +203,7 @@ export default function FeedPage() {
       label: 'hackathons closing soon',
       desc: 'within 7 days',
       value: pulse.hackathons,
-      href: '/opportunities?type=hackathon',
+      href: '/discover?tab=hackathon',
     },
   ]
 

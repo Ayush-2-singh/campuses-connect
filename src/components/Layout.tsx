@@ -26,7 +26,6 @@ const NAV_ITEMS = [
   { label: 'Library', href: '/notes', icon: 'notebook' },
   { label: 'Compete', href: '/compete', icon: 'zap' },
   { label: 'Discover', href: '/discover', icon: 'flame' },
-  { label: 'Opportunities', href: '/opportunities', icon: 'briefcase' },
   { label: 'Connect', href: '/connections', icon: 'link' },
   { label: 'Live Voice Chat', href: '/live-voice-chat', icon: 'mic' },
 ]
@@ -39,7 +38,7 @@ const SECONDARY_NAV = [
 const FAB_ACTIONS = [
   { label: 'Ask ConnectToCampus', desc: 'Search, shortcuts & questions', icon: 'sparkles', action: 'cmd' as const },
   { label: 'Upload Note', desc: 'Add a resource to the library', icon: 'notebook', href: '/notes' },
-  { label: 'Post Opportunity', desc: 'Internships, hackathons & more', icon: 'briefcase', href: '/opportunities' },
+  { label: 'Post an Idea', desc: 'Startups, projects & collabs', icon: 'flame', href: '/discover' },
   { label: 'Explore More', desc: 'All features in one place', icon: 'more', href: '/more' },
 ]
 
