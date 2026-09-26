@@ -14,7 +14,7 @@
  *   4. Range pagination with a Load-more control instead of a bare LIMIT 30.
  */
 
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import EmptyState from '@/components/EmptyState'
@@ -69,6 +69,57 @@ export default function ConfessionsTab({ userId }: { userId: string | null }) {
 
   const [reportTarget, setReportTarget] = useState<Confession | null>(null)
   const [reportBusy, setReportBusy] = useState(false)
+
+  // ---- interactivity state ----
+  /** Burst hearts: {key, confessionId, x%, y%} — rendered inside the card. */
+  const [bursts, setBursts] = useState<{ key: number; id: string; x: number; y: number }[]>([])
+  /** Cards whose ❤️ button just popped (animation trigger). */
+  const [popped, setPopped] = useState<Set<string>>(new Set())
+  /** Tracks last tap per confession for double-tap detection (<350ms). */
+  const lastTapRef = useRef<Record<string, number>>({})
+  const burstSeq = useRef(0)
+
+  /** Spawn a floating heart at the tap point inside a card. */
+  const spawnBurst = useCallback((confessionId: string, x: number, y: number) => {
+    const key = ++burstSeq.current
+    setBursts((prev) => [...prev.slice(-6), { key, id: confessionId, x, y }])
+    window.setTimeout(() => {
+      setBursts((prev) => prev.filter((b) => b.key !== key))
+    }, 1400)
+  }, [])
+
+  const markPopped = useCallback((confessionId: string) => {
+    setPopped((prev) => new Set(prev).add(confessionId))
+    window.setTimeout(() => {
+      setPopped((prev) => {
+        const next = new Set(prev)
+        next.delete(confessionId)
+        return next
+      })
+    }, 450)
+  }, [])
+
+  /**
+   * Card body interactions: double-tap (or double-click) anywhere on the text
+   * reacts + bursts a heart at the exact tap point — Instagram-style.
+   */
+  const onBodyPointerDown = (e: React.PointerEvent<HTMLParagraphElement>, c: Confession) => {
+    if (!userId) return
+    const rect = e.currentTarget.getBoundingClientRect()
+    const x = ((e.clientX - rect.left) / rect.width) * 100
+    const y = ((e.clientY - rect.top) / rect.height) * 100
+    const now = Date.now()
+    const last = lastTapRef.current[c.id] || 0
+    lastTapRef.current[c.id] = now
+    if (now - last < 350) {
+      lastTapRef.current[c.id] = 0
+      spawnBurst(c.id, x, y)
+      if (!myReactions.has(c.id)) {
+        markPopped(c.id)
+        void react(c)
+      }
+    }
+  }
 
   const load = useCallback(
     async (offset = 0) => {
@@ -259,7 +310,17 @@ export default function ConfessionsTab({ userId }: { userId: string | null }) {
               boxSizing: 'border-box',
             }}
           />
-          <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 8 }}>
+          <div style={{ display: 'flex', alignItems: 'center', marginTop: 8 }}>
+            <span
+              style={{
+                fontSize: 11,
+                color: draft.length > 1800 ? 'var(--danger)' : 'var(--text-muted)',
+              }}
+              aria-live="polite"
+            >
+              {draft.length}/2000
+            </span>
+            <span style={{ flex: 1 }} />
             <button
               onClick={submit}
               disabled={!draft.trim() || posting}
@@ -276,7 +337,7 @@ export default function ConfessionsTab({ userId }: { userId: string | null }) {
                 fontFamily: 'inherit',
               }}
             >
-              {posting ? 'Posting…' : 'Post'}
+              {posting ? 'Posting…' : 'Post anonymously'}
             </button>
           </div>
         </div>
@@ -313,19 +374,52 @@ export default function ConfessionsTab({ userId }: { userId: string | null }) {
         <EmptyState icon="🕵️" title="No confessions yet" body="Be the first to share something anonymously." />
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-          {confessions.map((c) => {
+          {confessions.map((c, i) => {
             const reacted = myReactions.has(c.id)
+            const cardBursts = bursts.filter((b) => b.id === c.id)
             return (
               <div
                 key={c.id}
+                className="confess-card"
                 style={{
+                  position: 'relative',
+                  overflow: 'hidden',
                   background: 'var(--bg)',
                   border: '1px solid var(--border)',
                   borderRadius: 14,
                   padding: 14,
+                  animation: `ccConfessIn 0.3s ease ${Math.min(i, 8) * 0.04}s backwards`,
                 }}
               >
+                {/* masked badge — whisper-tone identity strip */}
+                <div
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 6,
+                    marginBottom: 8,
+                  }}
+                >
+                  <span
+                    style={{
+                      fontSize: 10,
+                      fontWeight: 800,
+                      letterSpacing: 0.8,
+                      textTransform: 'uppercase',
+                      color: 'var(--text-muted)',
+                      background: 'var(--bg-secondary)',
+                      borderRadius: 7,
+                      padding: '2px 8px',
+                    }}
+                  >
+                    🕵️ Anonymous
+                  </span>
+                  <span style={{ flex: 1 }} />
+                  <span style={{ fontSize: 11, color: 'var(--text-muted)' }}>{timeAgo(c.created_at)}</span>
+                </div>
+
                 <p
+                  onPointerDown={(e) => onBodyPointerDown(e, c)}
                   style={{
                     fontSize: 14.5,
                     color: 'var(--text-primary)',
@@ -333,10 +427,32 @@ export default function ConfessionsTab({ userId }: { userId: string | null }) {
                     lineHeight: 1.5,
                     whiteSpace: 'pre-wrap',
                     wordBreak: 'break-word',
+                    cursor: userId ? 'pointer' : 'default',
+                    userSelect: 'none',
                   }}
                 >
                   {c.body}
                 </p>
+
+                {/* floating double-tap hearts */}
+                {cardBursts.map((b) => (
+                  <span
+                    key={b.key}
+                    aria-hidden
+                    style={{
+                      position: 'absolute',
+                      left: `${b.x}%`,
+                      top: `${b.y}%`,
+                      fontSize: 34,
+                      pointerEvents: 'none',
+                      animation: 'ccHeartBurst 1.4s ease-out forwards',
+                      filter: 'drop-shadow(0 4px 10px rgba(0,0,0,0.35))',
+                    }}
+                  >
+                    ❤️
+                  </span>
+                ))}
+
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                   <button
                     onClick={() => react(c)}
@@ -358,15 +474,20 @@ export default function ConfessionsTab({ userId }: { userId: string | null }) {
                       fontWeight: 600,
                       cursor: 'pointer',
                       fontFamily: 'inherit',
+                      animation: popped.has(c.id) ? 'ccReactionPop 0.45s ease' : undefined,
                     }}
                   >
-                    <span aria-hidden="true">{reacted ? '❤️' : '🤍'}</span>
+                    <span aria-hidden="true" style={{ display: 'inline-block' }}>
+                      {reacted ? '❤️' : '🤍'}
+                    </span>
                     {c.reaction_count}
                   </button>
 
-                  <span style={{ fontSize: 11.5, color: 'var(--text-muted)' }}>{timeAgo(c.created_at)}</span>
+                  {!reacted && userId && (
+                    <span style={{ fontSize: 11, color: 'var(--text-muted)', opacity: 0.75 }}>double-tap ❤️</span>
+                  )}
 
-                  <div style={{ flex: 1 }} />
+                  <span style={{ flex: 1 }} />
 
                   {
                     <button

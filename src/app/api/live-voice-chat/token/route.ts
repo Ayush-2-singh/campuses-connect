@@ -44,6 +44,9 @@ export async function POST(req: NextRequest) {
       roomJoin: true,
       room: `live-voice-chat-${call.id}`,
       canPublish: true,
+      // Emoji reactions travel over the LiveKit data channel — no DB, no
+      // polling, perfectly in sync with the voice room's lifetime.
+      canPublishData: true,
       canSubscribe: true,
     })
 

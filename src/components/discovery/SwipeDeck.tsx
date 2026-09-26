@@ -53,6 +53,9 @@ export default function SwipeDeck({
   const [drag, setDrag] = useState<DragState | null>(null)
   const [flyOut, setFlyOut] = useState<{ id: string; dir: 1 | -1 } | null>(null)
   const [deckHeight, setDeckHeight] = useState(460)
+  // Entrance: the top card pops in (rise+scale) every time a new card takes
+  // the top slot — makes the deck feel alive instead of static.
+  const [enteredId, setEnteredId] = useState<string | null>(null)
   const cardRef = useRef<HTMLDivElement | null>(null)
   const busyRef = useRef(busy)
   busyRef.current = busy
@@ -66,6 +69,15 @@ export default function SwipeDeck({
     const el = cardRef.current
     if (el && el.scrollHeight > deckHeight) setDeckHeight(el.scrollHeight + 8)
   }, [deckHeight, top?.id])
+
+  // Trigger the entrance animation whenever a new card becomes the top card.
+  useEffect(() => {
+    if (top?.id && top.id !== enteredId) {
+      setEnteredId(null)
+      // Double rAF so the reset (0) paints before the animation class applies.
+      requestAnimationFrame(() => requestAnimationFrame(() => setEnteredId(top.id)))
+    }
+  }, [top?.id, enteredId])
 
   const doAction = useCallback(
     (action: 'interested' | 'passed') => {
@@ -135,33 +147,38 @@ export default function SwipeDeck({
 
   if (!top) {
     return (
-      <div style={{ textAlign: 'center', padding: '36px 16px' }}>
-        <p style={{ fontSize: 40, margin: 0 }}>🎉</p>
-        <p style={{ fontSize: 16, fontWeight: 800, color: 'var(--text-primary)', margin: '10px 0 4px' }}>
-          You&apos;ve reached the end
+      <div style={{ textAlign: 'center', padding: '48px 16px' }}>
+        <p style={{ fontSize: 48, margin: 0, animation: 'ccCardUp 0.3s ease' }}>🎉</p>
+        <p style={{ fontSize: 20, fontWeight: 800, color: 'var(--text-primary)', margin: '14px 0 6px' }}>
+          You&apos;re all caught up!
         </p>
-        <p style={{ fontSize: 13, color: 'var(--text-muted)', margin: '0 0 16px' }}>
-          There are no new ideas to discover right now.
+        <p style={{ fontSize: 14, color: 'var(--text-muted)', margin: '0 0 6px' }}>
+          You&apos;ve swiped through every idea in this queue.
         </p>
-        {onEmpty && (
-          <button
-            onClick={onEmpty}
-            style={{
-              minHeight: 40,
-              padding: '8px 20px',
-              borderRadius: 10,
-              border: 'none',
-              background: 'var(--accent)',
-              color: 'var(--on-accent)',
-              fontSize: 14,
-              fontWeight: 700,
-              cursor: 'pointer',
-              fontFamily: 'inherit',
-            }}
-          >
-            Refresh
-          </button>
-        )}
+        <p style={{ fontSize: 12.5, color: 'var(--text-muted)', margin: '0 0 20px', opacity: 0.8 }}>
+          New ideas land here the moment someone posts — or post your own and find builders.
+        </p>
+        <div style={{ display: 'flex', justifyContent: 'center', gap: 10, flexWrap: 'wrap' }}>
+          {onEmpty && (
+            <button
+              onClick={onEmpty}
+              style={{
+                minHeight: 44,
+                padding: '10px 22px',
+                borderRadius: 12,
+                border: '1px solid var(--border)',
+                background: 'var(--bg)',
+                color: 'var(--text-secondary)',
+                fontSize: 14,
+                fontWeight: 700,
+                cursor: 'pointer',
+                fontFamily: 'inherit',
+              }}
+            >
+              ↻ Refresh queue
+            </button>
+          )}
+        </div>
       </div>
     )
   }

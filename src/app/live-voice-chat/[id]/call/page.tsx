@@ -2,7 +2,13 @@
 
 import { Suspense, useCallback, useEffect, useRef, useState } from 'react'
 import { useParams, useRouter, useSearchParams } from 'next/navigation'
-import { LiveKitRoom, RoomAudioRenderer, useLocalParticipant, useParticipants } from '@livekit/components-react'
+import {
+  LiveKitRoom,
+  RoomAudioRenderer,
+  useLocalParticipant,
+  useParticipants,
+  useDataChannel,
+} from '@livekit/components-react'
 import { createClient } from '@/lib/supabase/client'
 
 const supabase = createClient()
@@ -102,42 +108,235 @@ function CallRoom() {
       onConnected={() => setConnected(true)}
       onError={(err) => setError(describeError(err))}
       onDisconnected={leave}
-      className="mx-auto max-w-3xl p-4 md:p-6"
+      className="mx-auto max-w-4xl p-4 md:p-6"
     >
       <RoomAudioRenderer />
-      <p className="mb-4 text-sm text-white/50">{connected ? '🟢 Connected' : 'Connecting…'}</p>
-      <Participants />
-      <Controls callId={callId!} onLeave={leave} />
+      <CallShell connected={connected} onLeave={leave} />
     </LiveKitRoom>
   )
 }
 
-function Participants() {
+/**
+ * Everything that needs live room context renders inside this shell.
+ * ONE useDataChannelMessage instance lives here — reactions state and the
+ * sender are passed down as props so every tile shares the same event list.
+ */
+function CallShell({ connected, onLeave }: { connected: boolean; onLeave: () => void }) {
   const participants = useParticipants()
+  const { emojiEvents, sendReaction } = useReactions()
+  const callId = useSearchParams().get('callId') || ''
+
   return (
-    <div className="mb-8 grid grid-cols-2 gap-3 md:grid-cols-3">
-      {participants.map((p) => (
-        <div
-          key={p.identity}
-          className={`rounded-xl border p-4 text-center ${
-            p.isSpeaking ? 'border-green-400' : 'border-white/10'
-          } bg-white/5`}
-        >
-          <div className="mx-auto mb-2 flex h-12 w-12 items-center justify-center rounded-full bg-indigo-500 text-lg text-white">
-            {(p.name ?? '?').charAt(0).toUpperCase()}
-          </div>
-          <p className="truncate text-sm text-white">
-            {p.name ?? 'Student'}
-            {p.isLocal ? ' (You)' : ''}
-          </p>
-        </div>
-      ))}
+    <div style={{ minHeight: '72vh', display: 'flex', flexDirection: 'column' }}>
+      <Header connected={connected} count={participants.length} />
+      <Participants participants={participants} emojiEvents={emojiEvents} />
+      <div style={{ flex: 1 }} />
+      <Controls callId={callId} onLeave={onLeave} sendReaction={sendReaction} />
     </div>
   )
 }
 
-function Controls({ callId, onLeave }: { callId: string; onLeave: () => void }) {
+/** Room header: live badge + participant count. */
+function Header({ connected, count }: { connected: boolean; count: number }) {
+  return (
+    <div
+      style={{
+        display: 'flex',
+        alignItems: 'center',
+        gap: 10,
+        marginBottom: 18,
+        color: 'var(--text-secondary)',
+        fontSize: 13,
+      }}
+    >
+      <span
+        style={{
+          display: 'inline-flex',
+          alignItems: 'center',
+          gap: 6,
+          fontWeight: 800,
+          color: connected ? 'var(--success-text, var(--accent-text))' : 'var(--text-muted)',
+        }}
+      >
+        <span
+          style={{
+            width: 8,
+            height: 8,
+            borderRadius: '50%',
+            background: connected ? 'var(--success, var(--accent))' : 'var(--text-muted)',
+            boxShadow: connected ? '0 0 8px var(--success, var(--accent))' : 'none',
+          }}
+        />
+        {connected ? 'LIVE' : 'Connecting…'}
+      </span>
+      <span style={{ opacity: 0.6 }}>·</span>
+      <span>{count} in call</span>
+    </div>
+  )
+}
+
+interface EmojiEvent {
+  key: number
+  emoji: string
+  from: string
+}
+
+/**
+ * PARTICIPANT TILES — one card per person (GMeet-style): speaking ring,
+ * mute indicator, and floating emoji bursts anchored to the tile.
+ */
+function Participants({
+  participants,
+  emojiEvents,
+}: {
+  participants: ReturnType<typeof useParticipants>
+  emojiEvents: EmojiEvent[]
+}) {
+  return (
+    <div
+      style={{
+        display: 'grid',
+        gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))',
+        gap: 14,
+        width: '100%',
+      }}
+    >
+      {participants.map((p) => {
+        const muted = !p.isMicrophoneEnabled
+        const mineReactions = emojiEvents.filter((e) => e.from === p.identity)
+        return (
+          <div
+            key={p.identity}
+            style={{
+              position: 'relative',
+              overflow: 'hidden',
+              borderRadius: 16,
+              border: p.isSpeaking ? '2px solid var(--success, var(--accent))' : '1px solid var(--border)',
+              background: 'var(--bg-secondary)',
+              padding: '22px 12px 14px',
+              textAlign: 'center',
+              boxShadow: p.isSpeaking
+                ? '0 0 24px color-mix(in srgb, var(--success, var(--accent)) 25%, transparent)'
+                : 'none',
+              transition: 'border-color 0.15s ease, box-shadow 0.15s ease',
+            }}
+          >
+            {/* floating emoji bursts from THIS participant */}
+            {mineReactions.map((e) => (
+              <span
+                key={e.key}
+                aria-hidden
+                style={{
+                  position: 'absolute',
+                  bottom: 8,
+                  left: `${18 + ((e.key * 37) % 60)}%`,
+                  fontSize: 26,
+                  pointerEvents: 'none',
+                  animation: 'ccEmojiFloat 3s ease-out forwards',
+                }}
+              >
+                {e.emoji}
+              </span>
+            ))}
+
+            <div
+              style={{
+                width: 56,
+                height: 56,
+                borderRadius: '50%',
+                margin: '0 auto 10px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                fontSize: 22,
+                fontWeight: 800,
+                color: p.isSpeaking ? 'var(--on-accent)' : 'var(--accent-text)',
+                background: p.isSpeaking ? 'var(--success, var(--accent))' : 'var(--accent-light)',
+                transition: 'background 0.2s ease',
+              }}
+            >
+              {(p.name ?? '?').charAt(0).toUpperCase()}
+            </div>
+            <p
+              style={{
+                fontSize: 13,
+                fontWeight: 700,
+                color: 'var(--text-primary)',
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+                whiteSpace: 'nowrap',
+                margin: 0,
+              }}
+            >
+              {p.name ?? 'Student'}
+              {p.isLocal ? ' (You)' : ''}
+            </p>
+            <p style={{ fontSize: 11, color: muted ? 'var(--danger)' : 'var(--text-muted)', margin: '4px 0 0' }}>
+              {muted ? '🔇 muted' : '🎙 live'}
+            </p>
+          </div>
+        )
+      })}
+    </div>
+  )
+}
+
+/**
+ * Data-channel reactions: receive everyone's emoji (and send mine).
+ * Topic 'reaction' — payload is just the emoji character. No DB, no polling:
+ * the burst lives 3s in component state and disappears.
+ */
+function useReactions() {
+  const [emojiEvents, setEmojiEvents] = useState<EmojiEvent[]>([])
+  const seq = useRef(0)
+
+  const push = useCallback((emoji: string, from: string) => {
+    const key = ++seq.current
+    setEmojiEvents((prev) => [...prev.slice(-14), { key, emoji, from }])
+    window.setTimeout(() => {
+      setEmojiEvents((prev) => prev.filter((e) => e.key !== key))
+    }, 3000)
+  }, [])
+
+  const { send } = useDataChannel('reaction', (msg) => {
+    // ReceivedDataMessage = { topic, payload: Uint8Array, from?: Participant }
+    push(new TextDecoder().decode(msg.payload), msg.from?.identity ?? 'remote')
+  })
+
+  const sendReaction = useCallback(
+    (emoji: string) => {
+      try {
+        send(new TextEncoder().encode(emoji), { reliable: false })
+      } catch {
+        /* channel not ready yet — the local burst still shows */
+      }
+      // Show my own reaction instantly (no round-trip wait). LiveKit does not
+      // echo data messages back to the sender, so local echo is required.
+      push(emoji, 'local')
+    },
+    [send, push]
+  )
+
+  return { emojiEvents, sendReaction }
+}
+
+/**
+ * GMeet-style bottom control bar: emoji picker (3s float for everyone),
+ * mic toggle, leave. Mic state also syncs to the DB via RPC.
+ */
+function Controls({
+  callId,
+  onLeave,
+  sendReaction,
+}: {
+  callId: string
+  onLeave: () => void
+  sendReaction: (emoji: string) => void
+}) {
   const { localParticipant, isMicrophoneEnabled } = useLocalParticipant()
+  const [emojiOpen, setEmojiOpen] = useState(false)
+
+  const REACTIONS = ['👏', '🔥', '❤️', '😂', '🎉', '👍', '🤯', '🙏']
 
   async function toggleMic() {
     const nextEnabled = !isMicrophoneEnabled
@@ -150,16 +349,114 @@ function Controls({ callId, onLeave }: { callId: string; onLeave: () => void }) 
   }
 
   return (
-    <div className="flex justify-center gap-3">
+    <div
+      style={{
+        position: 'sticky',
+        bottom: 0,
+        display: 'flex',
+        justifyContent: 'center',
+        alignItems: 'center',
+        gap: 12,
+        padding: '18px 0 calc(16px + env(safe-area-inset-bottom, 0px))',
+        flexWrap: 'wrap',
+      }}
+    >
+      {/* emoji picker — reactions float up for ~3s, visible to everyone */}
+      <div style={{ position: 'relative' }}>
+        {emojiOpen && (
+          <div
+            style={{
+              position: 'absolute',
+              bottom: 64,
+              left: '50%',
+              transform: 'translateX(-50%)',
+              background: 'var(--bg)',
+              border: '1px solid var(--border)',
+              borderRadius: 16,
+              padding: 10,
+              display: 'grid',
+              gridTemplateColumns: 'repeat(4, 1fr)',
+              gap: 6,
+              boxShadow: '0 10px 40px rgba(0,0,0,0.45)',
+              animation: 'ccCardUp 0.15s ease',
+              zIndex: 5,
+            }}
+          >
+            {REACTIONS.map((emoji) => (
+              <button
+                key={emoji}
+                onClick={() => {
+                  sendReaction(emoji)
+                  setEmojiOpen(false)
+                }}
+                aria-label={`Send ${emoji}`}
+                style={{
+                  fontSize: 24,
+                  background: 'transparent',
+                  border: 'none',
+                  borderRadius: 10,
+                  padding: '6px 8px',
+                  cursor: 'pointer',
+                }}
+              >
+                {emoji}
+              </button>
+            ))}
+          </div>
+        )}
+        <button
+          onClick={() => setEmojiOpen((o) => !o)}
+          aria-label="Send a reaction"
+          aria-expanded={emojiOpen}
+          style={{
+            width: 52,
+            height: 52,
+            borderRadius: 26,
+            border: '1px solid var(--border)',
+            background: 'var(--bg)',
+            color: 'var(--text-primary)',
+            fontSize: 20,
+            cursor: 'pointer',
+          }}
+        >
+          😀
+        </button>
+      </div>
+
       <button
         onClick={toggleMic}
-        className={`rounded-full px-6 py-3 text-sm font-medium ${
-          isMicrophoneEnabled ? 'bg-white/10 text-white' : 'bg-red-500 text-white'
-        }`}
+        aria-label={isMicrophoneEnabled ? 'Mute microphone' : 'Unmute microphone'}
+        style={{
+          width: 60,
+          height: 60,
+          borderRadius: 30,
+          border: 'none',
+          background: isMicrophoneEnabled ? 'var(--bg-tertiary)' : 'var(--danger)',
+          color: isMicrophoneEnabled ? 'var(--text-primary)' : '#fff',
+          fontSize: 22,
+          cursor: 'pointer',
+          boxShadow: '0 4px 16px rgba(0,0,0,0.3)',
+        }}
       >
-        {isMicrophoneEnabled ? 'Mute' : 'Unmute'}
+        {isMicrophoneEnabled ? '🎙️' : '🔇'}
       </button>
-      <button onClick={onLeave} className="rounded-full bg-red-600 px-6 py-3 text-sm font-medium text-white">
+
+      <button
+        onClick={onLeave}
+        aria-label="Leave the call"
+        style={{
+          height: 60,
+          padding: '0 26px',
+          borderRadius: 30,
+          border: 'none',
+          background: 'var(--danger)',
+          color: '#fff',
+          fontSize: 15,
+          fontWeight: 800,
+          cursor: 'pointer',
+          boxShadow: '0 4px 16px rgba(0,0,0,0.3)',
+        }}
+      >
         Leave
       </button>
     </div>

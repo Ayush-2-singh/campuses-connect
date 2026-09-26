@@ -185,9 +185,10 @@ export default function DiscoverPage() {
 
   // ---- queue state ----
   const [tab, setTab] = useState<Tab>('foryou')
-  // Discovery opens as a HUB first (like Community); ?tab= deep links land
-  // straight in the deck experience.
-  const [view, setView] = useState<'hub' | 'deck'>('hub')
+  // SWAP-FIRST (user request): the Tinder-style swipe deck IS the front door —
+  // /discover lands straight in the deck, one post at a time. The hub with
+  // blogs/people/hackathons links stays reachable via "← All Discovery".
+  const [view, setView] = useState<'hub' | 'deck'>('deck')
 
   const [cards, setCards] = useState<DiscoveryFeedCard[]>([])
   const [loading, setLoading] = useState(true)

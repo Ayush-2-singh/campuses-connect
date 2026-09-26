@@ -1170,6 +1170,99 @@ a,
   }
 }
 
+/* Voice-call emoji reactions — GMeet style: rise up, drift, fade out over 3s. */
+@keyframes ccEmojiFloat {
+  0% {
+    opacity: 0;
+    transform: translateY(0) scale(0.6);
+  }
+  12% {
+    opacity: 1;
+    transform: translateY(-18px) scale(1.15);
+  }
+  25% {
+    transform: translateY(-42px) scale(1) translateX(6px);
+  }
+  55% {
+    opacity: 1;
+    transform: translateY(-96px) scale(1) translateX(-5px);
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(-150px) scale(0.9) translateX(4px);
+  }
+}
+
+/* Confession double-tap heart burst — pops at the tap point and floats away. */
+@keyframes ccHeartBurst {
+  0% {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(0.4) rotate(-12deg);
+  }
+  18% {
+    opacity: 1;
+    transform: translate(-50%, -60%) scale(1.35) rotate(6deg);
+  }
+  40% {
+    transform: translate(-50%, -80%) scale(1) rotate(-4deg);
+  }
+  100% {
+    opacity: 0;
+    transform: translate(-50%, -190%) scale(0.85) rotate(3deg);
+  }
+}
+
+/* Confession reaction pop — tiny squish on the ❤️ button when it fills. */
+@keyframes ccReactionPop {
+  0% {
+    transform: scale(1);
+  }
+  40% {
+    transform: scale(1.28);
+  }
+  70% {
+    transform: scale(0.94);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+/* Confession card entrance — staggered rise handled with an inline delay. */
+@keyframes ccConfessIn {
+  from {
+    opacity: 0;
+    transform: translateY(14px) scale(0.985);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* Confession hover lift (desktop only, respects reduced motion). */
+@media (hover: hover) and (prefers-reduced-motion: no-preference) {
+  .confess-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 28px rgba(0, 0, 0, 0.18);
+    border-color: var(--border-strong);
+  }
+  .confess-card {
+    transition:
+      transform 0.16s ease,
+      box-shadow 0.16s ease,
+      border-color 0.16s ease;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .confess-card,
+  .confess-card * {
+    animation: none !important;
+    transition: none !important;
+  }
+}
+
 /* ───────────────────────── Press feedback ───────────────────────── */
 /* Every tappable element gets a subtle press-down. Class-specific rules
    (theme-toggle, fab-btn, card-hover) override via higher specificity. */

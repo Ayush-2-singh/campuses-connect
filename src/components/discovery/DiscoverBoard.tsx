@@ -74,7 +74,10 @@ export default function DiscoverBoard({
   signedIn: boolean
   onCreate: () => void
 }) {
-  const [mode, setMode] = useState<'grid' | 'swipe'>('grid')
+  // SWIPE-FIRST (user request): the Tinder-style deck is the default — posts
+  // arrive one at a time, big and tappable. The blueprint grid is one toggle
+  // away for users who want to scan everything at once.
+  const [mode, setMode] = useState<'grid' | 'swipe'>('swipe')
   const [saved, setSaved] = useState<Set<string>>(new Set())
 
   const featured = useMemo(() => cards.find((c) => !!c.short_desc) || cards[0], [cards])
