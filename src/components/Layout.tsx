@@ -17,6 +17,10 @@ import { accentForPath } from '@/theme/colors'
 // its code on every page navigation.
 const CommandPalette = dynamic(() => import('@/components/CommandPalette'), { ssr: false })
 
+// Voice broadcast card — lazy too: it only matters when a call is live, and
+// its realtime subscription starts only after the chunk loads.
+const VoiceChatCard = dynamic(() => import('@/components/VoiceChatCard'), { ssr: false })
+
 // Final desktop IA: five pillars, with Discovery/Community (and Classroom-
 // inside-Library) expandable so secondary features live under their pillar
 // instead of crowding the sidebar. Mirrors the mobile bar in mobileNav.ts.
@@ -830,7 +834,7 @@ export default function Layout({ children, user, profile }: { children: React.Re
           </div>
         </div>
 
-        <div className="page-enter">
+        <div key={pathname} className="page-enter">
           {/* No-campus banner */}
           {user &&
             profile &&
@@ -885,6 +889,9 @@ export default function Layout({ children, user, profile }: { children: React.Re
           {children}
         </div>
       </main>
+
+      {/* ── Global voice broadcast card — bottom-right on every page ── */}
+      <VoiceChatCard />
 
       {/* ── Mobile bottom nav (shared 4-tab bar) ── */}
       <MobileBottomNav pathname={pathname} onNavigate={(href) => router.push(href)} />

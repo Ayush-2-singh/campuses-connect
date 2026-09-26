@@ -28,7 +28,7 @@
 | Aug 2026 | **Skeleton loaders** | Professional shimmer loading across all pages |
 | Aug 2026 | **Error handling** | try/catch on all page loads and actions |
 | Aug 2026 | **Lost&Found UX** | Admin hint for regular users |
-| Aug 2026 | **Security headers** | CSP, X-Frame-Options, X-Content-Type-Options, Referrer-Policy |
+| Aug 2026 | **Security headers** | X-Frame-Options, X-Content-Type-Options, Referrer-Policy, Permissions-Policy |
 | Aug 2026 | **Navigation prefetch** | Pages prefetch on hover for instant navigation |
 | Aug 2026 | **Asset caching** | Images cached 30 days, public assets 7 days |
 | Aug 2026 | **Pull-to-refresh** | Mobile gesture component for feed pages |
@@ -416,7 +416,7 @@ NEXT_PUBLIC_SUPABASE_ANON_KEY=your_anon_key
 SUPABASE_SERVICE_ROLE_KEY=your_service_role_key
 
 # AI (Google Gemini)
-GOOGLE_AI_API_KEY=your_gemini_key
+GEMINI_API_KEY=your_gemini_key
 ```
 
 ### Database Setup
@@ -545,7 +545,7 @@ connect-to-campus/
 │   └── migrations/           # Database migrations (001-041 + rollback reference)
 ├── public/
 │   ├── sw.js                 # Service worker (PWA)
-│   └── manifest.json         # PWA manifest
+│   └── manifest.webmanifest  # PWA manifest
 └── package.json
 ```
 
@@ -573,9 +573,9 @@ connect-to-campus/
 
 ## 📊 Database
 
-- **55 migration files** — comprehensive schema (001 → 041 plus a rollback reference)
-- **67 tables** — users, posts, events, jobs, integrations, etc.
-- **97 database functions** — optimized RPCs for authz, feeds and gamification
+- **76 migration files** — comprehensive schema (001 → 048, dated hotfixes, plus a rollback reference)
+- **52 tables** — users, posts, events, jobs, integrations, etc.
+- **58 database functions** — optimized RPCs for authz, feeds and gamification
 - **Row Level Security (RLS)** — every table secured
 - **Real-time subscriptions** — live updates for chat & notifications
 

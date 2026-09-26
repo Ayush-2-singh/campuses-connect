@@ -70,6 +70,9 @@ const mock = vi.hoisted(() => {
             inserted = row
             return builder
           },
+          // reward_note_upload is called fire-and-forget after every insert;
+          // provide a no-op so the handler does not log a TypeError.
+          rpc: async () => ({ data: null, error: null }),
           then: (res: any, rej: any) => Promise.resolve(settle()).then(res, rej),
         }
         return builder

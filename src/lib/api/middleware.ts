@@ -2,12 +2,12 @@
  * Server-side API middleware helpers.
  * Use inside Next.js Route Handlers to enforce authentication and role checks.
  *
- * Uses shared getVerifiedUser from @/lib/auth which handles chunked cookies.
+ * Uses shared getVerifiedUserFromCookie from @/lib/auth which handles chunked cookies.
  */
 
 import { NextRequest, NextResponse } from 'next/server'
 import { headers } from 'next/headers'
-import { getVerifiedUser, getVerifiedUserFromCookie, getSupabaseAdmin } from '@/lib/auth'
+import { getVerifiedUserFromCookie, getSupabaseAdmin } from '@/lib/auth'
 
 /**
  * Resolve the signed-in user for a route handler.

@@ -90,7 +90,7 @@ export const metadata: Metadata = {
     apple: [{ url: '/apple-touch-icon.png', sizes: '180x180', type: 'image/png' }],
   },
   manifest: '/manifest.webmanifest',
-  themeColor: '#FD8F01',
+  themeColor: '#0D1116',
   colorScheme: 'dark',
   appleWebApp: {
     capable: true,
@@ -194,8 +194,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <link rel="icon" href="/icon-192.png" type="image/png" sizes="192x192" />
         <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
         <link rel="manifest" href="/manifest.webmanifest" />
-        <meta name="theme-color" content="#FD8F01" />
-        <meta name="msapplication-TileColor" content="#FD8F01" />
+        <meta name="theme-color" content="#0D1116" />
+        <meta name="msapplication-TileColor" content="#0D1116" />
         <meta name="msapplication-tap-highlight" content="no" />
 
         {/* Mobile Web App */}

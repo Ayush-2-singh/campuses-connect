@@ -1,11 +1,26 @@
 'use client'
 
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { useRouter, useParams } from 'next/navigation'
 
 import Avatar from '@/components/Avatar'
 import { CardSkeleton } from '@/components/Skeleton'
+
+/**
+ * WhatsApp-style running index for non-deleted DMs — "#1, #2 …" from the start
+ * of the conversation. Deleted messages do not advance the count.
+ */
+const messageNumbers = (rows: { id: string; is_deleted?: boolean | null }[]) => {
+  const out: Record<string, number> = {}
+  let n = 0
+  for (const m of rows) {
+    if (m.is_deleted) continue
+    n += 1
+    out[m.id] = n
+  }
+  return out
+}
 
 const timeAgo = (date: string) => {
   const d = new Date(date)
@@ -113,6 +128,9 @@ export default function ChatPage() {
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' })
   }, [messages.length])
+
+  // Recomputed only when the list changes — render just looks up by id.
+  const numbers = useMemo(() => messageNumbers(messages), [messages])
 
   const send = async () => {
     const body = text.trim()
@@ -295,9 +313,13 @@ export default function ChatPage() {
                     color: mine ? 'rgba(255,255,255,0.7)' : 'var(--text-muted)',
                     margin: '3px 0 0',
                     textAlign: 'right',
+                    display: 'flex',
+                    gap: 5,
+                    justifyContent: 'flex-end',
                   }}
                 >
-                  {timeAgo(m.created_at)}
+                  {!m.is_deleted && <span style={{ opacity: 0.75 }}>#{numbers[m.id]}</span>}
+                  <span>{timeAgo(m.created_at)}</span>
                 </p>
               </div>
             </div>

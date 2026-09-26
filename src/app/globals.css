@@ -1158,6 +1158,18 @@ a,
   }
 }
 
+/* Voice broadcast card entrance — quick rise, never blocks interaction. */
+@keyframes ccCardUp {
+  from {
+    opacity: 0;
+    transform: translateY(8px) scale(0.97);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
 /* ───────────────────────── Press feedback ───────────────────────── */
 /* Every tappable element gets a subtle press-down. Class-specific rules
    (theme-toggle, fab-btn, card-hover) override via higher specificity. */

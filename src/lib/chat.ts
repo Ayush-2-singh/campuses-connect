@@ -185,6 +185,23 @@ export function messageTime(iso: string): string {
   return new Date(iso).toLocaleTimeString('en-IN', { hour: 'numeric', minute: '2-digit' })
 }
 
+/**
+ * WhatsApp-style index: the running number of every NON-DELETED message from
+ * the start of the room ("#1", "#2" …). Deleted messages keep the bubble but
+ * do not advance the count, mirroring how WhatsApp drops cleared chats from
+ * the visible history. O(n) over the loaded window — no extra queries.
+ */
+export function messageNumbers(rows: ChatMessageRow[]): Record<string, number> {
+  const out: Record<string, number> = {}
+  let n = 0
+  for (const row of rows) {
+    if (row.deleted_at) continue
+    n += 1
+    out[row.id] = n
+  }
+  return out
+}
+
 // ─── Category list helpers ────────────────────────────────────────────────────
 /** "1,284 members" */
 export function formatCount(n: number | null | undefined): string {

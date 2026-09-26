@@ -8,7 +8,7 @@ import type { CapacitorConfig } from '@capacitor/cli'
  * This Next.js 15 App Router project cannot be statically exported without
  * destroying functionality the spec requires us to preserve. `output: 'export'`
  * does not support:
- *   - API route handlers  → all 45 routes under src/app/api/**
+ *   - API route handlers  → all 44 route handlers under src/app/api/**
  *   - middleware.ts       → session refresh + the /admin authorization gate
  *   - next/headers / cookies() → chunked-cookie session auth in src/lib/api/middleware.ts
  *

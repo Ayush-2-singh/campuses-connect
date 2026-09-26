@@ -26,6 +26,7 @@ import {
   groupMessages,
   isNewDay,
   isSendable,
+  messageNumbers,
   messageTime,
   postingReasonCopy,
   postingVerdict,
@@ -657,6 +658,10 @@ export default function ChatRoomPage() {
 
   const grouped = useMemo(() => groupMessages(messages) as (Message & { groupWithPrev: boolean })[], [messages])
 
+  // WhatsApp-style per-message index ("#1, #2 …") over non-deleted messages.
+  // Computed once per message-list change; the render just looks up by id.
+  const numbers = useMemo(() => messageNumbers(messages), [messages])
+
   // ── Render ──────────────────────────────────────────────────────────────────
   if (notFound) {
     return (
@@ -1151,7 +1156,7 @@ export default function ChatRoomPage() {
                           )}
                         </div>
 
-                        {/* Meta line: time · edited · pending/failed */}
+                        {/* Meta line: index · time · edited · pending/failed */}
                         <p
                           style={{
                             fontSize: 10.5,
@@ -1163,6 +1168,7 @@ export default function ChatRoomPage() {
                             justifyContent: mine ? 'flex-end' : 'flex-start',
                           }}
                         >
+                          {!deleted && !m.pending && <span style={{ opacity: 0.75 }}>#{numbers[m.id]}</span>}
                           {m.edited_at && !deleted && <span>edited</span>}
                           <span>{messageTime(m.created_at)}</span>
                           {m.pending && <span>· sending…</span>}
