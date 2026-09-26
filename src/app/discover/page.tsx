@@ -18,9 +18,9 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import Image from 'next/image'
 import { createClient, getBootUser } from '@/lib/supabase/client'
 import Layout from '@/components/Layout'
+import IconBanner from '@/components/IconBanner'
 import ErrorBoundary from '@/components/ErrorBoundary'
 import EmptyState from '@/components/EmptyState'
 import { Icon } from '@/components/icons'
@@ -579,18 +579,10 @@ export default function DiscoverPage() {
                       position: 'relative',
                       display: 'block',
                       width: '100%',
-                      aspectRatio: '836 / 300',
                       overflow: 'hidden',
                     }}
                   >
-                    <Image
-                      src="/images/ideas.webp"
-                      alt=""
-                      width={836}
-                      height={300}
-                      sizes="(max-width: 900px) 100vw, 900px"
-                      style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
-                    />
+                    <IconBanner variant="ideas" height={180} iconSize={46} />
                     <span
                       style={{
                         position: 'absolute',

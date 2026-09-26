@@ -24,10 +24,10 @@
 
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
-import Image from 'next/image'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { Icon } from '@/components/icons'
+import IconBanner from '@/components/IconBanner'
 
 /* ------------------------------------------------------------------ */
 /* Feature cards (§7) — six equal cards, one icon system, real routes  */
@@ -41,7 +41,7 @@ const FEATURES: {
   href: string
   accent: string
   accentText: string
-  img: string
+  banner: 'community' | 'voice' | 'compete' | 'library' | 'opportunities' | 'talent' | 'ideas'
 }[] = [
   {
     key: 'communities',
@@ -51,7 +51,7 @@ const FEATURES: {
     href: '/communities',
     accent: 'var(--purple-light)',
     accentText: 'var(--purple-text)',
-    img: '/images/community.webp',
+    banner: 'community',
   },
   {
     key: 'live',
@@ -61,7 +61,7 @@ const FEATURES: {
     href: '/live-voice-chat',
     accent: 'var(--danger-light)',
     accentText: 'var(--danger-text)',
-    img: '/images/live-voice.webp',
+    banner: 'voice',
   },
   {
     key: 'compete',
@@ -71,7 +71,7 @@ const FEATURES: {
     href: '/compete?tab=clash',
     accent: 'var(--success-light)',
     accentText: 'var(--success-text)',
-    img: '/images/compete.webp',
+    banner: 'compete',
   },
   {
     key: 'library',
@@ -81,7 +81,7 @@ const FEATURES: {
     href: '/notes',
     accent: 'var(--purple-light)',
     accentText: 'var(--purple-text)',
-    img: '/images/notes.webp',
+    banner: 'library',
   },
   {
     key: 'opportunities',
@@ -91,7 +91,7 @@ const FEATURES: {
     href: '/opportunities',
     accent: 'var(--blue-light)',
     accentText: 'var(--blue-text)',
-    img: '/images/jobs-internships.webp',
+    banner: 'opportunities',
   },
   {
     key: 'talent',
@@ -101,7 +101,7 @@ const FEATURES: {
     href: '/talent',
     accent: 'var(--cyan-light)',
     accentText: 'var(--cyan-text)',
-    img: '/images/talent.webp',
+    banner: 'talent',
   },
 ]
 
@@ -115,7 +115,7 @@ type Announcement = {
   title: string
   body: string
   time: string
-  img?: string
+  banner?: 'dsa' | 'voice' | 'library' | 'opportunities'
   href: string
 }
 
@@ -168,31 +168,17 @@ function FeatureCard({ f }: { f: (typeof FEATURES)[number] }) {
         minWidth: 0,
       }}
     >
-      {/* banner image — top half of the card */}
+      {/* banner — top half of the card (pure SVG, zero network cost) */}
       <span
         style={{
           position: 'relative',
           display: 'block',
           width: '100%',
-          aspectRatio: '376 / 190',
           overflow: 'hidden',
           flexShrink: 0,
         }}
       >
-        <Image
-          src={f.img}
-          alt=""
-          width={376}
-          height={190}
-          sizes="(max-width: 900px) 50vw, 280px"
-          style={{
-            width: '100%',
-            height: '100%',
-            objectFit: 'cover',
-            display: 'block',
-            transition: 'transform 0.25s ease',
-          }}
-        />
+        <IconBanner variant={f.banner} height={150} iconSize={40} />
         <span
           style={{
             position: 'absolute',
@@ -246,22 +232,18 @@ function AnnouncementCard({ a }: { a: Announcement }) {
         minWidth: 0,
       }}
     >
-      {a.img && (
-        <Image
-          src={a.img}
-          alt=""
-          width={320}
-          height={110}
-          sizes="(max-width: 900px) 78vw, 320px"
+      {a.banner && (
+        <span
           style={{
-            width: '100%',
-            height: 110,
-            objectFit: 'cover',
+            display: 'block',
             borderRadius: 9,
+            overflow: 'hidden',
             border: '1px solid var(--border)',
             flexShrink: 0,
           }}
-        />
+        >
+          <IconBanner variant={a.banner} height={96} iconSize={30} />
+        </span>
       )}
       <span
         style={{
@@ -358,7 +340,7 @@ export default function HomeRedesign({ signedIn }: { signedIn: boolean }) {
       title: 'Campus DSA Contest',
       body: "Join this week's DSA contest and test your skills with students across colleges.",
       time: 'This week',
-      img: '/images/dsa-contest.webp',
+      banner: 'dsa',
       href: '/compete',
     },
     {
@@ -367,7 +349,7 @@ export default function HomeRedesign({ signedIn }: { signedIn: boolean }) {
       title: 'Live Voice Chat is Here',
       body: 'Join real-time voice rooms, discuss doubts and collaborate with students.',
       time: 'New',
-      img: '/images/live-voice.webp',
+      banner: 'voice',
       href: '/live-voice-chat',
     },
     {
@@ -376,7 +358,7 @@ export default function HomeRedesign({ signedIn }: { signedIn: boolean }) {
       title: 'New Notes Collection',
       body: 'Added topic-wise notes, PYQs and revision sheets in Library.',
       time: 'Updated',
-      img: '/images/library.webp',
+      banner: 'library',
       href: '/notes',
     },
     {
@@ -385,7 +367,7 @@ export default function HomeRedesign({ signedIn }: { signedIn: boolean }) {
       title: 'Opportunity Board',
       body: 'Discover internships, projects and opportunities shared with students.',
       time: stats.opportunities > 0 ? `${stats.opportunities} live` : 'Active',
-      img: '/images/opportunities.webp',
+      banner: 'opportunities',
       href: '/opportunities',
     },
   ]
@@ -552,19 +534,11 @@ export default function HomeRedesign({ signedIn }: { signedIn: boolean }) {
                   position: 'relative',
                   display: 'block',
                   width: '100%',
-                  aspectRatio: '376 / 170',
                   overflow: 'hidden',
                   flexShrink: 0,
                 }}
               >
-                <Image
-                  src="/images/confession.webp"
-                  alt=""
-                  width={376}
-                  height={170}
-                  sizes="(max-width: 900px) 50vw, 320px"
-                  style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
-                />
+                <IconBanner variant="confession" height={150} iconSize={40} />
                 <span
                   style={{
                     position: 'absolute',
@@ -612,19 +586,11 @@ export default function HomeRedesign({ signedIn }: { signedIn: boolean }) {
                   position: 'relative',
                   display: 'block',
                   width: '100%',
-                  aspectRatio: '376 / 170',
                   overflow: 'hidden',
                   flexShrink: 0,
                 }}
               >
-                <Image
-                  src="/images/compete.webp"
-                  alt=""
-                  width={376}
-                  height={170}
-                  sizes="(max-width: 900px) 50vw, 320px"
-                  style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
-                />
+                <IconBanner variant="compete" height={150} iconSize={40} />
                 <span
                   style={{
                     position: 'absolute',
@@ -671,19 +637,11 @@ export default function HomeRedesign({ signedIn }: { signedIn: boolean }) {
                   position: 'relative',
                   display: 'block',
                   width: '100%',
-                  aspectRatio: '376 / 170',
                   overflow: 'hidden',
                   flexShrink: 0,
                 }}
               >
-                <Image
-                  src="/images/leaderboard.webp"
-                  alt=""
-                  width={376}
-                  height={170}
-                  sizes="(max-width: 900px) 50vw, 320px"
-                  style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
-                />
+                <IconBanner variant="leaderboard" height={150} iconSize={40} />
                 <span
                   style={{
                     position: 'absolute',
@@ -731,7 +689,7 @@ export default function HomeRedesign({ signedIn }: { signedIn: boolean }) {
                 href: '/discover',
                 accent: 'var(--accent-light)',
                 accentText: 'var(--accent-text)',
-                img: '/images/ideas.webp',
+                banner: 'ideas' as const,
               }}
             />
           </div>
@@ -874,14 +832,16 @@ export default function HomeRedesign({ signedIn }: { signedIn: boolean }) {
               <br />
               Grow together.
             </p>
-            <Image
-              src="/images/hero-campus.webp"
-              alt="Students collaborating on campus"
-              width={480}
-              height={258}
-              sizes="(max-width: 1024px) 100vw, 320px"
-              style={{ width: '100%', height: 'auto', borderRadius: 10, border: '1px solid var(--border)' }}
-            />
+            <span
+              style={{
+                display: 'block',
+                borderRadius: 10,
+                overflow: 'hidden',
+                border: '1px solid var(--border)',
+              }}
+            >
+              <IconBanner variant="hero" height={130} iconSize={38} />
+            </span>
             <button
               onClick={() => go(signedIn ? '/feed' : '/auth/signup')}
               style={{
@@ -961,20 +921,17 @@ export default function HomeRedesign({ signedIn }: { signedIn: boolean }) {
 
           {/* Startup promo (§11) */}
           <div style={{ ...CARD, padding: 18 }}>
-            <Image
-              src="/images/startup-impact.webp"
-              alt="Students building startups together"
-              width={520}
-              height={512}
-              sizes="(max-width: 1024px) 100vw, 300px"
+            <span
               style={{
-                width: '100%',
-                height: 'auto',
+                display: 'block',
                 borderRadius: 10,
+                overflow: 'hidden',
                 border: '1px solid var(--border)',
                 marginBottom: 12,
               }}
-            />
+            >
+              <IconBanner variant="startup" height={140} iconSize={40} />
+            </span>
             <h3 style={{ fontSize: 15.5, fontWeight: 800, color: 'var(--text-primary)', margin: '0 0 4px' }}>
               Turn Your Ideas Into Impact
             </h3>
