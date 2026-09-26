@@ -1,6 +1,6 @@
 'use client'
 
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import Layout from '@/components/Layout'
@@ -118,8 +118,54 @@ export default function LiveVoiceChatRoomPage() {
       }
       await load()
     }
-    init()
+    void init()
   }, [groupId, load, supabase])
+
+  // ── LIVE STATE (bug fix) ─────────────────────────────────────────────────
+  // The room page used to fetch once on mount and go stale: after leaving a
+  // call the Join button kept its old "N in call" label, and a call started
+  // by someone else never appeared. Realtime on calls + participants keeps
+  // everything honest, with a focus refetch as belt-and-braces.
+  const pollRef = useRef<ReturnType<typeof setInterval> | null>(null)
+
+  useEffect(() => {
+    const channel = supabase
+      .channel(`voice-room:${groupId}`)
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'live_voice_chat_calls', filter: `group_id=eq.${groupId}` },
+        () => {
+          void load()
+        }
+      )
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'live_voice_chat_participants' }, () => {
+        void load()
+      })
+      .subscribe((status) => {
+        if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
+          // Realtime unavailable — fall back to gentle polling so the Join
+          // button never lies.
+          if (!pollRef.current) pollRef.current = setInterval(() => void load(), 15_000)
+        }
+      })
+
+    // Refetch when the tab/page becomes visible again (e.g. back from call).
+    const onVisible = () => {
+      if (document.visibilityState === 'visible') void load()
+    }
+    document.addEventListener('visibilitychange', onVisible)
+    window.addEventListener('focus', onVisible)
+
+    return () => {
+      document.removeEventListener('visibilitychange', onVisible)
+      window.removeEventListener('focus', onVisible)
+      if (pollRef.current) {
+        clearInterval(pollRef.current)
+        pollRef.current = null
+      }
+      void supabase.removeChannel(channel)
+    }
+  }, [groupId, supabase, load])
 
   const requireLogin = () => router.replace('/auth/login?redirect=' + encodeURIComponent(`/live-voice-chat/${groupId}`))
 

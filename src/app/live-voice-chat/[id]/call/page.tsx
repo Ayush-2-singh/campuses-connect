@@ -123,7 +123,8 @@ function CallRoom() {
  */
 function CallShell({ connected, onLeave }: { connected: boolean; onLeave: () => void }) {
   const participants = useParticipants()
-  const { emojiEvents, sendReaction } = useReactions()
+  const { localParticipant } = useLocalParticipant()
+  const { emojiEvents, sendReaction } = useReactions(localParticipant?.identity)
   const callId = useSearchParams().get('callId') || ''
 
   return (
@@ -286,7 +287,7 @@ function Participants({
  * Topic 'reaction' — payload is just the emoji character. No DB, no polling:
  * the burst lives 3s in component state and disappears.
  */
-function useReactions() {
+function useReactions(myIdentity: string | undefined) {
   const [emojiEvents, setEmojiEvents] = useState<EmojiEvent[]>([])
   const seq = useRef(0)
 
@@ -311,10 +312,12 @@ function useReactions() {
         /* channel not ready yet — the local burst still shows */
       }
       // Show my own reaction instantly (no round-trip wait). LiveKit does not
-      // echo data messages back to the sender, so local echo is required.
-      push(emoji, 'local')
+      // echo data messages back to the sender, so local echo is required —
+      // and it must use MY participant identity so the burst renders on my
+      // own tile, not a phantom 'local' key no tile matches.
+      push(emoji, myIdentity ?? 'local')
     },
-    [send, push]
+    [send, push, myIdentity]
   )
 
   return { emojiEvents, sendReaction }

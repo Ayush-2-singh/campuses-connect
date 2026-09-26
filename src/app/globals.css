@@ -1240,6 +1240,29 @@ a,
   }
 }
 
+/* Live pulse flash card — new fact slides in from the right every minute. */
+@keyframes ccPulseIn {
+  from {
+    opacity: 0;
+    transform: translateX(18px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+@keyframes ccPulseDot {
+  0%,
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.55;
+    transform: scale(0.8);
+  }
+}
+
 /* Confession hover lift (desktop only, respects reduced motion). */
 @media (hover: hover) and (prefers-reduced-motion: no-preference) {
   .confess-card:hover {

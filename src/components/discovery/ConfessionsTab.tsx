@@ -41,6 +41,22 @@ const REPORT_REASONS = [
 
 const PAGE_SIZE = 30
 
+/** Sticky-note tints — deterministic per card via its id hash. */
+const CONFESS_TINTS = [
+  { bg: 'rgba(253,143,1,0.10)', border: 'rgba(253,143,1,0.28)', accent: '#fd8f01' }, // amber
+  { bg: 'rgba(169,123,240,0.10)', border: 'rgba(169,123,240,0.28)', accent: '#a97bf0' }, // violet
+  { bg: 'rgba(75,191,122,0.10)', border: 'rgba(75,191,122,0.28)', accent: '#4cbf7a' }, // green
+  { bg: 'rgba(91,157,255,0.10)', border: 'rgba(91,157,255,0.28)', accent: '#5b9dff' }, // blue
+  { bg: 'rgba(224,85,62,0.10)', border: 'rgba(224,85,62,0.28)', accent: '#e0553e' }, // coral
+]
+
+/** Stable small hash from a uuid string — keeps card colours consistent across renders. */
+function hashId(id: string): number {
+  let h = 0
+  for (let i = 0; i < id.length; i++) h = (h * 31 + id.charCodeAt(i)) >>> 0
+  return h
+}
+
 function timeAgo(iso: string): string {
   const diff = Date.now() - new Date(iso).getTime()
   const mins = Math.floor(diff / 60000)
@@ -373,10 +389,13 @@ export default function ConfessionsTab({ userId }: { userId: string | null }) {
       ) : confessions.length === 0 ? (
         <EmptyState icon="🕵️" title="No confessions yet" body="Be the first to share something anonymously." />
       ) : (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
           {confessions.map((c, i) => {
             const reacted = myReactions.has(c.id)
             const cardBursts = bursts.filter((b) => b.id === c.id)
+            // Sticky-note palette: each card gets a hue from its id so the
+            // feed reads as a wall of different coloured secrets.
+            const tint = CONFESS_TINTS[hashId(c.id) % CONFESS_TINTS.length]
             return (
               <div
                 key={c.id}
@@ -384,20 +403,70 @@ export default function ConfessionsTab({ userId }: { userId: string | null }) {
                 style={{
                   position: 'relative',
                   overflow: 'hidden',
-                  background: 'var(--bg)',
-                  border: '1px solid var(--border)',
+                  background: `linear-gradient(155deg, ${tint.bg}, var(--bg) 78%)`,
+                  border: `1px solid ${tint.border}`,
+                  borderLeft: `3px solid ${tint.accent}`,
                   borderRadius: 14,
-                  padding: 14,
+                  padding: '16px 16px 13px',
                   animation: `ccConfessIn 0.3s ease ${Math.min(i, 8) * 0.04}s backwards`,
                 }}
               >
+                {/* decorative “secret note” SVG — quote watermark + seal */}
+                <svg
+                  aria-hidden
+                  viewBox="0 0 400 120"
+                  preserveAspectRatio="xMidYMid slice"
+                  style={{
+                    position: 'absolute',
+                    inset: 0,
+                    width: '100%',
+                    height: '100%',
+                    opacity: 0.16,
+                    pointerEvents: 'none',
+                  }}
+                >
+                  {/* big opening quote */}
+                  <text x="330" y="86" fill={tint.accent} fontSize="110" fontFamily="Georgia, serif" fontWeight="700">
+                    &ldquo;
+                  </text>
+                  {/* wax-seal circle */}
+                  <circle cx="34" cy="94" r="17" fill="none" stroke={tint.accent} strokeWidth="1.4" />
+                  <circle cx="34" cy="94" r="11" fill="none" stroke={tint.accent} strokeWidth="0.9" opacity="0.7" />
+                  <text x="34" y="98" textAnchor="middle" fill={tint.accent} fontSize="11">
+                    ?
+                  </text>
+                  {/* faint diagonal hatching, like a paper grain */}
+                  <g stroke={tint.accent} strokeWidth="0.5" opacity="0.5">
+                    <line x1="120" y1="0" x2="60" y2="120" />
+                    <line x1="170" y1="0" x2="110" y2="120" />
+                    <line x1="220" y1="0" x2="160" y2="120" />
+                  </g>
+                </svg>
+
+                {/* washi-tape strip pinned across the top edge */}
+                <span
+                  aria-hidden
+                  style={{
+                    position: 'absolute',
+                    top: -7,
+                    left: '50%',
+                    transform: `translateX(-50%) rotate(${(hashId(c.id) % 5) - 2}deg)`,
+                    width: 92,
+                    height: 15,
+                    background: tint.accent,
+                    opacity: 0.5,
+                    borderRadius: 2,
+                  }}
+                />
+
                 {/* masked badge — whisper-tone identity strip */}
                 <div
                   style={{
+                    position: 'relative',
                     display: 'flex',
                     alignItems: 'center',
                     gap: 6,
-                    marginBottom: 8,
+                    marginBottom: 9,
                   }}
                 >
                   <span
@@ -406,13 +475,14 @@ export default function ConfessionsTab({ userId }: { userId: string | null }) {
                       fontWeight: 800,
                       letterSpacing: 0.8,
                       textTransform: 'uppercase',
-                      color: 'var(--text-muted)',
-                      background: 'var(--bg-secondary)',
+                      color: tint.accent,
+                      background: 'var(--bg)',
+                      border: `1px solid ${tint.border}`,
                       borderRadius: 7,
                       padding: '2px 8px',
                     }}
                   >
-                    🕵️ Anonymous
+                    🕵️ Confession #{hashId(c.id).toString(36).slice(0, 4).toUpperCase()}
                   </span>
                   <span style={{ flex: 1 }} />
                   <span style={{ fontSize: 11, color: 'var(--text-muted)' }}>{timeAgo(c.created_at)}</span>
@@ -421,10 +491,12 @@ export default function ConfessionsTab({ userId }: { userId: string | null }) {
                 <p
                   onPointerDown={(e) => onBodyPointerDown(e, c)}
                   style={{
-                    fontSize: 14.5,
+                    position: 'relative',
+                    fontSize: 16,
+                    fontWeight: 500,
                     color: 'var(--text-primary)',
-                    margin: '0 0 10px',
-                    lineHeight: 1.5,
+                    margin: '0 0 12px',
+                    lineHeight: 1.55,
                     whiteSpace: 'pre-wrap',
                     wordBreak: 'break-word',
                     cursor: userId ? 'pointer' : 'default',

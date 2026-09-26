@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
 import Layout from '@/components/Layout'
+import LivePulseFeed from '@/components/LivePulseFeed'
 import ErrorBoundary from '@/components/ErrorBoundary'
 import EmptyState from '@/components/EmptyState'
 import { ListSkeleton } from '@/components/Skeleton'
@@ -136,6 +137,11 @@ export default function ChatCategoriesPage() {
               Global rooms for every student — join the conversation.
             </p>
           </div>
+
+          {/* LIVE PULSE — a rotating flash card of genuine platform activity
+              (chat messages, live voice rooms, starting events, aura wins,
+              mentions). Refreshes + advances every 60s, deep-links to source. */}
+          <LivePulseFeed userId={user?.id ?? null} />
 
           <div style={{ position: 'relative', marginBottom: 16 }}>
             <span

@@ -103,7 +103,7 @@ export default function LiveVoiceChatPage() {
       }
       await load()
     }
-    init()
+    void init()
   }, [load, supabase])
 
   const requireLogin = () => {
