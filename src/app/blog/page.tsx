@@ -7,6 +7,7 @@ import Layout from '@/components/Layout'
 import Avatar from '@/components/Avatar'
 import EmptyState from '@/components/EmptyState'
 import { ListSkeleton } from '@/components/Skeleton'
+import { Icon } from '@/components/icons'
 import { useHaptic } from '@/hooks/useMobile'
 
 type BlogPost = {
@@ -28,25 +29,33 @@ type BlogPost = {
   author_avatar: string | null
 }
 
-const CATEGORIES = [
-  { key: 'all', label: 'All', icon: '📄' },
-  { key: 'interview_experience', label: 'Interviews', icon: '🎯' },
-  { key: 'tech_blog', label: 'Tech', icon: '💻' },
-  { key: 'campus_life', label: 'Campus', icon: '🏫' },
-  { key: 'how_to', label: 'How-To', icon: '📚' },
-  { key: 'project', label: 'Projects', icon: '🚀' },
-  { key: 'review', label: 'Reviews', icon: '⭐' },
+type CatDef = { key: string; label: string; icon: string; accent: string; soft: string }
+
+const CATEGORIES: CatDef[] = [
+  { key: 'all', label: 'All', icon: 'layers', accent: 'var(--accent)', soft: 'var(--accent-light)' },
+  {
+    key: 'interview_experience',
+    label: 'Interviews',
+    icon: 'target',
+    accent: 'var(--accent)',
+    soft: 'var(--accent-light)',
+  },
+  { key: 'tech_blog', label: 'Tech', icon: 'code', accent: 'var(--purple-text)', soft: 'var(--purple-light)' },
+  { key: 'campus_life', label: 'Campus', icon: 'school', accent: 'var(--success-text)', soft: 'var(--success-light)' },
+  { key: 'how_to', label: 'How-To', icon: 'book', accent: 'var(--cyan-text)', soft: 'var(--cyan-light)' },
+  { key: 'project', label: 'Projects', icon: 'rocket', accent: 'var(--orange-text)', soft: 'var(--orange-light)' },
+  { key: 'review', label: 'Reviews', icon: 'star', accent: 'var(--yellow-text)', soft: 'var(--yellow-light)' },
 ]
 
-const CATEGORY_COLORS: Record<string, { bg: string; text: string }> = {
-  interview_experience: { bg: 'var(--accent-light)', text: 'var(--accent-text)' },
-  tech_blog: { bg: 'var(--purple-light)', text: 'var(--purple-text)' },
-  campus_life: { bg: 'var(--success-light)', text: 'var(--success-text)' },
-  how_to: { bg: 'var(--cyan-light)', text: 'var(--cyan-text)' },
-  project: { bg: 'var(--orange-light)', text: 'var(--orange-text)' },
-  review: { bg: 'var(--yellow-light)', text: 'var(--yellow-text)' },
-  general: { bg: 'var(--bg-tertiary)', text: 'var(--text-secondary)' },
+const GENERAL_CAT: CatDef = {
+  key: 'general',
+  label: 'Blog',
+  icon: 'notebook',
+  accent: 'var(--text-secondary)',
+  soft: 'var(--bg-tertiary)',
 }
+
+const catOf = (key: string): CatDef => CATEGORIES.find((c) => c.key === key) || GENERAL_CAT
 
 const timeAgo = (date: string) => {
   const diff = Date.now() - new Date(date).getTime()
@@ -59,6 +68,13 @@ const timeAgo = (date: string) => {
   if (days < 7) return `${days}d ago`
   return new Date(date).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })
 }
+
+const Stat = ({ icon, value }: { icon: string; value: number }) => (
+  <span className="blog-stat">
+    <Icon name={icon} size={13} strokeWidth={2} />
+    {value}
+  </span>
+)
 
 export default function BlogPage() {
   const [user, setUser] = useState<any>(null)
@@ -75,39 +91,37 @@ export default function BlogPage() {
   const supabase = createClient()
   const haptic = useHaptic()
 
-  const fetchPosts = useCallback(async (offset = 0) => {
-    const params = new URLSearchParams({
-      limit: String(PAGE_SIZE),
-      offset: String(offset),
-    })
-    if (category !== 'all') params.set('category', category)
-    if (search.trim()) params.set('q', search.trim())
+  const fetchPosts = useCallback(
+    async (offset = 0) => {
+      const { data } = await supabase.rpc('search_blog_posts', {
+        search_query: search.trim() || '',
+        p_category: category === 'all' ? null : category,
+        p_limit: PAGE_SIZE,
+        p_offset: offset,
+      })
 
-    const { data } = await supabase.rpc('search_blog_posts', {
-      search_query: search.trim() || '',
-      p_category: category === 'all' ? null : category,
-      p_limit: PAGE_SIZE,
-      p_offset: offset,
-    })
-
-    const list = (data || []) as BlogPost[]
-    if (offset === 0) {
-      setPosts(list)
-      // Featured = first post with most views
-      if (!featured && list.length > 0) {
-        setFeatured(list.reduce((a, b) => (b.view_count > a.view_count ? b : a)))
+      const list = (data || []) as BlogPost[]
+      if (offset === 0) {
+        setPosts(list)
+        // Featured = first post with most views
+        if (!featured && list.length > 0) {
+          setFeatured(list.reduce((a, b) => (b.view_count > a.view_count ? b : a)))
+        }
+      } else {
+        setPosts((prev) => [...prev, ...list])
       }
-    } else {
-      setPosts(prev => [...prev, ...list])
-    }
-    setHasMore(list.length === PAGE_SIZE)
-    setLoading(false)
-    setLoadingMore(false)
-  }, [category, search, featured])
+      setHasMore(list.length === PAGE_SIZE)
+      setLoading(false)
+      setLoadingMore(false)
+    },
+    [category, search, featured]
+  )
 
   useEffect(() => {
     const load = async () => {
-      const { data: { user } } = await supabase.auth.getUser()
+      const {
+        data: { user },
+      } = await supabase.auth.getUser()
       if (user) {
         setUser(user)
         const { data: prof } = await supabase.from('profiles').select('*').eq('id', user.id).single()
@@ -139,52 +153,62 @@ export default function BlogPage() {
     }, 300)
   }
 
+  const featuredCat = featured ? catOf(featured.category) : null
+
   return (
     <Layout user={user} profile={profile}>
       <div style={{ maxWidth: 800, margin: '0 auto', padding: '28px 20px 40px' }}>
-
         {/* Header */}
-        <div style={{ marginBottom: 24 }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
-            <div>
-              <h1 style={{ fontSize: 28, fontWeight: 800, color: 'var(--text-primary)', margin: '0 0 4px' }}>
-                📝 Blog
-              </h1>
-              <p style={{ fontSize: 14, color: 'var(--text-muted)', margin: 0 }}>
-                Interview experiences, tech guides, campus stories & more
-              </p>
+        <div className="blog-header">
+          <div className="blog-header-left">
+            <div className="blog-head-tile">
+              <Icon name="notebook" size={24} strokeWidth={2} />
             </div>
-            {user && (
-              <button
-                onClick={() => { haptic.tap(); router.push('/blog/new') }}
-                className="btn-shine"
-                style={{
-                  background: 'var(--accent)', color: 'var(--on-accent)',
-                  border: 'none', padding: '10px 20px', borderRadius: 10,
-                  fontSize: 14, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit',
-                }}
-              >
-                ✍️ Write
-              </button>
-            )}
+            <div style={{ minWidth: 0 }}>
+              <h1 className="blog-head-title">Blog</h1>
+              <p className="blog-head-sub">Interview experiences, tech guides, campus stories &amp; more</p>
+            </div>
           </div>
+          {user && (
+            <button
+              onClick={() => {
+                haptic.tap()
+                router.push('/blog/new')
+              }}
+              className="btn-shine"
+              style={{
+                background: 'var(--accent)',
+                color: 'var(--on-accent)',
+                border: 'none',
+                padding: '10px 18px',
+                borderRadius: 10,
+                fontSize: 14,
+                fontWeight: 700,
+                cursor: 'pointer',
+                fontFamily: 'inherit',
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: 7,
+              }}
+            >
+              <Icon name="pencil" size={15} strokeWidth={2.2} />
+              Write
+            </button>
+          )}
         </div>
 
         {/* Search */}
-        <div style={{ position: 'relative', marginBottom: 20 }}>
+        <div className="blog-search">
+          <span className="blog-search-icon">
+            <Icon name="search" size={17} strokeWidth={2} />
+          </span>
           <input
             type="text"
             value={search}
-            onChange={e => handleSearch(e.target.value)}
+            onChange={(e) => handleSearch(e.target.value)}
             placeholder="Search blogs... (e.g. Google interview, React project)"
-            style={{
-              width: '100%', border: '1px solid var(--border)', borderRadius: 12,
-              padding: '12px 16px 12px 44px', fontSize: 14, outline: 'none',
-              fontFamily: 'inherit', color: 'var(--text-primary)', background: 'var(--bg)',
-              boxSizing: 'border-box' as const,
-            }}
+            aria-label="Search blogs"
           />
-          <span style={{ position: 'absolute', left: 16, top: '50%', transform: 'translateY(-50%)', fontSize: 16, color: 'var(--text-muted)' }}>🔍</span>
         </div>
 
         {/* Category Filters */}
@@ -194,79 +218,77 @@ export default function BlogPage() {
           role="tablist"
           aria-label="Blog categories"
         >
-          {CATEGORIES.map(cat => (
+          {CATEGORIES.map((cat) => (
             <button
               key={cat.key}
-              onClick={() => { haptic.tap(); setCategory(cat.key) }}
+              className="blog-chip"
+              onClick={() => {
+                haptic.tap()
+                setCategory(cat.key)
+              }}
               role="tab"
               aria-selected={category === cat.key}
               style={{
-                flexShrink: 0, padding: '8px 16px', borderRadius: 20, fontSize: 13,
-                fontWeight: category === cat.key ? 600 : 500,
-                border: category === cat.key ? 'none' : '1px solid var(--border)',
-                background: category === cat.key ? 'var(--accent)' : 'var(--bg)',
-                color: category === cat.key ? 'var(--on-accent)' : 'var(--text-secondary)',
-                cursor: 'pointer', fontFamily: 'inherit',
+                ['--chip-accent' as any]: cat.accent,
+                ['--chip-soft' as any]: cat.soft,
               }}
             >
-              {cat.icon} {cat.label}
+              <Icon name={cat.icon} size={14} strokeWidth={2.2} />
+              {cat.label}
             </button>
           ))}
         </div>
 
         {/* Featured Post */}
-        {featured && category === 'all' && !search && (
-          <div
-            onClick={() => { haptic.tap(); router.push(`/blog/${featured.slug}`) }}
-            className="card-hover"
-            style={{
-              background: 'var(--bg)', border: '1px solid var(--accent-border)',
-              borderRadius: 16, padding: 24, marginBottom: 24, cursor: 'pointer',
-              boxShadow: 'var(--shadow-sm)',
+        {featured && featuredCat && category === 'all' && !search && (
+          <article
+            onClick={() => {
+              haptic.tap()
+              router.push(`/blog/${featured.slug}`)
             }}
+            className="blog-featured"
+            aria-label={`Featured post: ${featured.title}`}
           >
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
-              <span style={{
-                fontSize: 11, fontWeight: 700, padding: '4px 10px', borderRadius: 20,
-                background: 'var(--accent-light)', color: 'var(--accent-text)',
-              }}>
-                ⭐ Featured
+            <div className="blog-featured-banner">
+              <span className="blog-featured-badge">
+                <Icon name="sparkles" size={13} strokeWidth={2.2} />
+                Featured
               </span>
-              <span style={{
-                fontSize: 11, padding: '3px 10px', borderRadius: 20,
-                ...CATEGORY_COLORS[featured.category],
-                fontWeight: 600,
-              }}>
-                {CATEGORIES.find(c => c.key === featured.category)?.icon} {featured.category.replace('_', ' ')}
+              <span className="blog-pill" style={{ background: 'var(--bg)', color: featuredCat.accent }}>
+                <Icon name={featuredCat.icon} size={12} strokeWidth={2.2} />
+                {featuredCat.label}
               </span>
               {featured.company_name && (
-                <span style={{
-                  fontSize: 11, padding: '3px 10px', borderRadius: 20,
-                  background: 'var(--purple-light)', color: 'var(--purple-text)',
-                  fontWeight: 600,
-                }}>
-                  🏢 {featured.company_name}
+                <span className="blog-pill" style={{ background: 'var(--purple-light)', color: 'var(--purple-text)' }}>
+                  <Icon name="building" size={12} strokeWidth={2.2} />
+                  {featured.company_name}
+                </span>
+              )}
+              {featured.role && (
+                <span className="blog-pill" style={{ background: 'var(--orange-light)', color: 'var(--orange-text)' }}>
+                  <Icon name="briefcase" size={12} strokeWidth={2.2} />
+                  {featured.role}
                 </span>
               )}
             </div>
-            <h2 style={{ fontSize: 22, fontWeight: 800, color: 'var(--text-primary)', margin: '0 0 8px', lineHeight: 1.3 }}>
-              {featured.title}
-            </h2>
-            {featured.excerpt && (
-              <p style={{ fontSize: 14, color: 'var(--text-secondary)', margin: '0 0 16px', lineHeight: 1.6 }}>
-                {featured.excerpt}
-              </p>
-            )}
-            <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-              <Avatar name={featured.author_name} avatarUrl={featured.author_avatar} size={28} />
-              <span style={{ fontSize: 13, color: 'var(--text-muted)' }}>
-                {featured.author_name} · {timeAgo(featured.published_at)}
-              </span>
-              <span style={{ fontSize: 12, color: 'var(--text-muted)' }}>
-                👁 {featured.view_count} · ❤️ {featured.like_count} · 💬 {featured.comment_count}
-              </span>
+            <div className="blog-featured-body">
+              <h2 className="blog-featured-title">{featured.title}</h2>
+              {featured.excerpt && <p className="blog-featured-excerpt">{featured.excerpt}</p>}
+              <div className="blog-meta">
+                <Avatar name={featured.author_name} avatarUrl={featured.author_avatar} size={28} />
+                <span style={{ fontSize: 13, color: 'var(--text-muted)' }}>
+                  {featured.author_name} · {timeAgo(featured.published_at)}
+                </span>
+                <div style={{ flex: 1 }} />
+                <Stat icon="eye" value={featured.view_count} />
+                <Stat icon="heart" value={featured.like_count} />
+                <Stat icon="message" value={featured.comment_count} />
+              </div>
+              <div className="blog-card-arrow" style={{ bottom: 16, right: 16 }}>
+                <Icon name="chevron" size={15} strokeWidth={2.4} />
+              </div>
             </div>
-          </div>
+          </article>
         )}
 
         {/* Blog List */}
@@ -275,117 +297,98 @@ export default function BlogPage() {
         ) : posts.length === 0 ? (
           <EmptyState
             icon="notebook"
-            title={search ? `No blogs matching "${search}"` : "No blogs yet"}
-            body={search ? "Try different keywords or browse all categories." : "Be the first to share your experience!"}
-            cta={user ? "Write a blog" : "Sign in to write"}
+            title={search ? `No blogs matching "${search}"` : 'No blogs yet'}
+            body={
+              search ? 'Try different keywords or browse all categories.' : 'Be the first to share your experience!'
+            }
+            cta={user ? 'Write a blog' : 'Sign in to write'}
             onCta={user ? () => router.push('/blog/new') : () => router.push('/auth/login')}
           />
         ) : (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-            {posts.map(post => {
-              const catColor = CATEGORY_COLORS[post.category] || CATEGORY_COLORS.general
+            {posts.map((post) => {
+              const cat = catOf(post.category)
               return (
                 <article
                   key={post.id}
-                  onClick={() => { haptic.tap(); router.push(`/blog/${post.slug}`) }}
-                  className="card-hover"
+                  onClick={() => {
+                    haptic.tap()
+                    router.push(`/blog/${post.slug}`)
+                  }}
+                  className="blog-card"
                   style={{
-                    background: 'var(--bg)', border: '1px solid var(--border)',
-                    borderRadius: 14, padding: 20, cursor: 'pointer',
-                    boxShadow: 'var(--shadow-sm)',
+                    ['--blog-accent' as any]: cat.accent,
+                    ['--blog-soft' as any]: cat.soft,
                   }}
                 >
-                  <div style={{ display: 'flex', gap: 16 }}>
-                    {/* Cover image */}
-                    {post.cover_url && (
-                      <div style={{
-                        width: 120, height: 80, borderRadius: 10, overflow: 'hidden',
-                        flexShrink: 0, background: 'var(--bg-tertiary)',
-                      }}>
-                        <img
-                          src={post.cover_url}
-                          alt={post.title}
-                          loading="lazy"
-                          decoding="async"
-                          style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-                        />
+                  {/* Cover / tinted category thumb */}
+                  <div className="blog-thumb">
+                    {post.cover_url ? (
+                      <img src={post.cover_url} alt={post.title} loading="lazy" decoding="async" />
+                    ) : (
+                      <Icon name={cat.icon} size={34} strokeWidth={1.6} />
+                    )}
+                  </div>
+
+                  <div className="blog-card-body">
+                    {/* Chips */}
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 8, flexWrap: 'wrap' }}>
+                      <span className="blog-pill" style={{ background: cat.soft, color: cat.accent }}>
+                        <Icon name={cat.icon} size={12} strokeWidth={2.2} />
+                        {cat.label}
+                      </span>
+                      {post.company_name && (
+                        <span
+                          className="blog-pill"
+                          style={{ background: 'var(--purple-light)', color: 'var(--purple-text)' }}
+                        >
+                          <Icon name="building" size={12} strokeWidth={2.2} />
+                          {post.company_name}
+                        </span>
+                      )}
+                      {post.role && (
+                        <span
+                          className="blog-pill"
+                          style={{ background: 'var(--orange-light)', color: 'var(--orange-text)' }}
+                        >
+                          <Icon name="briefcase" size={12} strokeWidth={2.2} />
+                          {post.role}
+                        </span>
+                      )}
+                    </div>
+
+                    {/* Title */}
+                    <h3 className="blog-card-title">{post.title}</h3>
+
+                    {/* Excerpt */}
+                    {post.excerpt && <p className="blog-card-excerpt">{post.excerpt}</p>}
+
+                    {/* Tags */}
+                    {post.tags && post.tags.length > 0 && (
+                      <div className="blog-tags">
+                        {post.tags.slice(0, 4).map((tag) => (
+                          <span key={tag} className="blog-tag">
+                            #{tag}
+                          </span>
+                        ))}
                       </div>
                     )}
 
-                    <div style={{ flex: 1, minWidth: 0 }}>
-                      {/* Tags */}
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 8, flexWrap: 'wrap' }}>
-                        <span style={{
-                          fontSize: 11, padding: '3px 10px', borderRadius: 20,
-                          background: catColor.bg, color: catColor.text, fontWeight: 600,
-                        }}>
-                          {CATEGORIES.find(c => c.key === post.category)?.icon} {post.category.replace('_', ' ')}
-                        </span>
-                        {post.company_name && (
-                          <span style={{
-                            fontSize: 11, padding: '3px 10px', borderRadius: 20,
-                            background: 'var(--purple-light)', color: 'var(--purple-text)',
-                            fontWeight: 600,
-                          }}>
-                            🏢 {post.company_name}
-                          </span>
-                        )}
-                        {post.role && (
-                          <span style={{
-                            fontSize: 11, padding: '3px 10px', borderRadius: 20,
-                            background: 'var(--orange-light)', color: 'var(--orange-text)',
-                            fontWeight: 600,
-                          }}>
-                            💼 {post.role}
-                          </span>
-                        )}
-                      </div>
-
-                      {/* Title */}
-                      <h3 style={{
-                        fontSize: 17, fontWeight: 700, color: 'var(--text-primary)',
-                        margin: '0 0 6px', lineHeight: 1.3,
-                      }}>
-                        {post.title}
-                      </h3>
-
-                      {/* Excerpt */}
-                      {post.excerpt && (
-                        <p style={{
-                          fontSize: 13, color: 'var(--text-secondary)', margin: '0 0 10px',
-                          lineHeight: 1.5, display: '-webkit-box', WebkitLineClamp: 2,
-                          WebkitBoxOrient: 'vertical' as const, overflow: 'hidden',
-                        }}>
-                          {post.excerpt}
-                        </p>
-                      )}
-
-                      {/* Tags */}
-                      {post.tags && post.tags.length > 0 && (
-                        <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap', marginBottom: 8 }}>
-                          {post.tags.slice(0, 4).map(tag => (
-                            <span key={tag} style={{
-                              fontSize: 10, padding: '2px 8px', borderRadius: 12,
-                              background: 'var(--bg-tertiary)', color: 'var(--text-muted)',
-                              fontWeight: 500,
-                            }}>
-                              #{tag}
-                            </span>
-                          ))}
-                        </div>
-                      )}
-
-                      {/* Footer */}
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                        <Avatar name={post.author_name} avatarUrl={post.author_avatar} size={22} />
-                        <span style={{ fontSize: 12, color: 'var(--text-muted)' }}>
-                          {post.author_name} · {timeAgo(post.published_at)}
-                        </span>
-                        <span style={{ fontSize: 11, color: 'var(--text-muted)' }}>
-                          👁 {post.view_count} · ❤️ {post.like_count}
-                        </span>
-                      </div>
+                    {/* Footer */}
+                    <div className="blog-meta">
+                      <Avatar name={post.author_name} avatarUrl={post.author_avatar} size={22} />
+                      <span style={{ fontSize: 12, color: 'var(--text-muted)' }}>
+                        {post.author_name} · {timeAgo(post.published_at)}
+                      </span>
+                      <div style={{ flex: 1 }} />
+                      <Stat icon="eye" value={post.view_count} />
+                      <Stat icon="heart" value={post.like_count} />
+                      {post.comment_count > 0 && <Stat icon="message" value={post.comment_count} />}
                     </div>
+                  </div>
+
+                  <div className="blog-card-arrow">
+                    <Icon name="chevron" size={15} strokeWidth={2.4} />
                   </div>
                 </article>
               )
@@ -397,15 +400,33 @@ export default function BlogPage() {
                 onClick={loadMore}
                 disabled={loadingMore}
                 style={{
-                  width: '100%', padding: '12px', borderRadius: 10,
-                  border: '1px solid var(--border)', background: 'var(--bg)',
-                  color: loadingMore ? 'var(--text-muted)' : 'var(--accent)',
-                  fontSize: 14, fontWeight: 600,
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: 7,
+                  width: '100%',
+                  padding: '12px',
+                  borderRadius: 12,
+                  border: '1px solid var(--border)',
+                  background: 'var(--bg)',
+                  color: loadingMore ? 'var(--text-muted)' : 'var(--accent-text)',
+                  fontSize: 14,
+                  fontWeight: 600,
                   cursor: loadingMore ? 'default' : 'pointer',
-                  fontFamily: 'inherit', marginTop: 8,
+                  fontFamily: 'inherit',
+                  marginTop: 8,
+                  transition: 'border-color 0.16s ease, background 0.16s ease',
                 }}
+                className="blog-loadmore"
               >
-                {loadingMore ? 'Loading…' : 'Load more blogs'}
+                {loadingMore ? (
+                  'Loading…'
+                ) : (
+                  <>
+                    Load more blogs
+                    <Icon name="chevron" size={14} strokeWidth={2.4} style={{ transform: 'rotate(90deg)' }} />
+                  </>
+                )}
               </button>
             )}
           </div>

@@ -256,6 +256,23 @@ const ICON_PATHS: Record<string, React.ReactNode> = {
       <path d="M22 10v6" />
     </>
   ),
+  /* Stacked sheets — "All" filter / list glyph. */
+  layers: (
+    <>
+      <path d="M12 2 2 7l10 5 10-5-10-5Z" />
+      <path d="m2 12 10 5 10-5" />
+      <path d="m2 17 10 5 10-5" />
+    </>
+  ),
+  /* Angle brackets — Tech category glyph. */
+  code: (
+    <>
+      <path d="m16 18 6-6-6-6" />
+      <path d="m8 6-6 6 6 6" />
+    </>
+  ),
+  /* Pencil — Write / compose actions. */
+  pencil: <path d="M17 3a2.83 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3Z" />,
 }
 
 export function Icon({
@@ -263,12 +280,15 @@ export function Icon({
   size = 18,
   strokeWidth = 2,
   filled = false,
+  style,
 }: {
   name: string
   size?: number
   strokeWidth?: number
   /** Solid state — for like/streak/bookmark toggles (outline → fill). */
   filled?: boolean
+  /** Extra positioning (e.g. rotate) without wrapping in a span. */
+  style?: React.CSSProperties
 }) {
   return (
     <svg
@@ -281,7 +301,7 @@ export function Icon({
       strokeLinecap="round"
       strokeLinejoin="round"
       aria-hidden="true"
-      style={{ flexShrink: 0 }}
+      style={{ flexShrink: 0, ...style }}
     >
       {ICON_PATHS[name] || ICON_PATHS.more}
     </svg>
