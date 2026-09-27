@@ -14,20 +14,25 @@
  *    and re-subscribes when visible again.
  *  - Zero cards mounted ⇒ full teardown, zero cost.
  *
- * RLS note: `live_voice_chat_calls` SELECT is restricted to group members, so
- * non-members never read participant rows. The broadcast card only needs
- * "a call is live in group X", which realtime events deliver without a read.
+ * TRUTH note: an 'active' call row is NOT a live room — crashed tabs leave
+ * ghost participants and active rows with nobody inside. Realtime events are
+ * therefore only HINTS: a DELETE/ended event hides the card immediately, but
+ * the card only turns ON after fetchLiveVoiceRooms() confirms at least one
+ * heartbeat-fresh participant is really inside (20260927_voice_live_truth).
  */
 
 import { createClient } from '@/lib/supabase/client'
+import { fetchLiveVoiceRooms, type LiveVoiceRoom } from '@/lib/liveVoice'
 import type { RealtimeChannel } from '@supabase/supabase-js'
 
 export interface LiveCallState {
-  /** True when some group has an active call right now. */
+  /** True when a room has at least one real user inside it right now. */
   active: boolean
   groupId: string | null
-  /** Call id when the current user can read the row (member); else null. */
+  /** Id of the live call (joinable via RPC after joining the group). */
   callId: string | null
+  /** People actually inside the call (fresh heartbeat). 0 = unknown. */
+  count: number
   /** Epoch ms of the moment we first saw this call go live (0 = unknown). */
   since: number
 }
@@ -50,7 +55,7 @@ let visibilityTimer: ReturnType<typeof setTimeout> | null = null
 let fallbackPoll: ReturnType<typeof setInterval> | null = null
 let started = false
 
-const state: LiveCallState = { active: false, groupId: null, callId: null, since: 0 }
+const state: LiveCallState = { active: false, groupId: null, callId: null, count: 0, since: 0 }
 let lastEmit = JSON.stringify(state)
 
 function emit(force = false) {
@@ -66,35 +71,47 @@ function emit(force = false) {
   }
 }
 
-function applyRow(row: LiveCallRow | null) {
-  if (row && row.status === 'active') {
+/** Apply the honest read path's answer (rooms with someone inside). */
+function applyRooms(rooms: LiveVoiceRoom[]) {
+  const room = rooms[0] ?? null
+  if (room) {
     state.active = true
-    state.groupId = row.group_id
-    state.callId = row.id
+    state.groupId = room.groupId
+    state.callId = room.callId
+    state.count = room.participantCount
     if (!state.since) state.since = Date.now()
   } else {
     state.active = false
     state.groupId = null
     state.callId = null
+    state.count = 0
     state.since = 0
   }
   emit()
 }
 
-/** One seed read on subscribe (member-RLS'd), then realtime keeps it fresh. */
+/** One seed read on subscribe; realtime events + the fallback poll re-run it. */
 async function seed() {
   try {
     const sb = createClient()
-    const { data } = await sb
-      .from('live_voice_chat_calls')
-      .select('id, group_id, status')
-      .eq('status', 'active')
-      .limit(1)
-      .maybeSingle()
-    applyRow((data as unknown as LiveCallRow) || null)
+    applyRooms(await fetchLiveVoiceRooms(sb))
   } catch {
     /* offline — realtime events or the poll will correct us */
   }
+}
+
+/**
+ * Realtime events only say "a call row moved", never "somebody is inside" —
+ * so an ON hint is debounced into ONE honest re-read instead of being
+ * trusted directly.
+ */
+let reseedTimer: ReturnType<typeof setTimeout> | null = null
+function scheduleReseed() {
+  if (reseedTimer || typeof window === 'undefined') return
+  reseedTimer = setTimeout(() => {
+    reseedTimer = null
+    void seed()
+  }, 600)
 }
 
 function ensureChannel() {
@@ -105,11 +122,14 @@ function ensureChannel() {
     .on(
       'postgres_changes' as any,
       { event: '*', schema: 'public', table: 'live_voice_chat_calls' },
-      (payload: { new?: LiveCallRow | null; old?: LiveCallRow | null }) => {
-        const newRow = payload?.new ?? null
-        const oldRow = payload?.old ?? null
-        // DELETE carries only `old`; UPDATE/INSERT carry `new`.
-        applyRow(newRow || oldRow)
+      (payload: { eventType?: string; new?: LiveCallRow | null; old?: LiveCallRow | null }) => {
+        const row = payload?.new ?? payload?.old ?? null
+        if (payload?.eventType === 'DELETE' || row?.status === 'ended') {
+          applyRooms([]) // the call is over — hide immediately
+        } else {
+          // A call row appeared/changed — verify real presence before showing.
+          scheduleReseed()
+        }
       }
     )
     .subscribe((status: string) => {
@@ -157,6 +177,10 @@ function handleVisibility() {
 
 function shutdown() {
   stopFallbackPoll()
+  if (reseedTimer) {
+    clearTimeout(reseedTimer)
+    reseedTimer = null
+  }
   if (channel) {
     const sb = createClient()
     void sb.removeChannel(channel)

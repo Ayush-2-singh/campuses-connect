@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
+import { fetchLiveVoiceRooms } from '@/lib/liveVoice'
 import Layout from '@/components/Layout'
 import SectionShell from '@/components/SectionShell'
 
@@ -43,7 +44,7 @@ export default function LiveVoiceChatPage() {
   const [profile, setProfile] = useState<any>(null)
   const [groups, setGroups] = useState<any[]>([])
   const [memberships, setMemberships] = useState<string[]>([])
-  const [liveGroupIds, setLiveGroupIds] = useState<string[]>([])
+  const [liveByGroup, setLiveByGroup] = useState<Record<string, number>>({})
   const [section, setSection] = useState<string>('all')
   const [showCreate, setShowCreate] = useState(false)
   const [busy, setBusy] = useState(false)
@@ -73,10 +74,19 @@ export default function LiveVoiceChatPage() {
       return
     }
     setGroups(data || [])
+  }, [supabase])
 
-    // Active calls are RLS-filtered to groups the caller belongs to.
-    const { data: calls } = await supabase.from('live_voice_chat_calls').select('id, group_id').eq('status', 'active')
-    setLiveGroupIds((calls || []).map((c: any) => c.group_id))
+  /**
+   * LIVE ⇔ at least one user is ACTUALLY inside the room right now — a
+   * heartbeat-fresh participant, not merely an 'active' call row (crashed
+   * tabs leave those behind for hours). Single source of truth shared with
+   * every other voice surface: live_voice_chat_live_rooms().
+   */
+  const loadLive = useCallback(async () => {
+    const rooms = await fetchLiveVoiceRooms(supabase)
+    const next: Record<string, number> = {}
+    for (const r of rooms) next[r.groupId] = r.participantCount
+    setLiveByGroup(next)
   }, [supabase])
 
   useEffect(() => {
@@ -102,9 +112,36 @@ export default function LiveVoiceChatPage() {
         setMemberships((mem || []).map((m: any) => m.group_id))
       }
       await load()
+      await loadLive()
     }
     void init()
-  }, [load, supabase])
+  }, [load, loadLive, supabase])
+
+  // LIVE must never go stale: refetch on realtime call events, on tab focus,
+  // and on a gentle 30s tick while visible (realtime events only reach group
+  // members — the tick keeps non-members' badges honest too).
+  useEffect(() => {
+    const channel = supabase
+      .channel('lvc-hub-live')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'live_voice_chat_calls' }, () => {
+        void loadLive()
+      })
+      .subscribe()
+
+    const refresh = () => {
+      if (document.visibilityState === 'visible') void loadLive()
+    }
+    document.addEventListener('visibilitychange', refresh)
+    window.addEventListener('focus', refresh)
+    const timer = setInterval(refresh, 30_000)
+
+    return () => {
+      document.removeEventListener('visibilitychange', refresh)
+      window.removeEventListener('focus', refresh)
+      clearInterval(timer)
+      void supabase.removeChannel(channel)
+    }
+  }, [supabase, loadLive])
 
   const requireLogin = () => {
     router.replace(
@@ -344,7 +381,7 @@ export default function LiveVoiceChatPage() {
           ) : (
             visible.map((g) => {
               const isMember = memberships.includes(g.id)
-              const isLive = liveGroupIds.includes(g.id)
+              const isLive = (liveByGroup[g.id] || 0) > 0
               return (
                 <div
                   key={g.id}

@@ -25,6 +25,8 @@ const FILES = [
   '20260921_fix_notification_functions.sql',
   '20260922_fix_announcement_assignment_notifications.sql',
   '20260923_fix_post_reactions_select_policy.sql',
+  '20260926_fix_voice_room_stale_state.sql',
+  '20260927_voice_live_truth.sql',
   '20261001_universal_admins.sql',
   '20261015_notes_admin_only_rls.sql',
   '20261016_infra_cost_hardening.sql',

@@ -45,7 +45,13 @@ function readExpanded(): boolean {
 
 export default function VoiceChatCard() {
   const router = useRouter()
-  const [state, setState] = useState<LiveCallState>({ active: false, groupId: null, callId: null, since: 0 })
+  const [state, setState] = useState<LiveCallState>({
+    active: false,
+    groupId: null,
+    callId: null,
+    count: 0,
+    since: 0,
+  })
   const [open, setOpen] = useState(false)
   const [dismissedFor, setDismissedFor] = useState<string | null>(null)
   const [group, setGroup] = useState<{
@@ -59,7 +65,6 @@ export default function VoiceChatCard() {
   const [isMember, setIsMember] = useState(false)
   const [busy, setBusy] = useState(false)
   const [now, setNow] = useState(() => Date.now())
-  const [canReadRow, setCanReadRow] = useState(false)
   const seenCallRef = useRef<string | null>(null)
   const supabaseRef = useRef<ReturnType<typeof createClient> | null>(null)
 
@@ -93,8 +98,9 @@ export default function VoiceChatCard() {
   }, [state.active, open])
 
   // ── Room details + membership + live participant count ──
-  // Non-members cannot read the call row (RLS), but they still see the card —
-  // they just get "room is live" without participant names/counts.
+  // Non-members cannot read participant rows (RLS), so they rely on the
+  // heartbeat-verified count the broadcast carries; members additionally get
+  // a direct, frequently-refreshed head count.
   useEffect(() => {
     let cancelled = false
     async function load() {
@@ -102,7 +108,6 @@ export default function VoiceChatCard() {
         setGroup(null)
         setParticipantCount(0)
         setIsMember(false)
-        setCanReadRow(false)
         return
       }
       const sb = getSupabase()
@@ -146,10 +151,8 @@ export default function VoiceChatCard() {
           .select('user_id, left_at')
           .eq('call_id', state.callId!)
         if (cancelled) return
-        setCanReadRow(true)
         setParticipantCount((parts || []).filter((p: any) => !p.left_at).length)
       } else {
-        setCanReadRow(false)
         setParticipantCount(0)
       }
     }
@@ -235,7 +238,11 @@ export default function VoiceChatCard() {
   if (!state.active || hideOnPath || (dismissedFor && dismissedFor === (state.callId || 'current'))) return null
 
   const label = group?.name || 'Voice room'
-  const countLabel = canReadRow && participantCount > 0 ? `${participantCount} in call` : 'Live now'
+  // Members read the participant rows directly (freshest); everyone else
+  // uses the heartbeat-verified count the broadcast already carries. Both
+  // only ever hold for rooms with someone actually inside.
+  const knownCount = participantCount > 0 ? participantCount : state.count
+  const countLabel = knownCount > 0 ? `${knownCount} in call` : 'Live now'
 
   return (
     <div

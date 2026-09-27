@@ -127,6 +127,24 @@ function CallShell({ connected, onLeave }: { connected: boolean; onLeave: () => 
   const { emojiEvents, sendReaction } = useReactions(localParticipant?.identity)
   const callId = useSearchParams().get('callId') || ''
 
+  // ── Presence heartbeat ──────────────────────────────────────────────
+  // Every surface derives LIVE from "a user is ACTUALLY inside", and the
+  // server decides that from this beat (fresh = heartbeat < 150s old, see
+  // 20260927_voice_live_truth.sql). A crashed tab stops beating, gets swept
+  // as left within ~5 minutes and its call ends for real — so no room can
+  // show LIVE with nobody in it. Errors are ignored on purpose: before the
+  // migration is applied the RPC simply doesn't exist, and the leave RPC on
+  // unmount still cleans up.
+  useEffect(() => {
+    if (!connected || !callId) return
+    const beat = () => {
+      void supabase.rpc('touch_live_voice_chat_heartbeat', { p_call_id: callId })
+    }
+    beat()
+    const timer = setInterval(beat, 30_000)
+    return () => clearInterval(timer)
+  }, [connected, callId])
+
   return (
     <div style={{ minHeight: '72vh', display: 'flex', flexDirection: 'column' }}>
       <Header connected={connected} count={participants.length} />

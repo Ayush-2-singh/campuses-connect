@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
+import { fetchLiveVoiceRooms } from '@/lib/liveVoice'
 import Layout from '@/components/Layout'
 
 const SECTION_LABELS: Record<string, string> = {
@@ -77,6 +78,11 @@ export default function LiveVoiceChatRoomPage() {
         avatar_url: byId.get(m.user_id)?.avatar_url || null,
       }))
     )
+
+    // Sweep ghost presence BEFORE reading it (the RPC closes heartbeat-dead
+    // participant rows and ends calls nobody is in), so this room's LIVE
+    // badge can never count a student whose tab already crashed.
+    await fetchLiveVoiceRooms(supabase)
 
     const { data: callRow } = await supabase
       .from('live_voice_chat_calls')
@@ -217,6 +223,10 @@ export default function LiveVoiceChatRoomPage() {
     router.push(`/live-voice-chat/${groupId}/call?callId=${callId}`)
   }
 
+  // LIVE ⇔ a call exists AND at least one participant is actually in it.
+  // An 'active' call row full of crashed ghosts is NOT live.
+  const isLive = !!call && participants.length > 0
+
   if (loading) {
     return (
       <Layout user={user} profile={profile}>
@@ -289,7 +299,7 @@ export default function LiveVoiceChatRoomPage() {
                     {members.length === 1 ? '' : 's'}
                   </p>
                 </div>
-                {call && (
+                {isLive && (
                   <span
                     style={{
                       background: 'var(--danger)',
@@ -319,7 +329,7 @@ export default function LiveVoiceChatRoomPage() {
                     disabled={busy}
                     style={{
                       flex: 1,
-                      background: busy ? 'var(--disabled)' : call ? 'var(--success, var(--accent))' : 'var(--accent)',
+                      background: busy ? 'var(--disabled)' : isLive ? 'var(--success, var(--accent))' : 'var(--accent)',
                       color: 'var(--on-accent)',
                       border: 'none',
                       borderRadius: 10,
@@ -330,7 +340,7 @@ export default function LiveVoiceChatRoomPage() {
                       fontFamily: 'inherit',
                     }}
                   >
-                    {busy ? 'Connecting…' : call ? `🎧 Join call (${participants.length} in)` : '🎙️ Start voice chat'}
+                    {busy ? 'Connecting…' : isLive ? `🎧 Join call (${participants.length} in)` : '🎙️ Start voice chat'}
                   </button>
                   <button
                     onClick={leaveGroup}
@@ -372,7 +382,7 @@ export default function LiveVoiceChatRoomPage() {
             </div>
 
             <h3 style={{ fontSize: 15, fontWeight: 700, color: 'var(--text-primary)', margin: '0 0 10px' }}>
-              {call ? `In the call now (${participants.length})` : 'Members'}
+              {isLive ? `In the call now (${participants.length})` : 'Members'}
             </h3>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
               {members.length === 0 ? (
@@ -382,7 +392,7 @@ export default function LiveVoiceChatRoomPage() {
                   // While a call is live, show who is actually in it, on top.
                   .slice()
                   .sort((a, b) => {
-                    if (!call) return 0
+                    if (!isLive) return 0
                     const aIn = participants.some((p) => p.user_id === a.user_id) ? 0 : 1
                     const bIn = participants.some((p) => p.user_id === b.user_id) ? 0 : 1
                     return aIn - bIn

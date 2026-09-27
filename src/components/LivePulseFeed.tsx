@@ -10,7 +10,8 @@
  * queries every refresh):
  *   1. CHAT MESSAGES   — latest message per room ("DSA Community is live:
  *                        <snippet>") → links to /chat/:key
- *   2. LIVE VOICE      — active calls ("Voice room X is live — N in call")
+ *   2. LIVE VOICE      — rooms with somebody ACTUALLY inside, heartbeat-
+ *                        verified ("Voice room X is live — N in call")
  *                        → links to /live-voice-chat/:groupId
  *   3. EVENTS          — events starting within the next 2h ("just started /
  *                        starting soon") → links to /events
@@ -29,6 +30,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
+import { fetchLiveVoiceRooms } from '@/lib/liveVoice'
 import { Icon } from '@/components/icons'
 
 type PulseKind = 'chat' | 'voice' | 'event' | 'aura' | 'mention'
@@ -121,22 +123,20 @@ export default function LivePulseFeed({ userId }: { userId: string | null }) {
       /* source unavailable — skip, never fabricate */
     }
 
-    // 2. Live voice rooms (RLS-scoped for non-members; still truthful).
+    // 2. Live voice — rooms with a user ACTUALLY inside right now (heartbeat-
+    //    verified via live_voice_chat_live_rooms). An 'active' call row left
+    //    behind by a crashed tab is NOT live and never reaches the card;
+    //    nothing inside ⇒ this source is simply skipped (no filler).
     try {
-      const { data: calls } = await sb
-        .from('live_voice_chat_calls')
-        .select('id, group_id, started_at, live_voice_chat_groups(name)')
-        .eq('status', 'active')
-        .order('started_at', { ascending: false })
-        .limit(3)
-      for (const c of (calls as any[]) || []) {
+      const rooms = await fetchLiveVoiceRooms(sb)
+      for (const r of rooms.slice(0, 3)) {
         found.push({
-          key: `voice-${c.id}`,
+          key: `voice-${r.callId}`,
           kind: 'voice',
-          text: `🎙 ${c.live_voice_chat_groups?.name || 'A voice room'} is live right now`,
+          text: `🎙 ${r.name} is live — ${r.participantCount} in call`,
           detail: 'Tap to join the conversation',
-          href: `/live-voice-chat/${c.group_id}`,
-          at: new Date(c.started_at).getTime(),
+          href: `/live-voice-chat/${r.groupId}`,
+          at: r.startedAt || Date.now(),
         })
       }
     } catch {

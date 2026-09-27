@@ -26,6 +26,7 @@ import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
+import { fetchLiveVoiceRooms } from '@/lib/liveVoice'
 import { Icon } from '@/components/icons'
 import IconBanner from '@/components/IconBanner'
 
@@ -306,27 +307,36 @@ function AnnouncementCard({ a }: { a: Announcement }) {
 export default function HomeRedesign({ signedIn }: { signedIn: boolean }) {
   const router = useRouter()
 
-  /* Real counts where the app has them (anon-safe reads). */
+  /* Real counts where the app has them (anon-safe reads).
+     `live` = rooms with a user ACTUALLY inside right now (heartbeat-verified
+     via live_voice_chat_live_rooms) — never the raw number of rooms that
+     happen to exist. */
   const [stats, setStats] = useState({ communities: 3, live: 0, opportunities: 0 })
   useEffect(() => {
     let cancelled = false
+    const sb = createClient()
     const load = async () => {
-      const sb = createClient()
-      const [comms, rooms, opps] = await Promise.all([
+      const [comms, liveRooms, opps] = await Promise.all([
         sb.from('communities').select('id', { count: 'exact', head: true }),
-        sb.from('live_voice_chat_groups').select('id', { count: 'exact', head: true }),
+        fetchLiveVoiceRooms(sb),
         sb.from('opportunities').select('id', { count: 'exact', head: true }).eq('is_active', true),
       ])
       if (cancelled) return
       setStats({
         communities: comms.count ?? 3,
-        live: rooms.count ?? 0,
+        live: liveRooms.length,
         opportunities: opps.count ?? 0,
       })
     }
-    load()
+    void load()
+    // Rooms empty out and fill up constantly — refresh while the tab is
+    // visible so the cards never advertise a live room that already ended.
+    const timer = setInterval(() => {
+      if (document.visibilityState === 'visible') void load()
+    }, 30_000)
     return () => {
       cancelled = true
+      clearInterval(timer)
     }
   }, [])
 
@@ -384,7 +394,8 @@ export default function HomeRedesign({ signedIn }: { signedIn: boolean }) {
       icon: 'mic',
       label: 'Join a live room',
       href: '/live-voice-chat',
-      desc: stats.live > 0 ? `${stats.live} rooms live now` : 'Voice rooms across colleges',
+      desc:
+        stats.live > 0 ? `${stats.live} room${stats.live === 1 ? '' : 's'} live now` : 'Voice rooms across colleges',
     },
     { icon: 'briefcase', label: 'Explore opportunities', href: '/opportunities', desc: 'Internships, jobs & projects' },
   ]
@@ -672,7 +683,15 @@ export default function HomeRedesign({ signedIn }: { signedIn: boolean }) {
           {/* Row 1: Communities · Live Voice · Compete & Rankings (§7) */}
           <div className="home-row-3">
             <FeatureCard f={FEATURES[0]} />
-            <FeatureCard f={FEATURES[1]} />
+            <FeatureCard
+              f={{
+                ...FEATURES[1],
+                // Only claim "live now" when someone is genuinely inside a
+                // room — otherwise fall back to the plain feature copy.
+                subtitle:
+                  stats.live > 0 ? `${stats.live} room${stats.live === 1 ? '' : 's'} live now` : FEATURES[1].subtitle,
+              }}
+            />
             <FeatureCard f={FEATURES[5]} />
           </div>
 
