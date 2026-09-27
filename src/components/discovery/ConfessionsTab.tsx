@@ -21,6 +21,7 @@ import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { useAdminContext } from '@/lib/permissions'
 import EmptyState from '@/components/EmptyState'
+import { Icon } from '@/components/icons'
 import { ListSkeleton } from '@/components/Skeleton'
 import { useToast } from '@/components/Toast'
 import { useHaptic } from '@/hooks/useMobile'
@@ -321,7 +322,9 @@ export default function ConfessionsTab({ userId }: { userId: string | null }) {
   const deleteConfession = async (c: Confession) => {
     if (!window.confirm('Delete this confession? This cannot be undone.')) return
     const token = myTokens[c.id]
-    if (!canModerate && (!token || !userId)) return
+    // Admins delete anything (audited); the poster only needs this browser's
+    // token — no author id exists and the token RPC needs no session.
+    if (!canModerate && !token) return
 
     const { data, error } = canModerate
       ? await supabase.rpc('admin_delete_confession', { p_confession_id: c.id })
@@ -355,8 +358,22 @@ export default function ConfessionsTab({ userId }: { userId: string | null }) {
             marginBottom: 16,
           }}
         >
-          <p style={{ fontSize: 13, color: 'var(--text-secondary)', margin: 0 }}>
-            🕵️ Reading is public — <strong>sign in to confess or react.</strong>
+          <p
+            style={{
+              fontSize: 13,
+              color: 'var(--text-secondary)',
+              margin: 0,
+              display: 'flex',
+              alignItems: 'center',
+              gap: 7,
+            }}
+          >
+            <span style={{ display: 'inline-flex', color: 'var(--text-muted)', flexShrink: 0 }} aria-hidden="true">
+              <Icon name="mask" size={16} strokeWidth={2.2} />
+            </span>
+            <span>
+              Reading is public — <strong>sign in to confess or react.</strong>
+            </span>
           </p>
           <button
             onClick={requireAuth}
@@ -388,8 +405,22 @@ export default function ConfessionsTab({ userId }: { userId: string | null }) {
             marginBottom: 16,
           }}
         >
-          <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 8 }}>
-            <span style={{ fontSize: 15 }}>🕵️</span>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
+            <span
+              aria-hidden="true"
+              style={{
+                width: 26,
+                height: 26,
+                borderRadius: 8,
+                display: 'grid',
+                placeItems: 'center',
+                flexShrink: 0,
+                background: 'var(--accent-light)',
+                color: 'var(--accent-text)',
+              }}
+            >
+              <Icon name="mask" size={15} strokeWidth={2.2} />
+            </span>
             <p style={{ fontSize: 12.5, fontWeight: 700, color: 'var(--text-secondary)', margin: 0 }}>
               Confess anonymously
             </p>
@@ -464,9 +495,13 @@ export default function ConfessionsTab({ userId }: { userId: string | null }) {
               fontWeight: 600,
               cursor: 'pointer',
               fontFamily: 'inherit',
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: 6,
             }}
           >
-            {s === 'latest' ? '🕐 Latest' : '🔥 Trending'}
+            <Icon name={s === 'latest' ? 'clock' : 'flame'} size={14} strokeWidth={2.2} />
+            {s === 'latest' ? 'Latest' : 'Trending'}
           </button>
         ))}
       </div>
@@ -475,7 +510,7 @@ export default function ConfessionsTab({ userId }: { userId: string | null }) {
       {loading ? (
         <ListSkeleton count={4} />
       ) : confessions.length === 0 ? (
-        <EmptyState icon="🕵️" title="No confessions yet" body="Be the first to share something anonymously." />
+        <EmptyState icon="mask" title="No confessions yet" body="Be the first to share something anonymously." />
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
           {confessions.map((c, i) => {
@@ -492,11 +527,9 @@ export default function ConfessionsTab({ userId }: { userId: string | null }) {
                   position: 'relative',
                   overflow: 'hidden',
                   background: `linear-gradient(155deg, ${tint.bg}, var(--bg) 78%)`,
-                  border: `1px solid ${tint.border}`,
-                  borderLeft: `3px solid ${tint.accent}`,
-                  borderRadius: 14,
-                  padding: '16px 16px 13px',
                   animation: `ccConfessIn 0.3s ease ${Math.min(i, 8) * 0.04}s backwards`,
+                  ['--confess-accent' as any]: tint.accent,
+                  ['--confess-border' as any]: tint.border,
                 }}
               >
                 {/* decorative “secret note” SVG — quote watermark + seal */}
@@ -547,7 +580,7 @@ export default function ConfessionsTab({ userId }: { userId: string | null }) {
                   }}
                 />
 
-                {/* masked badge — whisper-tone identity strip */}
+                {/* masked badge — identity strip, no id anywhere */}
                 <div
                   style={{
                     position: 'relative',
@@ -568,9 +601,13 @@ export default function ConfessionsTab({ userId }: { userId: string | null }) {
                       border: `1px solid ${tint.border}`,
                       borderRadius: 7,
                       padding: '2px 8px',
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: 5,
                     }}
                   >
-                    🕵️ Confession #{hashId(c.id).toString(36).slice(0, 4).toUpperCase()}
+                    <Icon name="mask" size={12} strokeWidth={2.2} />
+                    Anonymous
                   </span>
                   <span style={{ flex: 1 }} />
                   <span style={{ fontSize: 11, color: 'var(--text-muted)' }}>{timeAgo(c.created_at)}</span>
@@ -603,13 +640,13 @@ export default function ConfessionsTab({ userId }: { userId: string | null }) {
                       position: 'absolute',
                       left: `${b.x}%`,
                       top: `${b.y}%`,
-                      fontSize: 34,
+                      color: '#ff4d67',
                       pointerEvents: 'none',
                       animation: 'ccHeartBurst 1.4s ease-out forwards',
                       filter: 'drop-shadow(0 4px 10px rgba(0,0,0,0.35))',
                     }}
                   >
-                    ❤️
+                    <Icon name="heart" size={34} strokeWidth={2} filled />
                   </span>
                 ))}
 
@@ -618,75 +655,52 @@ export default function ConfessionsTab({ userId }: { userId: string | null }) {
                     onClick={() => react(c)}
                     aria-pressed={reacted}
                     aria-label={reacted ? 'Remove reaction' : 'React — sign in required'}
+                    className="confess-like"
                     style={{
-                      minHeight: 36,
-                      minWidth: 62,
-                      display: 'inline-flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      gap: 6,
-                      padding: '6px 12px',
-                      borderRadius: 20,
-                      border: reacted ? '1px solid var(--accent)' : '1px solid var(--border)',
-                      background: reacted ? 'var(--accent-light)' : 'var(--bg)',
-                      color: reacted ? 'var(--accent-text)' : 'var(--text-secondary)',
-                      fontSize: 13,
-                      fontWeight: 600,
-                      cursor: 'pointer',
-                      fontFamily: 'inherit',
                       animation: popped.has(c.id) ? 'ccReactionPop 0.45s ease' : undefined,
                     }}
                   >
-                    <span aria-hidden="true" style={{ display: 'inline-block' }}>
-                      {reacted ? '❤️' : '🤍'}
-                    </span>
+                    <Icon name="heart" size={15} strokeWidth={2.2} filled={reacted} />
                     {c.reaction_count}
                   </button>
 
                   {!reacted && userId && (
-                    <span style={{ fontSize: 11, color: 'var(--text-muted)', opacity: 0.75 }}>double-tap ❤️</span>
+                    <span
+                      style={{
+                        fontSize: 11,
+                        color: 'var(--text-muted)',
+                        opacity: 0.75,
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: 4,
+                      }}
+                    >
+                      double-tap to
+                      <Icon name="heart" size={11} strokeWidth={2.4} />
+                    </span>
                   )}
 
                   <span style={{ flex: 1 }} />
 
-                  {(canModerate || (userId && myTokens[c.id])) && (
+                  {(canModerate || myTokens[c.id]) && (
                     <button
                       onClick={() => deleteConfession(c)}
                       aria-label="Delete confession"
                       title={canModerate ? 'Delete (moderator)' : 'Delete your confession'}
-                      style={{
-                        minHeight: 36,
-                        minWidth: 36,
-                        borderRadius: 20,
-                        border: '1px solid var(--border)',
-                        background: 'var(--bg)',
-                        color: 'var(--text-muted)',
-                        fontSize: 14,
-                        cursor: 'pointer',
-                      }}
+                      className="confess-action confess-action--danger"
                     >
-                      🗑
+                      <Icon name="trash" size={15} strokeWidth={2.2} />
                     </button>
                   )}
 
-                  {
-                    <button
-                      onClick={() => (userId ? setReportTarget(c) : requireAuth())}
-                      aria-label="Report confession"
-                      style={{
-                        minHeight: 36,
-                        minWidth: 36,
-                        borderRadius: 20,
-                        border: '1px solid var(--border)',
-                        background: 'var(--bg)',
-                        color: 'var(--text-muted)',
-                        fontSize: 14,
-                        cursor: 'pointer',
-                      }}
-                    >
-                      🚩
-                    </button>
-                  }
+                  <button
+                    onClick={() => (userId ? setReportTarget(c) : requireAuth())}
+                    aria-label="Report confession"
+                    title="Report"
+                    className="confess-action"
+                  >
+                    <Icon name="flag" size={15} strokeWidth={2.2} />
+                  </button>
                 </div>
               </div>
             )

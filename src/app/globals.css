@@ -1301,7 +1301,7 @@ a,
   .confess-card:hover {
     transform: translateY(-2px);
     box-shadow: 0 8px 28px rgba(0, 0, 0, 0.18);
-    border-color: var(--border-strong);
+    border-color: color-mix(in srgb, var(--confess-accent, var(--border-strong)) 60%, var(--border));
   }
   .confess-card {
     transition:
@@ -1309,6 +1309,77 @@ a,
       box-shadow 0.16s ease,
       border-color 0.16s ease;
   }
+}
+
+/* Card chrome — the borders live HERE (driven by per-card vars) instead of
+   inline styles, so the hover rule above can actually retint them. Inline
+   styles keep only the per-card gradient, entrance animation and the vars. */
+.confess-card {
+  --confess-accent: #fd8f01;
+  --confess-border: rgba(253, 143, 1, 0.28);
+  border: 1px solid var(--confess-border);
+  border-left: 3px solid var(--confess-accent);
+  border-radius: 16px;
+  padding: 16px 16px 13px;
+}
+
+/* Like pill — reacted state rides aria-pressed so hover can retint it. */
+.confess-like {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-height: 36px;
+  min-width: 62px;
+  padding: 6px 12px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: var(--bg);
+  color: var(--text-secondary);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: inherit;
+  transition:
+    border-color 0.16s ease,
+    background 0.16s ease,
+    color 0.16s ease;
+}
+.confess-like:hover {
+  border-color: var(--accent);
+  color: var(--accent-text);
+}
+.confess-like[aria-pressed='true'] {
+  border-color: var(--accent);
+  background: var(--accent-light);
+  color: var(--accent-text);
+}
+
+/* Ghost icon buttons on the card (delete, report). */
+.confess-action {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 36px;
+  min-height: 36px;
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  background: var(--bg);
+  color: var(--text-muted);
+  cursor: pointer;
+  transition:
+    border-color 0.16s ease,
+    background 0.16s ease,
+    color 0.16s ease;
+}
+.confess-action:hover {
+  border-color: color-mix(in srgb, var(--confess-accent, var(--accent)) 60%, transparent);
+  color: var(--confess-accent, var(--accent-text));
+}
+.confess-action--danger:hover {
+  border-color: var(--danger);
+  background: var(--danger-light);
+  color: var(--danger-text);
 }
 
 @media (prefers-reduced-motion: reduce) {

@@ -311,6 +311,14 @@ const ICON_PATHS: Record<string, React.ReactNode> = {
       <path d="M4 22v-7" />
     </>
   ),
+  /* Domino mask — the anonymous/confession glyph. */
+  mask: (
+    <>
+      <path d="M4 8.5C4 6.6 5.6 5 7.5 5h9c1.9 0 3.5 1.6 3.5 3.5 0 3.9-2.6 8.5-5.5 8.5-1.4 0-2-.9-2.5-.9s-1.1.9-2.5.9C6.6 17 4 12.4 4 8.5Z" />
+      <circle cx="9" cy="10.5" r="1.2" />
+      <circle cx="15" cy="10.5" r="1.2" />
+    </>
+  ),
 }
 
 export function Icon({
