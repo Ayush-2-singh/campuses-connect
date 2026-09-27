@@ -834,6 +834,14 @@ a,
   .fab-wrap {
     bottom: calc(84px + env(safe-area-inset-bottom)) !important;
   }
+
+  /* The live-voice broadcast pill parks in the SAME corner as the FAB
+     (right: 16px, bottom: 84px) — on phones it would sit underneath the
+     + button and its upward menu. Stack it above the FAB (52px button +
+     10px gap) and the home indicator. Desktop keeps bottom: 84px. */
+  .cc-voice-card {
+    bottom: calc(146px + env(safe-area-inset-bottom)) !important;
+  }
 }
 
 /* ── Mobile horizontal scroll sections ──
@@ -1584,7 +1592,16 @@ html.nav-hidden .fab-wrap {
 /* ───────────────────────── Live Voice Chat — mobile layout ───────────────────────── */
 /* The header (title + New Room) and room rows (icon + text + Join) are single-row
    flex layouts that overflow a 320–430px viewport: the Join button is pushed past
-   the right edge and the New Room button gets squeezed. Stack them on mobile. */
+   the right edge and the New Room button gets squeezed. Stack them on mobile.
+
+   NOTE: .lvc-info's flex MUST live here in CSS, not as an inline style —
+   the inline `flex: 1` shorthand would set flex-basis inline and win over
+   the media query below, so the wrap would never happen on phones and the
+   room name + LIVE badge would be squeezed to ~100px next to Join. */
+.lvc-info {
+  flex: 1;
+  min-width: 0;
+}
 @media (max-width: 560px) {
   .lvc-header {
     flex-wrap: wrap;

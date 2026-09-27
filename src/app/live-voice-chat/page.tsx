@@ -398,7 +398,11 @@ export default function LiveVoiceChatPage() {
                   }}
                 >
                   <span style={{ fontSize: 30, flexShrink: 0 }}>{g.icon || '🎙️'}</span>
-                  <div className="lvc-info" style={{ flex: 1, minWidth: 0 }}>
+                  {/* flex/min-width live in CSS (.lvc-info), not inline —
+                      an inline `flex: 1` would override the mobile media
+                      query's flex-basis and squeeze the LIVE badge/desc
+                      into ~100px next to the Join button. */}
+                  <div className="lvc-info">
                     <p
                       style={{
                         fontSize: 14,
