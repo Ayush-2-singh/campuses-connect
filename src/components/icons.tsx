@@ -48,6 +48,39 @@ const ICON_PATHS: Record<string, React.ReactNode> = {
       <path d="M12 19v3" />
     </>
   ),
+  /* Meet-style call controls — mic with a slash = muted. */
+  'mic-off': (
+    <>
+      <path d="M1 1l22 22" />
+      <path d="M9 9v3a3 3 0 0 0 5.12 2.12" />
+      <path d="M15 9.34V4a3 3 0 0 0-5.94-.6" />
+      <path d="M17 16.95A7 7 0 0 1 5 12v-1" />
+      <path d="M19 10v1a7 7 0 0 1-.11 1.23" />
+      <path d="M12 19v3" />
+    </>
+  ),
+  video: (
+    <>
+      <path d="M23 7l-7 5 7 5V7z" />
+      <rect x="1" y="5" width="15" height="14" rx="2" />
+    </>
+  ),
+  'video-off': (
+    <>
+      <path d="M16 16v2a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h2m5.66 0H14a2 2 0 0 1 2 2v3.34l1 1L23 7v10z" />
+      <path d="M1 1l22 22" />
+    </>
+  ),
+  /* Screen with an up-arrow — the GMeet "present" glyph. */
+  'screen-share': (
+    <>
+      <path d="M12 13V7" />
+      <path d="m15 10-3-3-3 3" />
+      <rect x="2" y="3" width="20" height="14" rx="2" />
+      <path d="M8 21h8" />
+      <path d="M12 17v4" />
+    </>
+  ),
   user: (
     <>
       <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />

@@ -1,6 +1,6 @@
 'use client'
 
-import { Suspense, useCallback, useEffect, useRef, useState } from 'react'
+import { Suspense, useCallback, useEffect, useRef, useState, type CSSProperties } from 'react'
 import { useParams, useRouter, useSearchParams } from 'next/navigation'
 import {
   LiveKitRoom,
@@ -8,8 +8,12 @@ import {
   useLocalParticipant,
   useParticipants,
   useDataChannel,
+  useTracks,
+  VideoTrack,
 } from '@livekit/components-react'
+import { Track } from 'livekit-client'
 import { createClient } from '@/lib/supabase/client'
+import { Icon } from '@/components/icons'
 
 const supabase = createClient()
 
@@ -148,6 +152,8 @@ function CallShell({ connected, onLeave }: { connected: boolean; onLeave: () => 
   return (
     <div style={{ minHeight: '72vh', display: 'flex', flexDirection: 'column' }}>
       <Header connected={connected} count={participants.length} />
+      {/* Anyone's screen share takes the stage up top (Meet-style). */}
+      <ScreenStage />
       <Participants participants={participants} emojiEvents={emojiEvents} />
       <div style={{ flex: 1 }} />
       <Controls callId={callId} onLeave={onLeave} sendReaction={sendReaction} />
@@ -201,8 +207,61 @@ interface EmojiEvent {
 }
 
 /**
+ * PRESENTATION STAGE — whoever is sharing their screen gets a big 16:9
+ * stage above the tiles, like GMeet. Renders nothing when nobody shares.
+ */
+function ScreenStage() {
+  const screenRefs = useTracks([Track.Source.ScreenShare])
+  const ref = screenRefs[0]
+  if (!ref) return null
+
+  const who = ref.participant.name || ref.participant.identity || 'Student'
+
+  return (
+    <div
+      style={{
+        position: 'relative',
+        width: '100%',
+        maxHeight: '46vh',
+        aspectRatio: '16 / 9',
+        borderRadius: 16,
+        overflow: 'hidden',
+        border: '1px solid var(--border)',
+        background: '#000',
+        marginBottom: 14,
+        flexShrink: 0,
+      }}
+    >
+      {/* muted: shared-screen audio (if any) flows through RoomAudioRenderer */}
+      <VideoTrack trackRef={ref} muted style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
+      <span
+        style={{
+          position: 'absolute',
+          left: 10,
+          bottom: 10,
+          display: 'inline-flex',
+          alignItems: 'center',
+          gap: 6,
+          fontSize: 11.5,
+          fontWeight: 700,
+          color: '#fff',
+          background: 'rgba(0,0,0,0.55)',
+          padding: '4px 9px',
+          borderRadius: 8,
+        }}
+      >
+        <Icon name="screen-share" size={13} />
+        {ref.participant.isLocal ? `${who} · you are presenting` : `${who} is presenting`}
+      </span>
+    </div>
+  )
+}
+
+/**
  * PARTICIPANT TILES — one card per person (GMeet-style): speaking ring,
  * mute indicator, and floating emoji bursts anchored to the tile.
+ * A participant with their camera on shows real video (mirrored for your
+ * own tile); everyone else keeps the voice-first avatar tile.
  */
 function Participants({
   participants,
@@ -211,6 +270,8 @@ function Participants({
   participants: ReturnType<typeof useParticipants>
   emojiEvents: EmojiEvent[]
 }) {
+  const camRefs = useTracks([Track.Source.Camera])
+
   return (
     <div
       style={{
@@ -223,6 +284,7 @@ function Participants({
       {participants.map((p) => {
         const muted = !p.isMicrophoneEnabled
         const mineReactions = emojiEvents.filter((e) => e.from === p.identity)
+        const camRef = camRefs.find((r) => r.participant.identity === p.identity)
         return (
           <div
             key={p.identity}
@@ -258,24 +320,49 @@ function Participants({
               </span>
             ))}
 
-            <div
-              style={{
-                width: 56,
-                height: 56,
-                borderRadius: '50%',
-                margin: '0 auto 10px',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                fontSize: 22,
-                fontWeight: 800,
-                color: p.isSpeaking ? 'var(--on-accent)' : 'var(--accent-text)',
-                background: p.isSpeaking ? 'var(--success, var(--accent))' : 'var(--accent-light)',
-                transition: 'background 0.2s ease',
-              }}
-            >
-              {(p.name ?? '?').charAt(0).toUpperCase()}
-            </div>
+            {camRef ? (
+              <div
+                style={{
+                  width: '100%',
+                  height: 124,
+                  borderRadius: 12,
+                  overflow: 'hidden',
+                  margin: '0 auto 10px',
+                  background: '#000',
+                }}
+              >
+                <VideoTrack
+                  trackRef={camRef}
+                  muted
+                  style={{
+                    width: '100%',
+                    height: '100%',
+                    objectFit: 'cover',
+                    // Meet-style: your own camera is mirrored, everyone else's is not.
+                    ...(p.isLocal ? { transform: 'scaleX(-1)' } : null),
+                  }}
+                />
+              </div>
+            ) : (
+              <div
+                style={{
+                  width: 56,
+                  height: 56,
+                  borderRadius: '50%',
+                  margin: '0 auto 10px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  fontSize: 22,
+                  fontWeight: 800,
+                  color: p.isSpeaking ? 'var(--on-accent)' : 'var(--accent-text)',
+                  background: p.isSpeaking ? 'var(--success, var(--accent))' : 'var(--accent-light)',
+                  transition: 'background 0.2s ease',
+                }}
+              >
+                {(p.name ?? '?').charAt(0).toUpperCase()}
+              </div>
+            )}
             <p
               style={{
                 fontSize: 13,
@@ -290,8 +377,18 @@ function Participants({
               {p.name ?? 'Student'}
               {p.isLocal ? ' (You)' : ''}
             </p>
-            <p style={{ fontSize: 11, color: muted ? 'var(--danger)' : 'var(--text-muted)', margin: '4px 0 0' }}>
-              {muted ? '🔇 muted' : '🎙 live'}
+            <p
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: 4,
+                fontSize: 11,
+                color: muted ? 'var(--danger)' : 'var(--text-muted)',
+                margin: '4px 0 0',
+              }}
+            >
+              <Icon name={muted ? 'mic-off' : 'mic'} size={12} />
+              {muted ? 'muted' : 'live'}
             </p>
           </div>
         )
@@ -342,8 +439,12 @@ function useReactions(myIdentity: string | undefined) {
 }
 
 /**
- * GMeet-style bottom control bar: emoji picker (3s float for everyone),
- * mic toggle, leave. Mic state also syncs to the DB via RPC.
+ * GMeet-style bottom control bar: emoji picker (3s float for everyone), mic,
+ * camera, screen share, leave — every control an SVG button like Meet. Mic
+ * and camera turn Meet-red while OFF; an active screen share lights up in
+ * the accent. Mic state syncs to the DB via RPC; camera/screen share are
+ * pure LiveKit toggles (the share button hides itself in browsers without
+ * getDisplayMedia, e.g. older mobile Safari).
  */
 function Controls({
   callId,
@@ -354,19 +455,64 @@ function Controls({
   onLeave: () => void
   sendReaction: (emoji: string) => void
 }) {
-  const { localParticipant, isMicrophoneEnabled } = useLocalParticipant()
+  const { localParticipant, isMicrophoneEnabled, isCameraEnabled, isScreenShareEnabled } = useLocalParticipant()
   const [emojiOpen, setEmojiOpen] = useState(false)
+
+  // Screen capture does not exist on every browser — decide AFTER mount so
+  // SSR and the first client render agree (no hydration mismatch).
+  const [canScreenShare, setCanScreenShare] = useState(false)
+  useEffect(() => {
+    setCanScreenShare(!!(typeof navigator !== 'undefined' && navigator.mediaDevices?.getDisplayMedia))
+  }, [])
 
   const REACTIONS = ['👏', '🔥', '❤️', '😂', '🎉', '👍', '🤯', '🙏']
 
+  /** Shared geometry for the round controls (Meet's 60px circles). */
+  const CTRL: CSSProperties = {
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    border: 'none',
+    display: 'inline-flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    cursor: 'pointer',
+    boxShadow: '0 4px 16px rgba(0,0,0,0.3)',
+    flexShrink: 0,
+  }
+  /** Meet palette for the round controls: neutral = on, red = off. */
+  const ON = { background: 'var(--bg-tertiary)', color: 'var(--text-primary)' } as const
+  const OFF = { background: 'var(--danger)', color: '#fff' } as const
+
   async function toggleMic() {
     const nextEnabled = !isMicrophoneEnabled
-    await localParticipant.setMicrophoneEnabled(nextEnabled)
+    try {
+      await localParticipant.setMicrophoneEnabled(nextEnabled)
+    } catch {
+      return // microphone permission denied — LiveKit keeps the current state
+    }
     // Keep the DB's mute state in sync with the room.
     await supabase.rpc('set_live_voice_chat_mute', {
       p_call_id: callId,
       p_muted: !nextEnabled,
     })
+  }
+
+  /** Camera is pure LiveKit — no DB column; off by default, opt in like Meet. */
+  async function toggleCamera() {
+    try {
+      await localParticipant.setCameraEnabled(!isCameraEnabled)
+    } catch {
+      /* permission denied or no camera — the button simply stays off */
+    }
+  }
+
+  async function toggleScreenShare() {
+    try {
+      await localParticipant.setScreenShareEnabled(!isScreenShareEnabled)
+    } catch {
+      /* user cancelled the picker, or this browser refuses screen capture */
+    }
   }
 
   return (
@@ -444,23 +590,41 @@ function Controls({
         </button>
       </div>
 
+      {/* Meet-style mic — red slashed SVG glyph while muted */}
       <button
         onClick={toggleMic}
         aria-label={isMicrophoneEnabled ? 'Mute microphone' : 'Unmute microphone'}
-        style={{
-          width: 60,
-          height: 60,
-          borderRadius: 30,
-          border: 'none',
-          background: isMicrophoneEnabled ? 'var(--bg-tertiary)' : 'var(--danger)',
-          color: isMicrophoneEnabled ? 'var(--text-primary)' : '#fff',
-          fontSize: 22,
-          cursor: 'pointer',
-          boxShadow: '0 4px 16px rgba(0,0,0,0.3)',
-        }}
+        aria-pressed={!isMicrophoneEnabled}
+        style={{ ...CTRL, ...(isMicrophoneEnabled ? ON : OFF) }}
       >
-        {isMicrophoneEnabled ? '🎙️' : '🔇'}
+        <Icon name={isMicrophoneEnabled ? 'mic' : 'mic-off'} size={23} />
       </button>
+
+      {/* Camera — Meet-red while off; turning it on publishes your video */}
+      <button
+        onClick={toggleCamera}
+        aria-label={isCameraEnabled ? 'Turn camera off' : 'Turn camera on'}
+        aria-pressed={!isCameraEnabled}
+        style={{ ...CTRL, ...(isCameraEnabled ? ON : OFF) }}
+      >
+        <Icon name={isCameraEnabled ? 'video' : 'video-off'} size={23} />
+      </button>
+
+      {/* Screen share — accent while presenting; hidden where unsupported */}
+      {canScreenShare && (
+        <button
+          onClick={toggleScreenShare}
+          aria-label={isScreenShareEnabled ? 'Stop sharing your screen' : 'Share your screen'}
+          aria-pressed={isScreenShareEnabled}
+          style={{
+            ...CTRL,
+            background: isScreenShareEnabled ? 'var(--accent)' : 'var(--bg-tertiary)',
+            color: isScreenShareEnabled ? 'var(--on-accent)' : 'var(--text-primary)',
+          }}
+        >
+          <Icon name="screen-share" size={23} />
+        </button>
+      )}
 
       <button
         onClick={onLeave}
