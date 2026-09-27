@@ -133,7 +133,7 @@ export default function LivePulseFeed({ userId }: { userId: string | null }) {
         found.push({
           key: `voice-${r.callId}`,
           kind: 'voice',
-          text: `🎙 ${r.name} is live — ${r.participantCount} in call`,
+          text: `${r.name} is live — ${r.participantCount} in call`,
           detail: 'Tap to join the conversation',
           href: `/live-voice-chat/${r.groupId}`,
           at: r.startedAt || Date.now(),
@@ -160,7 +160,7 @@ export default function LivePulseFeed({ userId }: { userId: string | null }) {
         found.push({
           key: `event-${e.id}`,
           kind: 'event',
-          text: started ? `📅 ${e.title} just started!` : `📅 ${e.title} starts soon`,
+          text: started ? `${e.title} just started!` : `${e.title} starts soon`,
           detail: started ? 'Happening now — jump in' : 'Get the details before it begins',
           href: '/events',
           at: new Date(e.starts_at).getTime(),
@@ -184,7 +184,7 @@ export default function LivePulseFeed({ userId }: { userId: string | null }) {
         found.push({
           key: `aura-${g.id}`,
           kind: 'aura',
-          text: `⚡ ${g.winner_nickname} just won a game — ${g.winner_score} pts`,
+          text: `${g.winner_nickname} just won a game — ${g.winner_score} pts`,
           detail: 'Think you can beat that? The arena is open',
           href: '/compete?tab=clash',
           at: new Date(g.won_at).getTime(),

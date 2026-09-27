@@ -31,6 +31,7 @@ import {
   postingReasonCopy,
   postingVerdict,
   replyPreview,
+  roomVisuals,
   type ChatBlockReason,
   type ChatMessageRow,
   type ModerationAction,
@@ -682,7 +683,11 @@ export default function ChatRoomPage() {
   return (
     <Layout user={user} profile={profile}>
       <ErrorBoundary pageName="chat-room">
-        <div {...swipe} style={{ maxWidth: 760, margin: '0 auto', padding: '0 0 24px' }}>
+        <div
+          {...swipe}
+          className="chat-room"
+          style={{ maxWidth: 760, margin: '0 auto', marginBottom: -88, padding: 0 }}
+        >
           {/* ── Header ── */}
           <div
             className="chat-room-header"
@@ -727,7 +732,9 @@ export default function ChatRoomPage() {
                   gap: 6,
                 }}
               >
-                <span aria-hidden="true">{community?.icon || '💬'}</span>
+                <span aria-hidden="true" style={{ display: 'inline-flex', color: roomVisuals(community?.key).accent }}>
+                  <Icon name={roomVisuals(community?.key).icon} size={18} strokeWidth={2.2} />
+                </span>
                 <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                   {community?.name || 'Room'}
                 </span>
@@ -780,7 +787,7 @@ export default function ChatRoomPage() {
                   cursor: 'pointer',
                 }}
               >
-                🛡
+                <Icon name="shield" size={17} />
               </button>
             )}
           </div>
@@ -799,7 +806,9 @@ export default function ChatRoomPage() {
                 gap: 10,
               }}
             >
-              <span style={{ fontSize: 20, flexShrink: 0 }}>📘</span>
+              <span style={{ flexShrink: 0, display: 'inline-flex', color: 'var(--accent-text)' }} aria-hidden="true">
+                <Icon name="book" size={20} />
+              </span>
               <div style={{ flex: 1, minWidth: 0 }}>
                 <p
                   style={{
@@ -816,9 +825,15 @@ export default function ChatRoomPage() {
                 </p>
                 <p style={{ fontSize: 11, color: 'var(--text-muted)', margin: 0 }}>
                   Discussing this resource
-                  {resource.profiles?.username
-                    ? ` · 👤 ${resource.profiles.full_name || resource.profiles.username}`
-                    : ''}
+                  {resource.profiles?.username && (
+                    <>
+                      {' · '}
+                      <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+                        <Icon name="user" size={12} strokeWidth={2.2} />
+                        {resource.profiles.full_name || resource.profiles.username}
+                      </span>
+                    </>
+                  )}
                 </p>
               </div>
               {(resource.external_file_url || resource.drive_link || resource.external_link) && (
@@ -855,7 +870,7 @@ export default function ChatRoomPage() {
                   cursor: 'pointer',
                 }}
               >
-                ✕
+                <Icon name="x" size={16} />
               </button>
             </div>
           )}
@@ -947,8 +962,19 @@ export default function ChatRoomPage() {
                   padding: '10px 14px',
                 }}
               >
-                <p style={{ fontSize: 11, fontWeight: 800, color: 'var(--accent-text)', margin: '0 0 4px' }}>
-                  📌 PINNED
+                <p
+                  style={{
+                    fontSize: 11,
+                    fontWeight: 800,
+                    color: 'var(--accent-text)',
+                    margin: '0 0 4px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 5,
+                  }}
+                >
+                  <Icon name="bookmark" size={12} strokeWidth={2.4} />
+                  PINNED
                 </p>
                 {pinned.map((p) => (
                   <p key={p.id} style={{ fontSize: 12.5, color: 'var(--text-primary)', margin: '0 0 2px' }}>
@@ -976,7 +1002,7 @@ export default function ChatRoomPage() {
                     gap: 10,
                   }}
                 >
-                  <span>{error}</span>
+                  <span>{error}</span>{' '}
                   <button
                     onClick={() => setError('')}
                     aria-label="Dismiss error"
@@ -986,9 +1012,11 @@ export default function ChatRoomPage() {
                       color: 'inherit',
                       cursor: 'pointer',
                       fontFamily: 'inherit',
+                      display: 'inline-flex',
+                      alignItems: 'center',
                     }}
                   >
-                    ✕
+                    <Icon name="x" size={15} />
                   </button>
                 </div>
               )}
@@ -1151,7 +1179,10 @@ export default function ChatRoomPage() {
                                 textDecoration: 'underline',
                               }}
                             >
-                              🖼 Open image
+                              <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5 }}>
+                                <Icon name="image" size={13} strokeWidth={2} />
+                                Open image
+                              </span>
                             </a>
                           )}
                         </div>
@@ -1305,9 +1336,11 @@ export default function ChatRoomPage() {
                         cursor: 'pointer',
                         fontFamily: 'inherit',
                         minHeight: 32,
+                        display: 'inline-flex',
+                        alignItems: 'center',
                       }}
                     >
-                      ✕
+                      <Icon name="x" size={16} />
                     </button>
                   </div>
                 )}
@@ -1378,7 +1411,7 @@ export default function ChatRoomPage() {
                       justifyContent: 'center',
                     }}
                   >
-                    {editing ? '✓' : '➤'}
+                    <Icon name={editing ? 'check' : 'send'} size={18} strokeWidth={2.2} />
                   </button>
                 </div>
 
@@ -1420,7 +1453,7 @@ export default function ChatRoomPage() {
             {actionSheet.author_id !== user?.id && (
               <SheetRow
                 label="Reply"
-                icon="↩"
+                icon="reply"
                 onClick={() => {
                   setReplyTo(actionSheet)
                   setEditing(null)
@@ -1430,12 +1463,12 @@ export default function ChatRoomPage() {
               />
             )}
             {actionSheet.author_id === user?.id && !actionSheet.deleted_at && (
-              <SheetRow label="Edit" icon="✏️" onClick={() => startEdit(actionSheet)} />
+              <SheetRow label="Edit" icon="pencil" onClick={() => startEdit(actionSheet)} />
             )}
             {actionSheet.body && (
               <SheetRow
                 label="Copy text"
-                icon="📋"
+                icon="copy"
                 onClick={() => {
                   navigator.clipboard?.writeText(actionSheet.body || '')
                   setActionSheet(null)
@@ -1446,19 +1479,30 @@ export default function ChatRoomPage() {
             {isModerator && !actionSheet.deleted_at && (
               <SheetRow
                 label={actionSheet.pinned_at ? 'Unpin message' : 'Pin message'}
-                icon="📌"
+                icon="bookmark"
                 onClick={() => togglePin(actionSheet, !actionSheet.pinned_at)}
               />
             )}
             {(actionSheet.author_id === user?.id || isModerator) && (
-              <SheetRow label="Delete message" icon="🗑" danger onClick={() => removeMessage(actionSheet)} />
+              <SheetRow label="Delete message" icon="trash" danger onClick={() => removeMessage(actionSheet)} />
             )}
 
             {/* Report reason input, shown inline when reporting is requested. */}
             {actionSheet.author_id !== user?.id && !actionSheet.deleted_at && (
               <div style={{ padding: '8px 16px 4px', borderTop: '1px solid var(--border)', marginTop: 6 }}>
-                <p style={{ fontSize: 12, fontWeight: 700, color: 'var(--text-muted)', margin: '8px 0 6px' }}>
-                  🚩 REPORT THIS MESSAGE
+                <p
+                  style={{
+                    fontSize: 12,
+                    fontWeight: 700,
+                    color: 'var(--text-muted)',
+                    margin: '8px 0 6px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 6,
+                  }}
+                >
+                  <Icon name="flag" size={13} strokeWidth={2.2} />
+                  REPORT THIS MESSAGE
                 </p>
                 <textarea
                   value={reportReason}
@@ -1515,7 +1559,7 @@ export default function ChatRoomPage() {
               }) && (
                 <SheetRow
                   label="Moderate this user"
-                  icon="🛡"
+                  icon="shield"
                   onClick={() => {
                     setModTarget({ id: actionSheet.author_id, author: actionSheet.author })
                     setModAction('warn')
@@ -1674,7 +1718,7 @@ export default function ChatRoomPage() {
           <Sheet onClose={() => setShowReports(false)} title="Open reports">
             {reports.length === 0 ? (
               <p style={{ fontSize: 13, color: 'var(--text-muted)', padding: '0 20px 12px', margin: 0 }}>
-                Nothing to review. 🎉
+                Nothing to review.
               </p>
             ) : (
               reports.map((r) => (
@@ -1745,7 +1789,10 @@ export default function ChatRoomPage() {
                         fontFamily: 'inherit',
                       }}
                     >
-                      🛡 Moderate
+                      <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+                        <Icon name="shield" size={14} strokeWidth={2.2} />
+                        Moderate
+                      </span>
                     </button>
                   </div>
                 </div>
@@ -1838,7 +1885,7 @@ function SheetRow({
       style={{ color: danger ? 'var(--danger)' : 'var(--text-primary)' }}
     >
       <span style={{ width: 22, display: 'inline-flex', justifyContent: 'center' }} aria-hidden="true">
-        {icon}
+        <Icon name={icon} size={18} strokeWidth={2} />
       </span>
       {label}
     </button>

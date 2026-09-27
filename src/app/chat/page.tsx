@@ -9,7 +9,7 @@ import ErrorBoundary from '@/components/ErrorBoundary'
 import EmptyState from '@/components/EmptyState'
 import { ListSkeleton } from '@/components/Skeleton'
 import { Icon } from '@/components/icons'
-import { activeLabel, formatCount, unreadLabel } from '@/lib/chat'
+import { activeLabel, formatCount, roomVisuals, unreadLabel } from '@/lib/chat'
 
 /**
  * Live Chat — the category list.
@@ -130,7 +130,21 @@ export default function ChatCategoriesPage() {
           {/* Header — sticky so the search stays reachable while scrolling */}
           <div style={{ marginBottom: 14 }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 4 }}>
-              <span style={{ fontSize: 24 }}>💬</span>
+              <span
+                style={{
+                  width: 42,
+                  height: 42,
+                  borderRadius: 12,
+                  display: 'grid',
+                  placeItems: 'center',
+                  flexShrink: 0,
+                  background: 'var(--accent-light)',
+                  color: 'var(--accent-text)',
+                }}
+                aria-hidden="true"
+              >
+                <Icon name="message" size={22} strokeWidth={2} />
+              </span>
               <h1 style={{ fontSize: 22, fontWeight: 800, color: 'var(--text-primary)', margin: 0 }}>Live Chat</h1>
             </div>
             <p style={{ fontSize: 13, color: 'var(--text-muted)', margin: 0 }}>
@@ -231,6 +245,7 @@ export default function ChatCategoriesPage() {
                 const active = activeLabel(act?.active_count)
                 const unreadCount = unreadLabel(unread[c.id])
                 const isMember = memberships.includes(c.id)
+                const visuals = roomVisuals(c.key)
 
                 return (
                   <button
@@ -254,8 +269,15 @@ export default function ChatCategoriesPage() {
                       boxShadow: 'var(--shadow-sm)',
                     }}
                   >
-                    <span style={{ fontSize: 28, lineHeight: 1, flexShrink: 0 }} aria-hidden="true">
-                      {c.icon || '💬'}
+                    <span
+                      className="chat-room-icon"
+                      aria-hidden="true"
+                      style={{
+                        ['--room-soft' as any]: visuals.soft,
+                        ['--room-accent' as any]: visuals.accent,
+                      }}
+                    >
+                      <Icon name={visuals.icon} size={21} strokeWidth={2} />
                     </span>
 
                     <span style={{ flex: 1, minWidth: 0 }}>

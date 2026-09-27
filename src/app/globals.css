@@ -1352,9 +1352,43 @@ a:active,
   z-index: 20;
 }
 
+/* WhatsApp-style dock. Sticky alone cannot PULL the composer down when the
+   thread is short (a bottom sticky only ever shifts the box up toward its
+   line), so the room wrapper fills the viewport and lays out as a column:
+   the thread flexes to absorb the slack and the composer's flow position IS
+   the viewport bottom. Sticky then pins it there while long threads scroll.
+   The -88px reaches into the shell's bottom padding so a fully-scrolled page
+   ends at the composer instead of an 88px gap. */
+.chat-room {
+  display: flex;
+  flex-direction: column;
+  min-height: calc(100dvh - 60px);
+  margin-bottom: -88px;
+}
+@media (max-width: 768px) {
+  .chat-room {
+    /* topbar (66 + notch inset) and the fixed bottom nav it must clear
+       (72 + home-indicator inset) */
+    min-height: calc(100dvh - 138px - env(safe-area-inset-top) - env(safe-area-inset-bottom));
+  }
+}
+
+/* Room identity tile — shared SVG glyph on the room's category tint. */
+.chat-room-icon {
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  flex-shrink: 0;
+  border-radius: 13px;
+  background: var(--room-soft, var(--accent-light));
+  color: var(--room-accent, var(--accent-text));
+}
+
 /* Long words — URLs, stack traces, code — must never create horizontal
    overflow. 360px is the narrowest target. */
 .chat-thread {
+  flex: 1;
   overflow-wrap: anywhere;
   word-break: break-word;
 }

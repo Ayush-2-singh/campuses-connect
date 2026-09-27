@@ -282,3 +282,31 @@ export function replyPreview(body: string | null | undefined, max = 90): string 
   if (!flat) return 'Photo'
   return flat.length > max ? `${flat.slice(0, max - 1)}…` : flat
 }
+
+// ─── Room identity (emoji-free) ───────────────────────────────────────────────
+/**
+ * communities.icon still carries legacy emoji, but every Live Chat surface
+ * renders the shared SVG set instead. key -> glyph + category accent so each
+ * room reads at a glance in the list, the room header and any future chip.
+ */
+export const ROOM_VISUALS: Record<string, { icon: string; accent: string; soft: string }> = {
+  academics: { icon: 'book', accent: 'var(--blue-text)', soft: 'var(--blue-light)' },
+  'ai-ml': { icon: 'sparkles', accent: 'var(--purple-text)', soft: 'var(--purple-light)' },
+  career: { icon: 'briefcase', accent: 'var(--orange-text)', soft: 'var(--orange-light)' },
+  compete: { icon: 'trophy', accent: 'var(--yellow-text)', soft: 'var(--yellow-light)' },
+  dsa: { icon: 'layers', accent: 'var(--cyan-text)', soft: 'var(--cyan-light)' },
+  general: { icon: 'message', accent: 'var(--accent-text)', soft: 'var(--accent-light)' },
+  startups: { icon: 'rocket', accent: 'var(--danger-text)', soft: 'var(--danger-light)' },
+  'web-development': { icon: 'globe', accent: 'var(--success-text)', soft: 'var(--success-light)' },
+}
+
+/** Unknown/future room keys fall back to the neutral chat glyph. */
+export function roomVisuals(key?: string | null): { icon: string; accent: string; soft: string } {
+  return (
+    (key && ROOM_VISUALS[key]) || {
+      icon: 'message',
+      accent: 'var(--accent-text)',
+      soft: 'var(--accent-light)',
+    }
+  )
+}
