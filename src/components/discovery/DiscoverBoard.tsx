@@ -62,6 +62,7 @@ export default function DiscoverBoard({
   onRetry,
   signedIn,
   onCreate,
+  onOpenCard,
 }: {
   tab: BoardTab
   onTabChange: (t: BoardTab) => void
@@ -73,6 +74,8 @@ export default function DiscoverBoard({
   onRetry: () => void
   signedIn: boolean
   onCreate: () => void
+  /** Tap on the top deck card (demo cards can't be opened). */
+  onOpenCard?: (postId: string) => void
 }) {
   // SWIPE-FIRST (user request): the Tinder-style deck is the default — posts
   // arrive one at a time, big and tappable. The blueprint grid is one toggle
@@ -157,7 +160,7 @@ export default function DiscoverBoard({
       {mode === 'swipe' ? (
         // Empty deck -> the deck's own caught-up state, with a refresh wired to
         // the board's retry loader (previously this button never appeared).
-        <SwipeDeck cards={cards} onAction={onAction} busy={busy} onEmpty={onRetry} />
+        <SwipeDeck cards={cards} onAction={onAction} busy={busy} onEmpty={onRetry} onOpenCard={onOpenCard} />
       ) : (
         <>
           {/* ---------------- FEATURED banner (blueprint) ---------------- */}

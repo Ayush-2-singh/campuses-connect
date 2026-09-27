@@ -199,6 +199,23 @@ export interface DiscoveryAction {
   status?: string | null
 }
 
+/** Max length of the "why you're a fit" note — mirrors the DB CHECK. */
+export const INTEREST_NOTE_MAX = 500
+
+/** DEMO ids are client-only placeholders — never sent to the backend. */
+export const isDemoCardId = (id: string) => id.startsWith('demo-')
+
+/**
+ * The demo deck: up to `limit` seed cards for a category (or the whole set for
+ * 'all'). Used as a fallback when the real queue is empty so a new campus never
+ * lands on a dead "all caught up" screen while still seeing how swiping works.
+ */
+export function pickDemoCards(category?: DiscoveryCategory | 'all' | null, limit = 5): DiscoveryFeedCard[] {
+  const all = DEMO_DISCOVERY_CARDS
+  const filtered = !category || category === 'all' ? all : all.filter((c) => c.category === category)
+  return (filtered.length > 0 ? filtered : all).slice(0, limit)
+}
+
 /** One cursor-paginated batch of the swipe queue. */
 export async function fetchDiscoveryFeed(opts: {
   cursorCreated?: string | null
@@ -362,12 +379,30 @@ export async function deleteDiscoveryPost(id: string): Promise<{ ok: boolean; er
  * Pass / Interested — the ONE action layer used by swipe, buttons and
  * keyboard (STEP 8). Idempotent server-side: repeats collapse into one row.
  */
-export async function recordDiscoveryAction(postId: string, action: 'interested' | 'passed'): Promise<DiscoveryAction> {
+export async function recordDiscoveryAction(
+  postId: string,
+  action: 'interested' | 'passed',
+  note?: string | null
+): Promise<DiscoveryAction> {
   const supabase = createClient()
-  const { data, error } = await supabase.rpc('record_discovery_action', {
+  // A pitch only makes sense with an interest; the RPC also nulls it server-side
+  // for 'passed', so we don't bother sending it there.
+  const cleanNote = action === 'interested' && note ? note.trim().slice(0, INTEREST_NOTE_MAX) || null : null
+  let res = await supabase.rpc('record_discovery_action', {
     p_post_id: postId,
     p_action: action,
+    p_note: cleanNote,
   })
+  // Graceful fallback for a backend that hasn't applied the note migration yet
+  // (PGRST202 = no function matches): retry against the original 2-arg RPC so
+  // interests never break during a deploy window. It just loses the note.
+  if (res.error && (res.error.code === 'PGRST202' || /p_note/i.test(res.error.message))) {
+    res = await supabase.rpc('record_discovery_action', {
+      p_post_id: postId,
+      p_action: action,
+    })
+  }
+  const { data, error } = res
   if (error) return { ok: false, error: error.message }
   const row = (Array.isArray(data) ? data[0] : data) as {
     matched: boolean
@@ -413,6 +448,8 @@ export interface IncomingInterest {
   user_name: string | null
   user_username: string | null
   user_avatar: string | null
+  /** The applicant's pitch — who they are and why they fit. */
+  note: string | null
 }
 
 /** Author's incoming interests (pending first) — powers the inbox + accept button. */
@@ -424,7 +461,7 @@ export async function fetchMyIncomingInterests(): Promise<{ items: IncomingInter
   const { data, error } = await supabase
     .from('discovery_interests')
     .select(
-      `id, post_id, user_id, created_at, status,
+      `id, post_id, user_id, created_at, status, note,
        discovery_posts!inner(title, author_id),
        profiles!discovery_interests_user_id_fkey(full_name, username, avatar_url)`
     )
@@ -448,6 +485,7 @@ export async function fetchMyIncomingInterests(): Promise<{ items: IncomingInter
         user_name: user?.full_name ?? null,
         user_username: user?.username ?? null,
         user_avatar: user?.avatar_url ?? null,
+        note: (r.note as string | null) ?? null,
       }
     }),
   }

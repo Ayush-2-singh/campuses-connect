@@ -62,11 +62,14 @@ export default function SwipeDeck({
   onAction,
   busy,
   onEmpty,
+  onOpenCard,
 }: {
   cards: DiscoveryFeedCard[]
   onAction: (postId: string, action: 'interested' | 'passed') => void
   busy: boolean
   onEmpty?: () => void
+  /** Tap on the top card. Falls back to the detail route when not supplied. */
+  onOpenCard?: (postId: string) => void
 }) {
   const router = useRouter()
 
@@ -179,7 +182,11 @@ export default function SwipeDeck({
     const wasTap = Math.abs(drag.dx) < TAP_SLOP && Math.abs(drag.dy) < TAP_SLOP
     setDrag(null)
     // A clean tap opens the full write-up — no drag needed to inspect an idea.
-    if (wasTap && top && !busyRef.current) router.push(`/discover/${top.id}`)
+    // The owner of the queue decides what a tap means (real post vs demo card).
+    if (wasTap && top && !busyRef.current) {
+      if (onOpenCard) onOpenCard(top.id)
+      else router.push(`/discover/${top.id}`)
+    }
   }
 
   const progress = drag ? Math.min(1, Math.abs(drag.dx) / THRESHOLD) : 0

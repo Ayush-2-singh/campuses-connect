@@ -18,6 +18,7 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
+import Link from 'next/link'
 import { createClient, getBootUser } from '@/lib/supabase/client'
 import Layout from '@/components/Layout'
 import IconBanner from '@/components/IconBanner'
@@ -38,11 +39,14 @@ import {
   LOOKING_FOR_OPTIONS,
   CATEGORY_LABELS,
   STAGE_LABELS,
+  isDemoCardId,
+  pickDemoCards,
   type DiscoveryCategory,
   type DiscoveryStage,
   type DiscoveryFeedCard,
   type IncomingInterest,
 } from '@/lib/discovery'
+import InterestNoteSheet from '@/components/discovery/InterestNoteSheet'
 import DiscoverBoard from '@/components/discovery/DiscoverBoard'
 import DiscoveryBlogs from '@/components/discovery/DiscoveryBlogs'
 import DiscoveryPeople from '@/components/discovery/DiscoveryPeople'
@@ -64,6 +68,9 @@ const TABS: { key: Tab; label: string }[] = [
 ]
 
 const PAGE = 10
+// How many seed cards to show when the real queue is empty, so a fresh campus
+// still has something to swipe through while testing.
+const DEMO_COUNT = 5
 
 /* Card token shared with the homepage design system */
 const CARD = {
@@ -191,6 +198,11 @@ export default function DiscoverPage() {
   const [view, setView] = useState<'hub' | 'deck'>('deck')
 
   const [cards, setCards] = useState<DiscoveryFeedCard[]>([])
+  // True while the deck is showing client-only demo cards (empty real queue).
+  const [usingDemo, setUsingDemo] = useState(false)
+  // Latest queue for imperative handlers (avoids stale closures).
+  const queueRef = useRef<DiscoveryFeedCard[]>([])
+  queueRef.current = cards
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
@@ -247,7 +259,9 @@ export default function DiscoverPage() {
           return
         }
         setError(null)
-        setCards(res.cards)
+        const demo = res.cards.length === 0
+        setUsingDemo(demo)
+        setCards(demo ? pickDemoCards('all', DEMO_COUNT) : res.cards)
         setLoading(false)
       })
       .catch(() => setLoading(false))
@@ -274,7 +288,14 @@ export default function DiscoverPage() {
         return
       }
       setError(null)
-      setCards((prev) => (opts.fresh ? res.cards : [...prev, ...res.cards]))
+      if (opts.fresh) {
+        // Empty real queue -> seed the deck with demo cards to check the UX.
+        const demo = res.cards.length === 0
+        setUsingDemo(demo)
+        setCards(demo ? pickDemoCards(category, DEMO_COUNT) : res.cards)
+      } else {
+        setCards((prev) => [...prev, ...res.cards])
+      }
     },
     [category]
   )
@@ -292,6 +313,7 @@ export default function DiscoverPage() {
 
   // Prefetch the next batch when the user reaches the 7th card (STEP 12).
   useEffect(() => {
+    if (usingDemo) return // demo cards have no real cursor to paginate from
     if (cards.length === 0) return
     if (cards.length < 7 || loadingMoreRef.current) return
     const seen = new Set(cards.map((c) => c.id))
@@ -321,27 +343,81 @@ export default function DiscoverPage() {
         return
       }
       if (actingId) return
-      setActingId(postId)
-      setBusy(true)
-      if (action === 'interested') haptic.medium()
+
+      // Demo cards are client-only seed content — never written to the DB.
+      if (isDemoCardId(postId)) {
+        setCards((prev) => prev.filter((c) => c.id !== postId))
+        haptic.tap()
+        toast.show('Demo idea — post your own to match with real builders 🚀')
+        return
+      }
 
       // Optimistic: drop the card from the queue immediately.
       setCards((prev) => prev.filter((c) => c.id !== postId))
 
-      const res = await recordDiscoveryAction(postId, action)
+      if (action === 'interested') {
+        // Collect the pitch BEFORE recording — the author needs to know who is
+        // asking, not just that someone swiped right. The interest is still
+        // recorded (without a note) if the sheet is dismissed.
+        haptic.medium()
+        const title = queueRef.current.find((c) => c.id === postId)?.title ?? 'this idea'
+        setPendingInterest({ postId, title })
+        return
+      }
+
+      setActingId(postId)
+      setBusy(true)
+      const res = await recordDiscoveryAction(postId, 'passed')
       setBusy(false)
       setActingId(null)
       if (!res.ok) {
         toast.show(res.error || 'Action failed', { tone: 'danger' })
         loadedTabsRef.current.delete(tab) // reload queue on next visit
         loadQueue({ fresh: true })
-        return
-      }
-      if (action === 'interested') {
-        toast.show('Interest sent — the builder will see it', { tone: 'success' })
       }
     },
     [user, actingId, toast, haptic, router, tab, loadQueue]
+  )
+
+  // Pitch sheet for the current interest (null while no interest is pending).
+  const [pendingInterest, setPendingInterest] = useState<{ postId: string; title: string } | null>(null)
+
+  // Records the interest with the applicant's pitch (or null if they skipped).
+  const sendInterest = useCallback(
+    async (note: string | null) => {
+      const pending = pendingInterest
+      if (!pending) return
+      setPendingInterest(null)
+      setActingId(pending.postId)
+      setBusy(true)
+      const res = await recordDiscoveryAction(pending.postId, 'interested', note)
+      setBusy(false)
+      setActingId(null)
+      if (!res.ok) {
+        toast.show(res.error || 'Could not send interest', { tone: 'danger' })
+        loadedTabsRef.current.delete(tab)
+        loadQueue({ fresh: true })
+        return
+      }
+      haptic.success()
+      toast.show(note ? 'Pitch sent — the builder will see it' : 'Interest sent — the builder will see it', {
+        tone: 'success',
+      })
+    },
+    [pendingInterest, toast, haptic, tab, loadQueue]
+  )
+
+  // Tap on the top card: demo cards can't be opened, real ones go to the detail
+  // page (which owns the full write-up).
+  const openCard = useCallback(
+    (postId: string) => {
+      if (isDemoCardId(postId)) {
+        toast.show('Demo idea — post your own to match with real builders 🚀')
+        return
+      }
+      router.push(`/discover/${postId}`)
+    },
+    [toast, router]
   )
 
   // ---- create idea (STEP 11) ----
@@ -838,6 +914,7 @@ export default function DiscoverPage() {
                       loadQueue({ fresh: true }).finally(() => setLoading(false))
                     }}
                     signedIn={!!user}
+                    onOpenCard={openCard}
                     onCreate={() => (user ? setShowCreate(true) : router.push('/auth/login?redirect=/discover'))}
                   />
                 )}
@@ -1053,20 +1130,80 @@ export default function DiscoverPage() {
                       key={i.id}
                       style={{
                         display: 'flex',
-                        alignItems: 'center',
+                        alignItems: 'flex-start',
                         gap: 10,
                         border: '1px solid var(--border)',
                         borderRadius: 12,
                         padding: 12,
                       }}
                     >
+                      <span
+                        aria-hidden
+                        style={{
+                          width: 34,
+                          height: 34,
+                          borderRadius: 17,
+                          background: 'var(--accent-light)',
+                          color: 'var(--accent-text)',
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          fontSize: 14,
+                          fontWeight: 800,
+                          overflow: 'hidden',
+                          flexShrink: 0,
+                        }}
+                      >
+                        {i.user_avatar ? (
+                          <img
+                            src={i.user_avatar}
+                            alt=""
+                            style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                          />
+                        ) : (
+                          (i.user_name || i.user_username || '?').charAt(0).toUpperCase()
+                        )}
+                      </span>
                       <div style={{ flex: 1, minWidth: 0 }}>
-                        <p style={{ fontSize: 13.5, fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>
-                          @{i.user_username || i.user_name || 'student'}
-                        </p>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+                          <p style={{ fontSize: 13.5, fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>
+                            {i.user_name || `@${i.user_username || 'student'}`}
+                          </p>
+                          {i.user_username && (
+                            <Link
+                              href={`/profile/${i.user_username}`}
+                              style={{
+                                fontSize: 11.5,
+                                fontWeight: 700,
+                                color: 'var(--accent-text)',
+                                textDecoration: 'none',
+                              }}
+                            >
+                              View profile →
+                            </Link>
+                          )}
+                        </div>
                         <p style={{ fontSize: 12, color: 'var(--text-muted)', margin: '2px 0 0' }}>
-                          likes <strong>{i.post_title}</strong>
+                          wants to build <strong>{i.post_title}</strong>
                         </p>
+                        {i.note && (
+                          <p
+                            style={{
+                              fontSize: 12.5,
+                              color: 'var(--text-secondary)',
+                              background: 'var(--bg-secondary)',
+                              borderLeft: '3px solid var(--accent)',
+                              borderRadius: 8,
+                              padding: '7px 10px',
+                              margin: '8px 0 0',
+                              lineHeight: 1.5,
+                              whiteSpace: 'pre-wrap',
+                              wordBreak: 'break-word',
+                            }}
+                          >
+                            {i.note}
+                          </p>
+                        )}
                       </div>
                       <button
                         onClick={() => acceptInterest(i)}
@@ -1082,6 +1219,7 @@ export default function DiscoverPage() {
                           fontWeight: 700,
                           cursor: 'pointer',
                           fontFamily: 'inherit',
+                          flexShrink: 0,
                         }}
                       >
                         {accepting === i.id ? '…' : '🤝 Accept'}
@@ -1093,6 +1231,14 @@ export default function DiscoverPage() {
             </div>
           </div>
         )}
+
+        {/* Pitch sheet — collected when the user marks an idea interested */}
+        <InterestNoteSheet
+          open={!!pendingInterest}
+          ideaTitle={pendingInterest?.title ?? ''}
+          busy={busy}
+          onSubmit={sendInterest}
+        />
 
         {/* Match modal (STEP 10) */}
         {matchInfo && (

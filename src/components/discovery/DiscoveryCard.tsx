@@ -6,7 +6,7 @@
  */
 
 import type { DiscoveryFeedCard } from '@/lib/discovery'
-import { CATEGORY_LABELS, STAGE_LABELS } from '@/lib/discovery'
+import { CATEGORY_LABELS, STAGE_LABELS, isDemoCardId } from '@/lib/discovery'
 
 const CATEGORY_ICON: Record<string, string> = {
   startup: '🚀',
@@ -36,6 +36,7 @@ export function timeAgoShort(iso: string): string {
 
 export default function DiscoveryCard({ card, draggable = false }: { card: DiscoveryFeedCard; draggable?: boolean }) {
   const stage = STAGE_STYLE[card.stage] ?? STAGE_STYLE.idea
+  const isDemo = isDemoCardId(card.id) || card.author_id === 'demo'
 
   return (
     <div
@@ -80,6 +81,22 @@ export default function DiscoveryCard({ card, draggable = false }: { card: Disco
           {STAGE_LABELS[card.stage] || card.stage}
         </span>
         <span style={{ flex: 1 }} />
+        {isDemo && (
+          <span
+            style={{
+              fontSize: 9.5,
+              fontWeight: 800,
+              letterSpacing: 0.6,
+              textTransform: 'uppercase',
+              color: 'var(--text-muted)',
+              border: '1px solid var(--border-strong)',
+              borderRadius: 6,
+              padding: '2px 6px',
+            }}
+          >
+            Demo
+          </span>
+        )}
         <span style={{ fontSize: 11, color: 'var(--text-muted)' }}>{timeAgoShort(card.created_at)}</span>
       </div>
 

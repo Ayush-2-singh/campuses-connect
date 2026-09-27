@@ -32,6 +32,7 @@ import {
   type DiscoveryCategory,
   type DiscoveryStage,
 } from '@/lib/discovery'
+import InterestNoteSheet from '@/components/discovery/InterestNoteSheet'
 
 export default function DiscoveryDetailPage() {
   const { id } = useParams<{ id: string }>()
@@ -93,10 +94,21 @@ export default function DiscoveryDetailPage() {
 
   const isOwner = !!user && !!post && post.author_id === user.id
 
-  const markInterested = async () => {
+  // Interest goes through the pitch sheet first: the author needs to know who
+  // is asking, not just that someone swiped right. Dismissing still records the
+  // interest (without a note) so the action is never silently lost.
+  const [showNote, setShowNote] = useState(false)
+
+  const markInterested = () => {
     if (!user || !post || busy || acted) return
+    setShowNote(true)
+  }
+
+  const sendInterest = async (note: string | null) => {
+    setShowNote(false)
+    if (!post || busy || acted) return
     setBusy(true)
-    const res = await recordDiscoveryAction(post.id, 'interested')
+    const res = await recordDiscoveryAction(post.id, 'interested', note)
     setBusy(false)
     if (!res.ok) {
       toast.show(res.error || 'Could not send interest', { tone: 'danger' })
@@ -105,7 +117,9 @@ export default function DiscoveryDetailPage() {
     haptic.medium()
     setActed(true)
     setPost((p) => (p ? { ...p, interested_count: p.interested_count + 1 } : p))
-    toast.show('Interest sent — the builder will see it', { tone: 'success' })
+    toast.show(note ? 'Pitch sent — the builder will see it' : 'Interest sent — the builder will see it', {
+      tone: 'success',
+    })
   }
 
   // ---- owner edit ----
@@ -480,6 +494,9 @@ export default function DiscoveryDetailPage() {
             </>
           )}
         </div>
+
+        {/* Pitch sheet */}
+        <InterestNoteSheet open={showNote} ideaTitle={post?.title ?? ''} busy={busy} onSubmit={sendInterest} />
 
         {/* Edit sheet */}
         {editing && (
