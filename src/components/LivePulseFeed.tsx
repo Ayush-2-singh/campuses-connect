@@ -247,6 +247,7 @@ export default function LivePulseFeed({ userId }: { userId: string | null }) {
         onClick={() => router.push(item.href)}
         aria-label={`${item.text}. Tap to open.`}
         key={item.key} // re-key per item so the flash animation replays
+        className="cc-pulse-card"
         style={{
           display: 'flex',
           alignItems: 'center',
@@ -289,20 +290,10 @@ export default function LivePulseFeed({ userId }: { userId: string | null }) {
               color: 'var(--text-primary)',
             }}
           >
-            <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{item.text}</span>
+            <span className="cc-pulse-title">{item.text}</span>
           </span>
           {item.detail && (
-            <span
-              style={{
-                display: 'block',
-                fontSize: 12,
-                color: 'var(--text-muted)',
-                marginTop: 2,
-                overflow: 'hidden',
-                textOverflow: 'ellipsis',
-                whiteSpace: 'nowrap',
-              }}
-            >
+            <span className="cc-pulse-detail" style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 2 }}>
               {item.detail}
             </span>
           )}

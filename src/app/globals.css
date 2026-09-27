@@ -1589,6 +1589,36 @@ html.nav-hidden .fab-wrap {
   }
 }
 
+/* ──────────────── Live pulse flash card (Live Chat) — mobile layout ───────────── */
+/* Desktop: one tight line with an ellipsis. On a 320–430px phone that cut the
+   whole fact mid-sentence ("…is live — 3 in ca"), while the room boxes below
+   wrapped their text fine. Same reference as the other boxes now: up to two
+   lines for the headline and two for the detail, nothing lost mid-word.
+   NOTE: these live in CSS (not inline) on purpose — an inline
+   `white-space: nowrap` would win over the media query below and the card
+   would keep truncating on phones (the exact bug this fixes). */
+.cc-pulse-title {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.cc-pulse-detail {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+@media (max-width: 560px) {
+  .cc-pulse-title,
+  .cc-pulse-detail {
+    white-space: normal;
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
+  }
+}
+
 /* ───────────────────────── Live Voice Chat — mobile layout ───────────────────────── */
 /* The header (title + New Room) and room rows (icon + text + Join) are single-row
    flex layouts that overflow a 320–430px viewport: the Join button is pushed past
