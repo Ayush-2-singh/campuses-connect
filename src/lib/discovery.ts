@@ -63,6 +63,134 @@ export interface DiscoveryPost extends DiscoveryFeedCard {
   updated_at: string
 }
 
+/**
+ * DEMO IDEAS — seed content shown in the swipe deck whenever the real queue
+ * is empty, so a new campus never lands on a dead "all caught up" screen.
+ * They are clearly labelled DEMO in the UI and are never written to the DB;
+ * actions on them simply prompt the user to post their own idea.
+ */
+export const DEMO_DISCOVERY_CARDS: DiscoveryFeedCard[] = [
+  {
+    id: 'demo-1',
+    title: 'Campus Laundry — booking app for hostel washers',
+    short_desc:
+      'Hostel laundry days are chaos. Book a machine slot from your phone, get notified when your cycle is done, split detergent costs with your floor.',
+    category: 'startup',
+    stage: 'idea',
+    tags: ['mobile-app', 'campus-life', 'firebase'],
+    looking_for: ['Flutter dev', 'UI designer'],
+    interested_count: 12,
+    created_at: new Date(Date.now() - 26 * 3600_000).toISOString(),
+    author_id: 'demo',
+    author_name: 'Demo Idea',
+    author_username: 'demo',
+    author_avatar: null,
+    my_action: null,
+  },
+  {
+    id: 'demo-2',
+    title: 'Notes marketplace with instant chat + ratings',
+    short_desc:
+      'Seniors upload last-year notes, juniors buy for ₹10-20. Built-in chat negotiates price, ratings keep quality high, platform takes 10%.',
+    category: 'startup',
+    stage: 'prototype',
+    tags: ['marketplace', 'supabase', 'payments'],
+    looking_for: ['React dev', 'Campus ambassador'],
+    interested_count: 27,
+    created_at: new Date(Date.now() - 2 * 24 * 3600_000).toISOString(),
+    author_id: 'demo',
+    author_name: 'Demo Idea',
+    author_username: 'demo',
+    author_avatar: null,
+    my_action: null,
+  },
+  {
+    id: 'demo-3',
+    title: 'Smart Campus Navigator — indoor maps for new students',
+    short_desc:
+      'Freshers waste the whole first week finding labs and offices. Turn-by-turn indoor navigation using QR anchors at every door. Zero GPS needed.',
+    category: 'project',
+    stage: 'idea',
+    tags: ['maps', 'qr-codes', 'react-native'],
+    looking_for: ['Mobile dev', 'Campus survey volunteers'],
+    interested_count: 9,
+    created_at: new Date(Date.now() - 3 * 24 * 3600_000).toISOString(),
+    author_id: 'demo',
+    author_name: 'Demo Idea',
+    author_username: 'demo',
+    author_avatar: null,
+    my_action: null,
+  },
+  {
+    id: 'demo-4',
+    title: 'Attendance predictor — know before it hits 75%',
+    short_desc:
+      'Scrapes your timetable + attendance portal, simulates future bunks, and tells you exactly which classes are safe to miss before the 75% rule bites.',
+    category: 'project',
+    stage: 'mvp',
+    tags: ['python', 'automation', 'student-life'],
+    looking_for: ['Backend dev', 'Testers from other colleges'],
+    interested_count: 41,
+    created_at: new Date(Date.now() - 5 * 24 * 3600_000).toISOString(),
+    author_id: 'demo',
+    author_name: 'Demo Idea',
+    author_username: 'demo',
+    author_avatar: null,
+    my_action: null,
+  },
+  {
+    id: 'demo-5',
+    title: 'Smart India Hackathon squad — 4 builders needed',
+    short_desc:
+      'Team registered for SIH, problem statement picked (Smart Education). Need one ML person and one full-stack dev. We placed 2nd at the internal round.',
+    category: 'hackathon',
+    stage: 'building',
+    tags: ['sih', 'machine-learning', 'team-up'],
+    looking_for: ['ML engineer', 'Full-stack dev'],
+    interested_count: 18,
+    created_at: new Date(Date.now() - 8 * 3600_000).toISOString(),
+    author_id: 'demo',
+    author_name: 'Demo Idea',
+    author_username: 'demo',
+    author_avatar: null,
+    my_action: null,
+  },
+  {
+    id: 'demo-6',
+    title: 'Splitwise for hostel mess rebates + shared subscriptions',
+    short_desc:
+      'Mess rebate tracking, OTT账号 sharing, and trip expenses — one app for every shared rupee in the hostel. Settlements via UPI deep links.',
+    category: 'collab',
+    stage: 'idea',
+    tags: ['fintech', 'upi', 'hostel-life'],
+    looking_for: ['Product thinker', 'Flutter dev'],
+    interested_count: 15,
+    created_at: new Date(Date.now() - 4 * 24 * 3600_000).toISOString(),
+    author_id: 'demo',
+    author_name: 'Demo Idea',
+    author_username: 'demo',
+    author_avatar: null,
+    my_action: null,
+  },
+  {
+    id: 'demo-7',
+    title: 'AI doubt-solver trained ONLY on your college syllabus',
+    short_desc:
+      'Generic ChatGPT gives out-of-syllabus answers. This one indexes your department’s PYQs + prescribed textbooks, so answers match what the exam actually asks.',
+    category: 'startup',
+    stage: 'prototype',
+    tags: ['ai', 'rag', 'edtech'],
+    looking_for: ['Prompt engineer', 'Campus reps for content'],
+    interested_count: 33,
+    created_at: new Date(Date.now() - 12 * 3600_000).toISOString(),
+    author_id: 'demo',
+    author_name: 'Demo Idea',
+    author_username: 'demo',
+    author_avatar: null,
+    my_action: null,
+  },
+]
+
 export interface DiscoveryAction {
   ok: boolean
   error?: string

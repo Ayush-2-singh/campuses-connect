@@ -155,14 +155,9 @@ export default function DiscoverBoard({
       </div>
 
       {mode === 'swipe' ? (
-        <>
-          <SwipeDeck cards={cards} onAction={onAction} busy={busy} />
-          {cards.length === 0 && !loading && (
-            <p style={{ textAlign: 'center', fontSize: 12, color: 'var(--text-muted)', marginTop: 6 }}>
-              No ideas in this tab yet — be the first to post one.
-            </p>
-          )}
-        </>
+        // Empty deck -> the deck's own caught-up state, with a refresh wired to
+        // the board's retry loader (previously this button never appeared).
+        <SwipeDeck cards={cards} onAction={onAction} busy={busy} onEmpty={onRetry} />
       ) : (
         <>
           {/* ---------------- FEATURED banner (blueprint) ---------------- */}
