@@ -830,49 +830,9 @@ export default function DiscoverPage() {
               </div>
             ) : (
               <>
-                {/* Tabs (deck view) — with a way back to the hub */}
-                <div style={{ display: 'flex', gap: 7, flexWrap: 'wrap', marginBottom: 16 }}>
-                  <button
-                    onClick={() => {
-                      setView('hub')
-                      window.scrollTo({ top: 0 })
-                    }}
-                    style={{
-                      minHeight: 36,
-                      padding: '6px 13px',
-                      borderRadius: 18,
-                      border: '1px solid var(--border)',
-                      background: 'var(--bg-secondary)',
-                      color: 'var(--text-secondary)',
-                      fontSize: 13,
-                      fontWeight: 600,
-                      cursor: 'pointer',
-                      fontFamily: 'inherit',
-                    }}
-                  >
-                    ← All Discovery
-                  </button>
-                  {TABS.map((t) => (
-                    <button
-                      key={t.key}
-                      onClick={() => setTab(t.key)}
-                      style={{
-                        minHeight: 36,
-                        padding: '6px 13px',
-                        borderRadius: 18,
-                        border: tab === t.key ? 'none' : '1px solid var(--border)',
-                        background: tab === t.key ? 'var(--accent)' : 'var(--bg)',
-                        color: tab === t.key ? 'var(--on-accent)' : 'var(--text-secondary)',
-                        fontSize: 13,
-                        fontWeight: 600,
-                        cursor: 'pointer',
-                        fontFamily: 'inherit',
-                      }}
-                    >
-                      {t.label}
-                    </button>
-                  ))}
-                </div>
+                {/* NO in-page tab row: navigation between Discovery surfaces
+                    lives ONLY in the desktop sidebar's Discovery children. The
+                    classic SwipeDeck stays one toggle away inside the board. */}
 
                 {/* (Shortcut pills removed — spec: Discovery shows discoverable
               content, not a links dashboard. Blogs/People are tabs above;
@@ -903,7 +863,6 @@ export default function DiscoverPage() {
                 ) : (
                   <DiscoverBoard
                     tab={tab === 'foryou' ? 'startup' : (tab as 'startup' | 'project' | 'hackathon' | 'collab')}
-                    onTabChange={(t) => setTab(t)}
                     cards={cards}
                     loading={loading}
                     error={error}

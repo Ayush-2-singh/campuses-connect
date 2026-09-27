@@ -27,11 +27,20 @@ export const LOOKING_FOR_OPTIONS = [
   'Other',
 ] as const
 
+/* Plain labels — the glyph is an SVG (see CATEGORY_ICONS), never an emoji. */
 export const CATEGORY_LABELS: Record<DiscoveryCategory, string> = {
-  startup: '🚀 Startup',
-  project: '🛠 Project',
-  hackathon: '⚡ Hackathon',
-  collab: '🤝 Collaboration',
+  startup: 'Startup',
+  project: 'Project',
+  hackathon: 'Hackathon',
+  collab: 'Collaboration',
+}
+
+/** Category → Icon name from the shared SVG set. */
+export const CATEGORY_ICONS: Record<DiscoveryCategory, string> = {
+  startup: 'rocket',
+  project: 'wrench',
+  hackathon: 'zap',
+  collab: 'users',
 }
 export const STAGE_LABELS: Record<DiscoveryStage, string> = {
   idea: 'Idea',

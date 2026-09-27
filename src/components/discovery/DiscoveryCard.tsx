@@ -1,18 +1,30 @@
 'use client'
 
 /**
- * DiscoveryCard — the summary card for the swipe queue and lists.
+ * DiscoveryCard — the summary card for the swipe deck and lists.
+ *
  * Summary data only; the long-form content lives on the detail page (STEP 5).
+ * All glyphs are SVG (via the shared Icon set) so they inherit the section
+ * accent, scale crisply and can flip to a solid state for interactions.
  */
 
 import type { DiscoveryFeedCard } from '@/lib/discovery'
 import { CATEGORY_LABELS, STAGE_LABELS, isDemoCardId } from '@/lib/discovery'
+import { Icon } from '@/components/icons'
 
 const CATEGORY_ICON: Record<string, string> = {
-  startup: '🚀',
-  project: '🛠',
-  hackathon: '⚡',
-  collab: '🤝',
+  startup: 'rocket',
+  project: 'wrench',
+  hackathon: 'zap',
+  collab: 'users',
+}
+
+/* Category → tint, so each idea type reads at a glance. */
+const CATEGORY_TINT: Record<string, { bg: string; fg: string; border: string }> = {
+  startup: { bg: 'var(--accent-light)', fg: 'var(--accent-text)', border: 'var(--accent)' },
+  project: { bg: 'var(--blue-light)', fg: 'var(--blue-text)', border: 'var(--blue)' },
+  hackathon: { bg: 'var(--success-light)', fg: 'var(--success-text)', border: 'var(--success)' },
+  collab: { bg: 'var(--purple-light)', fg: 'var(--purple-text)', border: 'var(--purple)' },
 }
 
 const STAGE_STYLE: Record<string, { bg: string; text: string }> = {
@@ -36,37 +48,59 @@ export function timeAgoShort(iso: string): string {
 
 export default function DiscoveryCard({ card, draggable = false }: { card: DiscoveryFeedCard; draggable?: boolean }) {
   const stage = STAGE_STYLE[card.stage] ?? STAGE_STYLE.idea
+  const tint = CATEGORY_TINT[card.category] ?? CATEGORY_TINT.startup
+  const catIcon = CATEGORY_ICON[card.category] ?? 'sparkles'
   const isDemo = isDemoCardId(card.id) || card.author_id === 'demo'
 
   return (
     <div
+      className="discovery-card"
       style={{
+        position: 'relative',
         background: 'var(--bg)',
         border: '1px solid var(--border)',
         borderRadius: 18,
-        padding: '18px 18px 14px',
-        boxShadow: '0 6px 24px rgba(0,0,0,0.07)',
+        padding: '18px 18px 16px',
+        boxShadow: 'var(--shadow)',
         userSelect: draggable ? 'none' : 'auto',
         pointerEvents: draggable ? 'none' : 'auto',
         display: 'flex',
         flexDirection: 'column',
-        gap: 10,
-        minHeight: 380,
+        gap: 12,
+        minHeight: 360,
+        overflow: 'hidden',
       }}
     >
-      {/* Category + stage */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+      {/* Category accent hairline — gives the card an identity without noise. */}
+      <span
+        aria-hidden
+        style={{
+          position: 'absolute',
+          top: 0,
+          left: 0,
+          right: 0,
+          height: 3,
+          background: `linear-gradient(90deg, ${tint.border}, transparent 78%)`,
+        }}
+      />
+
+      {/* Category + stage + demo */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
         <span
           style={{
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: 6,
             fontSize: 11.5,
             fontWeight: 700,
-            color: 'var(--text-secondary)',
-            background: 'var(--bg-secondary)',
+            color: tint.fg,
+            background: tint.bg,
             borderRadius: 8,
-            padding: '3px 9px',
+            padding: '4px 10px',
           }}
         >
-          {CATEGORY_ICON[card.category] || '💡'} {CATEGORY_LABELS[card.category]?.slice(2) || card.category}
+          <Icon name={catIcon} size={13} />
+          {CATEGORY_LABELS[card.category] || card.category}
         </span>
         <span
           style={{
@@ -75,7 +109,7 @@ export default function DiscoveryCard({ card, draggable = false }: { card: Disco
             background: stage.bg,
             color: stage.text,
             borderRadius: 8,
-            padding: '3px 9px',
+            padding: '4px 9px',
           }}
         >
           {STAGE_LABELS[card.stage] || card.stage}
@@ -97,7 +131,12 @@ export default function DiscoveryCard({ card, draggable = false }: { card: Disco
             Demo
           </span>
         )}
-        <span style={{ fontSize: 11, color: 'var(--text-muted)' }}>{timeAgoShort(card.created_at)}</span>
+        <span
+          style={{ fontSize: 11, color: 'var(--text-muted)', display: 'inline-flex', alignItems: 'center', gap: 4 }}
+        >
+          <Icon name="clock" size={12} />
+          {timeAgoShort(card.created_at)}
+        </span>
       </div>
 
       {/* Title + description */}
@@ -107,7 +146,8 @@ export default function DiscoveryCard({ card, draggable = false }: { card: Disco
           fontWeight: 800,
           color: 'var(--text-primary)',
           margin: '2px 0 0',
-          lineHeight: 1.25,
+          lineHeight: 1.28,
+          letterSpacing: '-0.02em',
           overflow: 'hidden',
           display: '-webkit-box',
           WebkitLineClamp: 2,
@@ -121,7 +161,7 @@ export default function DiscoveryCard({ card, draggable = false }: { card: Disco
           fontSize: 13.5,
           color: 'var(--text-secondary)',
           margin: 0,
-          lineHeight: 1.5,
+          lineHeight: 1.55,
           overflow: 'hidden',
           display: '-webkit-box',
           WebkitLineClamp: 3,
@@ -131,34 +171,41 @@ export default function DiscoveryCard({ card, draggable = false }: { card: Disco
         {card.short_desc}
       </p>
 
-      {/* Author */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 2 }}>
-        <span
-          style={{
-            width: 26,
-            height: 26,
-            borderRadius: 13,
-            background: 'var(--accent-light)',
-            color: 'var(--accent-text)',
-            display: 'inline-flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            fontSize: 12,
-            fontWeight: 800,
-            overflow: 'hidden',
-            flexShrink: 0,
-          }}
-        >
-          {card.author_avatar ? (
-            <img src={card.author_avatar} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-          ) : (
-            (card.author_name || card.author_username || '?').charAt(0).toUpperCase()
-          )}
-        </span>
-        <span style={{ fontSize: 12.5, fontWeight: 600, color: 'var(--text-secondary)' }}>
-          @{card.author_username || card.author_name || 'student'}
-        </span>
-      </div>
+      {/* Looking for — the single most actionable line on the card. */}
+      {card.looking_for.length > 0 && (
+        <div>
+          <p
+            style={{
+              fontSize: 10.5,
+              fontWeight: 800,
+              textTransform: 'uppercase',
+              letterSpacing: 0.5,
+              color: 'var(--text-muted)',
+              margin: '0 0 6px',
+            }}
+          >
+            Looking for
+          </p>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 5 }}>
+            {card.looking_for.slice(0, 5).map((s) => (
+              <span
+                key={s}
+                style={{
+                  fontSize: 11.5,
+                  fontWeight: 600,
+                  color: 'var(--accent-text)',
+                  background: 'var(--accent-light)',
+                  border: '1px solid var(--accent-border)',
+                  borderRadius: 7,
+                  padding: '3px 9px',
+                }}
+              >
+                {s}
+              </span>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Tags */}
       {card.tags.length > 0 && (
@@ -180,45 +227,72 @@ export default function DiscoveryCard({ card, draggable = false }: { card: Disco
         </div>
       )}
 
-      {/* Looking for */}
-      {card.looking_for.length > 0 && (
-        <div>
-          <p
-            style={{
-              fontSize: 10.5,
-              fontWeight: 700,
-              textTransform: 'uppercase',
-              letterSpacing: 0.4,
-              color: 'var(--text-muted)',
-              margin: '0 0 4px',
-            }}
-          >
-            Looking for
-          </p>
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 5 }}>
-            {card.looking_for.slice(0, 5).map((s) => (
-              <span
-                key={s}
-                style={{
-                  fontSize: 11.5,
-                  fontWeight: 600,
-                  color: 'var(--accent-text)',
-                  background: 'var(--accent-light)',
-                  borderRadius: 7,
-                  padding: '3px 9px',
-                }}
-              >
-                {s}
-              </span>
-            ))}
-          </div>
-        </div>
-      )}
-
       <div style={{ flex: 1 }} />
 
-      {/* Interest count */}
-      <p style={{ fontSize: 12, color: 'var(--text-muted)', margin: 0 }}>🔥 {card.interested_count} interested</p>
+      {/* Footer — creator + social proof */}
+      <div
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: 8,
+          paddingTop: 12,
+          borderTop: '1px solid var(--border)',
+        }}
+      >
+        <span
+          style={{
+            width: 28,
+            height: 28,
+            borderRadius: 14,
+            background: 'var(--accent-light)',
+            color: 'var(--accent-text)',
+            display: 'inline-flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            fontSize: 12,
+            fontWeight: 800,
+            overflow: 'hidden',
+            flexShrink: 0,
+          }}
+        >
+          {card.author_avatar ? (
+            <img src={card.author_avatar} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+          ) : (
+            (card.author_name || card.author_username || '?').charAt(0).toUpperCase()
+          )}
+        </span>
+        <span
+          style={{
+            fontSize: 12.5,
+            fontWeight: 600,
+            color: 'var(--text-secondary)',
+            overflow: 'hidden',
+            textOverflow: 'ellipsis',
+            whiteSpace: 'nowrap',
+            minWidth: 0,
+          }}
+        >
+          @{card.author_username || card.author_name || 'student'}
+        </span>
+        <span style={{ flex: 1 }} />
+        <span
+          style={{
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: 5,
+            fontSize: 12,
+            fontWeight: 700,
+            color: card.interested_count > 0 ? 'var(--accent-text)' : 'var(--text-muted)',
+            background: card.interested_count > 0 ? 'var(--accent-light)' : 'transparent',
+            borderRadius: 20,
+            padding: card.interested_count > 0 ? '3px 10px' : 0,
+            flexShrink: 0,
+          }}
+        >
+          <Icon name="flame" size={13} filled={card.interested_count > 0} />
+          {card.interested_count}
+        </span>
+      </div>
     </div>
   )
 }

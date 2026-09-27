@@ -24,12 +24,14 @@ import { Icon } from '@/components/icons'
 
 type BoardTab = 'startup' | 'project' | 'hackathon' | 'collab'
 
-const CATEGORIES: { key: BoardTab; label: string; emoji: string }[] = [
-  { key: 'startup', label: 'Startups', emoji: '🚀' },
-  { key: 'project', label: 'Projects', emoji: '🛠' },
-  { key: 'hackathon', label: 'Hackathons', emoji: '⚡' },
-  { key: 'collab', label: 'Collab', emoji: '🤝' },
-]
+/* Category → SVG glyph. The old pills row is gone: navigation between
+   categories lives ONLY in the desktop sidebar's Discovery children. */
+const CATEGORY_ICON: Record<BoardTab, string> = {
+  startup: 'rocket',
+  project: 'wrench',
+  hackathon: 'zap',
+  collab: 'users',
+}
 
 /* Category → accent chip colors (orange family leads, per blueprint) */
 const CAT_STYLE: Record<BoardTab, { bg: string; fg: string }> = {
@@ -44,16 +46,16 @@ const WARM_BAND = 'linear-gradient(180deg, color-mix(in srgb, var(--accent) 9%, 
 const WARM_CARD =
   'linear-gradient(160deg, color-mix(in srgb, var(--accent) 13%, transparent), color-mix(in srgb, var(--accent) 3%, transparent))'
 
-const STAGE_BADGE: Record<string, string> = {
-  idea: '💡 Idea',
-  prototype: '🧪 Prototype',
-  mvp: '🚀 MVP',
-  launched: '🌐 Launched',
+/* Stage → SVG glyph + label (emoji replaced by the shared icon set). */
+const STAGE_META: Record<string, { icon: string; label: string }> = {
+  idea: { icon: 'sparkles', label: 'Idea' },
+  prototype: { icon: 'wrench', label: 'Prototype' },
+  mvp: { icon: 'rocket', label: 'MVP' },
+  launched: { icon: 'globe', label: 'Launched' },
 }
 
 export default function DiscoverBoard({
   tab,
-  onTabChange,
   cards,
   loading,
   error,
@@ -65,7 +67,6 @@ export default function DiscoverBoard({
   onOpenCard,
 }: {
   tab: BoardTab
-  onTabChange: (t: BoardTab) => void
   cards: DiscoveryFeedCard[]
   loading: boolean
   error: string | null
@@ -98,37 +99,10 @@ export default function DiscoverBoard({
     <div>
       {/* warm band behind the top of the board (blueprint) */}
       <div style={{ background: WARM_BAND, margin: '-14px -2px 0', padding: '16px 2px 10px' }}>
-        {/* ---------- header row: pills + view toggle ---------- */}
+        {/* ---------- header row: view toggle only ----------
+            Category navigation used to be a duplicated pills row here — it now
+            lives in the desktop sidebar's Discovery children only. */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', marginBottom: 14 }}>
-          {CATEGORIES.map((c) => {
-            const active = tab === c.key
-            return (
-              <button
-                key={c.key}
-                onClick={() => onTabChange(c.key)}
-                style={{
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  gap: 6,
-                  minHeight: 34,
-                  padding: '6px 14px',
-                  borderRadius: 18,
-                  border: active ? 'none' : '1px solid var(--border)',
-                  background: active ? 'var(--accent)' : 'var(--bg)',
-                  color: active ? 'var(--on-accent)' : 'var(--text-secondary)',
-                  fontSize: 12.5,
-                  fontWeight: 700,
-                  cursor: 'pointer',
-                  fontFamily: 'inherit',
-                  boxShadow: active ? '0 2px 10px color-mix(in srgb, var(--accent) 35%, transparent)' : 'none',
-                }}
-              >
-                <span aria-hidden>{c.emoji}</span>
-                {c.label}
-              </button>
-            )
-          })}
-
           <span style={{ flex: 1 }} />
 
           {/* swipe/grid toggle — swipe deck stays reachable (nothing removed) */}
@@ -190,11 +164,10 @@ export default function DiscoverBoard({
                   display: 'inline-flex',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  fontSize: 24,
                   flexShrink: 0,
                 }}
               >
-                {CATEGORIES.find((c) => c.key === tab)?.emoji}
+                <Icon name={CATEGORY_ICON[tab] ?? 'sparkles'} size={26} />
               </span>
               <span style={{ flex: 1, minWidth: 220 }}>
                 <span
@@ -282,20 +255,24 @@ export default function DiscoverBoard({
                 const cat = (card.category as BoardTab) || tab
                 const chip = CAT_STYLE[cat] || CAT_STYLE[tab]
                 return (
-                  <div key={card.id} style={cardStyle}>
+                  <div key={card.id} className="discovery-card" style={cardStyle}>
                     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
                       <span
                         style={{
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: 5,
                           fontSize: 10,
                           fontWeight: 800,
                           letterSpacing: 0.5,
                           textTransform: 'uppercase',
-                          padding: '3px 9px',
+                          padding: '4px 9px',
                           borderRadius: 7,
                           background: chip.bg,
                           color: chip.fg,
                         }}
                       >
+                        <Icon name={CATEGORY_ICON[cat] ?? 'sparkles'} size={12} />
                         {CATEGORY_LABELS[cat] || card.category}
                       </span>
                       <button
@@ -310,7 +287,7 @@ export default function DiscoverBoard({
                           padding: 2,
                         }}
                       >
-                        <Icon name="bookmark" size={15} />
+                        <Icon name="bookmark" size={16} filled={saved.has(card.id)} strokeWidth={2} />
                       </button>
                     </div>
 
@@ -343,8 +320,18 @@ export default function DiscoverBoard({
                     {/* meta row: stage + author */}
                     <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 'auto', paddingTop: 10 }}>
                       {card.stage && (
-                        <span style={{ fontSize: 10.5, fontWeight: 700, color: 'var(--text-secondary)' }}>
-                          {STAGE_BADGE[card.stage] || card.stage}
+                        <span
+                          style={{
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: 5,
+                            fontSize: 10.5,
+                            fontWeight: 700,
+                            color: 'var(--text-secondary)',
+                          }}
+                        >
+                          <Icon name={STAGE_META[card.stage]?.icon ?? 'sparkles'} size={12} />
+                          {STAGE_META[card.stage]?.label || card.stage}
                         </span>
                       )}
                       <span style={{ flex: 1 }} />
@@ -379,8 +366,13 @@ export default function DiscoverBoard({
                           fontWeight: 800,
                           cursor: busy || !signedIn ? 'not-allowed' : 'pointer',
                           fontFamily: 'inherit',
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          gap: 6,
                         }}
                       >
+                        <Icon name="heart" size={14} />
                         Interested
                       </button>
                       <button
@@ -398,8 +390,13 @@ export default function DiscoverBoard({
                           fontWeight: 700,
                           cursor: busy || !signedIn ? 'not-allowed' : 'pointer',
                           fontFamily: 'inherit',
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          gap: 6,
                         }}
                       >
+                        <Icon name="x" size={14} />
                         Pass
                       </button>
                     </div>

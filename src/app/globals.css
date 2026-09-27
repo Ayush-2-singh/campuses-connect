@@ -34,19 +34,23 @@
   color-scheme: dark;
   -webkit-color-scheme: dark;
 
-  /* Surfaces — blueprint charcoal (dark mockup background) */
-  --bg: #0d1116;
-  --bg-secondary: #15161f;
-  --bg-tertiary: #1c1f28;
+  /* Surfaces — one clear elevation ladder: page < card < inset < tertiary.
+     Cards MUST sit ABOVE the page: previously --bg (cards) was darker than
+     --bg-secondary (page), so every panel read as a hole and the whole dark
+     theme looked off. */
+  --bg-page: #090b10;
+  --bg: #14181f;
+  --bg-secondary: #1b202a;
+  --bg-tertiary: #232936;
 
-  /* Borders — cool gray-blue, slightly cooler than before */
-  --border: #262b36;
-  --border-strong: #39404e;
+  /* Borders — cool gray-blue, retuned to the surfaces above */
+  --border: #252b37;
+  --border-strong: #38404f;
 
   /* Text */
-  --text-primary: #e8e9ed;
-  --text-secondary: #8b93a3;
-  --text-muted: #697383;
+  --text-primary: #e9ebf0;
+  --text-secondary: #99a2b1;
+  --text-muted: #6f7887;
 
   /* Brand — gold by default; sections override via [data-accent] */
   --accent: var(--accent-gold);
@@ -102,9 +106,9 @@
   --radius-xl: 20px;
 
   /* Elevation */
-  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.45), 0 1px 3px rgba(0, 0, 0, 0.4);
-  --shadow: 0 4px 6px -2px rgba(0, 0, 0, 0.55), 0 12px 16px -4px rgba(0, 0, 0, 0.5);
-  --shadow-lg: 0 24px 48px -12px rgba(0, 0, 0, 0.72);
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.32), 0 1px 3px rgba(0, 0, 0, 0.28);
+  --shadow: 0 4px 10px -2px rgba(0, 0, 0, 0.4), 0 14px 24px -6px rgba(0, 0, 0, 0.36);
+  --shadow-lg: 0 24px 48px -12px rgba(0, 0, 0, 0.6);
 
   --font-sans: Inter, -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Segoe UI', Roboto, sans-serif;
 }
@@ -140,10 +144,11 @@
   color-scheme: light;
   -webkit-color-scheme: light;
 
-  /* Light blueprint surfaces: #F8F8FB page, #FEFEFE cards */
-  --bg: #f8f8fb;
-  --bg-secondary: #fefefe;
-  --bg-tertiary: #f0f1f6;
+  /* Light surfaces — the same ladder, lightness inverted: page < card < inset. */
+  --bg-page: #f4f5f9;
+  --bg: #ffffff;
+  --bg-secondary: #f1f3f8;
+  --bg-tertiary: #e7eaf1;
 
   --border: #e3e5ea;
   --border-strong: #cfd3db;
@@ -303,10 +308,17 @@ html {
 }
 
 body {
-  background: var(--bg-secondary);
-  background-image: url('/whatsapp-doodles-light.svg');
-  background-repeat: repeat;
-  background-size: 360px 360px;
+  background-color: var(--bg-page);
+  /* Depth without noise — one soft accent bloom at the top of the page.
+     (The old site-wide emoji doodle wallpaper read as clutter, especially in
+     dark mode; the chat thread keeps its own wallpaper via .chat-doodle-bg.) */
+  background-image: radial-gradient(
+    1100px 520px at 50% -12%,
+    color-mix(in srgb, var(--accent) 7%, transparent),
+    transparent 70%
+  );
+  background-repeat: no-repeat;
+  background-attachment: fixed;
   color: var(--text-primary);
   font-family: var(--font-sans);
   margin: 0;
@@ -316,9 +328,6 @@ body {
   transition:
     background-color 0.25s ease,
     color 0.25s ease;
-}
-[data-theme='light'] body {
-  background-image: url('/whatsapp-doodles-dark.svg');
 }
 
 h1,
@@ -365,13 +374,29 @@ button:disabled {
    default wallpaper. Stroke color flips with the theme so it stays subtle
    on both surfaces. */
 .chat-doodle-bg {
-  background-color: var(--bg-secondary);
+  background-color: var(--bg-page);
   background-image: url('/chat-doodles-light.svg');
   background-size: 360px 360px;
   background-repeat: repeat;
 }
 [data-theme='light'] .chat-doodle-bg {
   background-image: url('/chat-doodles-dark.svg');
+}
+
+/* Discovery cards (deck + grid) — a clear clickable affordance: the card lifts
+   and picks up the section accent on hover. Desktop-only, motion-safe. */
+.discovery-card {
+  transition:
+    transform 0.18s ease,
+    border-color 0.18s ease,
+    box-shadow 0.18s ease;
+}
+@media (hover: hover) and (prefers-reduced-motion: no-preference) {
+  .discovery-card:hover {
+    transform: translateY(-3px);
+    border-color: var(--accent-border);
+    box-shadow: var(--shadow), var(--accent-glow);
+  }
 }
 
 /* Card hover — border + shadow pick up the section accent */

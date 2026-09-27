@@ -258,7 +258,7 @@ export default function Layout({ children, user, profile }: { children: React.Re
             return (
               <button
                 key={item.href}
-                onClick={() => router.push(item.href)}
+                onClick={() => navigate(item.href)}
                 style={{
                   width: '100%',
                   textAlign: 'left',
@@ -326,7 +326,7 @@ export default function Layout({ children, user, profile }: { children: React.Re
                 return (
                   <button
                     key={item.href}
-                    onClick={() => router.push(item.href)}
+                    onClick={() => navigate(item.href)}
                     onMouseEnter={() => prefetch(item.href)}
                     style={{
                       width: '100%',
@@ -393,7 +393,7 @@ export default function Layout({ children, user, profile }: { children: React.Re
                 return (
                   <button
                     key={item.href}
-                    onClick={() => router.push(item.href)}
+                    onClick={() => navigate(item.href)}
                     onMouseEnter={() => prefetch(item.href)}
                     style={{
                       width: '100%',
@@ -457,7 +457,7 @@ export default function Layout({ children, user, profile }: { children: React.Re
                 return (
                   <button
                     key={item.href}
-                    onClick={() => router.push(item.href)}
+                    onClick={() => navigate(item.href)}
                     onMouseEnter={() => prefetch(item.href)}
                     style={{
                       width: '100%',
@@ -491,7 +491,7 @@ export default function Layout({ children, user, profile }: { children: React.Re
             return (
               <button
                 key={item.href}
-                onClick={() => router.push(item.href)}
+                onClick={() => navigate(item.href)}
                 onMouseEnter={() => prefetch(item.href)}
                 style={{
                   width: '100%',
