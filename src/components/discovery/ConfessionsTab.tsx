@@ -2,9 +2,11 @@
 
 /**
  * ConfessionsTab — the anonymous confession feed, relocated out of the old
- * /discover page (which is now the idea/swipe hub). Behaviour and backend are
- * unchanged: confessions_public view (never exposes author_id), create /
- * toggle-reaction / report RPCs, 5-report auto-hide.
+ * /discover page (which is now the idea/swipe hub). The backend stores NO
+ * author id at all (20260928_confession_total_anonymity.sql): reads go through
+ * the confessions_public view, create returns a one-time delete token this
+ * browser keeps, and offers delete buttons — the poster via their token,
+ * platform/campus admins via the audited admin RPC. 5-report auto-hide stays.
  *
  * Audit fixes applied during the relocation (old page.tsx issues):
  *   1. Sort changes reload ONLY the feed — auth/profile are not refetched.
@@ -17,6 +19,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
+import { useAdminContext } from '@/lib/permissions'
 import EmptyState from '@/components/EmptyState'
 import { ListSkeleton } from '@/components/Skeleton'
 import { useToast } from '@/components/Toast'
@@ -67,6 +70,44 @@ function timeAgo(iso: string): string {
   return `${Math.floor(hours / 24)}d`
 }
 
+/* --------------------------------------------------------------------------
+ * Own-post delete tokens. Confessions store NO author id (see
+ * 20260928_confession_total_anonymity.sql), so the only proof that a
+ * confession is "yours" is the one-time secret create_confession() returned.
+ * This browser keeps {confessionId → token}; the database only ever sees
+ * SHA-256(token). Posted before that migration? No token exists — an admin
+ * can still delete those.
+ * -------------------------------------------------------------------------- */
+const DELETE_TOKENS_KEY = 'cc-confession-delete-tokens'
+
+function readDeleteTokens(): Record<string, string> {
+  try {
+    return JSON.parse(window.localStorage.getItem(DELETE_TOKENS_KEY) || '{}')
+  } catch {
+    return {}
+  }
+}
+
+function rememberDeleteToken(id: string, token: string) {
+  try {
+    const all = readDeleteTokens()
+    all[id] = token
+    window.localStorage.setItem(DELETE_TOKENS_KEY, JSON.stringify(all))
+  } catch {
+    /* storage unavailable — the delete button just won't appear later */
+  }
+}
+
+function forgetDeleteToken(id: string) {
+  try {
+    const all = readDeleteTokens()
+    delete all[id]
+    window.localStorage.setItem(DELETE_TOKENS_KEY, JSON.stringify(all))
+  } catch {
+    /* ignore */
+  }
+}
+
 export default function ConfessionsTab({ userId }: { userId: string | null }) {
   const supabase = createClient()
   const toast = useToast()
@@ -85,6 +126,17 @@ export default function ConfessionsTab({ userId }: { userId: string | null }) {
 
   const [reportTarget, setReportTarget] = useState<Confession | null>(null)
   const [reportBusy, setReportBusy] = useState(false)
+
+  // ---- delete rights ----
+  // Admins (platform/campus — the same gate as the moderation RPCs) can
+  // delete ANY confession; everyone else only ones this browser holds a
+  // token for (their own posts — no author id is stored anywhere).
+  const admin = useAdminContext(userId ?? undefined)
+  const canModerate = admin.isPlatformAdmin || admin.isCampusAdmin
+  const [myTokens, setMyTokens] = useState<Record<string, string>>({})
+  useEffect(() => {
+    setMyTokens(readDeleteTokens())
+  }, [])
 
   // ---- interactivity state ----
   /** Burst hearts: {key, confessionId, x%, y%} — rendered inside the card. */
@@ -189,15 +241,27 @@ export default function ConfessionsTab({ userId }: { userId: string | null }) {
     const body = draft.trim()
     if (!body || posting) return
     setPosting(true)
-    const { error } = await supabase.rpc('create_confession', { p_body: body })
+    const { data, error } = await supabase.rpc('create_confession', { p_body: body })
     setPosting(false)
     if (error) {
       toast.show(error.message || 'Could not post', { tone: 'danger' })
       return
     }
+    // The RPC returns { id, token, status }: the token is the ONLY proof that
+    // can delete this post later (no author id exists) — keep it in this
+    // browser. `status: 'hidden'` means deterministic filters parked it.
+    const created = data as { id?: string; token?: string; status?: string } | null
+    if (created?.id && created?.token) {
+      rememberDeleteToken(created.id, created.token)
+      setMyTokens(readDeleteTokens())
+    }
     haptic.tap()
     setDraft('')
-    toast.show('Posted anonymously', { tone: 'success' })
+    if (created?.status === 'hidden') {
+      toast.show('Posted — hidden until a moderator reviews it')
+    } else {
+      toast.show('Posted anonymously', { tone: 'success' })
+    }
     await load(0)
   }
 
@@ -248,6 +312,30 @@ export default function ConfessionsTab({ userId }: { userId: string | null }) {
     }
     toast.show('Report sent to moderators', { tone: 'success' })
     await load(0)
+  }
+
+  /**
+   * Delete — as admin (any confession, audited server-side) or as the poster
+   * (this browser's one-time token is the proof). Both are hard deletes.
+   */
+  const deleteConfession = async (c: Confession) => {
+    if (!window.confirm('Delete this confession? This cannot be undone.')) return
+    const token = myTokens[c.id]
+    if (!canModerate && (!token || !userId)) return
+
+    const { data, error } = canModerate
+      ? await supabase.rpc('admin_delete_confession', { p_confession_id: c.id })
+      : await supabase.rpc('delete_confession', { p_confession_id: c.id, p_delete_token: token })
+
+    if (error || data !== true) {
+      toast.show(error?.message || 'Could not delete', { tone: 'danger' })
+      return
+    }
+    forgetDeleteToken(c.id)
+    setMyTokens(readDeleteTokens())
+    setConfessions((prev) => prev.filter((x) => x.id !== c.id))
+    haptic.tap()
+    toast.show('Confession deleted', { tone: 'success' })
   }
 
   return (
@@ -560,6 +648,26 @@ export default function ConfessionsTab({ userId }: { userId: string | null }) {
                   )}
 
                   <span style={{ flex: 1 }} />
+
+                  {(canModerate || (userId && myTokens[c.id])) && (
+                    <button
+                      onClick={() => deleteConfession(c)}
+                      aria-label="Delete confession"
+                      title={canModerate ? 'Delete (moderator)' : 'Delete your confession'}
+                      style={{
+                        minHeight: 36,
+                        minWidth: 36,
+                        borderRadius: 20,
+                        border: '1px solid var(--border)',
+                        background: 'var(--bg)',
+                        color: 'var(--text-muted)',
+                        fontSize: 14,
+                        cursor: 'pointer',
+                      }}
+                    >
+                      🗑
+                    </button>
+                  )}
 
                   {
                     <button
