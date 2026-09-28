@@ -11,6 +11,7 @@ import {
   useTracks,
   VideoTrack,
 } from '@livekit/components-react'
+import type { TrackReferenceOrPlaceholder, TrackReference } from '@livekit/components-react'
 import { Track } from 'livekit-client'
 import { createClient } from '@/lib/supabase/client'
 import { Icon } from '@/components/icons'
@@ -131,6 +132,30 @@ function CallShell({ connected, onLeave }: { connected: boolean; onLeave: () => 
   const { emojiEvents, sendReaction } = useReactions(localParticipant?.identity)
   const callId = useSearchParams().get('callId') || ''
 
+  // ── GMeet-style layout control ─────────────────────────────────────
+  // 'auto'   → screen-share stage when someone presents, tiles otherwise
+  // 'grid'   → everyone as equal tiles, no stage
+  // 'spotlight' → the pinned (or loudest/first) person fills the stage
+  // Pinned identity survives layout switches; stored per session.
+  const [layout, setLayout] = useState<'auto' | 'grid' | 'spotlight'>(() => {
+    try {
+      const v = window.sessionStorage.getItem('cc-voice-layout')
+      return v === 'grid' || v === 'spotlight' || v === 'auto' ? v : 'auto'
+    } catch {
+      return 'auto'
+    }
+  })
+  const [pinnedId, setPinnedId] = useState<string | null>(null)
+
+  const changeLayout = useCallback((next: 'auto' | 'grid' | 'spotlight') => {
+    setLayout(next)
+    try {
+      window.sessionStorage.setItem('cc-voice-layout', next)
+    } catch {
+      /* private browsing — layout just won't persist */
+    }
+  }, [])
+
   // ── Presence heartbeat ──────────────────────────────────────────────
   // Every surface derives LIVE from "a user is ACTUALLY inside", and the
   // server decides that from this beat (fresh = heartbeat < 150s old, see
@@ -149,14 +174,262 @@ function CallShell({ connected, onLeave }: { connected: boolean; onLeave: () => 
     return () => clearInterval(timer)
   }, [connected, callId])
 
+  const screenShareRef = useTracks([Track.Source.ScreenShare])[0]
+
+  // Spotlight target: the pinned person, else the first remote participant,
+  // else me — there is always someone on stage in spotlight mode.
+  const spotlightId = pinnedId ?? participants.find((p) => !p.isLocal)?.identity ?? localParticipant?.identity ?? null
+
   return (
     <div style={{ minHeight: '72vh', display: 'flex', flexDirection: 'column' }}>
       <Header connected={connected} count={participants.length} onBack={onLeave} />
-      {/* Anyone's screen share takes the stage up top (Meet-style). */}
-      <ScreenStage />
-      <Participants participants={participants} emojiEvents={emojiEvents} />
+      {/* Layout switcher — Auto / Grid / Spotlight, like Meet's tile buttons. */}
+      <LayoutSwitcher layout={layout} onChange={changeLayout} />
+
+      {(layout === 'auto' || layout === 'spotlight') && (
+        <Stage
+          mode={layout === 'spotlight' ? 'spotlight' : 'share'}
+          participants={participants}
+          shareRef={screenShareRef}
+          spotlightId={spotlightId}
+          pinnedId={pinnedId}
+          onUnpin={() => setPinnedId(null)}
+        />
+      )}
+
+      <Participants
+        participants={participants}
+        emojiEvents={emojiEvents}
+        layout={layout}
+        pinnedId={pinnedId}
+        spotlightId={spotlightId}
+        onPin={(identity) => setPinnedId((cur) => (cur === identity ? null : identity))}
+      />
       <div style={{ flex: 1 }} />
       <Controls callId={callId} onLeave={onLeave} sendReaction={sendReaction} />
+    </div>
+  )
+}
+
+/**
+ * LAYOUT SWITCHER — Meet's three view modes. Segmented control, one press to
+ * reflow the room; the choice persists for the session.
+ */
+function LayoutSwitcher({
+  layout,
+  onChange,
+}: {
+  layout: 'auto' | 'grid' | 'spotlight'
+  onChange: (next: 'auto' | 'grid' | 'spotlight') => void
+}) {
+  const MODES: { key: 'auto' | 'grid' | 'spotlight'; label: string; icon: string }[] = [
+    { key: 'auto', label: 'Auto', icon: 'layout' },
+    { key: 'grid', label: 'Grid', icon: 'users' },
+    { key: 'spotlight', label: 'Spotlight', icon: 'eye' },
+  ]
+  return (
+    <div
+      role="radiogroup"
+      aria-label="Call layout"
+      style={{
+        display: 'inline-flex',
+        alignSelf: 'flex-start',
+        gap: 2,
+        background: 'var(--bg)',
+        border: '1px solid var(--border)',
+        borderRadius: 12,
+        padding: 3,
+        marginBottom: 14,
+      }}
+    >
+      {MODES.map((m) => {
+        const active = layout === m.key
+        return (
+          <button
+            key={m.key}
+            role="radio"
+            aria-checked={active}
+            onClick={() => onChange(m.key)}
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: 6,
+              border: 'none',
+              borderRadius: 9,
+              padding: '7px 12px',
+              fontSize: 12.5,
+              fontWeight: active ? 700 : 500,
+              fontFamily: 'inherit',
+              cursor: 'pointer',
+              background: active ? 'var(--accent)' : 'transparent',
+              color: active ? 'var(--on-accent)' : 'var(--text-secondary)',
+            }}
+          >
+            <Icon name={m.icon} size={14} strokeWidth={2.2} />
+            {m.label}
+          </button>
+        )
+      })}
+    </div>
+  )
+}
+
+/**
+ * STAGE — the big tile above the strip.
+ *   share mode     → whoever is sharing their screen (Meet-style)
+ *   spotlight mode → the pinned/loudest person's camera, or their avatar
+ * Renders nothing when there is nothing to show (e.g. auto with no share).
+ */
+function Stage({
+  mode,
+  participants,
+  shareRef,
+  spotlightId,
+  pinnedId,
+  onUnpin,
+}: {
+  mode: 'share' | 'spotlight'
+  participants: ReturnType<typeof useParticipants>
+  shareRef?: TrackReferenceOrPlaceholder
+  spotlightId: string | null
+  pinnedId: string | null
+  onUnpin: () => void
+}) {
+  const camRefs = useTracks([Track.Source.Camera])
+
+  // A placeholder reference (publication still undefined) can't be rendered —
+  // treat it exactly like "nothing is being shared".
+  const share = mode === 'share' && shareRef && shareRef.publication ? (shareRef as TrackReference) : undefined
+
+  if (mode === 'share' && !share) return null
+
+  const person = participants.find((p) => p.identity === spotlightId)
+  const camRef = camRefs.find((r) => r.participant.identity === spotlightId)
+  const name = person?.name || person?.identity || 'Student'
+
+  return (
+    <div
+      style={{
+        position: 'relative',
+        width: '100%',
+        maxHeight: '48vh',
+        aspectRatio: '16 / 9',
+        borderRadius: 18,
+        overflow: 'hidden',
+        border: '1px solid var(--border)',
+        background: '#000',
+        marginBottom: 14,
+        flexShrink: 0,
+      }}
+    >
+      {share ? (
+        // muted: shared-screen audio flows through RoomAudioRenderer
+        <VideoTrack trackRef={share} muted style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
+      ) : camRef ? (
+        <VideoTrack
+          trackRef={camRef}
+          muted
+          style={{
+            width: '100%',
+            height: '100%',
+            objectFit: 'contain',
+            ...(person?.isLocal ? { transform: 'scaleX(-1)' } : null),
+          }}
+        />
+      ) : (
+        <div
+          style={{
+            width: '100%',
+            height: '100%',
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: 12,
+            background: 'linear-gradient(160deg, var(--bg-secondary), var(--bg-page))',
+          }}
+        >
+          <div
+            style={{
+              width: 96,
+              height: 96,
+              borderRadius: '50%',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              fontSize: 38,
+              fontWeight: 800,
+              color: 'var(--accent-text)',
+              background: 'var(--accent-light)',
+            }}
+          >
+            {name.charAt(0).toUpperCase()}
+          </div>
+          <p style={{ fontSize: 14, fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>
+            {name}
+            {person?.isLocal ? ' (You)' : ''}
+          </p>
+        </div>
+      )}
+
+      {/* name chip */}
+      <span
+        style={{
+          position: 'absolute',
+          left: 10,
+          bottom: 10,
+          display: 'inline-flex',
+          alignItems: 'center',
+          gap: 6,
+          fontSize: 11.5,
+          fontWeight: 700,
+          color: '#fff',
+          background: 'rgba(0,0,0,0.55)',
+          padding: '4px 9px',
+          borderRadius: 8,
+        }}
+      >
+        {share ? (
+          <>
+            <Icon name="screen-share" size={13} />
+            {share.participant.isLocal ? `${name} · you are presenting` : `${name} is presenting`}
+          </>
+        ) : (
+          <>
+            <Icon name="eye" size={13} />
+            {name}
+            {person?.isLocal ? ' (You)' : ''}
+          </>
+        )}
+      </span>
+
+      {/* pinned chip — click to release, like Meet */}
+      {pinnedId && (
+        <button
+          onClick={onUnpin}
+          aria-label="Unpin from stage"
+          style={{
+            position: 'absolute',
+            top: 10,
+            right: 10,
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: 6,
+            fontSize: 11.5,
+            fontWeight: 700,
+            color: '#fff',
+            background: 'var(--accent)',
+            border: 'none',
+            padding: '5px 10px',
+            borderRadius: 8,
+            cursor: 'pointer',
+            fontFamily: 'inherit',
+          }}
+        >
+          <Icon name="pin" size={12} strokeWidth={2.4} />
+          Pinned
+        </button>
+      )}
     </div>
   )
 }
@@ -265,29 +538,49 @@ function ScreenStage() {
  * mute indicator, and floating emoji bursts anchored to the tile.
  * A participant with their camera on shows real video (mirrored for your
  * own tile); everyone else keeps the voice-first avatar tile.
+ *
+ * GMeet layout behaviours:
+ *   • grid/strip hide the pinned/spotlighted person (they're on the stage)
+ *   • every tile carries a Pin button — pinning puts that person on the stage
+ *   • tile frames slowly cycle accent hues (animated gradient borders)
  */
 function Participants({
   participants,
   emojiEvents,
+  layout,
+  pinnedId,
+  spotlightId,
+  onPin,
 }: {
   participants: ReturnType<typeof useParticipants>
   emojiEvents: EmojiEvent[]
+  layout: 'auto' | 'grid' | 'spotlight'
+  pinnedId: string | null
+  spotlightId: string | null
+  onPin: (identity: string) => void
 }) {
   const camRefs = useTracks([Track.Source.Camera])
+  // In auto mode everyone stays in the strip; grid/spotlight lift the staged
+  // person out so they aren't shown twice.
+  const strip = participants.filter((p) => {
+    if (layout === 'auto') return true
+    return p.identity !== spotlightId
+  })
 
   return (
     <div
       style={{
         display: 'grid',
-        gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))',
+        gridTemplateColumns: 'repeat(auto-fill, minmax(160px, 1fr))',
         gap: 14,
         width: '100%',
       }}
     >
-      {participants.map((p) => {
+      {strip.map((p) => {
         const muted = !p.isMicrophoneEnabled
         const mineReactions = emojiEvents.filter((e) => e.from === p.identity)
         const camRef = camRefs.find((r) => r.participant.identity === p.identity)
+        const isPinned = pinnedId === p.identity
         return (
           <div
             key={p.identity}
@@ -305,6 +598,31 @@ function Participants({
               transition: 'border-color 0.15s ease, box-shadow 0.15s ease',
             }}
           >
+            {/* pin control — Meet-style: keep this person on the stage */}
+            <button
+              onClick={() => onPin(p.identity)}
+              aria-label={isPinned ? `Unpin ${p.name ?? 'participant'}` : `Pin ${p.name ?? 'participant'} to the stage`}
+              aria-pressed={isPinned}
+              title={isPinned ? 'Unpin' : 'Pin to stage'}
+              style={{
+                position: 'absolute',
+                top: 8,
+                right: 8,
+                width: 30,
+                height: 30,
+                borderRadius: 9,
+                display: 'inline-flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                border: isPinned ? 'none' : '1px solid var(--border)',
+                background: isPinned ? 'var(--accent)' : 'var(--bg)',
+                color: isPinned ? 'var(--on-accent)' : 'var(--text-muted)',
+                cursor: 'pointer',
+                zIndex: 3,
+              }}
+            >
+              <Icon name="pin" size={14} strokeWidth={2.2} />
+            </button>
             {/* floating emoji bursts from THIS participant */}
             {mineReactions.map((e) => (
               <span
@@ -325,6 +643,7 @@ function Participants({
 
             {camRef ? (
               <div
+                className="lvc-frame"
                 style={{
                   width: '100%',
                   height: 124,

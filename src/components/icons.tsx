@@ -1,6 +1,30 @@
 import React from 'react'
 
 const ICON_PATHS: Record<string, React.ReactNode> = {
+  lock: (
+    <>
+      <rect x="3" y="11" width="18" height="11" rx="2" />
+      <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+    </>
+  ),
+  unlock: (
+    <>
+      <rect x="3" y="11" width="18" height="11" rx="2" />
+      <path d="M7 11V7a5 5 0 0 1 9.9-1" />
+    </>
+  ),
+  layout: (
+    <>
+      <rect x="3" y="3" width="18" height="18" rx="2" />
+      <path d="M3 9h18M9 21V9" />
+    </>
+  ),
+  pin: (
+    <>
+      <path d="M12 17v5" />
+      <path d="M9 10.76V5a3 3 0 1 1 6 0v5.76L19 14H5l4-3.24z" />
+    </>
+  ),
   home: (
     <>
       <path d="M3 10.5 12 3l9 7.5" />

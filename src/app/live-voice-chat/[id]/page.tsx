@@ -35,6 +35,10 @@ export default function LiveVoiceChatRoomPage() {
   const [loading, setLoading] = useState(true)
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
+  // Private rooms: the password prompt for non-members.
+  const [pwPrompt, setPwPrompt] = useState(false)
+  const [pwValue, setPwValue] = useState('')
+  const [pwError, setPwError] = useState('')
 
   /**
    * Member names are fetched in a second query rather than embedded.
@@ -177,14 +181,40 @@ export default function LiveVoiceChatRoomPage() {
 
   const requireLogin = () => router.replace('/auth/login?redirect=' + encodeURIComponent(`/live-voice-chat/${groupId}`))
 
-  const joinGroup = async () => {
+  const joinGroup = async (password?: string) => {
     if (!user) return requireLogin()
+    // A private room shown to a non-member first asks for the password.
+    if (password === undefined && group?.is_private && !isMember) {
+      setPwPrompt(true)
+      return
+    }
     setBusy(true)
     setError('')
-    const { error: rpcError } = await supabase.rpc('join_live_voice_chat_group', { p_group_id: groupId })
+    setPwError('')
+    const { error: rpcError } = await supabase.rpc('join_live_voice_chat_group', {
+      p_group_id: groupId,
+      p_password: password ?? null,
+    })
     setBusy(false)
     if (rpcError) return setError(rpcError.message)
+    // FALSE without an error means the password did not match (or the room
+    // became invisible). Say so instead of silently doing nothing.
+    if (password !== undefined) {
+      // re-check membership to confirm the join actually happened
+      const { data: mine } = await supabase
+        .from('live_voice_chat_members')
+        .select('group_id')
+        .eq('group_id', groupId)
+        .eq('user_id', user.id)
+        .maybeSingle()
+      if (!mine) {
+        setPwError('Wrong password. Ask the room admin for the current one.')
+        return
+      }
+    }
     setIsMember(true)
+    setPwPrompt(false)
+    setPwValue('')
     await load()
   }
 
@@ -313,6 +343,21 @@ export default function LiveVoiceChatRoomPage() {
                     {SECTION_LABELS[group.section] || 'Random'} · {group.scope === 'global' ? 'Global' : 'Campus'} ·{' '}
                     {members.length} member
                     {members.length === 1 ? '' : 's'}
+                    {group.is_private && (
+                      <span
+                        style={{
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: 4,
+                          marginLeft: 6,
+                          color: 'var(--warning-text)',
+                          fontWeight: 600,
+                        }}
+                      >
+                        <Icon name="lock" size={12} strokeWidth={2.4} />
+                        Private
+                      </span>
+                    )}
                   </p>
                 </div>
                 {isLive && (
@@ -390,9 +435,94 @@ export default function LiveVoiceChatRoomPage() {
                     Leave
                   </button>
                 </div>
+              ) : pwPrompt ? (
+                /* Password prompt for private rooms — the admin shared this
+                   password with the people who are allowed inside. */
+                <form
+                  onSubmit={(e) => {
+                    e.preventDefault()
+                    void joinGroup(pwValue)
+                  }}
+                  style={{ display: 'flex', flexDirection: 'column', gap: 10 }}
+                >
+                  <p
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 7,
+                      fontSize: 13,
+                      color: 'var(--text-secondary)',
+                      margin: 0,
+                    }}
+                  >
+                    <Icon name="lock" size={15} strokeWidth={2.2} />
+                    This room is private. Enter the password the admin gave you.
+                  </p>
+                  <input
+                    type="password"
+                    value={pwValue}
+                    onChange={(e) => setPwValue(e.target.value)}
+                    placeholder="Room password"
+                    autoComplete="off"
+                    autoFocus
+                    style={{
+                      width: '100%',
+                      border: pwError ? '1px solid var(--danger)' : '1px solid var(--border)',
+                      borderRadius: 10,
+                      padding: '11px 14px',
+                      fontSize: 14,
+                      outline: 'none',
+                      fontFamily: 'inherit',
+                      color: 'var(--text-primary)',
+                      background: 'var(--bg)',
+                      boxSizing: 'border-box',
+                    }}
+                  />
+                  {pwError && <p style={{ fontSize: 12.5, color: 'var(--danger)', margin: 0 }}>{pwError}</p>}
+                  <div style={{ display: 'flex', gap: 8 }}>
+                    <button
+                      type="submit"
+                      disabled={busy || pwValue.trim().length === 0}
+                      style={{
+                        flex: 1,
+                        background: pwValue.trim() && !busy ? 'var(--accent)' : 'var(--disabled)',
+                        color: 'var(--on-accent)',
+                        border: 'none',
+                        borderRadius: 10,
+                        padding: '11px',
+                        fontSize: 14,
+                        fontWeight: 700,
+                        cursor: pwValue.trim() && !busy ? 'pointer' : 'default',
+                        fontFamily: 'inherit',
+                      }}
+                    >
+                      {busy ? 'Checking…' : 'Unlock & join'}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setPwPrompt(false)
+                        setPwError('')
+                        setPwValue('')
+                      }}
+                      style={{
+                        background: 'var(--bg)',
+                        color: 'var(--text-secondary)',
+                        border: '1px solid var(--border)',
+                        borderRadius: 10,
+                        padding: '11px 18px',
+                        fontSize: 14,
+                        cursor: 'pointer',
+                        fontFamily: 'inherit',
+                      }}
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                </form>
               ) : (
                 <button
-                  onClick={joinGroup}
+                  onClick={() => void joinGroup()}
                   disabled={busy}
                   style={{
                     width: '100%',
@@ -407,7 +537,23 @@ export default function LiveVoiceChatRoomPage() {
                     fontFamily: 'inherit',
                   }}
                 >
-                  {busy ? 'Joining…' : 'Join room'}
+                  {busy ? (
+                    'Joining…'
+                  ) : (
+                    <>
+                      <span
+                        style={{
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: 8,
+                          justifyContent: 'center',
+                        }}
+                      >
+                        {group.is_private && <Icon name="lock" size={16} strokeWidth={2.2} />}
+                        {group.is_private ? 'Enter password to join' : 'Join room'}
+                      </span>
+                    </>
+                  )}
                 </button>
               )}
             </div>

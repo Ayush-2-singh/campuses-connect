@@ -58,6 +58,8 @@ export default function LiveVoiceChatPage() {
     icon: 'mic',
     section: 'random',
     scope: 'campus' as 'campus' | 'global',
+    isPrivate: false,
+    password: '',
   })
   const router = useRouter()
   const supabase = createClient()
@@ -152,15 +154,18 @@ export default function LiveVoiceChatPage() {
     )
   }
 
-  const join = async (groupId: string) => {
+  const join = async (groupId: string, password?: string) => {
     if (!user) return requireLogin()
-    if (memberships.includes(groupId)) {
+    if (memberships.includes(groupId) && password === undefined) {
       router.push(`/live-voice-chat/${groupId}`)
       return
     }
     setBusy(true)
     setError('')
-    const { error: rpcError } = await supabase.rpc('join_live_voice_chat_group', { p_group_id: groupId })
+    const { error: rpcError } = await supabase.rpc('join_live_voice_chat_group', {
+      p_group_id: groupId,
+      p_password: password ?? null,
+    })
     setBusy(false)
     if (rpcError) return setError(rpcError.message)
     setMemberships((m) => [...m, groupId])
@@ -178,18 +183,22 @@ export default function LiveVoiceChatPage() {
       p_icon: form.icon,
       p_scope: form.scope,
       p_section: form.section,
+      p_is_private: form.isPrivate,
+      p_password: form.isPrivate ? form.password : null,
     })
     setBusy(false)
 
     if (rpcError || !groupId) {
       // The RPC returns NULL (not an error) when the caller isn't allowed to
       // create this scope — most often a student with no campus asking for a
-      // campus group.
+      // campus group, or a private room with a too-short password.
       setError(
         rpcError?.message ||
-          (form.scope === 'campus'
-            ? 'Could not create a campus group. Add your campus in your profile, or pick Global.'
-            : 'Could not create the group. Please try again.')
+          (form.isPrivate && form.password.trim().length < 4
+            ? 'Private rooms need a password of at least 4 characters.'
+            : form.scope === 'campus'
+              ? 'Could not create a campus group. Add your campus in your profile, or pick Global.'
+              : 'Could not create the group. Please try again.')
       )
       return
     }
@@ -201,6 +210,8 @@ export default function LiveVoiceChatPage() {
       icon: 'mic',
       section: 'random',
       scope: profile?.campus_id ? 'campus' : 'global',
+      isPrivate: false,
+      password: '',
     })
     setShowCreate(false)
     router.push(`/live-voice-chat/${groupId}`)
@@ -321,6 +332,42 @@ export default function LiveVoiceChatPage() {
                 rows={2}
                 style={{ ...inputStyle, resize: 'none' }}
               />
+
+              {/* Private room toggle + password — only the people the admin
+                  shares the password with can join. */}
+              <label
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 10,
+                  fontSize: 13,
+                  color: 'var(--text-secondary)',
+                  cursor: 'pointer',
+                  userSelect: 'none',
+                }}
+              >
+                <input
+                  type="checkbox"
+                  checked={form.isPrivate}
+                  onChange={(e) => setForm((f) => ({ ...f, isPrivate: e.target.checked, password: '' }))}
+                  style={{ width: 16, height: 16, accentColor: 'var(--accent)', cursor: 'pointer' }}
+                />
+                <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+                  <Icon name="lock" size={14} strokeWidth={2.2} />
+                  Private room — only people with the password can join
+                </span>
+              </label>
+              {form.isPrivate && (
+                <input
+                  type="password"
+                  value={form.password}
+                  onChange={(e) => setForm((f) => ({ ...f, password: e.target.value }))}
+                  placeholder="Room password * (min 4 characters)"
+                  autoComplete="new-password"
+                  style={inputStyle}
+                  maxLength={40}
+                />
+              )}
               <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
                 {ICONS.map((icon) => (
                   <button
@@ -438,6 +485,20 @@ export default function LiveVoiceChatPage() {
                         gap: 6,
                       }}
                     >
+                      {g.is_private && (
+                        <span
+                          title="Private room — password required"
+                          aria-label="Private room"
+                          style={{
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            color: 'var(--warning-text)',
+                            flexShrink: 0,
+                          }}
+                        >
+                          <Icon name="lock" size={13} strokeWidth={2.4} />
+                        </span>
+                      )}
                       <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                         {g.name}
                       </span>

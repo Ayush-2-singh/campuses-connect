@@ -1526,6 +1526,50 @@ a:active,
   }
 }
 
+/* ── Live voice call — animated video frame ──────────────────────────
+   Camera tiles wear a slowly-rotating conic gradient border (three accent
+   hues cycling). The gradient sits on a ::before layer slightly larger than
+   the video; the video stays visible in the middle. Speaks while active:
+   the ring speeds up. Respects reduced motion. */
+@keyframes lvcFrameSpin {
+  to {
+    --lvc-angle: 360deg;
+  }
+}
+@property --lvc-angle {
+  syntax: '<angle>';
+  initial-value: 0deg;
+  inherits: false;
+}
+.lvc-frame {
+  position: relative;
+}
+.lvc-frame::before {
+  content: '';
+  position: absolute;
+  inset: -2px;
+  border-radius: 14px;
+  background: conic-gradient(
+    from var(--lvc-angle),
+    var(--accent) 0%,
+    var(--accent-purple) 30%,
+    var(--accent-cyan) 60%,
+    var(--accent) 100%
+  );
+  animation: lvcFrameSpin 7s linear infinite;
+  opacity: 0.85;
+  z-index: 0;
+}
+.lvc-frame > * {
+  position: relative;
+  z-index: 1;
+}
+@media (prefers-reduced-motion: reduce) {
+  .lvc-frame::before {
+    animation: none;
+  }
+}
+
 /* ── Live voice call page — Meet-style controls ──────────────────────── */
 .lvc-back {
   width: 40px;
