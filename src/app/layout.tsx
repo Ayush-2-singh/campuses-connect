@@ -4,6 +4,8 @@ import { ToastProvider } from '@/components/Toast'
 import OfflineIndicator from '@/components/OfflineIndicator'
 import LoadingBar from '@/components/LoadingBar'
 import NativeShell from '@/components/NativeShell'
+import CookieConsent from '@/components/CookieConsent'
+import Analytics from '@/components/Analytics'
 
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL || 'https://www.connecttocampus.com'
 
@@ -217,6 +219,10 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           {/* Boots the Capacitor shell (status bar, back button, deep links,
               session refresh). Renders nothing and no-ops on the web. */}
           <NativeShell />
+          {/* Cookie consent + consent-gated analytics (both no-ops until the
+              visitor decides; Analytics additionally needs env vars set). */}
+          <CookieConsent />
+          <Analytics />
           {children}
         </ToastProvider>
       </body>

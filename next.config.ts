@@ -47,6 +47,9 @@ const nextConfig: NextConfig = {
           { key: 'X-Frame-Options', value: 'DENY' },
           // Enable XSS protection in older browsers
           { key: 'X-XSS-Protection', value: '1; mode=block' },
+          // Force HTTPS for 2 years once the browser has seen one secure
+          // response (Vercel terminates TLS; this hardens every visit after).
+          { key: 'Strict-Transport-Security', value: 'max-age=63072000; includeSubDomains; preload' },
           // Control referrer information
           { key: 'Referrer-Policy', value: 'strict-origin-when-cross-origin' },
           // Permissions policy — disable unnecessary browser features.
