@@ -5,13 +5,15 @@ import { useParams, useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { fetchLiveVoiceRooms } from '@/lib/liveVoice'
 import Layout from '@/components/Layout'
+import { Icon } from '@/components/icons'
+import { voiceIcon } from '@/lib/liveVoice'
 
 const SECTION_LABELS: Record<string, string> = {
-  dsa: '🧩 DSA',
-  discussion: '💬 Discussion',
-  'web-dev': '🌐 Web Dev',
-  english: '🔤 English',
-  random: '🎲 Random',
+  dsa: 'DSA',
+  discussion: 'Discussion',
+  'web-dev': 'Web Dev',
+  english: 'English',
+  random: 'Random',
 }
 
 function initials(name?: string | null, fallback = '?') {
@@ -256,7 +258,7 @@ export default function LiveVoiceChatRoomPage() {
             margin: '0 0 6px -12px',
           }}
         >
-          ←
+          <Icon name="chevron" size={22} strokeWidth={2.2} style={{ transform: 'rotate(180deg)' }} />
         </button>
 
         {error && (
@@ -288,14 +290,28 @@ export default function LiveVoiceChatRoomPage() {
               }}
             >
               <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginBottom: 12 }}>
-                <span style={{ fontSize: 40 }}>{group.icon || '🎙️'}</span>
+                <span
+                  style={{
+                    width: 56,
+                    height: 56,
+                    borderRadius: 16,
+                    display: 'grid',
+                    placeItems: 'center',
+                    flexShrink: 0,
+                    background: 'var(--accent-light)',
+                    color: 'var(--accent-text)',
+                  }}
+                  aria-hidden="true"
+                >
+                  <Icon name={voiceIcon(group.icon)} size={28} strokeWidth={2} />
+                </span>
                 <div style={{ minWidth: 0, flex: 1 }}>
                   <h2 style={{ fontSize: 20, fontWeight: 700, color: 'var(--text-primary)', margin: '0 0 4px' }}>
                     {group.name}
                   </h2>
                   <p style={{ fontSize: 12, color: 'var(--text-muted)', margin: 0 }}>
-                    {SECTION_LABELS[group.section] || '🎲 Random'} ·{' '}
-                    {group.scope === 'global' ? '🌐 Global' : '🏫 Campus'} · {members.length} member
+                    {SECTION_LABELS[group.section] || 'Random'} · {group.scope === 'global' ? 'Global' : 'Campus'} ·{' '}
+                    {members.length} member
                     {members.length === 1 ? '' : 's'}
                   </p>
                 </div>
@@ -309,9 +325,13 @@ export default function LiveVoiceChatRoomPage() {
                       padding: '3px 10px',
                       borderRadius: 999,
                       flexShrink: 0,
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: 5,
                     }}
                   >
-                    ● LIVE
+                    <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#fff' }} aria-hidden="true" />
+                    LIVE
                   </span>
                 )}
               </div>
@@ -338,9 +358,20 @@ export default function LiveVoiceChatRoomPage() {
                       fontWeight: 700,
                       cursor: busy ? 'default' : 'pointer',
                       fontFamily: 'inherit',
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: 8,
                     }}
                   >
-                    {busy ? 'Connecting…' : isLive ? `🎧 Join call (${participants.length} in)` : '🎙️ Start voice chat'}
+                    {busy ? (
+                      'Connecting…'
+                    ) : (
+                      <>
+                        <Icon name="mic" size={17} strokeWidth={2.2} />
+                        {isLive ? `Join call (${participants.length} in)` : 'Start voice chat'}
+                      </>
+                    )}
                   </button>
                   <button
                     onClick={leaveGroup}
@@ -447,8 +478,21 @@ export default function LiveVoiceChatRoomPage() {
                           <span style={{ fontSize: 11, color: 'var(--text-muted)', flexShrink: 0 }}>Admin</span>
                         )}
                         {inCall && (
-                          <span style={{ fontSize: 11, color: 'var(--success-text, var(--accent))', flexShrink: 0 }}>
-                            🔴 in call
+                          <span
+                            style={{
+                              fontSize: 11,
+                              color: 'var(--success-text, var(--accent))',
+                              flexShrink: 0,
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              gap: 5,
+                            }}
+                          >
+                            <span
+                              style={{ width: 7, height: 7, borderRadius: '50%', background: 'currentColor' }}
+                              aria-hidden="true"
+                            />
+                            in call
                           </span>
                         )}
                       </div>

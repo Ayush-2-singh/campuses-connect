@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { isPlaced, placementRemaining, rankTier } from '@/lib/rating'
+import { Icon } from '@/components/icons'
 
 /**
  * ScoreHeader — the four metrics, each in its own tile, never merged.
@@ -74,9 +75,16 @@ export default function ScoreHeader({ userId }: { userId?: string | null }) {
       aria-label="Your scores"
     >
       <div style={tile}>
-        <p style={value}>
-          ⭐ {placed ? rating : '—'}
-          {placed && <span style={{ fontSize: 12, marginLeft: 6 }}>{tier.icon}</span>}
+        <p style={{ ...value, display: 'flex', alignItems: 'center', gap: 6 }}>
+          <span style={{ display: 'inline-flex', color: 'var(--yellow-text)' }} aria-hidden="true">
+            <Icon name="star" size={15} strokeWidth={2.2} filled />
+          </span>
+          {placed ? rating : '—'}
+          {placed && (
+            <span style={{ display: 'inline-flex', color: 'var(--accent)', marginLeft: 2 }} title={tier.label}>
+              <Icon name={tier.icon} size={14} strokeWidth={2.2} />
+            </span>
+          )}
         </p>
         <p style={label}>
           {placed ? `Rating · ${tier.label}` : `Placement · ${placementRemaining(summary.games ?? 0)} to go`}
@@ -84,17 +92,32 @@ export default function ScoreHeader({ userId }: { userId?: string | null }) {
       </div>
 
       <div style={tile}>
-        <p style={value}>✨ {summary.aura_today ?? 0}</p>
+        <p style={{ ...value, display: 'flex', alignItems: 'center', gap: 6 }}>
+          <span style={{ display: 'inline-flex', color: 'var(--accent)' }} aria-hidden="true">
+            <Icon name="sparkles" size={15} strokeWidth={2.2} />
+          </span>
+          {summary.aura_today ?? 0}
+        </p>
         <p style={label}>Aura · today</p>
       </div>
 
       <div style={tile}>
-        <p style={value}>📈 {(summary.xp ?? 0).toLocaleString()}</p>
+        <p style={{ ...value, display: 'flex', alignItems: 'center', gap: 6 }}>
+          <span style={{ display: 'inline-flex', color: 'var(--success-text)' }} aria-hidden="true">
+            <Icon name="trending-up" size={15} strokeWidth={2.2} />
+          </span>
+          {(summary.xp ?? 0).toLocaleString()}
+        </p>
         <p style={label}>XP · progress</p>
       </div>
 
       <div style={tile}>
-        <p style={value}>🏆 {(summary.karma ?? 0).toLocaleString()}</p>
+        <p style={{ ...value, display: 'flex', alignItems: 'center', gap: 6 }}>
+          <span style={{ display: 'inline-flex', color: 'var(--purple-text)' }} aria-hidden="true">
+            <Icon name="trophy" size={15} strokeWidth={2.2} />
+          </span>
+          {(summary.karma ?? 0).toLocaleString()}
+        </p>
         <p style={label}>Karma · contribution</p>
       </div>
     </div>

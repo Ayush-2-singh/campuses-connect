@@ -13,6 +13,7 @@
  */
 
 import { useEffect, useRef, useState } from 'react'
+import { Icon } from '@/components/icons'
 import { INTEREST_NOTE_MAX } from '@/lib/discovery'
 
 export default function InterestNoteSheet({
@@ -84,8 +85,20 @@ export default function InterestNoteSheet({
         }}
       >
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
-          <span aria-hidden style={{ fontSize: 18 }}>
-            👋
+          <span
+            aria-hidden
+            style={{
+              width: 30,
+              height: 30,
+              borderRadius: 9,
+              display: 'grid',
+              placeItems: 'center',
+              background: 'var(--accent-light)',
+              color: 'var(--accent-text)',
+              flexShrink: 0,
+            }}
+          >
+            <Icon name="smile" size={17} strokeWidth={2.2} />
           </span>
           <h3 style={{ fontSize: 17, fontWeight: 800, color: 'var(--text-primary)', margin: 0 }}>
             Tell them who you are
@@ -136,7 +149,7 @@ export default function InterestNoteSheet({
               fontFamily: 'inherit',
             }}
           >
-            {busy ? 'Sending…' : '❤️ Send interest with my pitch'}
+            {busy ? 'Sending…' : 'Send interest with my pitch'}
           </button>
           <button
             onClick={() => !busy && onSubmit(null)}

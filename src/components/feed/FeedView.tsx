@@ -226,7 +226,7 @@ export default function FeedView() {
           {/* Campus Pulse header */}
           <div style={{ marginBottom: 22 }}>
             <h2 style={{ fontSize: 26, fontWeight: 800, color: 'var(--text-primary)', margin: '0 0 4px' }}>
-              {mounted && firstName ? `${greeting()}, ${firstName} 👋` : 'CampusConnect'}
+              {mounted && firstName ? `${greeting()}, ${firstName}` : 'CampusConnect'}
             </h2>
             <p style={{ fontSize: 13.5, color: 'var(--text-muted)', margin: 0 }}>
               {mounted && firstName

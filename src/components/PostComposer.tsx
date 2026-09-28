@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { listCreatableCategories, useAdminContext } from '@/lib/permissions'
+import { Icon } from '@/components/icons'
 import type { CreatableCategory, PostScope } from '@/types'
 
 export default function PostComposer({
@@ -302,9 +303,15 @@ export default function PostComposer({
                 color: 'var(--warning-text)',
                 marginBottom: 10,
                 lineHeight: 1.5,
+                display: 'flex',
+                alignItems: 'flex-start',
+                gap: 7,
               }}
             >
-              🛡️ {heldNotice}
+              <span style={{ display: 'inline-flex', flexShrink: 0, marginTop: 1 }} aria-hidden="true">
+                <Icon name="shield" size={14} strokeWidth={2.2} />
+              </span>
+              {heldNotice}
             </div>
           )}
           {postError && (
@@ -339,17 +346,17 @@ export default function PostComposer({
             >
               {/* Two top-level choices: Global, or Campus (with sub-options) */}
               {scopeOptions.includes('global') && (
-                <optgroup label="🌐 Global">
+                <optgroup label="Global">
                   <option value="global">Global — every student</option>
                 </optgroup>
               )}
               {(scopeOptions.includes('campus') || scopeOptions.includes('college_network')) && (
-                <optgroup label="🏫 Campus">
+                <optgroup label="Campus">
                   {scopeOptions.includes('campus') && (
-                    <option value="campus">🏛️ My Campus{context.campusName ? ` — ${context.campusName}` : ''}</option>
+                    <option value="campus">My Campus{context.campusName ? ` — ${context.campusName}` : ''}</option>
                   )}
                   {scopeOptions.includes('college_network') && (
-                    <option value="college_network">🎓 My College — {context.collegeName || 'whole college'}</option>
+                    <option value="college_network">My College — {context.collegeName || 'whole college'}</option>
                   )}
                 </optgroup>
               )}
@@ -383,9 +390,21 @@ export default function PostComposer({
                   fontWeight: 600,
                   cursor: 'pointer',
                   fontFamily: 'inherit',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: 6,
                 }}
               >
-                {checking ? '🛡️ Checking...' : posting ? 'Posting...' : 'Post'}
+                {checking ? (
+                  <>
+                    <Icon name="shield" size={13} strokeWidth={2.2} />
+                    Checking…
+                  </>
+                ) : posting ? (
+                  'Posting…'
+                ) : (
+                  'Post'
+                )}
               </button>
             </div>
           </div>

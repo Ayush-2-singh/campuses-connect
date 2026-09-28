@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { useToast } from '@/components/Toast'
 import Avatar from '@/components/Avatar'
+import { Icon } from '@/components/icons'
 import { createClient } from '@/lib/supabase/client'
 import { useHaptic } from '@/hooks/useMobile'
 import type { Post } from '@/types'
@@ -15,15 +16,15 @@ const SCOPE_CONFIG: Record<string, { label: string; bg: string; text: string }> 
 }
 
 const CATEGORY_ICONS: Record<string, string> = {
-  discussion: '💬',
-  resource: '🔗',
-  notes: '📚',
-  hackathon: '⚡',
-  internship: '💼',
-  event: '📅',
-  announcement: '📢',
-  project: '🚀',
-  opportunity: '🎯',
+  discussion: 'message',
+  resource: 'link',
+  notes: 'book',
+  hackathon: 'zap',
+  internship: 'briefcase',
+  event: 'calendar',
+  announcement: 'megaphone',
+  project: 'rocket',
+  opportunity: 'target',
 }
 
 const timeAgo = (date: string) => {
@@ -153,7 +154,7 @@ export default function PostCard({
   }, [reportOpen])
 
   const sc = SCOPE_CONFIG[post.scope] || SCOPE_CONFIG.global
-  const catIcon = CATEGORY_ICONS[post.categories?.key || ''] || '📄'
+  const catIcon = CATEGORY_ICONS[post.categories?.key || ''] || 'notebook'
 
   // Like toggle — tap to like, tap again to remove (unlike).
   const handleLike = async () => {
@@ -374,13 +375,11 @@ export default function PostCard({
 
   return (
     <div
-      className="post-card"
+      className={post.is_pinned ? 'post-card post-card--pinned' : 'post-card'}
       style={{
         background: 'var(--bg)',
         borderRadius: 14,
-        border: post.is_pinned ? '1px solid var(--accent-border)' : '1px solid var(--border)',
         padding: '18px',
-        boxShadow: 'var(--shadow-sm)',
       }}
     >
       {deleteError && (
@@ -426,7 +425,13 @@ export default function PostCard({
                 {post.profiles?.full_name || 'Anonymous'}
               </span>
               {post.profiles?.is_verified && (
-                <span style={{ fontSize: 11, color: 'var(--accent)', flexShrink: 0 }}>✓</span>
+                <span
+                  style={{ color: 'var(--accent)', flexShrink: 0, display: 'inline-flex' }}
+                  title="Verified"
+                  aria-label="Verified"
+                >
+                  <Icon name="check" size={13} strokeWidth={3} />
+                </span>
               )}
             </div>
             <p
@@ -466,14 +471,31 @@ export default function PostCard({
               padding: '3px 8px',
               borderRadius: 20,
               fontWeight: 600,
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: 5,
             }}
           >
-            {catIcon} {post.categories?.label || 'Post'}
+            <Icon name={catIcon} size={12} strokeWidth={2.2} />
+            {post.categories?.label || 'Post'}
           </span>
         </div>
       </div>
       {post.is_pinned && (
-        <div style={{ fontSize: 11, color: 'var(--accent)', fontWeight: 600, marginBottom: 8 }}>📌 Pinned</div>
+        <div
+          style={{
+            fontSize: 11,
+            color: 'var(--accent)',
+            fontWeight: 600,
+            marginBottom: 8,
+            display: 'flex',
+            alignItems: 'center',
+            gap: 5,
+          }}
+        >
+          <Icon name="bookmark" size={13} strokeWidth={2.4} />
+          Pinned
+        </div>
       )}
       {post.status === 'held' && (
         <div
@@ -486,9 +508,13 @@ export default function PostCard({
             borderRadius: 8,
             fontWeight: 600,
             marginBottom: 8,
+            display: 'flex',
+            alignItems: 'center',
+            gap: 6,
           }}
         >
-          🛡️ Pending review{post.held_reason ? ` — ${post.held_reason}` : ''}
+          <Icon name="shield" size={13} strokeWidth={2.2} />
+          Pending review{post.held_reason ? ` — ${post.held_reason}` : ''}
         </div>
       )}
       {post.title && (
@@ -608,9 +634,32 @@ export default function PostCard({
               color: 'var(--on-accent)',
             }}
           >
-            {joining ? '…' : joined ? '✓ Joined' : '⚡ Join Hackathon'}
+            {joining ? (
+              '…'
+            ) : joined ? (
+              <>
+                <Icon name="check" size={14} strokeWidth={2.6} />
+                Joined
+              </>
+            ) : (
+              <>
+                <Icon name="zap" size={14} strokeWidth={2.2} />
+                Join Hackathon
+              </>
+            )}
           </button>
-          <span style={{ fontSize: 12, color: 'var(--text-muted)' }}>👥 {joinCount} joined</span>
+          <span
+            style={{
+              fontSize: 12,
+              color: 'var(--text-muted)',
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: 5,
+            }}
+          >
+            <Icon name="users" size={14} strokeWidth={2.2} />
+            {joinCount} joined
+          </span>
         </div>
       )}
       {/* Action bar — YouTube style: pill chips + stroke icons */}
@@ -957,8 +1006,19 @@ export default function PostCard({
             role="dialog"
             aria-label="Report post"
           >
-            <p style={{ fontSize: 16, fontWeight: 700, color: 'var(--text-primary)', margin: '0 0 4px' }}>
-              🚩 Report this post
+            <p
+              style={{
+                fontSize: 16,
+                fontWeight: 700,
+                color: 'var(--text-primary)',
+                margin: '0 0 4px',
+                display: 'flex',
+                alignItems: 'center',
+                gap: 8,
+              }}
+            >
+              <Icon name="flag" size={17} strokeWidth={2.2} />
+              Report this post
             </p>
             <p style={{ fontSize: 12.5, color: 'var(--text-muted)', margin: '0 0 14px' }}>
               Our moderators will review it. False reports hurt the community.
@@ -1059,9 +1119,11 @@ export default function PostCard({
                     minHeight: 32,
                     fontFamily: 'inherit',
                     lineHeight: 1,
+                    display: 'inline-flex',
+                    alignItems: 'center',
                   }}
                 >
-                  🗑️
+                  <Icon name="trash" size={15} strokeWidth={2.2} />
                 </button>
               )}
             </div>

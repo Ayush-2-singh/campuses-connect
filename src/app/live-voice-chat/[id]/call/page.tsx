@@ -1,6 +1,6 @@
 'use client'
 
-import { Suspense, useCallback, useEffect, useRef, useState, type CSSProperties } from 'react'
+import { Suspense, useCallback, useEffect, useRef, useState } from 'react'
 import { useParams, useRouter, useSearchParams } from 'next/navigation'
 import {
   LiveKitRoom,
@@ -151,7 +151,7 @@ function CallShell({ connected, onLeave }: { connected: boolean; onLeave: () => 
 
   return (
     <div style={{ minHeight: '72vh', display: 'flex', flexDirection: 'column' }}>
-      <Header connected={connected} count={participants.length} />
+      <Header connected={connected} count={participants.length} onBack={onLeave} />
       {/* Anyone's screen share takes the stage up top (Meet-style). */}
       <ScreenStage />
       <Participants participants={participants} emojiEvents={emojiEvents} />
@@ -161,8 +161,8 @@ function CallShell({ connected, onLeave }: { connected: boolean; onLeave: () => 
   )
 }
 
-/** Room header: live badge + participant count. */
-function Header({ connected, count }: { connected: boolean; count: number }) {
+/** Room header: back-to-room, live badge + participant count. */
+function Header({ connected, count, onBack }: { connected: boolean; count: number; onBack: () => void }) {
   return (
     <div
       style={{
@@ -174,6 +174,9 @@ function Header({ connected, count }: { connected: boolean; count: number }) {
         fontSize: 13,
       }}
     >
+      <button onClick={onBack} aria-label="Back to room" className="lvc-back">
+        <Icon name="chevron" size={18} strokeWidth={2.4} style={{ transform: 'rotate(180deg)' }} />
+      </button>
       <span
         style={{
           display: 'inline-flex',
@@ -467,19 +470,6 @@ function Controls({
 
   const REACTIONS = ['👏', '🔥', '❤️', '😂', '🎉', '👍', '🤯', '🙏']
 
-  /** Shared geometry for the round controls (Meet's 60px circles). */
-  const CTRL: CSSProperties = {
-    width: 60,
-    height: 60,
-    borderRadius: 30,
-    border: 'none',
-    display: 'inline-flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    cursor: 'pointer',
-    boxShadow: '0 4px 16px rgba(0,0,0,0.3)',
-    flexShrink: 0,
-  }
   /** Meet palette for the round controls: neutral = on, red = off. */
   const ON = { background: 'var(--bg-tertiary)', color: 'var(--text-primary)' } as const
   const OFF = { background: 'var(--danger)', color: '#fff' } as const
@@ -516,18 +506,7 @@ function Controls({
   }
 
   return (
-    <div
-      style={{
-        position: 'sticky',
-        bottom: 0,
-        display: 'flex',
-        justifyContent: 'center',
-        alignItems: 'center',
-        gap: 12,
-        padding: '18px 0 calc(16px + env(safe-area-inset-bottom, 0px))',
-        flexWrap: 'wrap',
-      }}
-    >
+    <div className="lvc-controls">
       {/* emoji picker — reactions float up for ~3s, visible to everyone */}
       <div style={{ position: 'relative' }}>
         {emojiOpen && (
@@ -582,11 +561,13 @@ function Controls({
             border: '1px solid var(--border)',
             background: 'var(--bg)',
             color: 'var(--text-primary)',
-            fontSize: 20,
             cursor: 'pointer',
+            display: 'inline-flex',
+            alignItems: 'center',
+            justifyContent: 'center',
           }}
         >
-          😀
+          <Icon name="smile" size={22} strokeWidth={2} />
         </button>
       </div>
 
@@ -595,7 +576,8 @@ function Controls({
         onClick={toggleMic}
         aria-label={isMicrophoneEnabled ? 'Mute microphone' : 'Unmute microphone'}
         aria-pressed={!isMicrophoneEnabled}
-        style={{ ...CTRL, ...(isMicrophoneEnabled ? ON : OFF) }}
+        className="lvc-ctrl"
+        style={isMicrophoneEnabled ? ON : OFF}
       >
         <Icon name={isMicrophoneEnabled ? 'mic' : 'mic-off'} size={23} />
       </button>
@@ -605,7 +587,8 @@ function Controls({
         onClick={toggleCamera}
         aria-label={isCameraEnabled ? 'Turn camera off' : 'Turn camera on'}
         aria-pressed={!isCameraEnabled}
-        style={{ ...CTRL, ...(isCameraEnabled ? ON : OFF) }}
+        className="lvc-ctrl"
+        style={isCameraEnabled ? ON : OFF}
       >
         <Icon name={isCameraEnabled ? 'video' : 'video-off'} size={23} />
       </button>
@@ -616,8 +599,8 @@ function Controls({
           onClick={toggleScreenShare}
           aria-label={isScreenShareEnabled ? 'Stop sharing your screen' : 'Share your screen'}
           aria-pressed={isScreenShareEnabled}
+          className="lvc-ctrl"
           style={{
-            ...CTRL,
             background: isScreenShareEnabled ? 'var(--accent)' : 'var(--bg-tertiary)',
             color: isScreenShareEnabled ? 'var(--on-accent)' : 'var(--text-primary)',
           }}
@@ -626,22 +609,7 @@ function Controls({
         </button>
       )}
 
-      <button
-        onClick={onLeave}
-        aria-label="Leave the call"
-        style={{
-          height: 60,
-          padding: '0 26px',
-          borderRadius: 30,
-          border: 'none',
-          background: 'var(--danger)',
-          color: '#fff',
-          fontSize: 15,
-          fontWeight: 800,
-          cursor: 'pointer',
-          boxShadow: '0 4px 16px rgba(0,0,0,0.3)',
-        }}
-      >
+      <button onClick={onLeave} aria-label="Leave the call" className="lvc-leave">
         Leave
       </button>
     </div>

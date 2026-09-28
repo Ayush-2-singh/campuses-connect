@@ -22,6 +22,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import type { DiscoveryFeedCard } from '@/lib/discovery'
+import { Icon } from '@/components/icons'
 import DiscoveryCard from './DiscoveryCard'
 
 const THRESHOLD = 110 // px — commit distance
@@ -195,7 +196,22 @@ export default function SwipeDeck({
   if (!top && !exiting) {
     return (
       <div style={{ textAlign: 'center', padding: '48px 16px' }}>
-        <p style={{ fontSize: 48, margin: 0, animation: 'ccCardUp 0.3s ease' }}>🎉</p>
+        <div
+          style={{
+            width: 64,
+            height: 64,
+            borderRadius: '50%',
+            margin: '0 auto',
+            display: 'grid',
+            placeItems: 'center',
+            background: 'var(--accent-light)',
+            color: 'var(--accent-text)',
+            animation: 'ccCardUp 0.3s ease',
+          }}
+          aria-hidden="true"
+        >
+          <Icon name="sparkles" size={30} strokeWidth={2} />
+        </div>
         <p style={{ fontSize: 20, fontWeight: 800, color: 'var(--text-primary)', margin: '14px 0 6px' }}>
           You&apos;re all caught up!
         </p>
@@ -407,8 +423,8 @@ export default function SwipeDeck({
             transition: 'transform 0.12s ease, border-color 0.15s ease',
           }}
         >
-          <span aria-hidden style={{ fontSize: 17 }}>
-            ✕
+          <span aria-hidden style={{ display: 'inline-flex' }}>
+            <Icon name="x" size={17} strokeWidth={2.6} />
           </span>
           Pass
         </button>
@@ -435,8 +451,8 @@ export default function SwipeDeck({
             transition: 'transform 0.12s ease, box-shadow 0.15s ease',
           }}
         >
-          <span aria-hidden style={{ fontSize: 17 }}>
-            ❤️
+          <span aria-hidden style={{ display: 'inline-flex' }}>
+            <Icon name="heart" size={17} strokeWidth={2.2} filled />
           </span>
           Interested
         </button>

@@ -46,10 +46,10 @@ export default function DiscoveryPeople() {
   }, [supabase])
 
   if (rows === null && !error) return <ListSkeleton count={3} />
-  if (error) return <EmptyState icon="⚠️" title="Could not load people" body={error} />
+  if (error) return <EmptyState icon="alert" title="Could not load people" body={error} />
   if (!rows || rows.length === 0)
     return (
-      <EmptyState icon="👥" title="No public profiles yet" body="Builders appear here as students join and share." />
+      <EmptyState icon="users" title="No public profiles yet" body="Builders appear here as students join and share." />
     )
 
   return (
@@ -86,7 +86,6 @@ export default function DiscoveryPeople() {
                 }}
               >
                 {p.avatar_url ? (
-                   
                   <img src={p.avatar_url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                 ) : (
                   (p.full_name || p.username || '?').charAt(0).toUpperCase()

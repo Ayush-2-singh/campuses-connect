@@ -13,6 +13,7 @@
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
+import { Icon } from '@/components/icons'
 
 interface HomeData {
   trending: { id: string; title: string; body: string; created_at: string }[]
@@ -23,10 +24,10 @@ interface HomeData {
 }
 
 const WHATS_NEW = [
-  { icon: '🤝', text: 'Discovery matching launched — swipe ideas, find builders' },
-  { icon: '🏆', text: 'Combined leaderboard: karma + GitHub + LeetCode' },
-  { icon: '🎧', text: 'Live Voice rooms across campuses' },
-  { icon: '📚', text: 'Library upgrades — notes, PYQs and AI Brain' },
+  { icon: 'users', text: 'Discovery matching launched — swipe ideas, find builders' },
+  { icon: 'trophy', text: 'Combined leaderboard: karma + GitHub + LeetCode' },
+  { icon: 'mic', text: 'Live Voice rooms across campuses' },
+  { icon: 'book', text: 'Library upgrades — notes, PYQs and AI Brain' },
 ]
 
 function SectionCard({
@@ -42,6 +43,7 @@ function SectionCard({
 }) {
   return (
     <div
+      className="card-hover"
       style={{
         background: 'var(--bg)',
         border: '1px solid var(--border)',
@@ -52,8 +54,22 @@ function SectionCard({
       }}
     >
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
-        <p style={{ fontSize: 13.5, fontWeight: 800, color: 'var(--text-primary)', margin: 0 }}>
-          {icon} {title}
+        <p
+          style={{
+            fontSize: 13.5,
+            fontWeight: 800,
+            color: 'var(--text-primary)',
+            margin: 0,
+            display: 'flex',
+            alignItems: 'center',
+            gap: 7,
+            minWidth: 0,
+          }}
+        >
+          <span style={{ display: 'inline-flex', color: 'var(--accent)', flexShrink: 0 }} aria-hidden="true">
+            <Icon name={icon} size={15} strokeWidth={2.2} />
+          </span>
+          {title}
         </p>
         <Link
           href={href}
@@ -67,7 +83,19 @@ function SectionCard({
   )
 }
 
-function Row({ primary, secondary, meta }: { primary: string; secondary?: string; meta?: string }) {
+function Row({
+  primary,
+  secondary,
+  meta,
+  icon,
+  metaIcon,
+}: {
+  primary: string
+  secondary?: string
+  meta?: string
+  icon?: string
+  metaIcon?: string
+}) {
   return (
     <div
       style={{
@@ -78,6 +106,11 @@ function Row({ primary, secondary, meta }: { primary: string; secondary?: string
         borderBottom: '1px solid var(--border)',
       }}
     >
+      {icon && (
+        <span style={{ display: 'inline-flex', color: 'var(--text-muted)', alignSelf: 'center' }} aria-hidden="true">
+          <Icon name={icon} size={13} strokeWidth={2.2} />
+        </span>
+      )}
       <span
         style={{
           fontSize: 12.5,
@@ -105,7 +138,25 @@ function Row({ primary, secondary, meta }: { primary: string; secondary?: string
           {secondary}
         </span>
       )}
-      {meta && <span style={{ fontSize: 11, color: 'var(--text-muted)', flexShrink: 0 }}>{meta}</span>}
+      {meta && (
+        <span
+          style={{
+            fontSize: 11,
+            color: 'var(--text-muted)',
+            flexShrink: 0,
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: 4,
+          }}
+        >
+          {metaIcon && (
+            <span style={{ display: 'inline-flex' }} aria-hidden="true">
+              <Icon name={metaIcon} size={12} strokeWidth={2.2} />
+            </span>
+          )}
+          {meta}
+        </span>
+      )}
     </div>
   )
 }
@@ -179,7 +230,7 @@ export default function HomeDashboard() {
         }}
       >
         <div style={{ display: 'flex' }}>
-          <SectionCard icon="🔥" title="Trending" href="/feed">
+          <SectionCard icon="flame" title="Trending" href="/feed">
             {data.trending.length === 0 ? (
               <p style={{ fontSize: 12.5, color: 'var(--text-muted)', margin: '4px 0' }}>No discussions yet.</p>
             ) : (
@@ -193,19 +244,19 @@ export default function HomeDashboard() {
         </div>
 
         <div style={{ display: 'flex' }}>
-          <SectionCard icon="💭" title="Confessions" href="/community?view=confessions">
+          <SectionCard icon="mask" title="Confessions" href="/community?view=confessions">
             {data.confessions.length === 0 ? (
               <p style={{ fontSize: 12.5, color: 'var(--text-muted)', margin: '4px 0' }}>Nothing confessed yet.</p>
             ) : (
               data.confessions.map((c) => (
-                <Row key={c.id} primary={c.body.slice(0, 70)} meta={`❤️ ${c.reaction_count}`} />
+                <Row key={c.id} primary={c.body.slice(0, 70)} meta={`${c.reaction_count}`} metaIcon="heart" />
               ))
             )}
           </SectionCard>
         </div>
 
         <div style={{ display: 'flex' }}>
-          <SectionCard icon="🔎" title="Discovery" href="/discover">
+          <SectionCard icon="search" title="Discovery" href="/discover">
             {data.ideas.length === 0 ? (
               <p style={{ fontSize: 12.5, color: 'var(--text-muted)', margin: '4px 0' }}>
                 No ideas yet — be the first to post one.
@@ -221,7 +272,7 @@ export default function HomeDashboard() {
         </div>
 
         <div style={{ display: 'flex' }}>
-          <SectionCard icon="📚" title="Library" href="/notes">
+          <SectionCard icon="book" title="Library" href="/notes">
             {data.resources.length === 0 ? (
               <p style={{ fontSize: 12.5, color: 'var(--text-muted)', margin: '4px 0' }}>No public resources yet.</p>
             ) : (
@@ -236,7 +287,7 @@ export default function HomeDashboard() {
 
         {/* Leaderboard — full-width row (spec layout). */}
         <div style={{ gridColumn: '1 / -1', display: 'flex' }}>
-          <SectionCard icon="🏆" title="Leaderboard" href="/leaderboard">
+          <SectionCard icon="trophy" title="Leaderboard" href="/leaderboard">
             {data.leaders.length === 0 ? (
               <p style={{ fontSize: 12.5, color: 'var(--text-muted)', margin: '4px 0' }}>No rankings yet.</p>
             ) : (
@@ -266,7 +317,22 @@ export default function HomeDashboard() {
         }}
       >
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
-          <p style={{ fontSize: 13.5, fontWeight: 800, color: 'var(--text-primary)', margin: 0 }}>📢 What&apos;s New</p>
+          <p
+            style={{
+              fontSize: 13.5,
+              fontWeight: 800,
+              color: 'var(--text-primary)',
+              margin: 0,
+              display: 'flex',
+              alignItems: 'center',
+              gap: 7,
+            }}
+          >
+            <span style={{ display: 'inline-flex', color: 'var(--accent)' }} aria-hidden="true">
+              <Icon name="megaphone" size={15} strokeWidth={2.2} />
+            </span>
+            What&apos;s New
+          </p>
           <Link
             href="/about"
             style={{ fontSize: 11.5, fontWeight: 600, color: 'var(--accent)', textDecoration: 'none' }}
@@ -275,7 +341,7 @@ export default function HomeDashboard() {
           </Link>
         </div>
         {WHATS_NEW.map((n) => (
-          <Row key={n.text} primary={`${n.icon} ${n.text}`} />
+          <Row key={n.text} icon={n.icon} primary={n.text} />
         ))}
       </div>
     </div>

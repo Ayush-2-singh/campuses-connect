@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import { Icon } from '@/components/icons'
 
 /**
  * Shows a subtle banner at the top of the page when the user is offline.
@@ -17,7 +18,14 @@ export default function OfflineIndicator() {
       setOffline(isOffline)
       if (isOffline) {
         // Small delay to avoid flashing on brief disconnects
-        setTimeout(() => setOffline(prev => { if (prev) setShow(true); return prev }), 500)
+        setTimeout(
+          () =>
+            setOffline((prev) => {
+              if (prev) setShow(true)
+              return prev
+            }),
+          500
+        )
       } else {
         setShow(false)
       }
@@ -57,7 +65,9 @@ export default function OfflineIndicator() {
         animation: 'slideDown 0.2s ease',
       }}
     >
-      <span style={{ fontSize: 14 }}>📡</span>
+      <span style={{ display: 'inline-flex' }} aria-hidden="true">
+        <Icon name="wifi-off" size={15} strokeWidth={2.2} />
+      </span>
       You&apos;re offline — some features may be limited
     </div>
   )

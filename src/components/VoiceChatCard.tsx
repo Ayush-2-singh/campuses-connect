@@ -24,6 +24,7 @@ import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { Icon } from '@/components/icons'
 import { subscribeVoiceBroadcast, type LiveCallState } from '@/lib/voiceBroadcast'
+import { voiceIcon } from '@/lib/liveVoice'
 
 const DISMISS_KEY = 'cc-voice-card-dismissed-call'
 
@@ -121,7 +122,7 @@ export default function VoiceChatCard() {
         (g as typeof group) || {
           id: state.groupId!,
           name: 'Voice room',
-          icon: '🎙️',
+          icon: 'mic',
           section: 'random',
           scope: 'global',
         }
@@ -281,7 +282,9 @@ export default function VoiceChatCard() {
               borderBottom: '1px solid var(--border)',
             }}
           >
-            <span style={{ fontSize: 18, lineHeight: 1 }}>{group?.icon || '🎙️'}</span>
+            <span style={{ display: 'inline-flex', color: 'var(--accent-text)' }} aria-hidden="true">
+              <Icon name={voiceIcon(group?.icon)} size={18} strokeWidth={2.2} />
+            </span>
             <div style={{ flex: 1, minWidth: 0 }}>
               <p
                 style={{
@@ -296,8 +299,21 @@ export default function VoiceChatCard() {
               >
                 {label}
               </p>
-              <p style={{ margin: 0, fontSize: 11, color: 'var(--text-secondary)' }}>
-                🔴 {countLabel}
+              <p
+                style={{
+                  margin: 0,
+                  fontSize: 11,
+                  color: 'var(--text-secondary)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 5,
+                }}
+              >
+                <span
+                  aria-hidden
+                  style={{ width: 7, height: 7, borderRadius: '50%', background: 'var(--danger)', flexShrink: 0 }}
+                />
+                {countLabel}
                 {liveFor ? ` · ${liveFor}` : ''}
               </p>
             </div>
@@ -354,9 +370,20 @@ export default function VoiceChatCard() {
                 fontWeight: 700,
                 cursor: busy ? 'default' : 'pointer',
                 fontFamily: 'inherit',
+                display: 'inline-flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: 7,
               }}
             >
-              {busy ? 'Connecting…' : '🎙️ Join voice room'}
+              {busy ? (
+                'Connecting…'
+              ) : (
+                <>
+                  <Icon name="mic" size={15} strokeWidth={2.2} />
+                  Join voice room
+                </>
+              )}
             </button>
             <button
               onClick={() => router.push(`/live-voice-chat/${state.groupId}`)}
@@ -409,7 +436,7 @@ export default function VoiceChatCard() {
               position: 'relative',
             }}
           >
-            🎙️
+            <Icon name="mic" size={14} strokeWidth={2.2} />
             <span
               style={{
                 position: 'absolute',

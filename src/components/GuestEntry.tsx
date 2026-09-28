@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
+import { Icon } from '@/components/icons'
 
 /**
  * Guest entry: type your name → pick your campus → you're in.
@@ -120,7 +121,21 @@ export default function GuestEntry({ onClose }: { onClose: () => void }) {
         }}
       >
         <div style={{ textAlign: 'center', marginBottom: 18 }}>
-          <div style={{ fontSize: 34, marginBottom: 6 }}>👋</div>
+          <div
+            style={{
+              width: 56,
+              height: 56,
+              borderRadius: 16,
+              margin: '0 auto 10px',
+              display: 'grid',
+              placeItems: 'center',
+              background: 'var(--accent-light)',
+              color: 'var(--accent-text)',
+            }}
+            aria-hidden="true"
+          >
+            <Icon name="smile" size={28} strokeWidth={2} />
+          </div>
           <h2 style={{ fontSize: 18, fontWeight: 800, color: 'var(--text-primary)', margin: '0 0 4px' }}>
             {step === 0 ? 'What should we call you?' : 'Choose your campus'}
           </h2>
@@ -266,9 +281,20 @@ export default function GuestEntry({ onClose }: { onClose: () => void }) {
                 fontWeight: 700,
                 cursor: loading || !collegeId ? 'not-allowed' : 'pointer',
                 fontFamily: 'inherit',
+                display: 'inline-flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: 7,
               }}
             >
-              {loading ? 'Entering…' : 'Start now 🚀'}
+              {loading ? (
+                'Entering…'
+              ) : (
+                <>
+                  Start now
+                  <Icon name="rocket" size={15} strokeWidth={2.2} />
+                </>
+              )}
             </button>
           )}
         </div>

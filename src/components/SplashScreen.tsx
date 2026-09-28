@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import { Icon } from '@/components/icons'
 
 export default function SplashScreen() {
   const [visible, setVisible] = useState(true)
@@ -46,11 +47,9 @@ export default function SplashScreen() {
             color: '#fff',
             margin: '0 auto 16px',
             boxShadow: '0 0 30px rgba(245,158,11,0.4)',
-            fontSize: 32,
-            fontWeight: 800,
           }}
         >
-          🎓
+          <Icon name="grad" size={34} strokeWidth={2} />
         </div>
 
         {/* Brand Name */}

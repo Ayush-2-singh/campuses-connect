@@ -6,6 +6,8 @@ import { createClient } from '@/lib/supabase/client'
 import { fetchLiveVoiceRooms } from '@/lib/liveVoice'
 import Layout from '@/components/Layout'
 import SectionShell from '@/components/SectionShell'
+import { Icon } from '@/components/icons'
+import { voiceIcon } from '@/lib/liveVoice'
 
 /**
  * Live Voice Chat — student-created voice groups, filed under a section.
@@ -16,15 +18,16 @@ import SectionShell from '@/components/SectionShell'
  * anything else, and the RPC silently falls back to 'random'.
  */
 const SECTIONS = [
-  { key: 'all', label: 'All', icon: '✨' },
-  { key: 'dsa', label: 'DSA', icon: '🧩' },
-  { key: 'discussion', label: 'Discussion', icon: '💬' },
-  { key: 'web-dev', label: 'Web Dev', icon: '🌐' },
-  { key: 'english', label: 'English', icon: '🔤' },
-  { key: 'random', label: 'Random', icon: '🎲' },
+  { key: 'all', label: 'All', icon: 'sparkles' },
+  { key: 'dsa', label: 'DSA', icon: 'layers' },
+  { key: 'discussion', label: 'Discussion', icon: 'message' },
+  { key: 'web-dev', label: 'Web Dev', icon: 'globe' },
+  { key: 'english', label: 'English', icon: 'type' },
+  { key: 'random', label: 'Random', icon: 'shuffle' },
 ] as const
 
-const ICONS = ['🎙️', '🧩', '💬', '🌐', '🔤', '🎲', '📚', '🚀']
+/** Icon names — stored on the group row, rendered through the shared set. */
+const ICONS = ['mic', 'layers', 'message', 'globe', 'type', 'shuffle', 'book', 'rocket']
 
 const inputStyle = {
   width: '100%',
@@ -52,7 +55,7 @@ export default function LiveVoiceChatPage() {
   const [form, setForm] = useState({
     name: '',
     description: '',
-    icon: '🎙️',
+    icon: 'mic',
     section: 'random',
     scope: 'campus' as 'campus' | 'global',
   })
@@ -195,7 +198,7 @@ export default function LiveVoiceChatPage() {
     setForm({
       name: '',
       description: '',
-      icon: '🎙️',
+      icon: 'mic',
       section: 'random',
       scope: profile?.campus_id ? 'campus' : 'global',
     })
@@ -253,9 +256,13 @@ export default function LiveVoiceChatPage() {
                   fontWeight: 600,
                   cursor: 'pointer',
                   fontFamily: 'inherit',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: 6,
                 }}
               >
-                {s.icon} {s.label}
+                <Icon name={s.icon} size={14} strokeWidth={2.2} />
+                {s.label}
               </button>
             )
           })}
@@ -292,7 +299,7 @@ export default function LiveVoiceChatPage() {
                 >
                   {SECTIONS.filter((s) => s.key !== 'all').map((s) => (
                     <option key={s.key} value={s.key}>
-                      {s.icon} {s.label}
+                      {s.label}
                     </option>
                   ))}
                 </select>
@@ -302,9 +309,9 @@ export default function LiveVoiceChatPage() {
                   style={{ ...inputStyle, padding: '10px 12px' }}
                 >
                   {profile?.campus_id && (
-                    <option value="campus">🏫 My campus — {profile?.campuses?.name || 'your campus'}</option>
+                    <option value="campus">My campus — {profile?.campuses?.name || 'your campus'}</option>
                   )}
-                  <option value="global">🌐 Global — every student in India</option>
+                  <option value="global">Global — every student in India</option>
                 </select>
               </div>
               <textarea
@@ -321,16 +328,19 @@ export default function LiveVoiceChatPage() {
                     onClick={() => setForm((f) => ({ ...f, icon }))}
                     aria-label={`Use ${icon}`}
                     style={{
-                      fontSize: 20,
-                      lineHeight: 1,
-                      padding: 6,
+                      width: 38,
+                      height: 38,
+                      display: 'grid',
+                      placeItems: 'center',
+                      padding: 0,
                       borderRadius: 10,
                       cursor: 'pointer',
                       border: form.icon === icon ? '2px solid var(--accent)' : '1px solid var(--border)',
-                      background: 'var(--bg)',
+                      background: form.icon === icon ? 'var(--accent-light)' : 'var(--bg)',
+                      color: form.icon === icon ? 'var(--accent-text)' : 'var(--text-secondary)',
                     }}
                   >
-                    {icon}
+                    <Icon name={icon} size={18} strokeWidth={2.2} />
                   </button>
                 ))}
               </div>
@@ -397,7 +407,21 @@ export default function LiveVoiceChatPage() {
                     boxShadow: 'var(--shadow-sm)',
                   }}
                 >
-                  <span style={{ fontSize: 30, flexShrink: 0 }}>{g.icon || '🎙️'}</span>
+                  <span
+                    style={{
+                      width: 46,
+                      height: 46,
+                      borderRadius: 13,
+                      display: 'grid',
+                      placeItems: 'center',
+                      flexShrink: 0,
+                      background: 'var(--accent-light)',
+                      color: 'var(--accent-text)',
+                    }}
+                    aria-hidden="true"
+                  >
+                    <Icon name={voiceIcon(g.icon)} size={22} strokeWidth={2} />
+                  </span>
                   {/* flex/min-width live in CSS (.lvc-info), not inline —
                       an inline `flex: 1` would override the mobile media
                       query's flex-basis and squeeze the LIVE badge/desc
@@ -435,7 +459,7 @@ export default function LiveVoiceChatPage() {
                     </p>
                     <p className="lvc-desc" style={{ fontSize: 12, color: 'var(--text-muted)', margin: 0 }}>
                       {(SECTIONS.find((s) => s.key === g.section)?.label || 'Random') +
-                        (g.scope === 'global' ? ' · 🌐 Global' : ' · 🏫 Campus')}
+                        (g.scope === 'global' ? ' · Global' : ' · Campus')}
                       {g.description ? ` · ${g.description}` : ''}
                     </p>
                   </div>

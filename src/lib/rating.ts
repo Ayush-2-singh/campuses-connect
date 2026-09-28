@@ -225,13 +225,14 @@ export function overallRating(ratings: Partial<Record<CompetitiveSkill, number>>
 export type RankTier = { key: string; label: string; icon: string }
 
 export function rankTier(rating: number): RankTier {
-  if (rating >= 2000) return { key: 'grandmaster', label: 'Grandmaster', icon: '👑' }
-  if (rating >= 1750) return { key: 'master', label: 'Master', icon: '💎' }
-  if (rating >= 1550) return { key: 'diamond', label: 'Diamond', icon: '🔷' }
-  if (rating >= 1400) return { key: 'platinum', label: 'Platinum', icon: '⚪' }
-  if (rating >= 1250) return { key: 'gold', label: 'Gold', icon: '🥇' }
-  if (rating >= 1100) return { key: 'silver', label: 'Silver', icon: '🥈' }
-  return { key: 'bronze', label: 'Bronze', icon: '🥉' }
+  // `icon` is a NAME from the shared SVG set — never an emoji.
+  if (rating >= 2000) return { key: 'grandmaster', label: 'Grandmaster', icon: 'crown' }
+  if (rating >= 1750) return { key: 'master', label: 'Master', icon: 'gem' }
+  if (rating >= 1550) return { key: 'diamond', label: 'Diamond', icon: 'diamond' }
+  if (rating >= 1400) return { key: 'platinum', label: 'Platinum', icon: 'circle' }
+  if (rating >= 1250) return { key: 'gold', label: 'Gold', icon: 'medal' }
+  if (rating >= 1100) return { key: 'silver', label: 'Silver', icon: 'medal' }
+  return { key: 'bronze', label: 'Bronze', icon: 'medal' }
 }
 
 /** Progress toward the next tier, 0–1, for the tier progress bar. */

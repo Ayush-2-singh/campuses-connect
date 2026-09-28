@@ -802,6 +802,24 @@ a,
 /* Safe areas — keep bars clear of the notch and home indicator */
 .mobile-topbar {
   padding-top: max(12px, env(safe-area-inset-top)) !important;
+  max-width: 100%;
+  box-sizing: border-box;
+}
+
+/* The topbar row must never force the page wider than the phone. The row
+   holds logo + title + 5 controls; on 320–390px screens its nowrap min-content
+   (~425px) exceeds the viewport, which stretched <main> and — together with
+   the shell's overflow-x: clip — cut the right side off EVERY page. Wrap it. */
+.mobile-topbar > div {
+  flex-wrap: wrap;
+  row-gap: 8px;
+  min-width: 0;
+}
+.mobile-topbar h1 {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  min-width: 0;
 }
 
 .mobile-bottomnav {
@@ -876,12 +894,32 @@ a,
 }
 
 /* Post/discussion cards — never let content force the card wider than the
-   screen (long URLs, code, unbroken words cut the right side on mobile). */
+   screen (long URLs, code, unbroken words cut the right side on mobile).
+   Border + shadow live here (not inline) so hover can retint them. */
 .post-card {
   max-width: 100%;
   min-width: 0;
   overflow-wrap: break-word;
   word-break: break-word;
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow-sm);
+  transition:
+    transform 0.18s ease,
+    box-shadow 0.18s ease,
+    border-color 0.18s ease;
+}
+.post-card--pinned {
+  border-color: var(--accent-border);
+}
+@media (hover: hover) and (prefers-reduced-motion: no-preference) {
+  .post-card:hover {
+    transform: translateY(-2px);
+    border-color: var(--accent-border);
+    box-shadow:
+      var(--shadow),
+      0 0 0 1px var(--accent-border),
+      var(--accent-glow);
+  }
 }
 .post-card > div {
   min-width: 0;
@@ -951,6 +989,17 @@ a,
     flex: 0 0 78%;
     scroll-snap-align: start;
   }
+}
+
+/* Scrolling chip/tab rows — a single row that the user swipes horizontally.
+   `min-width: 0` matters: a flex item defaults to min-width:auto, so a row of
+   nowrap chips used to force its whole page container wider than the phone. */
+.chip-scroll {
+  min-width: 0;
+  max-width: 100%;
+}
+.chip-scroll > * {
+  flex-shrink: 0;
 }
 
 /* ───────────────── Section page cards (homepage pattern) ─────────────── */
@@ -1454,6 +1503,98 @@ a:active,
   border-radius: 13px;
   background: var(--room-soft, var(--accent-light));
   color: var(--room-accent, var(--accent-text));
+}
+
+/* ── Live voice hub — room cards ─────────────────────────────────────── */
+/* Border + shadow live here (not inline) so hover can lift + retint. */
+.lvc-room {
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow-sm);
+  transition:
+    transform 0.18s ease,
+    box-shadow 0.18s ease,
+    border-color 0.18s ease;
+}
+@media (hover: hover) and (prefers-reduced-motion: no-preference) {
+  .lvc-room:hover {
+    transform: translateY(-2px);
+    border-color: var(--accent-border);
+    box-shadow:
+      var(--shadow),
+      0 0 0 1px var(--accent-border),
+      var(--accent-glow);
+  }
+}
+
+/* ── Live voice call page — Meet-style controls ──────────────────────── */
+.lvc-back {
+  width: 40px;
+  height: 40px;
+  flex-shrink: 0;
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  background: var(--bg);
+  color: var(--text-secondary);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  margin-left: -6px;
+}
+.lvc-controls {
+  position: sticky;
+  bottom: 0;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 12px;
+  padding: 18px 0 calc(16px + env(safe-area-inset-bottom, 0px));
+  flex-wrap: wrap;
+}
+.lvc-ctrl {
+  width: 60px;
+  height: 60px;
+  border-radius: 30px;
+  border: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
+  flex-shrink: 0;
+  font-family: inherit;
+}
+.lvc-leave {
+  height: 60px;
+  padding: 0 26px;
+  border-radius: 30px;
+  border: none;
+  background: var(--danger);
+  color: #fff;
+  font-size: 15px;
+  font-weight: 800;
+  font-family: inherit;
+  cursor: pointer;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+@media (max-width: 560px) {
+  .lvc-controls {
+    gap: 9px;
+    padding-top: 12px;
+  }
+  .lvc-ctrl {
+    width: 52px;
+    height: 52px;
+    border-radius: 26px;
+  }
+  .lvc-leave {
+    height: 52px;
+    padding: 0 20px;
+    font-size: 14px;
+  }
 }
 
 /* Long words — URLs, stack traces, code — must never create horizontal

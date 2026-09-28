@@ -240,10 +240,10 @@ export default function DiscoverBoard({
               ))}
             </div>
           ) : error ? (
-            <EmptyState icon="⚠️" title="Could not load ideas" body={error} cta="Retry" onCta={onRetry} />
+            <EmptyState icon="alert" title="Could not load ideas" body={error} cta="Retry" onCta={onRetry} />
           ) : rest.length === 0 && !featured ? (
             <EmptyState
-              icon="🚀"
+              icon="rocket"
               title="Nothing here yet"
               body="No ideas in this category — post yours and appear at the top."
               cta="Post an idea"

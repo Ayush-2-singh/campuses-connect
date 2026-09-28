@@ -21,6 +21,10 @@ const CommandPalette = dynamic(() => import('@/components/CommandPalette'), { ss
 // its realtime subscription starts only after the chunk loads.
 const VoiceChatCard = dynamic(() => import('@/components/VoiceChatCard'), { ssr: false })
 
+// Live pulse flash card — rotating live updates (chat, voice, events, wins)
+// at the top of every page. Client-only: it runs realtime subscriptions.
+const LivePulseFeed = dynamic(() => import('@/components/LivePulseFeed'), { ssr: false })
+
 // Final desktop IA: five pillars, with Discovery/Community (and Classroom-
 // inside-Library) expandable so secondary features live under their pillar
 // instead of crowding the sidebar. Mirrors the mobile bar in mobileNav.ts.
@@ -632,7 +636,7 @@ export default function Layout({ children, user, profile }: { children: React.Re
       </aside>
 
       {/* ── Main Content ── */}
-      <main style={{ flex: 1, marginLeft: 240, paddingBottom: 88 }} className="main-content">
+      <main style={{ flex: 1, minWidth: 0, marginLeft: 240, paddingBottom: 88 }} className="main-content">
         {/* Desktop top bar */}
         <div
           className="app-topbar"
@@ -755,17 +759,53 @@ export default function Layout({ children, user, profile }: { children: React.Re
             padding: '12px 16px',
             zIndex: 30,
             display: 'none',
+            maxWidth: '100%',
+            boxSizing: 'border-box',
           }}
           className="mobile-topbar"
         >
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-              <img src={logoSrc} alt="CTC" width={30} height={30} style={{ borderRadius: 9 }} />
-              <h1 style={{ fontSize: 17, fontWeight: 800, color: 'var(--text-primary)', margin: 0 }}>
+          {/* Row must be allowed to wrap: on ≤360px phones the logo + title +
+              5 controls exceed the viewport. A nowrap flex row cannot shrink
+              below its min-content, so it used to stretch <main> to ~425px and
+              the shell's overflow-x: clip cut the right side of EVERY page off. */}
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              flexWrap: 'wrap',
+              rowGap: 8,
+              minWidth: 0,
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, minWidth: 0 }}>
+              <img src={logoSrc} alt="CTC" width={30} height={30} style={{ borderRadius: 9, flexShrink: 0 }} />
+              <h1
+                style={{
+                  fontSize: 17,
+                  fontWeight: 800,
+                  color: 'var(--text-primary)',
+                  margin: 0,
+                  whiteSpace: 'nowrap',
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis',
+                  minWidth: 0,
+                }}
+              >
                 Connect<span style={{ color: '#FD8F01' }}>ToCampus</span>
               </h1>
             </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+            <div
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 6,
+                flexWrap: 'wrap',
+                rowGap: 6,
+                justifyContent: 'flex-end',
+                minWidth: 0,
+              }}
+            >
               <button
                 onClick={() => setCmdOpen(true)}
                 aria-label="Search"
@@ -857,7 +897,9 @@ export default function Layout({ children, user, profile }: { children: React.Re
                   flexWrap: 'wrap',
                 }}
               >
-                <span style={{ fontSize: 24, flexShrink: 0 }}>🏫</span>
+                <span style={{ flexShrink: 0, display: 'inline-flex', color: 'var(--accent)' }} aria-hidden="true">
+                  <Icon name="school" size={24} strokeWidth={2} />
+                </span>
                 <div style={{ flex: 1, minWidth: 200 }}>
                   <p style={{ fontSize: 13, fontWeight: 600, color: 'var(--accent)', margin: '0 0 2px' }}>
                     You don&apos;t have a campus assigned yet
@@ -879,13 +921,19 @@ export default function Layout({ children, user, profile }: { children: React.Re
                     cursor: 'pointer',
                     fontFamily: 'inherit',
                     flexShrink: 0,
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: 6,
                   }}
                 >
-                  🏫 Request Campus
+                  <Icon name="school" size={14} strokeWidth={2.2} />
+                  Request Campus
                 </button>
               </div>
             )}
           {/* No college banner - user joined globally */}
+          {/* Live pulse — one flash card of genuine platform activity */}
+          <LivePulseFeed userId={user?.id ?? null} />
           {children}
         </div>
       </main>

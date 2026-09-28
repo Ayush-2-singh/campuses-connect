@@ -116,3 +116,32 @@ export async function fetchLiveVoiceRooms(sb: SupabaseClient): Promise<LiveVoice
     return []
   }
 }
+
+/**
+ * Room icon → shared SVG glyph. Groups created before the SVG sweep stored
+ * emoji (🎙️, 🧩 …); newer ones store the icon name directly. Every surface
+ * renders through here so legacy rows never leak an emoji into the UI.
+ */
+const VOICE_ICON_MAP: Record<string, string> = {
+  '🎙': 'mic',
+  '🎙️': 'mic',
+  mic: 'mic',
+  '🧩': 'layers',
+  layers: 'layers',
+  '💬': 'message',
+  message: 'message',
+  '🌐': 'globe',
+  globe: 'globe',
+  '🔤': 'type',
+  type: 'type',
+  '🎲': 'shuffle',
+  shuffle: 'shuffle',
+  '📚': 'book',
+  book: 'book',
+  '🚀': 'rocket',
+  rocket: 'rocket',
+}
+
+export function voiceIcon(icon?: string | null): string {
+  return (icon && VOICE_ICON_MAP[icon]) || 'mic'
+}

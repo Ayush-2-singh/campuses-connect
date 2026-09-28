@@ -12,6 +12,7 @@ import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
 import { ListSkeleton } from '@/components/Skeleton'
 import EmptyState from '@/components/EmptyState'
+import { Icon } from '@/components/icons'
 
 interface BlogRow {
   id: string
@@ -52,7 +53,7 @@ export default function DiscoveryBlogs() {
   if (error)
     return (
       <EmptyState
-        icon="⚠️"
+        icon="alert"
         title="Could not load blogs"
         body={error}
         cta="Open the blog hub"
@@ -62,7 +63,7 @@ export default function DiscoveryBlogs() {
   if (!rows || rows.length === 0)
     return (
       <EmptyState
-        icon="✍️"
+        icon="pencil"
         title="No blogs yet"
         body="Share how you built your project, your first SaaS or your hackathon story."
         cta="Write the first one"
@@ -101,9 +102,26 @@ export default function DiscoveryBlogs() {
               {b.excerpt}
             </p>
           )}
-          <p style={{ fontSize: 11.5, color: 'var(--text-muted)', margin: '6px 0 0' }}>
-            {b.author_name ? `@${b.author_username || b.author_name}` : 'Student writer'}
-            {' · '}👁 {b.view_count ?? 0} {' · '}❤️ {b.like_count ?? 0}
+          <p
+            style={{
+              fontSize: 11.5,
+              color: 'var(--text-muted)',
+              margin: '6px 0 0',
+              display: 'flex',
+              alignItems: 'center',
+              gap: 10,
+              flexWrap: 'wrap',
+            }}
+          >
+            <span>{b.author_name ? `@${b.author_username || b.author_name}` : 'Student writer'}</span>
+            <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+              <Icon name="eye" size={13} strokeWidth={2} />
+              {b.view_count ?? 0}
+            </span>
+            <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+              <Icon name="heart" size={13} strokeWidth={2} />
+              {b.like_count ?? 0}
+            </span>
           </p>
         </Link>
       ))}
