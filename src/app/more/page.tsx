@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
 import Layout from '@/components/Layout'
+import { isPulseVisible, readPulsePrefs, setPulseMuted, writePulsePrefs, type PulsePrefs } from '@/lib/livePulsePrefs'
 
 const SECTIONS = [
   { icon: '🌐', label: 'Global', desc: 'Post & connect with students everywhere', href: '/global' },
@@ -44,10 +45,15 @@ const SECTIONS = [
 export default function MorePage() {
   const [user, setUser] = useState<any>(null)
   const [profile, setProfile] = useState<any>(null)
+  // Live-activity card switch — the one place that can always turn the
+  // bottom-right flash card back on, no matter how it was silenced (hidden
+  // for now / paused 24h / turned off). Read after mount (client-only value).
+  const [pulsePrefs, setPulsePrefs] = useState<PulsePrefs | null>(null)
   const router = useRouter()
   const supabase = createClient()
 
   useEffect(() => {
+    setPulsePrefs(readPulsePrefs())
     const load = async () => {
       const {
         data: { user },
@@ -136,6 +142,76 @@ export default function MorePage() {
               }}
             >
               View Campus Leaderboard →
+            </button>
+          </div>
+        )}
+
+        {/* Live activity card — always reachable from here */}
+        {pulsePrefs && (
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 14,
+              background: 'var(--bg)',
+              border: '1px solid var(--border)',
+              borderRadius: 14,
+              padding: '14px 18px',
+              marginBottom: 20,
+              boxShadow: 'var(--shadow-sm)',
+              fontFamily: 'inherit',
+            }}
+          >
+            <span style={{ fontSize: 24, flexShrink: 0 }} aria-hidden="true">
+              ⚡
+            </span>
+            <div style={{ flex: 1 }}>
+              <p style={{ fontSize: 14, fontWeight: 600, color: 'var(--text-primary)', margin: '0 0 2px' }}>
+                Live activity card
+              </p>
+              <p style={{ fontSize: 12, color: 'var(--text-muted)', margin: 0 }}>
+                The bottom-right flash of what is happening right now
+              </p>
+            </div>
+            <button
+              role="switch"
+              aria-checked={isPulseVisible(pulsePrefs, Date.now())}
+              aria-label="Live activity card on/off"
+              onClick={() => {
+                // ON → off (muted). OFF → fully on: clear the mute AND any
+                // 24h pause, otherwise a paused card would ignore this switch.
+                setPulsePrefs(
+                  isPulseVisible(pulsePrefs, Date.now())
+                    ? setPulseMuted(true)
+                    : writePulsePrefs({ muted: false, pausedUntil: 0 })
+                )
+              }}
+              style={{
+                width: 46,
+                height: 26,
+                borderRadius: 13,
+                border: 'none',
+                background: isPulseVisible(pulsePrefs, Date.now()) ? 'var(--accent)' : 'var(--border)',
+                position: 'relative',
+                cursor: 'pointer',
+                flexShrink: 0,
+                fontFamily: 'inherit',
+                padding: 0,
+              }}
+            >
+              <span
+                style={{
+                  position: 'absolute',
+                  top: 3,
+                  left: isPulseVisible(pulsePrefs, Date.now()) ? 23 : 3,
+                  width: 20,
+                  height: 20,
+                  borderRadius: '50%',
+                  background: '#fff',
+                  transition: 'left 0.18s ease',
+                  boxShadow: '0 1px 3px rgba(0,0,0,0.25)',
+                }}
+              />
             </button>
           </div>
         )}

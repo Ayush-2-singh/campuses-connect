@@ -946,12 +946,15 @@ export default function Layout({ children, user, profile }: { children: React.Re
                 </button>
               </div>
             )}
-          {/* No college banner - user joined globally */}
-          {/* Live pulse — one flash card of genuine platform activity */}
-          <LivePulseFeed userId={user?.id ?? null} />
           {children}
         </div>
       </main>
+
+      {/* Live pulse — one flash card of genuine platform activity. Lives
+          OUTSIDE .page-enter (which animates transform on every navigation):
+          a transformed ancestor makes position:fixed position against IT, so
+          the bottom-right card would jump/misplace on every page change. */}
+      <LivePulseFeed userId={user?.id ?? null} />
 
       {/* ── Global voice broadcast card — bottom-right on every page ── */}
       <VoiceChatCard />

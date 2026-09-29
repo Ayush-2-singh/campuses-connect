@@ -1,37 +1,58 @@
 'use client'
 
 /**
- * LIVE PULSE FEED — a rotating "flash card" of real platform activity for the
- * Live Chat page. One card, a new fact every ~60s, each fact GENUINE (queried
- * live from Supabase, never fabricated) and TAPPABLE (deep-links to the place
- * the activity happened).
+ * LIVE PULSE — the floating "what is happening right now" flash card.
+ *
+ * One compact card pinned bottom-right (the same corner and offsets as the
+ * voice broadcast pill, see `.cc-float-pulse` + `.cc-voice-card`) on EVERY
+ * page. It flashes a new, GENUINE fact about the platform every ~60s — each
+ * fact queried live from Supabase, never fabricated — and it is TAPPABLE:
+ * tapping deep-links to the place the activity happened.
  *
  * Sources (all real tables, all cheap indexed reads, one round of parallel
  * queries every refresh):
- *   1. CHAT MESSAGES   — latest message per room ("DSA Community is live:
- *                        <snippet>") → links to /chat/:key
+ *   1. CHAT MESSAGES   — messages from the LAST 15 MINUTES only
+ *                        ("DSA Community — Ayush just messaged")
+ *                        → links to /chat/:key
  *   2. LIVE VOICE      — rooms with somebody ACTUALLY inside, heartbeat-
  *                        verified ("Voice room X is live — N in call")
  *                        → links to /live-voice-chat/:groupId
- *   3. EVENTS          — events starting within the next 2h ("just started /
- *                        starting soon") → links to /events
- *   4. GAME FINISHES   — recent game winners ("X just won a game, +10 aura")
+ *   3. EVENTS          — events starting within ±2h ("just started / soon")
+ *                        → links to /events
+ *   4. GAME FINISHES   — winners of the last 30 minutes
  *                        → links to /compete?tab=clash
- *   5. MENTIONS        — chat messages that contain @myname posted after my
- *                        last read ("Someone tagged you in DSA Community")
+ *   5. MENTIONS        — someone tagged you in the last 15 minutes
  *                        → links to /chat/:key
  *
- * Rotation: the card advances every 60s AND immediately whenever fresh data
- * lands (realtime INSERT on chat_messages / voice calls), so something new is
- * always on screen. If a source has nothing to say it is simply skipped —
- * the feed never invents filler.
+ * Real time or nothing: every source is time-boxed (that is the whole point of
+ * a "live" card). An old message must never be dressed up as "just messaged",
+ * and a source with nothing fresh to say is skipped — the card would rather be
+ * silent than stale. If none of the five has anything, the card does not show.
+ *
+ * The user is always in control — the ⋯ menu offers Hide for now (this
+ * session), Pause for 24 hours and Turn off live updates, and the More page
+ * can switch it back on (see lib/livePulsePrefs).
+ *
+ * Yield rules: hidden while a live voice call is running (the voice pill owns
+ * that corner then), and on the surfaces it would sit on top of — the voice
+ * call pages, live chat rooms and the auth pages.
  */
 
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { useRouter } from 'next/navigation'
+import { usePathname, useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { fetchLiveVoiceRooms } from '@/lib/liveVoice'
+import { subscribeVoiceBroadcast } from '@/lib/voiceBroadcast'
 import { Icon } from '@/components/icons'
+import {
+  isPulseVisible,
+  pausePulseFor,
+  readPulsePrefs,
+  readSessionHidden,
+  setPulseMuted,
+  setSessionHidden,
+  type PulsePrefs,
+} from '@/lib/livePulsePrefs'
 
 type PulseKind = 'chat' | 'voice' | 'event' | 'aura' | 'mention'
 
@@ -57,6 +78,11 @@ const KIND_STYLE: Record<PulseKind, { icon: string; tint: string }> = {
 
 const ROTATE_MS = 60_000
 const REFRESH_MS = 60_000
+/** "Live" means live: nothing older than this is allowed on the card. */
+const ACTIVITY_WINDOW_MS = 15 * 60_000
+
+/** Surfaces where a bottom-right card would sit on top of real work. */
+const HIDDEN_PREFIXES = ['/live-voice-chat', '/chat', '/auth']
 
 function truncate(s: string, n = 90): string {
   const flat = (s || '').replace(/\s+/g, ' ').trim()
@@ -78,20 +104,55 @@ function warnSource(source: string, error: unknown) {
 
 export default function LivePulseFeed({ userId }: { userId: string | null }) {
   const router = useRouter()
+  const pathname = usePathname()
   const [items, setItems] = useState<PulseItem[]>([])
   const [idx, setIdx] = useState(0)
   const [paused, setPaused] = useState(false)
+  const [menuOpen, setMenuOpen] = useState(false)
+  // Prefs are read after mount: the card is client-only, and this keeps the
+  // first paint identical for everyone until the stored choice is known.
+  const [prefs, setPrefs] = useState<PulsePrefs | null>(null)
+  const [hiddenNow, setHiddenNow] = useState(false)
+  const [voiceLive, setVoiceLive] = useState(false)
   const supabaseRef = useRef<ReturnType<typeof createClient> | null>(null)
   const usernameRef = useRef<string | null>(null)
+  const rootRef = useRef<HTMLDivElement | null>(null)
 
   const getSupabase = useCallback(() => {
     if (!supabaseRef.current) supabaseRef.current = createClient()
     return supabaseRef.current
   }, [])
 
+  // Stored choices (hide-for-now / paused / off).
+  useEffect(() => {
+    setPrefs(readPulsePrefs())
+    setHiddenNow(readSessionHidden())
+  }, [])
+
+  // The voice pill owns this corner whenever a call is genuinely live.
+  useEffect(() => subscribeVoiceBroadcast((next) => setVoiceLive(next.active)), [])
+
+  // Close the ⋯ menu on an outside click or Escape.
+  useEffect(() => {
+    if (!menuOpen) return
+    const onDown = (e: MouseEvent) => {
+      if (rootRef.current && !rootRef.current.contains(e.target as Node)) setMenuOpen(false)
+    }
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setMenuOpen(false)
+    }
+    document.addEventListener('mousedown', onDown)
+    document.addEventListener('keydown', onKey)
+    return () => {
+      document.removeEventListener('mousedown', onDown)
+      document.removeEventListener('keydown', onKey)
+    }
+  }, [menuOpen])
+
   const collect = useCallback(async () => {
     const sb = getSupabase()
     const found: PulseItem[] = []
+    const sinceIso = new Date(Date.now() - ACTIVITY_WINDOW_MS).toISOString()
 
     // Usernames for mention detection (cheap: only when signed in).
     if (userId && !usernameRef.current) {
@@ -99,7 +160,9 @@ export default function LivePulseFeed({ userId }: { userId: string | null }) {
       usernameRef.current = prof?.username || null
     }
 
-    // 1 + 5. Latest chat messages per room, newest first (indexed on created_at).
+    // 1 + 5. Chat messages from the LAST 15 MINUTES, newest first. The window
+    //   is what keeps the copy honest: without it the card called week-old
+    //   messages "just messaged" on every page, which is both wrong and noisy.
     try {
       // `profiles!chat_messages_author_id_fkey` is MANDATORY here, not
       // cosmetic: chat_messages has TWO foreign keys to profiles (author_id
@@ -112,6 +175,7 @@ export default function LivePulseFeed({ userId }: { userId: string | null }) {
         .select(
           'id, body, created_at, community_id, communities(key, name), profiles!chat_messages_author_id_fkey(username, full_name)'
         )
+        .gte('created_at', sinceIso)
         .order('created_at', { ascending: false })
         .limit(12)
       warnSource('chat messages', msgsError)
@@ -134,7 +198,7 @@ export default function LivePulseFeed({ userId }: { userId: string | null }) {
         found.push({
           key: `chat-${m.id}`,
           kind: isMention ? 'mention' : 'chat',
-          text: isMention ? `You were tagged in ${room}` : `${room} is live — ${author} just messaged`,
+          text: isMention ? `You were tagged in ${room}` : `${author} just messaged in ${room}`,
           detail: truncate(m.body || '', 80),
           href: `/chat/${key}`,
           at: new Date(m.created_at).getTime(),
@@ -161,8 +225,8 @@ export default function LivePulseFeed({ userId }: { userId: string | null }) {
           at: r.startedAt || Date.now(),
         })
       }
-    } catch {
-      /* skip */
+    } catch (err) {
+      warnSource('live voice', err)
     }
 
     // 3. Events starting within ±2h window — "just started" or "starting soon".
@@ -189,8 +253,8 @@ export default function LivePulseFeed({ userId }: { userId: string | null }) {
           at: new Date(e.starts_at).getTime(),
         })
       }
-    } catch {
-      /* skip */
+    } catch (err) {
+      warnSource('events', err)
     }
 
     // 4. Aura in motion: recent game winners (game_winners tracks every
@@ -214,8 +278,8 @@ export default function LivePulseFeed({ userId }: { userId: string | null }) {
           at: new Date(g.won_at).getTime(),
         })
       }
-    } catch {
-      /* skip — table may not exist in older schemas */
+    } catch (err) {
+      warnSource('game winners', err) // table may not exist in older schemas
     }
 
     // Newest first; keep the carousel tight.
@@ -234,7 +298,6 @@ export default function LivePulseFeed({ userId }: { userId: string | null }) {
       .channel('live-pulse')
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'chat_messages' }, () => {
         void collect()
-        setIdx((i) => i) // new data lands → user sees the update on next view
       })
       .on('postgres_changes', { event: '*', schema: 'public', table: 'live_voice_chat_calls' }, () => {
         void collect()
@@ -254,110 +317,162 @@ export default function LivePulseFeed({ userId }: { userId: string | null }) {
     return () => clearInterval(t)
   }, [paused, items.length])
 
+  const hideForNow = useCallback(() => {
+    setSessionHidden(true)
+    setHiddenNow(true)
+    setMenuOpen(false)
+  }, [])
+
+  const pauseFor24h = useCallback(() => {
+    setPrefs(pausePulseFor())
+    setMenuOpen(false)
+  }, [])
+
+  const turnOff = useCallback(() => {
+    setPrefs(setPulseMuted(true))
+    setMenuOpen(false)
+  }, [])
+
+  // Not allowed on screen: user choice, a live voice call, or a surface the
+  // card would cover.
+  const coveredSurface = HIDDEN_PREFIXES.some((p) => pathname.startsWith(p))
+  if (!prefs || !isPulseVisible(prefs, Date.now()) || hiddenNow || voiceLive || coveredSurface) return null
+
   if (items.length === 0) return null // honest silence beats fake activity
 
   const item = items[idx % items.length]
   const style = KIND_STYLE[item.kind]
 
   return (
-    <div
-      onMouseEnter={() => setPaused(true)}
-      onMouseLeave={() => setPaused(false)}
-      onTouchStart={() => setPaused(true)}
-      onTouchEnd={() => setTimeout(() => setPaused(false), 8000)}
-      style={{ marginBottom: 14 }}
-    >
-      <button
-        onClick={() => router.push(item.href)}
-        aria-label={`${item.text}. Tap to open.`}
-        key={item.key} // re-key per item so the flash animation replays
-        className="cc-pulse-card"
-        style={{
-          display: 'flex',
-          alignItems: 'center',
-          gap: 12,
-          width: '100%',
-          textAlign: 'left',
-          background: 'var(--bg)',
-          border: '1px solid var(--accent-border, var(--border))',
-          borderRadius: 14,
-          padding: '12px 14px',
-          cursor: 'pointer',
-          fontFamily: 'inherit',
-          boxShadow: 'var(--shadow-sm)',
-          animation: 'ccPulseIn 0.35s ease',
-        }}
-      >
-        <span
+    <div className="cc-float-pulse" ref={rootRef}>
+      <div style={{ position: 'relative' }}>
+        {menuOpen && (
+          <div role="menu" aria-label="Live updates options" className="cc-pulse-menu">
+            <button role="menuitem" onClick={hideForNow}>
+              <span className="cc-pulse-menu-label">Hide for now</span>
+              <span className="cc-pulse-menu-hint">Until you close the app</span>
+            </button>
+            <button role="menuitem" onClick={pauseFor24h}>
+              <span className="cc-pulse-menu-label">Pause for 24 hours</span>
+              <span className="cc-pulse-menu-hint">Comes back on its own</span>
+            </button>
+            <button role="menuitem" onClick={turnOff}>
+              <span className="cc-pulse-menu-label">Turn off live updates</span>
+              <span className="cc-pulse-menu-hint">Switch it back on in More</span>
+            </button>
+          </div>
+        )}
+
+        <button
+          onClick={() => router.push(item.href)}
+          aria-label={`${item.text}. Tap to open.`}
+          key={item.key} // re-key per item so the flash animation replays
+          className="cc-pulse-card"
+          onMouseEnter={() => setPaused(true)}
+          onMouseLeave={() => setPaused(false)}
+          onTouchStart={() => setPaused(true)}
+          onTouchEnd={() => setTimeout(() => setPaused(false), 8000)}
           style={{
-            width: 38,
-            height: 38,
-            borderRadius: 11,
-            background: 'var(--accent-light)',
-            color: style.tint,
-            display: 'inline-flex',
+            display: 'flex',
             alignItems: 'center',
-            justifyContent: 'center',
-            flexShrink: 0,
+            gap: 10,
+            width: '100%',
+            textAlign: 'left',
+            background: 'var(--bg)',
+            border: '1px solid var(--accent-border, var(--border))',
+            borderRadius: 14,
+            padding: '11px 62px 11px 12px', // right padding clears the ⋯ / ✕
+            cursor: 'pointer',
+            fontFamily: 'inherit',
+            boxShadow: 'var(--shadow-sm)',
+            animation: 'ccPulseIn 0.35s ease',
           }}
         >
-          <Icon name={style.icon} size={18} />
-        </span>
-        <span style={{ flex: 1, minWidth: 0 }}>
           <span
             style={{
-              display: 'flex',
+              width: 34,
+              height: 34,
+              borderRadius: 10,
+              background: 'var(--accent-light)',
+              color: style.tint,
+              display: 'inline-flex',
               alignItems: 'center',
-              gap: 6,
-              fontSize: 13.5,
-              fontWeight: 700,
-              color: 'var(--text-primary)',
+              justifyContent: 'center',
+              flexShrink: 0,
             }}
           >
-            <span className="cc-pulse-title">{item.text}</span>
+            <Icon name={style.icon} size={16} />
           </span>
-          {item.detail && (
-            <span className="cc-pulse-detail" style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 2 }}>
-              {item.detail}
-            </span>
-          )}
-        </span>
-        <span
-          aria-hidden
-          style={{
-            width: 8,
-            height: 8,
-            borderRadius: '50%',
-            background: 'var(--danger)',
-            boxShadow: '0 0 8px var(--danger)',
-            flexShrink: 0,
-            animation: 'ccPulseDot 2s ease infinite',
-          }}
-        />
-      </button>
-
-      {/* carousel dots — show where you are in the rotation */}
-      {items.length > 1 && (
-        <div style={{ display: 'flex', justifyContent: 'center', gap: 5, marginTop: 7 }}>
-          {items.map((it, i) => (
-            <button
-              key={it.key}
-              onClick={() => setIdx(i)}
-              aria-label={`Show update ${i + 1} of ${items.length}`}
+          <span style={{ flex: 1, minWidth: 0 }}>
+            <span
               style={{
-                width: i === idx % items.length ? 14 : 6,
-                height: 6,
-                borderRadius: 3,
-                border: 'none',
-                padding: 0,
-                cursor: 'pointer',
-                background: i === idx % items.length ? 'var(--accent)' : 'var(--border)',
-                transition: 'width 0.2s ease, background 0.2s ease',
+                display: 'flex',
+                alignItems: 'center',
+                gap: 6,
+                fontSize: 13,
+                fontWeight: 700,
+                color: 'var(--text-primary)',
               }}
-            />
-          ))}
+            >
+              <span className="cc-pulse-title">{item.text}</span>
+            </span>
+            {item.detail && (
+              <span className="cc-pulse-detail" style={{ fontSize: 11.5, color: 'var(--text-muted)', marginTop: 2 }}>
+                {item.detail}
+              </span>
+            )}
+          </span>
+        </button>
+
+        {/* Controls sit OUTSIDE the tappable card: a button inside a button is
+            invalid HTML and swallows the navigation tap. */}
+        <div
+          style={{
+            position: 'absolute',
+            top: 6,
+            right: 6,
+            display: 'flex',
+            alignItems: 'center',
+            gap: 2,
+          }}
+        >
+          <button
+            className="cc-pulse-icon-btn"
+            aria-label="Live updates options"
+            aria-haspopup="menu"
+            aria-expanded={menuOpen}
+            onClick={() => setMenuOpen((o) => !o)}
+          >
+            <Icon name="more" size={15} />
+          </button>
+          <button className="cc-pulse-icon-btn" aria-label="Hide live updates for now" onClick={hideForNow}>
+            <Icon name="x" size={15} />
+          </button>
         </div>
-      )}
+
+        {/* carousel dots — show where you are in the rotation */}
+        {items.length > 1 && (
+          <div style={{ display: 'flex', justifyContent: 'center', gap: 5, marginTop: 6 }}>
+            {items.map((it, i) => (
+              <button
+                key={it.key}
+                onClick={() => setIdx(i)}
+                aria-label={`Show update ${i + 1} of ${items.length}`}
+                style={{
+                  width: i === idx % items.length ? 14 : 6,
+                  height: 6,
+                  borderRadius: 3,
+                  border: 'none',
+                  padding: 0,
+                  cursor: 'pointer',
+                  background: i === idx % items.length ? 'var(--accent)' : 'var(--border)',
+                  transition: 'width 0.2s ease, background 0.2s ease',
+                }}
+              />
+            ))}
+          </div>
+        )}
+      </div>
     </div>
   )
 }

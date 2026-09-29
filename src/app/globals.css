@@ -1421,6 +1421,89 @@ a,
   }
 }
 
+/* ── Live pulse floating card (bottom-right, every page) ──
+   Positioning mirrors the voice broadcast pill (fixed right:16 / bottom:84,
+   VoiceChatCard.tsx) so the two stack predictably: LivePulseFeed hides itself
+   whenever a voice call is live, and the mobile media query lifts this card to
+   the same 146px shelf the pill uses so it never sits under the + FAB. */
+.cc-float-pulse {
+  position: fixed;
+  right: 16px;
+  bottom: 84px;
+  z-index: 55; /* one notch under the voice pill (60) — they never co-show */
+  width: min(340px, calc(100vw - 32px));
+}
+
+@media (max-width: 768px) {
+  .cc-float-pulse {
+    bottom: calc(146px + env(safe-area-inset-bottom)) !important;
+  }
+}
+
+/* The ⋯ / ✕ controls hover outside the tappable card. */
+.cc-pulse-icon-btn {
+  width: 26px;
+  height: 26px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--text-muted);
+  cursor: pointer;
+  font-family: inherit;
+  padding: 0;
+}
+.cc-pulse-icon-btn:hover {
+  background: var(--bg-secondary);
+  color: var(--text-primary);
+}
+
+/* ⋯ dropdown — small, right-aligned, above the card (it opens downward from
+   the card top, so give it room against the viewport edge). */
+.cc-pulse-menu {
+  position: absolute;
+  top: -4px;
+  right: 0;
+  transform: translateY(-100%);
+  min-width: 220px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  box-shadow: var(--shadow-md, 0 8px 24px rgba(0, 0, 0, 0.18));
+  padding: 6px;
+  display: flex;
+  flex-direction: column;
+  z-index: 5;
+}
+.cc-pulse-menu button {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 1px;
+  width: 100%;
+  text-align: left;
+  background: none;
+  border: none;
+  border-radius: 8px;
+  padding: 8px 10px;
+  cursor: pointer;
+  font-family: inherit;
+}
+.cc-pulse-menu button:hover {
+  background: var(--bg-secondary);
+}
+.cc-pulse-menu-label {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+.cc-pulse-menu-hint {
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
 /* Confession hover lift (desktop only, respects reduced motion). */
 @media (hover: hover) and (prefers-reduced-motion: no-preference) {
   .confess-card:hover {
