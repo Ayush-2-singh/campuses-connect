@@ -9,6 +9,7 @@ import EmptyState from '@/components/EmptyState'
 import ErrorBoundary from '@/components/ErrorBoundary'
 import { CardSkeleton } from '@/components/Skeleton'
 import NoteTagCard from '@/components/NoteTagCard'
+import GroupMembersSheet from '@/components/GroupMembersSheet'
 import { Icon } from '@/components/icons'
 import { useAdminContext } from '@/lib/permissions'
 import { useHaptic, useSwipeBack } from '@/hooks/useMobile'
@@ -74,6 +75,9 @@ interface Community {
   tagline: string | null
   is_active: boolean
   chat_enabled: boolean
+  is_global?: boolean
+  created_by?: string | null
+  invite_code?: string | null
 }
 
 interface ChatReport {
@@ -123,6 +127,7 @@ export default function ChatRoomPage() {
 
   // Sheets
   const [actionSheet, setActionSheet] = useState<Message | null>(null)
+  const [membersOpen, setMembersOpen] = useState(false)
   const [modTarget, setModTarget] = useState<{ id: string; author?: Author } | null>(null)
   const [modAction, setModAction] = useState<ModerationAction>('warn')
   const [modReason, setModReason] = useState('')
@@ -225,7 +230,7 @@ export default function ChatRoomPage() {
 
     const { data: comm, error: commErr } = await supabase
       .from('communities')
-      .select('id, key, name, icon, tagline, is_active, chat_enabled')
+      .select('id, key, name, icon, tagline, is_active, chat_enabled, is_global, created_by, invite_code')
       .eq('key', slug)
       .maybeSingle()
 
@@ -745,6 +750,30 @@ export default function ChatRoomPage() {
                 {activeLabel(activeCount) ? ` • ${activeLabel(activeCount)}` : ''}
               </p>
             </div>
+
+            {/* User-created groups get the Telegram-style members panel:
+                invite code, approvals, mod actions. Global rooms do not. */}
+            {community?.is_global === false && (
+              <button
+                onClick={() => setMembersOpen(true)}
+                aria-label="Group members and settings"
+                style={{
+                  width: 44,
+                  height: 44,
+                  flexShrink: 0,
+                  borderRadius: '50%',
+                  border: '1px solid var(--border)',
+                  background: 'var(--bg)',
+                  color: 'var(--text-secondary)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  cursor: 'pointer',
+                }}
+              >
+                <Icon name="users" size={17} />
+              </button>
+            )}
 
             <button
               onClick={() => {
@@ -1425,6 +1454,14 @@ export default function ChatRoomPage() {
         </div>
 
         {/* ── Message action sheet ── */}
+        {membersOpen && community && (
+          <GroupMembersSheet
+            communityId={community.id}
+            onClose={() => setMembersOpen(false)}
+            onMemberCountChange={(n) => setMemberCount(n)}
+          />
+        )}
+
         {actionSheet && (
           <Sheet onClose={() => setActionSheet(null)} title="Message">
             <div style={{ display: 'flex', gap: 6, padding: '4px 16px 12px', flexWrap: 'wrap' }}>

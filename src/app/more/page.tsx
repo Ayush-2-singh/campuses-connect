@@ -7,6 +7,7 @@ import Layout from '@/components/Layout'
 import { isPulseVisible, readPulsePrefs, setPulseMuted, type PulsePrefs } from '@/lib/livePulsePrefs'
 
 const SECTIONS = [
+  { icon: '👥', label: 'Groups', desc: 'Create your circle — class batch, project team, hostel wing', href: '/groups' },
   { icon: '🌐', label: 'Global', desc: 'Post & connect with students everywhere', href: '/global' },
   { icon: '⚔️', label: 'Compete', desc: 'Daily DSA challenges, Campus Clash & Aura rankings', href: '/compete' },
   { icon: '🎪', label: 'Events', desc: 'Campus events, hackathons & memories', href: '/events' },

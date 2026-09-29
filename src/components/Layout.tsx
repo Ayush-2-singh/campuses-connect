@@ -45,6 +45,7 @@ const DISCOVERY_CHILDREN = [
 // Games & Clash surfaced as its own child (was hidden inside Compete tabs).
 const COMMUNITY_CHILDREN = [
   { label: 'Communities', href: '/communities', icon: 'users' },
+  { label: 'Groups', href: '/groups', icon: 'users' },
   { label: 'Live Chat', href: '/chat', icon: 'message' },
   { label: 'Confessions', href: '/community?view=confessions', icon: 'eyeOff' },
   { label: 'Games & Clash', href: '/compete?tab=clash', icon: 'zap' },
@@ -59,7 +60,7 @@ const LIBRARY_CHILDREN = [{ label: 'Classroom', href: '/college', icon: 'grad' }
 const PROFILE_NAV = [{ label: 'Profile', href: '/profile', icon: 'user' }]
 
 // Warmed right after mount — first click on any pillar is instant.
-const PREFETCH_ROUTES = ['/feed', '/discover', '/community', '/notes', '/profile']
+const PREFETCH_ROUTES = ['/feed', '/discover', '/community', '/notes', '/profile', '/groups']
 
 const FAB_ACTIONS = [
   { label: 'Ask ConnectToCampus', desc: 'Search, shortcuts & questions', icon: 'sparkles', action: 'cmd' as const },
