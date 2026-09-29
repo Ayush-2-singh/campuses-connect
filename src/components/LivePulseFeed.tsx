@@ -63,6 +63,19 @@ function truncate(s: string, n = 90): string {
   return flat.length > n ? `${flat.slice(0, n - 1)}…` : flat
 }
 
+/**
+ * A source that BREAKS must say so — "skip, never fabricate" means skip the
+ * card, not swallow the reason. Every query here is best-effort, but silence
+ * is not the same as no data: an ambiguous embed (a bare `profiles(...)` on
+ * chat_messages, which has two FKs to profiles) returned PGRST201, so `data`
+ * was null and this card vanished from EVERY page with nothing in the console.
+ * A source with genuinely nothing to say reports `error === null`, so this
+ * stays quiet in the normal case.
+ */
+function warnSource(source: string, error: unknown) {
+  if (error) console.warn(`[live-pulse] ${source} source skipped:`, error)
+}
+
 export default function LivePulseFeed({ userId }: { userId: string | null }) {
   const router = useRouter()
   const [items, setItems] = useState<PulseItem[]>([])
@@ -88,11 +101,20 @@ export default function LivePulseFeed({ userId }: { userId: string | null }) {
 
     // 1 + 5. Latest chat messages per room, newest first (indexed on created_at).
     try {
-      const { data: msgs } = await sb
+      // `profiles!chat_messages_author_id_fkey` is MANDATORY here, not
+      // cosmetic: chat_messages has TWO foreign keys to profiles (author_id
+      // and pinned_by, the latter added by 20261017_live_chat.sql), so a bare
+      // `profiles(...)` embed is ambiguous — PostgREST answers PGRST201, the
+      // destructured `data` is null, and the card silently renders nothing.
+      // Same form the chat thread uses (MESSAGE_SELECT in chat/[slug]).
+      const { data: msgs, error: msgsError } = await sb
         .from('chat_messages')
-        .select('id, body, created_at, community_id, communities(key, name), profiles(username, full_name)')
+        .select(
+          'id, body, created_at, community_id, communities(key, name), profiles!chat_messages_author_id_fkey(username, full_name)'
+        )
         .order('created_at', { ascending: false })
         .limit(12)
+      warnSource('chat messages', msgsError)
       const seenRooms = new Set<string>()
       for (const m of (msgs as any[]) || []) {
         const key = m.communities?.key
@@ -119,8 +141,8 @@ export default function LivePulseFeed({ userId }: { userId: string | null }) {
         })
         if (seenRooms.size >= 5) break
       }
-    } catch {
-      /* source unavailable — skip, never fabricate */
+    } catch (err) {
+      warnSource('chat messages', err) // source unavailable — skip, never fabricate
     }
 
     // 2. Live voice — rooms with a user ACTUALLY inside right now (heartbeat-
@@ -147,7 +169,7 @@ export default function LivePulseFeed({ userId }: { userId: string | null }) {
     try {
       const nowIso = new Date().toISOString()
       const soon = new Date(Date.now() + 2 * 3600_000).toISOString()
-      const { data: events } = await sb
+      const { data: events, error: eventsError } = await sb
         .from('campus_events')
         .select('id, title, starts_at')
         .eq('status', 'published')
@@ -155,6 +177,7 @@ export default function LivePulseFeed({ userId }: { userId: string | null }) {
         .lte('starts_at', soon)
         .order('starts_at', { ascending: true })
         .limit(2)
+      warnSource('events', eventsError)
       for (const e of (events as any[]) || []) {
         const started = new Date(e.starts_at).getTime() <= Date.now()
         found.push({
@@ -174,12 +197,13 @@ export default function LivePulseFeed({ userId }: { userId: string | null }) {
     // finished room — 047_game_winners_matchmaking.sql).
     try {
       const since = new Date(Date.now() - 30 * 60_000).toISOString()
-      const { data: winners } = await sb
+      const { data: winners, error: winnersError } = await sb
         .from('game_winners')
         .select('id, winner_nickname, winner_score, won_at')
         .gte('won_at', since)
         .order('won_at', { ascending: false })
         .limit(3)
+      warnSource('game winners', winnersError)
       for (const g of (winners as any[]) || []) {
         found.push({
           key: `aura-${g.id}`,
