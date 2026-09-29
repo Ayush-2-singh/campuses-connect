@@ -31,14 +31,27 @@ function getSupabaseAdmin(): SupabaseClient {
   return _supabaseAdmin
 }
 
-/** Only real web links are accepted — never `javascript:` or a bare path. */
+/**
+ * Only real web links are accepted — never `javascript:` or a bare path.
+ *
+ * Links pasted WITHOUT a scheme (`www.youtube.com/...`, `drive.google.com/...`)
+ * are extremely common: browsers strip the scheme when copying from the address
+ * bar, and `new URL('www...')` throws, which used to surface as the opaque
+ * "A valid link is required" error. So a bare `domain/path` value is assumed to
+ * be https — the only scheme real share targets use. A value with ANY other
+ * scheme (`javascript:`, `ftp:`) is still rejected outright.
+ */
 function normaliseLink(raw: unknown): string | null {
   if (typeof raw !== 'string') return null
-  const value = raw.trim()
+  let value = raw.trim()
   if (!value) return null
+  // A scheme is `word:` at the start. Absent one, treat the paste as https.
+  if (!/^[a-zA-Z][a-zA-Z0-9+.-]*:/.test(value)) value = `https://${value}`
   try {
     const url = new URL(value)
     if (url.protocol !== 'http:' && url.protocol !== 'https:') return null
+    // A scheme-less paste with no host at all ("https://just text") is not a link.
+    if (!url.hostname || !url.hostname.includes('.')) return null
     return url.toString()
   } catch {
     return null
