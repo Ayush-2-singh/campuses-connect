@@ -137,7 +137,9 @@ export async function POST(request: NextRequest) {
       verified_by: isAdmin ? userId : null,
       verified_at: isAdmin ? new Date().toISOString() : null,
     })
-    .select('id')
+    // note_uid is assigned by the trg_notes_note_uid trigger; select it back
+    // so the UI can offer "copy your note code" right after posting.
+    .select('id, note_uid')
     .single()
 
   if (insertError) {
@@ -154,6 +156,7 @@ export async function POST(request: NextRequest) {
   return NextResponse.json({
     success: true,
     note_id: noteRow?.id,
+    note_uid: noteRow?.note_uid ?? null,
     storage_provider: 'link',
     is_verified: isAdmin,
     message: isAdmin

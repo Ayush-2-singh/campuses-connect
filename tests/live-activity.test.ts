@@ -80,6 +80,7 @@ vi.mock('next/headers', () => ({
 
 import { POST } from '@/app/api/notes/upload/route'
 import { isPulseVisible, PULSE_DEFAULT_PREFS, setPulseMuted, timeAgoLabel } from '@/lib/livePulsePrefs'
+import { NOTE_UID_EXACT, noteUidHref, splitMessageParts } from '@/lib/noteUid'
 
 const request = (fields: Record<string, string>) => {
   const formData = new FormData()
@@ -141,5 +142,36 @@ describe('live pulse prefs — the card can never trap the user', () => {
     expect(timeAgoLabel(now - 3 * 3600_000, now)).toBe('3h ago')
     expect(timeAgoLabel(now - 2 * 24 * 3600_000, now)).toBe('2d ago')
     expect(timeAgoLabel(now - 10 * 24 * 3600_000, now)).toBe('1w ago')
+  })
+})
+
+describe('note UID tags — one definition of a Library reference', () => {
+  it('splits a message into text, mentions and note tags', () => {
+    // Trailing '' is standard String.split behaviour when the separator ends
+    // the string — the chat renderer skips empty parts.
+    expect(splitMessageParts('check CC-NOTE-XK42 out @ayush')).toEqual([
+      'check ',
+      'CC-NOTE-XK42',
+      ' out ',
+      '@ayush',
+      '',
+    ])
+    expect(splitMessageParts('no tags here')).toEqual(['no tags here'])
+    // Empty body short-circuits to nothing to render.
+    expect(splitMessageParts('')).toEqual([])
+  })
+
+  it('accepts only the exact code shape (confusion-free alphabet)', () => {
+    expect(NOTE_UID_EXACT.test('CC-NOTE-XK42')).toBe(true)
+    expect(NOTE_UID_EXACT.test('CC-NOTE-AAAA')).toBe(true)
+    // I, O, 0, 1 are excluded from the alphabet on purpose.
+    expect(NOTE_UID_EXACT.test('CC-NOTE-AI0O')).toBe(false)
+    expect(NOTE_UID_EXACT.test('CC-NOTE-XK4')).toBe(false)
+    expect(NOTE_UID_EXACT.test('CC-NOTE-XK423')).toBe(false)
+    expect(NOTE_UID_EXACT.test('javascript:alert(1)')).toBe(false)
+  })
+
+  it('builds a Library deep link', () => {
+    expect(noteUidHref('CC-NOTE-XK42')).toBe('/notes?uid=CC-NOTE-XK42')
   })
 })

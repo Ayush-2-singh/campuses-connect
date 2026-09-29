@@ -1,7 +1,8 @@
 'use client'
 
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
+import { useRouter, useSearchParams } from 'next/navigation'
 import Layout from '@/components/Layout'
 import { useAdminContext } from '@/lib/permissions'
 import { ListSkeleton } from '@/components/Skeleton'
@@ -9,6 +10,7 @@ import EmptyState from '@/components/EmptyState'
 import ErrorBoundary from '@/components/ErrorBoundary'
 import { Icon } from '@/components/icons'
 import { isNativePlatform } from '@/lib/native'
+import { NOTE_UID_EXACT } from '@/lib/noteUid'
 
 /**
  * Android: pull the file into the app and open Android's share/save sheet.
@@ -71,6 +73,10 @@ const typeIcon: Record<string, string> = {
 }
 
 export default function NotesPage() {
+  const router = useRouter()
+  const searchParams = useSearchParams()
+  const deepLinkedUid = searchParams.get('uid')
+  const highlightRef = useRef<string | null>(null)
   const [user, setUser] = useState<any>(null)
   const [profile, setProfile] = useState<any>(null)
   const [notes, setNotes] = useState<any[]>([])
@@ -100,6 +106,27 @@ export default function NotesPage() {
   // Phase 3: the Library is community-owned. Any signed-in student contributes;
   // their material is queued for review, admins publish immediately.
   const canSubmitLink = Boolean(user)
+
+  // Deep link from a chat tag card (/notes?uid=CC-NOTE-XXXX): once the list
+  // has loaded, scroll to the note and flash it. Then swap the URL back to a
+  // clean /notes so a refresh/re-share doesn't re-trigger the highlight.
+  useEffect(() => {
+    if (!deepLinkedUid || loading) return
+    if (!NOTE_UID_EXACT.test(deepLinkedUid)) {
+      router.replace('/notes')
+      return
+    }
+    const el = document.getElementById('highlighted-note')
+    if (el) {
+      el.scrollIntoView({ behavior: 'smooth', block: 'center' })
+      const t = setTimeout(() => router.replace('/notes'), 2500)
+      return () => clearTimeout(t)
+    }
+    // Note not in the first page (filtered out / different campus): still
+    // clear the param so we do not loop forever.
+    const t = setTimeout(() => router.replace('/notes'), 1200)
+    return () => clearTimeout(t)
+  }, [deepLinkedUid, loading, router])
   const canVerify = admin.isPlatformAdmin || admin.isCampusAdmin // admin verifies notes
   // Material is published as a link, so at least one link is mandatory.
   const hasLink = Boolean(form.drive_link.trim() || form.external_link.trim())
@@ -840,6 +867,7 @@ export default function NotesPage() {
                       <NoteRow
                         key={note.id}
                         note={note}
+                        highlighted={deepLinkedUid === note.note_uid}
                         canDelete={canVerify || note.uploaded_by === user?.id}
                         onDelete={deleteNote}
                         canVerify={canVerify}
@@ -856,6 +884,7 @@ export default function NotesPage() {
                 <NoteRow
                   key={note.id}
                   note={note}
+                  highlighted={deepLinkedUid === note.note_uid}
                   canDelete={canVerify || note.uploaded_by === user?.id}
                   onDelete={deleteNote}
                   canVerify={canVerify}
@@ -871,12 +900,14 @@ export default function NotesPage() {
 }
 function NoteRow({
   note,
+  highlighted,
   canDelete,
   onDelete,
   canVerify,
   onVerify,
 }: {
   note: any
+  highlighted?: boolean
   canDelete?: boolean
   onDelete?: (note: any) => void
   canVerify?: boolean
@@ -885,10 +916,12 @@ function NoteRow({
   const isPending = note.is_verified === false
   return (
     <div
-      className="card-hover"
+      className={highlighted ? 'card-hover note-highlight' : 'card-hover'}
+      id={highlighted ? 'highlighted-note' : undefined}
       style={{
         background: isPending ? 'var(--orange-light)' : 'var(--bg)',
         border: isPending ? '1px solid var(--orange-text)' : '1px solid var(--border)',
+        outline: highlighted ? '2px solid var(--accent)' : undefined,
         borderRadius: 'var(--radius)',
         padding: 14,
         display: 'flex',
@@ -950,6 +983,38 @@ function NoteRow({
         >
           {note.title}
         </p>
+        {/* Public reference code — tap to copy, so it can be tagged in any group. */}
+        {note.note_uid && (
+          <button
+            onClick={() => {
+              try {
+                void navigator.clipboard.writeText(note.note_uid)
+              } catch {
+                /* clipboard unavailable — the chip still shows the code */
+              }
+            }}
+            aria-label={`Copy note reference ${note.note_uid}`}
+            title={`Copy ${note.note_uid} — tag this in any group chat`}
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: 4,
+              fontSize: 10,
+              fontWeight: 800,
+              letterSpacing: '0.06em',
+              fontFamily: 'inherit',
+              padding: '2px 8px',
+              borderRadius: 6,
+              border: '1px dashed var(--border-strong, var(--border))',
+              background: 'transparent',
+              color: 'var(--text-muted)',
+              cursor: 'pointer',
+              marginBottom: 4,
+            }}
+          >
+            #{note.note_uid}
+          </button>
+        )}
         {note.author && (
           <p style={{ fontSize: 11.5, color: 'var(--text-muted)', margin: '0 0 3px' }}>by {note.author}</p>
         )}

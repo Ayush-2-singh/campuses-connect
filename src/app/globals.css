@@ -969,6 +969,22 @@ a,
   }
 }
 
+/* Deep-linked Library note (/notes?uid=CC-NOTE-XXXX): a short accent flash
+   so the tag's destination is unmistakable, then it settles. */
+.note-highlight {
+  animation: noteHighlight 2.2s ease;
+}
+@keyframes noteHighlight {
+  0%,
+  55% {
+    background: var(--accent-light);
+    box-shadow: 0 0 0 3px var(--accent-border, var(--accent));
+  }
+  100% {
+    background: var(--bg);
+  }
+}
+
 /* Post/discussion cards — never let content force the card wider than the
    screen (long URLs, code, unbroken words cut the right side on mobile).
    Border + shadow live here (not inline) so hover can retint them. */

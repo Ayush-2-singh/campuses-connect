@@ -8,6 +8,7 @@ import Avatar from '@/components/Avatar'
 import EmptyState from '@/components/EmptyState'
 import ErrorBoundary from '@/components/ErrorBoundary'
 import { CardSkeleton } from '@/components/Skeleton'
+import NoteTagCard from '@/components/NoteTagCard'
 import { Icon } from '@/components/icons'
 import { useAdminContext } from '@/lib/permissions'
 import { useHaptic, useSwipeBack } from '@/hooks/useMobile'
@@ -1805,18 +1806,29 @@ export default function ChatRoomPage() {
   )
 }
 
-/** Highlight @mentions without dangerouslySetInnerHTML. */
+/**
+ * Render message text: @mentions highlighted, [CC-NOTE-XXXX] Library tags
+ * rendered as the dark NoteTagCard (contributor + deep-link to the note in
+ * the Library). No dangerouslySetInnerHTML anywhere.
+ *
+ * React state inside the mapped parts is fine: parts are stable per body
+ * string, and NoteTagCard caches its fetch per code.
+ */
 function renderBody(body: string, isMine: boolean) {
   if (!body) return null
-  return body.split(/(@[a-zA-Z0-9_]{2,32})/g).map((part, i) =>
-    /^@[a-zA-Z0-9_]{2,32}$/.test(part) ? (
-      <span key={i} style={{ fontWeight: 700, color: isMine ? 'inherit' : 'var(--accent)' }}>
-        {part}
-      </span>
-    ) : (
-      <span key={i}>{part}</span>
-    )
-  )
+  return body.split(/(@[a-zA-Z0-9_]{2,32}|CC-NOTE-[A-HJ-NP-Z2-9]{4})/g).map((part, i) => {
+    if (/^@[a-zA-Z0-9_]{2,32}$/.test(part)) {
+      return (
+        <span key={i} style={{ fontWeight: 700, color: isMine ? 'inherit' : 'var(--accent)' }}>
+          {part}
+        </span>
+      )
+    }
+    if (/^CC-NOTE-[A-HJ-NP-Z2-9]{4}$/.test(part)) {
+      return <NoteTagCard key={i} uid={part} />
+    }
+    return <span key={i}>{part}</span>
+  })
 }
 
 /** Bottom sheet shell — backdrop tap or ✕ closes it. */
