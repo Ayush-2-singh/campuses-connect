@@ -79,7 +79,7 @@ vi.mock('next/headers', () => ({
 }))
 
 import { POST } from '@/app/api/notes/upload/route'
-import { isPulseVisible, PULSE_DEFAULT_PREFS, PULSE_PAUSE_MS, pausePulseFor, setPulseMuted } from '@/lib/livePulsePrefs'
+import { isPulseVisible, PULSE_DEFAULT_PREFS, setPulseMuted, timeAgoLabel } from '@/lib/livePulsePrefs'
 
 const request = (fields: Record<string, string>) => {
   const formData = new FormData()
@@ -124,30 +124,22 @@ describe('POST /api/notes/upload — links pasted without a scheme', () => {
 })
 
 describe('live pulse prefs — the card can never trap the user', () => {
-  const DAY = 24 * 60 * 60 * 1000
-
-  it('shows by default', () => {
-    expect(isPulseVisible(PULSE_DEFAULT_PREFS, 1_000)).toBe(true)
+  it('shows by default and on every visit (no 24h pause exists any more)', () => {
+    expect(isPulseVisible(PULSE_DEFAULT_PREFS)).toBe(true)
   })
 
   it('mutes until explicitly unmuted', () => {
     const muted = setPulseMuted(true)
-    expect(isPulseVisible(muted, Date.now())).toBe(false)
-    expect(isPulseVisible(setPulseMuted(false), Date.now())).toBe(true)
+    expect(isPulseVisible(muted)).toBe(false)
+    expect(isPulseVisible(setPulseMuted(false))).toBe(true)
   })
 
-  it('pause 24h expires on its own', () => {
+  it('labels last-activity age honestly', () => {
     const now = Date.now()
-    vi.useFakeTimers({ now })
-    const paused = pausePulseFor()
-    expect(paused.pausedUntil).toBe(now + PULSE_PAUSE_MS)
-    expect(isPulseVisible(paused, now + PULSE_PAUSE_MS - 1)).toBe(false)
-    expect(isPulseVisible(paused, now + PULSE_PAUSE_MS)).toBe(true)
-    vi.useRealTimers()
-  })
-
-  it('pause and mute combine (mute wins)', () => {
-    const both = { ...pausePulseFor(), muted: true }
-    expect(isPulseVisible(both, Date.now() + 2 * DAY)).toBe(false)
+    expect(timeAgoLabel(now, now)).toBe('just now')
+    expect(timeAgoLabel(now - 5 * 60_000, now)).toBe('5m ago')
+    expect(timeAgoLabel(now - 3 * 3600_000, now)).toBe('3h ago')
+    expect(timeAgoLabel(now - 2 * 24 * 3600_000, now)).toBe('2d ago')
+    expect(timeAgoLabel(now - 10 * 24 * 3600_000, now)).toBe('1w ago')
   })
 })

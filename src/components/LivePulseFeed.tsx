@@ -3,39 +3,25 @@
 /**
  * LIVE PULSE — the floating "what is happening right now" flash card.
  *
- * One compact card pinned bottom-right (the same corner and offsets as the
- * voice broadcast pill, see `.cc-float-pulse` + `.cc-voice-card`) on EVERY
- * page. It flashes a new, GENUINE fact about the platform every ~60s — each
- * fact queried live from Supabase, never fabricated — and it is TAPPABLE:
- * tapping deep-links to the place the activity happened.
+ * One compact card pinned bottom-right (the same corner as the voice broadcast
+ * pill) on EVERY page. Contract, in order of preference:
  *
- * Sources (all real tables, all cheap indexed reads, one round of parallel
- * queries every refresh):
- *   1. CHAT MESSAGES   — messages from the LAST 15 MINUTES only
- *                        ("DSA Community — Ayush just messaged")
- *                        → links to /chat/:key
- *   2. LIVE VOICE      — rooms with somebody ACTUALLY inside, heartbeat-
- *                        verified ("Voice room X is live — N in call")
- *                        → links to /live-voice-chat/:groupId
- *   3. EVENTS          — events starting within ±2h ("just started / soon")
- *                        → links to /events
- *   4. GAME FINISHES   — winners of the last 30 minutes
- *                        → links to /compete?tab=clash
- *   5. MENTIONS        — someone tagged you in the last 15 minutes
- *                        → links to /chat/:key
+ *   1. REAL fresh activity (chat ≤15min, live voice rooms, events ±2h, game
+ *      winners ≤30min, mentions) — rotates one fact every minute.
+ *   2. NOTHING fresh? The card still shows ONCE per visit with the platform's
+ *      LAST known message or voice room, honestly labelled ("last message
+ *      3h ago") — so a quiet campus reads as quiet, never as broken.
+ *   3. A brand-new platform with no history at all stays silent.
  *
- * Real time or nothing: every source is time-boxed (that is the whole point of
- * a "live" card). An old message must never be dressed up as "just messaged",
- * and a source with nothing fresh to say is skipped — the card would rather be
- * silent than stale. If none of the five has anything, the card does not show.
- *
- * The user is always in control — the ⋯ menu offers Hide for now (this
- * session), Pause for 24 hours and Turn off live updates, and the More page
- * can switch it back on (see lib/livePulsePrefs).
+ * Irritation control: 45s after it appears it dismisses itself (unless the
+ * pointer rests on it), navigation/hover pauses the timer, and the ⋯ menu
+ * offers Hide for now (this session) or Turn off — reversible from the More
+ * page switch. No 24h pause: a card silenced once and forgotten read like a
+ * broken feature.
  *
  * Yield rules: hidden while a live voice call is running (the voice pill owns
- * that corner then), and on the surfaces it would sit on top of — the voice
- * call pages, live chat rooms and the auth pages.
+ * that corner then), and on surfaces it would sit on top of — voice call
+ * pages, live chat rooms and the auth pages.
  */
 
 import { useCallback, useEffect, useRef, useState } from 'react'
@@ -46,15 +32,15 @@ import { subscribeVoiceBroadcast } from '@/lib/voiceBroadcast'
 import { Icon } from '@/components/icons'
 import {
   isPulseVisible,
-  pausePulseFor,
   readPulsePrefs,
   readSessionHidden,
   setPulseMuted,
   setSessionHidden,
+  timeAgoLabel,
   type PulsePrefs,
 } from '@/lib/livePulsePrefs'
 
-type PulseKind = 'chat' | 'voice' | 'event' | 'aura' | 'mention'
+type PulseKind = 'chat' | 'voice' | 'event' | 'aura' | 'mention' | 'last'
 
 interface PulseItem {
   key: string
@@ -74,12 +60,15 @@ const KIND_STYLE: Record<PulseKind, { icon: string; tint: string }> = {
   event: { icon: 'calendar', tint: 'var(--success-text)' },
   aura: { icon: 'zap', tint: 'var(--accent-text)' },
   mention: { icon: 'star', tint: 'var(--blue-text)' },
+  last: { icon: 'message', tint: 'var(--text-muted)' },
 }
 
 const ROTATE_MS = 60_000
 const REFRESH_MS = 60_000
-/** "Live" means live: nothing older than this is allowed on the card. */
+/** "Live" means live: fresh sources never surface anything older. */
 const ACTIVITY_WINDOW_MS = 15 * 60_000
+/** Card dismisses itself this long after appearing — attention, not nagging. */
+const AUTO_DISMISS_MS = 45_000
 
 /** Surfaces where a bottom-right card would sit on top of real work. */
 const HIDDEN_PREFIXES = ['/live-voice-chat', '/chat', '/auth']
@@ -95,8 +84,7 @@ function truncate(s: string, n = 90): string {
  * is not the same as no data: an ambiguous embed (a bare `profiles(...)` on
  * chat_messages, which has two FKs to profiles) returned PGRST201, so `data`
  * was null and this card vanished from EVERY page with nothing in the console.
- * A source with genuinely nothing to say reports `error === null`, so this
- * stays quiet in the normal case.
+ * A source with genuinely nothing to say reports `error === null`.
  */
 function warnSource(source: string, error: unknown) {
   if (error) console.warn(`[live-pulse] ${source} source skipped:`, error)
@@ -109,6 +97,7 @@ export default function LivePulseFeed({ userId }: { userId: string | null }) {
   const [idx, setIdx] = useState(0)
   const [paused, setPaused] = useState(false)
   const [menuOpen, setMenuOpen] = useState(false)
+  const [dismissed, setDismissed] = useState(false)
   // Prefs are read after mount: the card is client-only, and this keeps the
   // first paint identical for everyone until the stored choice is known.
   const [prefs, setPrefs] = useState<PulsePrefs | null>(null)
@@ -123,7 +112,7 @@ export default function LivePulseFeed({ userId }: { userId: string | null }) {
     return supabaseRef.current
   }, [])
 
-  // Stored choices (hide-for-now / paused / off).
+  // Stored choices (hide-for-now / off).
   useEffect(() => {
     setPrefs(readPulsePrefs())
     setHiddenNow(readSessionHidden())
@@ -160,16 +149,18 @@ export default function LivePulseFeed({ userId }: { userId: string | null }) {
       usernameRef.current = prof?.username || null
     }
 
-    // 1 + 5. Chat messages from the LAST 15 MINUTES, newest first. The window
+    // 1 + 2. Chat messages from the LAST 15 MINUTES, newest first. The window
     //   is what keeps the copy honest: without it the card called week-old
-    //   messages "just messaged" on every page, which is both wrong and noisy.
+    //   messages "just messaged" on every page.
+    //   (The same query doubles as the quiet-campus fallback further down —
+    //   re-queried without the window only if nothing fresh was found.)
+    let latestMessages: any[] = []
     try {
       // `profiles!chat_messages_author_id_fkey` is MANDATORY here, not
       // cosmetic: chat_messages has TWO foreign keys to profiles (author_id
-      // and pinned_by, the latter added by 20261017_live_chat.sql), so a bare
-      // `profiles(...)` embed is ambiguous — PostgREST answers PGRST201, the
-      // destructured `data` is null, and the card silently renders nothing.
-      // Same form the chat thread uses (MESSAGE_SELECT in chat/[slug]).
+      // and pinned_by), so a bare `profiles(...)` embed is ambiguous —
+      // PostgREST answers PGRST201, `data` is null, the card silently
+      // renders nothing. Same form the chat thread uses (MESSAGE_SELECT).
       const { data: msgs, error: msgsError } = await sb
         .from('chat_messages')
         .select(
@@ -179,16 +170,16 @@ export default function LivePulseFeed({ userId }: { userId: string | null }) {
         .order('created_at', { ascending: false })
         .limit(12)
       warnSource('chat messages', msgsError)
+      latestMessages = (msgs as any[]) || []
       const seenRooms = new Set<string>()
-      for (const m of (msgs as any[]) || []) {
+      for (const m of latestMessages) {
         const key = m.communities?.key
         if (!key || seenRooms.has(key)) continue
         seenRooms.add(key)
         const room = m.communities?.name || 'Community'
         const author = m.profiles?.full_name || m.profiles?.username || 'Someone'
 
-        // Mention detection: @username appears in a room — only surface each
-        // mention once (per page session) by checking it names ME.
+        // Mention detection: @username in a room names ME → its own kind.
         const isMention =
           userId &&
           usernameRef.current &&
@@ -210,13 +201,12 @@ export default function LivePulseFeed({ userId }: { userId: string | null }) {
     }
 
     // 2. Live voice — rooms with a user ACTUALLY inside right now (heartbeat-
-    //    verified via live_voice_chat_live_rooms). An 'active' call row left
-    //    behind by a crashed tab is NOT live and never reaches the card;
-    //    nothing inside ⇒ this source is simply skipped (no filler).
+    //    verified). Nothing inside ⇒ this source is simply skipped.
+    const liveVoiceItems: PulseItem[] = []
     try {
       const rooms = await fetchLiveVoiceRooms(sb)
       for (const r of rooms.slice(0, 3)) {
-        found.push({
+        liveVoiceItems.push({
           key: `voice-${r.callId}`,
           kind: 'voice',
           text: `${r.name} is live — ${r.participantCount} in call`,
@@ -228,10 +218,10 @@ export default function LivePulseFeed({ userId }: { userId: string | null }) {
     } catch (err) {
       warnSource('live voice', err)
     }
+    found.push(...liveVoiceItems)
 
     // 3. Events starting within ±2h window — "just started" or "starting soon".
     try {
-      const nowIso = new Date().toISOString()
       const soon = new Date(Date.now() + 2 * 3600_000).toISOString()
       const { data: events, error: eventsError } = await sb
         .from('campus_events')
@@ -257,8 +247,7 @@ export default function LivePulseFeed({ userId }: { userId: string | null }) {
       warnSource('events', err)
     }
 
-    // 4. Aura in motion: recent game winners (game_winners tracks every
-    // finished room — 047_game_winners_matchmaking.sql).
+    // 4. Aura in motion: recent game winners (last 30 minutes).
     try {
       const since = new Date(Date.now() - 30 * 60_000).toISOString()
       const { data: winners, error: winnersError } = await sb
@@ -280,6 +269,61 @@ export default function LivePulseFeed({ userId }: { userId: string | null }) {
       }
     } catch (err) {
       warnSource('game winners', err) // table may not exist in older schemas
+    }
+
+    // Quiet-campus FALLBACK: nothing fresh anywhere, but the platform has
+    // history? Show the last known message/voice room ONCE per visit, with
+    // an honest age ("last message 3h ago") — quiet must never read broken.
+    if (found.length === 0) {
+      // Latest message ever (cheap single query, indexed on created_at).
+      try {
+        const { data: last, error: lastError } = await sb
+          .from('chat_messages')
+          .select(
+            'id, body, created_at, communities(key, name), profiles!chat_messages_author_id_fkey(username, full_name)'
+          )
+          .order('created_at', { ascending: false })
+          .limit(1)
+        warnSource('last message fallback', lastError)
+        const m = (last as any[])?.[0]
+        if (m?.communities?.key) {
+          found.push({
+            key: `last-${m.id}`,
+            kind: 'last',
+            text: `Last message ${timeAgoLabel(new Date(m.created_at).getTime())} in ${m.communities.name || 'Community'}`,
+            detail: truncate(m.body || '', 80),
+            href: `/chat/${m.communities.key}`,
+            at: new Date(m.created_at).getTime(),
+          })
+        }
+      } catch (err) {
+        warnSource('last message fallback', err)
+      }
+      // Or the last voice room that actually had someone in it.
+      if (found.length === 0) {
+        try {
+          const { data: lastCall, error: lastCallError } = await sb
+            .from('live_voice_chat_calls')
+            .select('id, room_name, started_at, ended_at')
+            .not('ended_at', 'is', null)
+            .order('started_at', { ascending: false })
+            .limit(1)
+          warnSource('last voice fallback', lastCallError)
+          const c = (lastCall as any[])?.[0]
+          if (c?.room_name) {
+            found.push({
+              key: `lastvoice-${c.id}`,
+              kind: 'last',
+              text: `Last voice room ${timeAgoLabel(new Date(c.ended_at).getTime())} — ${c.room_name}`,
+              detail: 'Start a room and bring the campus together',
+              href: '/live-voice-chat',
+              at: new Date(c.ended_at).getTime(),
+            })
+          }
+        } catch (err) {
+          // Table/columns may differ across schemas — the fallback is optional.
+        }
+      }
     }
 
     // Newest first; keep the carousel tight.
@@ -317,14 +361,26 @@ export default function LivePulseFeed({ userId }: { userId: string | null }) {
     return () => clearInterval(t)
   }, [paused, items.length])
 
+  // Auto-dismiss: the card leaves on its own 45s after appearing, so it
+  // catches the eye without ever becoming furniture. Hover/touch pauses the
+  // countdown, an open menu pauses it, fresh data (a new top item arriving)
+  // restarts it — new information deserves fresh attention.
+  useEffect(() => {
+    if (dismissed || menuOpen) return
+    if (!items.length) return
+    const t = setTimeout(() => setDismissed(true), AUTO_DISMISS_MS)
+    return () => clearTimeout(t)
+  }, [dismissed, menuOpen, items.length])
+
+  // Navigating to a new page re-surfaces the card: each page gets one
+  // appearance, keeping "shows on every visit" true without nagging.
+  useEffect(() => {
+    setDismissed(false)
+  }, [pathname])
+
   const hideForNow = useCallback(() => {
     setSessionHidden(true)
     setHiddenNow(true)
-    setMenuOpen(false)
-  }, [])
-
-  const pauseFor24h = useCallback(() => {
-    setPrefs(pausePulseFor())
     setMenuOpen(false)
   }, [])
 
@@ -333,15 +389,16 @@ export default function LivePulseFeed({ userId }: { userId: string | null }) {
     setMenuOpen(false)
   }, [])
 
-  // Not allowed on screen: user choice, a live voice call, or a surface the
-  // card would cover.
+  // Not allowed on screen: user choice, a live voice call, a surface the card
+  // would cover, or the user dismissed it this session.
   const coveredSurface = HIDDEN_PREFIXES.some((p) => pathname.startsWith(p))
-  if (!prefs || !isPulseVisible(prefs, Date.now()) || hiddenNow || voiceLive || coveredSurface) return null
+  if (!prefs || !isPulseVisible(prefs) || hiddenNow || voiceLive || coveredSurface || dismissed) return null
 
-  if (items.length === 0) return null // honest silence beats fake activity
+  if (items.length === 0) return null // a brand-new platform stays silent
 
   const item = items[idx % items.length]
   const style = KIND_STYLE[item.kind]
+  const isFallback = item.kind === 'last'
 
   return (
     <div className="cc-float-pulse" ref={rootRef}>
@@ -350,11 +407,7 @@ export default function LivePulseFeed({ userId }: { userId: string | null }) {
           <div role="menu" aria-label="Live updates options" className="cc-pulse-menu">
             <button role="menuitem" onClick={hideForNow}>
               <span className="cc-pulse-menu-label">Hide for now</span>
-              <span className="cc-pulse-menu-hint">Until you close the app</span>
-            </button>
-            <button role="menuitem" onClick={pauseFor24h}>
-              <span className="cc-pulse-menu-label">Pause for 24 hours</span>
-              <span className="cc-pulse-menu-hint">Comes back on its own</span>
+              <span className="cc-pulse-menu-hint">Back on your next visit</span>
             </button>
             <button role="menuitem" onClick={turnOff}>
               <span className="cc-pulse-menu-label">Turn off live updates</span>
@@ -386,6 +439,7 @@ export default function LivePulseFeed({ userId }: { userId: string | null }) {
             fontFamily: 'inherit',
             boxShadow: 'var(--shadow-sm)',
             animation: 'ccPulseIn 0.35s ease',
+            opacity: isFallback ? 0.92 : 1,
           }}
         >
           <span

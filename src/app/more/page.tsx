@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
 import Layout from '@/components/Layout'
-import { isPulseVisible, readPulsePrefs, setPulseMuted, writePulsePrefs, type PulsePrefs } from '@/lib/livePulsePrefs'
+import { isPulseVisible, readPulsePrefs, setPulseMuted, type PulsePrefs } from '@/lib/livePulsePrefs'
 
 const SECTIONS = [
   { icon: '🌐', label: 'Global', desc: 'Post & connect with students everywhere', href: '/global' },
@@ -175,23 +175,15 @@ export default function MorePage() {
             </div>
             <button
               role="switch"
-              aria-checked={isPulseVisible(pulsePrefs, Date.now())}
+              aria-checked={isPulseVisible(pulsePrefs)}
               aria-label="Live activity card on/off"
-              onClick={() => {
-                // ON → off (muted). OFF → fully on: clear the mute AND any
-                // 24h pause, otherwise a paused card would ignore this switch.
-                setPulsePrefs(
-                  isPulseVisible(pulsePrefs, Date.now())
-                    ? setPulseMuted(true)
-                    : writePulsePrefs({ muted: false, pausedUntil: 0 })
-                )
-              }}
+              onClick={() => setPulsePrefs(setPulseMuted(!pulsePrefs.muted))}
               style={{
                 width: 46,
                 height: 26,
                 borderRadius: 13,
                 border: 'none',
-                background: isPulseVisible(pulsePrefs, Date.now()) ? 'var(--accent)' : 'var(--border)',
+                background: isPulseVisible(pulsePrefs) ? 'var(--accent)' : 'var(--border)',
                 position: 'relative',
                 cursor: 'pointer',
                 flexShrink: 0,
@@ -203,7 +195,7 @@ export default function MorePage() {
                 style={{
                   position: 'absolute',
                   top: 3,
-                  left: isPulseVisible(pulsePrefs, Date.now()) ? 23 : 3,
+                  left: isPulseVisible(pulsePrefs) ? 23 : 3,
                   width: 20,
                   height: 20,
                   borderRadius: '50%',
