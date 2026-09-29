@@ -345,7 +345,9 @@
 }
 @media (max-width: 768px) {
   :root {
-    --ui-scale: 1.06;
+    /* Phones have the least width to spare: enough to read a notch bigger
+       without costing the header row or any visible content column. */
+    --ui-scale: 1.04;
   }
 }
 
@@ -860,20 +862,40 @@ a,
   box-sizing: border-box;
 }
 
-/* The topbar row must never force the page wider than the phone. The row
-   holds logo + title + 5 controls; on 320–390px screens its nowrap min-content
-   (~425px) exceeds the viewport, which stretched <main> and — together with
-   the shell's overflow-x: clip — cut the right side off EVERY page. Wrap it. */
+/* The topbar row must never force the page wider than the phone, and it must
+   never break onto two rows either: a wrapped bar (brand alone, then the
+   controls underneath) reads as a broken header, and the global UI scale made
+   it wrap on every 390–430px phone. It stays ONE row: the inline styles on
+   <Layout>'s mobile bar set `flex-wrap: nowrap`, give the brand `flex: 1 1
+   auto` and the controls `flex-shrink: 0`, so the title ellipsises and the
+   controls keep their touch size. That cannot overflow the page — the title's
+   `overflow: hidden` makes its automatic minimum size 0, so the row's
+   min-content is just the controls. */
 .mobile-topbar > div {
-  flex-wrap: wrap;
-  row-gap: 8px;
   min-width: 0;
+}
+
+/* The theme-synced logo badge is decorative (not a control) and the mobile bar
+   already shows the brand logo at the left — keeping both cost 42px of the row
+   and pushed the controls onto a second line. Desktop keeps the badge. */
+.mobile-hide-logo {
+  display: none;
 }
 .mobile-topbar h1 {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
   min-width: 0;
+}
+
+/* Phone widths: the bar holds logo + brand + 4 controls on ONE row, so the
+   17px wordmark plus the global UI scale left the brand ellipsised on 320–430px
+   screens. A slightly smaller wordmark fits it in full while keeping the row
+   single-line (measured: 15px fits the whole "ConnectToCampus" at 375–430px). */
+@media (max-width: 430px) {
+  .mobile-topbar h1 {
+    font-size: 15px !important;
+  }
 }
 
 .mobile-bottomnav {

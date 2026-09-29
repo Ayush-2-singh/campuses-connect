@@ -56,16 +56,39 @@ describe('global UI scale', () => {
 
   it('keeps desktop closer than mobile, and mobile above 1 so it reads bigger', () => {
     const source = css()
-    const desktop = source.match(/@media \(min-width: 1024px\) \{\s*:root \{\s*--ui-scale:\s*([\d.]+)/)
-    const wide = source.match(/@media \(min-width: 1440px\) \{\s*:root \{\s*--ui-scale:\s*([\d.]+)/)
-    const mobile = source.match(/@media \(max-width: 768px\) \{\s*:root \{\s*--ui-scale:\s*([\d.]+)/)
-    expect(desktop?.[1], 'desktop tier missing').toBeTruthy()
-    expect(wide?.[1], 'wide-desktop tier missing').toBeTruthy()
-    expect(mobile?.[1], 'mobile tier missing').toBeTruthy()
-    expect(Number(desktop![1])).toBeGreaterThan(1)
-    expect(Number(mobile![1])).toBeGreaterThan(1)
+    // `[\s\S]{0,300}?` skips the block's comments/whitespace before the value.
+    const tier = (query: string) => {
+      const escaped = query.replace(/[()]/g, (c) => `\\${c}`)
+      return source.match(new RegExp(`@media ${escaped} \\{[\\s\\S]{0,300}?--ui-scale:\\s*([\\d.]+)`))?.[1]
+    }
+    const desktop = tier('(min-width: 1024px)')
+    const wide = tier('(min-width: 1440px)')
+    const mobile = tier('(max-width: 768px)')
+    expect(desktop, 'desktop tier missing').toBeTruthy()
+    expect(wide, 'wide-desktop tier missing').toBeTruthy()
+    expect(mobile, 'mobile tier missing').toBeTruthy()
+    expect(Number(desktop)).toBeGreaterThan(1)
+    expect(Number(mobile)).toBeGreaterThan(1)
     // Mobile has far less width to give — never scale it as hard as desktop.
-    expect(Number(mobile![1])).toBeLessThan(Number(desktop![1]))
+    expect(Number(mobile)).toBeLessThan(Number(desktop))
+    // Phones must keep ~their full width: above ~5% the mobile topbar row no
+    // longer fits on one line and every phone page loses its brand.
+    expect(Number(mobile)).toBeLessThanOrEqual(1.05)
+  })
+
+  it('keeps the mobile topbar on ONE row (controls never drop to a second line)', () => {
+    // The bar holds logo + brand + 4 controls; at 17px wordmark, 5 controls and
+    // 1.06 scale it needed ~398px, so `flex-wrap: wrap` pushed the controls
+    // under the brand on every 390–430px phone — a header that reads as broken.
+    // The row is now nowrap with the brand absorbing the shrink (ellipsis).
+    const layout = fs.readFileSync(path.join(SRC, 'components', 'Layout.tsx'), 'utf8')
+    const mobileBar = layout.slice(layout.indexOf('className="mobile-topbar"'))
+    expect(mobileBar, 'the mobile row must not wrap').toContain("flexWrap: 'nowrap'")
+    expect(mobileBar, 'the brand must absorb the shrink').toContain("flex: '1 1 auto'")
+    // The decorative logo badge (the brand logo is already on the left) is what
+    // cost the row 42px; it stays hidden on phones.
+    expect(css()).toMatch(/\.mobile-hide-logo \{\s*display: none;/)
+    expect(mobileBar).toContain('mobile-hide-logo')
   })
 
   it('exposes zoom-corrected viewport tokens for pages to use', () => {

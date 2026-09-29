@@ -764,21 +764,29 @@ export default function Layout({ children, user, profile }: { children: React.Re
           }}
           className="mobile-topbar"
         >
-          {/* Row must be allowed to wrap: on ≤360px phones the logo + title +
-              5 controls exceed the viewport. A nowrap flex row cannot shrink
-              below its min-content, so it used to stretch <main> to ~425px and
-              the shell's overflow-x: clip cut the right side of EVERY page off. */}
+          {/* ONE line, always. The brand truncates with an ellipsis instead of
+              the controls dropping onto a second row — a wrapped bar read as a
+              broken header on phones (and the 1.06 UI scale made it wrap on
+              every 390–430px device, since the row needed ~398px).
+
+              Going nowrap is safe now: the title carries `overflow: hidden`
+              and a `min-width: 0` chain, so its automatic minimum size is 0 and
+              the row's min-content is just the controls (~110px with padding) —
+              it can never exceed the phone. The old ~425px min-content that
+              stretched <main> and got clipped by the shell's overflow-x: clip
+              is gone. */}
           <div
             style={{
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'space-between',
-              flexWrap: 'wrap',
-              rowGap: 8,
+              flexWrap: 'nowrap',
               minWidth: 0,
             }}
           >
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8, minWidth: 0 }}>
+            {/* flex 1 1 auto: the brand absorbs all the shrink (ellipsis) and
+                the controls keep their full touch size. */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, minWidth: 0, flex: '1 1 auto' }}>
               <img src={logoSrc} alt="CTC" width={30} height={30} style={{ borderRadius: 9, flexShrink: 0 }} />
               <h1
                 style={{
@@ -799,11 +807,12 @@ export default function Layout({ children, user, profile }: { children: React.Re
               style={{
                 display: 'flex',
                 alignItems: 'center',
-                gap: 6,
+                gap: 5,
                 flexWrap: 'wrap',
                 rowGap: 6,
                 justifyContent: 'flex-end',
                 minWidth: 0,
+                flexShrink: 0,
               }}
             >
               <button
@@ -824,7 +833,13 @@ export default function Layout({ children, user, profile }: { children: React.Re
               >
                 <Icon name="search" size={17} />
               </button>
-              <LogoToggle size={36} />
+              {/* Decorative theme-synced logo badge — the mobile bar already
+                  shows the brand logo on the left, so this duplicate is hidden
+                  here (globals.css `.mobile-hide-logo`). It took 42px of the
+                  row, which is what pushed the controls onto a second line. */}
+              <span className="mobile-hide-logo">
+                <LogoToggle size={36} />
+              </span>
               <ThemeToggle mode="inline" />
               {!user ? (
                 <button
@@ -833,11 +848,11 @@ export default function Layout({ children, user, profile }: { children: React.Re
                     fontSize: 13,
                     color: 'var(--accent)',
                     border: '1px solid var(--accent)',
-                    padding: '8px 14px',
+                    padding: '7px 12px',
                     borderRadius: 8,
                     background: 'var(--bg)',
                     cursor: 'pointer',
-                    minHeight: 40,
+                    minHeight: 38,
                   }}
                 >
                   Sign in
