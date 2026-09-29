@@ -163,7 +163,7 @@ export default function UserProfilePage() {
 
   if (loading)
     return (
-      <div style={{ minHeight: '100vh', padding: '24px 16px', maxWidth: 640, margin: '0 auto' }}>
+      <div style={{ minHeight: 'var(--app-vh)', padding: '24px 16px', maxWidth: 640, margin: '0 auto' }}>
         <CardSkeleton rows={3} />
         <div style={{ height: 12 }} />
         <CardSkeleton rows={2} />
@@ -172,7 +172,7 @@ export default function UserProfilePage() {
 
   if (!profile)
     return (
-      <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+      <div style={{ minHeight: 'var(--app-vh)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
         <div style={{ textAlign: 'center' }}>
           <p style={{ fontSize: 48, marginBottom: 12 }}>🔍</p>
           <p style={{ fontSize: 16, fontWeight: 600, color: 'var(--text-primary)' }}>User not found</p>
@@ -197,7 +197,7 @@ export default function UserProfilePage() {
   const isOwnProfile = user?.id === profile.id
 
   return (
-    <div data-accent="gold" style={{ minHeight: '100vh', paddingBottom: 80 }}>
+    <div data-accent="gold" style={{ minHeight: 'var(--app-vh)', paddingBottom: 80 }}>
       {/* Header */}
       <div
         style={{

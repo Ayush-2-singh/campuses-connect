@@ -19,8 +19,7 @@ function VerifyInner() {
     }
     fetch('/api/verify-college-email', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' ,
-        credentials: 'include',},
+      headers: { 'Content-Type': 'application/json', credentials: 'include' },
       body: JSON.stringify({ token }),
     })
       .then((r) => r.json())
@@ -42,7 +41,13 @@ function VerifyInner() {
   return (
     <div
       data-accent="gold"
-      style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 }}
+      style={{
+        minHeight: 'var(--app-vh)',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        padding: 16,
+      }}
     >
       <div
         style={{
@@ -88,7 +93,7 @@ function VerifyInner() {
 
 export default function VerifyEmailPage() {
   return (
-    <Suspense fallback={<div style={{ minHeight: '100vh' }} />}>
+    <Suspense fallback={<div style={{ minHeight: 'var(--app-vh)' }} />}>
       <VerifyInner />
     </Suspense>
   )

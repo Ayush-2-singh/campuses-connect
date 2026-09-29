@@ -93,7 +93,7 @@ export default function AboutPage() {
     <div
       data-accent="gold"
       style={{
-        minHeight: '100vh',
+        minHeight: 'var(--app-vh)',
         fontFamily: '-apple-system, BlinkMacSystemFont, Segoe UI, sans-serif',
       }}
     >

@@ -210,7 +210,7 @@ export default function Layout({ children, user, profile }: { children: React.Re
   const sectionAccent = accentForPath(pathname)
 
   return (
-    <div data-accent={sectionAccent} style={{ minHeight: '100vh', display: 'flex' }}>
+    <div data-accent={sectionAccent} style={{ minHeight: 'var(--app-vh)', display: 'flex' }}>
       {/* ── Desktop Sidebar ── */}
       <aside
         style={{

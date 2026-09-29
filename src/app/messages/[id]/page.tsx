@@ -151,7 +151,7 @@ export default function ChatPage() {
     return (
       <div
         style={{
-          minHeight: '100vh',
+          minHeight: 'var(--app-vh)',
           background: 'var(--bg-secondary)',
           padding: '24px 16px',
           maxWidth: 640,
@@ -166,7 +166,7 @@ export default function ChatPage() {
     return (
       <div
         style={{
-          minHeight: '100vh',
+          minHeight: 'var(--app-vh)',
           background: 'var(--bg-secondary)',
           display: 'flex',
           alignItems: 'center',
@@ -205,7 +205,7 @@ export default function ChatPage() {
       data-accent="gold"
       className="chat-doodle-bg"
       style={{
-        minHeight: '100vh',
+        minHeight: 'var(--app-vh)',
         display: 'flex',
         flexDirection: 'column',
         maxWidth: 640,

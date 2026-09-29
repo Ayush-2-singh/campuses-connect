@@ -435,7 +435,7 @@ function CompetePageInner() {
 
 export default function CompetePage() {
   return (
-    <Suspense fallback={<div style={{ minHeight: '100vh' }} />}>
+    <Suspense fallback={<div style={{ minHeight: 'var(--app-vh)' }} />}>
       <CompetePageInner />
     </Suspense>
   )

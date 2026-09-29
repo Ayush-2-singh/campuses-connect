@@ -48,6 +48,7 @@
 | Sep 2026 | **Admin moderation scope** | Post & comment deletes go through `/api/admin/content` with role + campus/community scope checks |
 | Sep 2026 | **Chunked-cookie API auth** | Shared API guards reassemble `@supabase/ssr` chunked cookies; passing the request is optional |
 | Sep 2026 | **AI Admin Copilot** | Gemini pre-publish screening, `held` posts and a moderator queue (see feature 28) |
+| Sep 2026 | **Global UI scale** | One tunable root zoom (`--ui-scale`) makes every page read bigger/closer on desktop and mobile; `--app-vh/--app-dvh/--app-vw` tokens stop the zoom from cropping content |
 
 ---
 

@@ -214,7 +214,13 @@ export default function OnboardingPage() {
   return (
     <div
       data-accent="gold"
-      style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 }}
+      style={{
+        minHeight: 'var(--app-vh)',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        padding: 16,
+      }}
     >
       <div style={{ width: '100%', maxWidth: 440 }}>
         <div style={{ textAlign: 'center', marginBottom: 28 }}>

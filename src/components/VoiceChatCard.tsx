@@ -252,7 +252,7 @@ export default function VoiceChatCard() {
         right: 16,
         bottom: 84, // above the mobile bottom nav / desktop padding
         zIndex: 60,
-        maxWidth: 'calc(100vw - 32px)',
+        maxWidth: 'calc(var(--app-vw) - 32px)',
       }}
       className="cc-voice-card"
       data-open={open ? '1' : '0'}

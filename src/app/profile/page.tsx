@@ -326,13 +326,13 @@ export default function ProfilePage() {
 
   if (loading)
     return (
-      <div style={{ minHeight: '100vh', padding: '24px 16px', maxWidth: 640, margin: '0 auto' }}>
+      <div style={{ minHeight: 'var(--app-vh)', padding: '24px 16px', maxWidth: 640, margin: '0 auto' }}>
         <ListSkeleton count={2} />
       </div>
     )
 
   return (
-    <div data-accent="gold" style={{ minHeight: '100vh', paddingBottom: 80 }}>
+    <div data-accent="gold" style={{ minHeight: 'var(--app-vh)', paddingBottom: 80 }}>
       <div
         style={{
           position: 'sticky',

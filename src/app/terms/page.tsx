@@ -50,7 +50,7 @@ export default function TermsOfServicePage() {
     <div
       data-accent="gold"
       style={{
-        minHeight: '100vh',
+        minHeight: 'var(--app-vh)',
         background: 'var(--bg)',
         color: 'var(--text-primary)',
       }}

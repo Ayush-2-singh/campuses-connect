@@ -960,7 +960,7 @@ export default function AdminPage() {
   // ── Loading state ───────────────────────────────────────
   if (loading)
     return (
-      <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+      <div style={{ minHeight: 'var(--app-vh)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
         <p style={{ color: 'var(--text-muted)', fontSize: 14 }}>Loading admin panel…</p>
       </div>
     )
@@ -969,7 +969,7 @@ export default function AdminPage() {
   // RENDER
   // ═══════════════════════════════════════════════════════════
   return (
-    <div data-accent="gold" style={{ minHeight: '100vh' }}>
+    <div data-accent="gold" style={{ minHeight: 'var(--app-vh)' }}>
       {/* ── Header ─────────────────────────────────────── */}
       <div
         className="admin-header"

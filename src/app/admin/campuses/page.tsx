@@ -307,7 +307,7 @@ export default function AdminCampusesPage() {
   if (!user) return null
 
   return (
-    <div data-accent="purple" style={{ minHeight: '100vh' }}>
+    <div data-accent="purple" style={{ minHeight: 'var(--app-vh)' }}>
       {/* Header */}
       <div
         style={{

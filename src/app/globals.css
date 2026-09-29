@@ -297,6 +297,58 @@
   border: none !important;
 }
 
+/* ───────────────────────── 7. GLOBAL UI SCALE ───────────────────────── */
+/* The whole UI is authored in px, so making every page (desktop AND mobile)
+   read a notch bigger / "closer" — without rewriting thousands of inline
+   styles — means scaling the root element with `zoom`.
+
+   Why root `zoom` and not `transform: scale` or a bigger font-size:
+     • it reflows instead of cropping, so nothing is cut off — text and
+       controls simply render larger, exactly like the browser's own
+       Ctrl/Cmd + zoom, for every route (shell pages and standalone ones);
+     • fixed bars (sidebar, bottom nav, menus, toasts) still scale AND stay
+       anchored to the viewport;
+     • media queries keep evaluating against the REAL viewport width, so none
+       of the responsive breakpoints move.
+
+   The one catch it introduces: `zoom` also multiplies viewport units. A plain
+   `100vh` inside a zoomed page becomes `zoom × viewport` (phantom scrollbar)
+   and `100vw` boxes overflow sideways (content cut off — the "area loss" we
+   must avoid). The `--app-*` tokens below divide the zoom back out, so code
+   still gets a real viewport height/width. Use them instead of raw
+   100vh / 100dvh / 100vw.
+
+   TUNE THE FEEL HERE ONLY: 1 = the old density, higher = bigger/closer. */
+:root {
+  --ui-scale: 1;
+  --app-vh: calc(100vh / var(--ui-scale));
+  --app-dvh: calc(100dvh / var(--ui-scale));
+  --app-vw: calc(100vw / var(--ui-scale));
+}
+
+/* Desktop gets the closer read; phones a gentler nudge (mobile has far less
+   room to give, so it must not cost visible content width). */
+@media (min-width: 1024px) {
+  :root {
+    --ui-scale: 1.12;
+  }
+}
+@media (min-width: 1440px) {
+  :root {
+    --ui-scale: 1.18;
+  }
+}
+@media (min-width: 769px) and (max-width: 1023px) {
+  :root {
+    --ui-scale: 1.06;
+  }
+}
+@media (max-width: 768px) {
+  :root {
+    --ui-scale: 1.06;
+  }
+}
+
 /* ───────────────────────── Base ───────────────────────── */
 
 * {
@@ -305,6 +357,8 @@
 
 html {
   -webkit-text-size-adjust: 100%;
+  /* Global UI scale — see section 7 above. */
+  zoom: var(--ui-scale);
 }
 
 body {
@@ -1482,14 +1536,16 @@ a:active,
 .chat-room {
   display: flex;
   flex-direction: column;
-  min-height: calc(100dvh - 60px);
+  /* --app-dvh, not 100dvh: the global UI scale zooms the page, which would
+     otherwise make viewport units taller than the screen. */
+  min-height: calc(var(--app-dvh) - 60px);
   margin-bottom: -88px;
 }
 @media (max-width: 768px) {
   .chat-room {
     /* topbar (66 + notch inset) and the fixed bottom nav it must clear
        (72 + home-indicator inset) */
-    min-height: calc(100dvh - 138px - env(safe-area-inset-top) - env(safe-area-inset-bottom));
+    min-height: calc(var(--app-dvh) - 138px - env(safe-area-inset-top) - env(safe-area-inset-bottom));
   }
 }
 
@@ -1761,7 +1817,8 @@ html[data-chat-room] .fab-wrap {
   align-items: center;
   gap: 8px;
   pointer-events: none;
-  max-width: calc(100vw - 32px);
+  /* --app-vw, not 100vw — see the global UI scale (section 7). */
+  max-width: calc(var(--app-vw) - 32px);
 }
 @media (min-width: 769px) {
   .toast-viewport {
