@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
-import { useRouter, useSearchParams } from 'next/navigation'
+import { useRouter } from 'next/navigation'
 import Layout from '@/components/Layout'
 import { useAdminContext } from '@/lib/permissions'
 import { ListSkeleton } from '@/components/Skeleton'
@@ -74,8 +74,12 @@ const typeIcon: Record<string, string> = {
 
 export default function NotesPage() {
   const router = useRouter()
-  const searchParams = useSearchParams()
-  const deepLinkedUid = searchParams.get('uid')
+  // Deep-link uid (/notes?uid=CC-NOTE-XXXX) is read in an effect from
+  // window.location instead of useSearchParams(): a hook read during render
+  // forces the whole page into a Suspense boundary at build time (static
+  // prerender of a client page fails without it). Reading after mount keeps
+  // the page fully static-prerenderable with zero behavioural change.
+  const [deepLinkedUid, setDeepLinkedUid] = useState<string | null>(null)
   const highlightRef = useRef<string | null>(null)
   const [user, setUser] = useState<any>(null)
   const [profile, setProfile] = useState<any>(null)
@@ -110,6 +114,10 @@ export default function NotesPage() {
   // Deep link from a chat tag card (/notes?uid=CC-NOTE-XXXX): once the list
   // has loaded, scroll to the note and flash it. Then swap the URL back to a
   // clean /notes so a refresh/re-share doesn't re-trigger the highlight.
+  useEffect(() => {
+    const uid = new URLSearchParams(window.location.search).get('uid')
+    setDeepLinkedUid(uid)
+  }, [])
   useEffect(() => {
     if (!deepLinkedUid || loading) return
     if (!NOTE_UID_EXACT.test(deepLinkedUid)) {
