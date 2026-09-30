@@ -103,3 +103,26 @@ export function timeAgoLabel(ts: number, now: number = Date.now()): string {
   if (wk < 5) return `${wk}w ago`
   return `${Math.floor(d / 30)}mo ago`
 }
+
+/** How long the card surfaces for a brand-new @tag, even when muted. */
+export const PULSE_MENTION_FLASH_MS = 5_000
+
+/**
+ * Pure decision for the MENTION FLASH: a brand-new @tag is a notification,
+ * not ambient activity — it surfaces the card for 5 seconds even when the
+ * user muted or hid it. Mentions already seen this session (and everything
+ * present on the very first load, via the bootstrap flag) never flash, so a
+ * page refresh does not replay old tags.
+ */
+export function mentionFlash(
+  seen: Set<string>,
+  mentionKeys: string[],
+  bootstrapped: boolean,
+  now: number
+): { until: number; key: string } | null {
+  if (!bootstrapped) return null
+  for (const key of mentionKeys) {
+    if (!seen.has(key)) return { until: now + PULSE_MENTION_FLASH_MS, key }
+  }
+  return null
+}

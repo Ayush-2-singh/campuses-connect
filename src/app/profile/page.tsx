@@ -10,6 +10,8 @@ import Avatar from '@/components/Avatar'
 import { ListSkeleton } from '@/components/Skeleton'
 import { Icon } from '@/components/icons'
 import { useToast } from '@/components/Toast'
+import { CountUpStat } from '@/components/CountUpStat'
+import CollegeSearch from '@/components/CollegeSearch'
 import { isNativePlatform } from '@/lib/native'
 
 const AVATAR_BUCKET = 'avatars'
@@ -51,7 +53,7 @@ export default function ProfilePage() {
   }
   const [menuOpen, setMenuOpen] = useState(false)
   // attach-campus-later pickers (shown when the user joined globally)
-  const [campusColleges, setCampusColleges] = useState<any[]>([])
+
   const [campusCampuses, setCampusCampuses] = useState<any[]>([])
   const [campusDepartments, setCampusDepartments] = useState<any[]>([])
   const [campusPick, setCampusPick] = useState({ college_id: '', campus_id: '', department_id: '' })
@@ -66,15 +68,6 @@ export default function ProfilePage() {
   useEffect(() => {
     setMenuOpen(false)
   }, [pathname])
-
-  // Load colleges so a global user can attach their campus later.
-  useEffect(() => {
-    supabase
-      .from('colleges')
-      .select('*')
-      .eq('is_active', true)
-      .then(({ data }) => setCampusColleges(data || []))
-  }, [supabase])
 
   useEffect(() => {
     if (campusPick.college_id)
@@ -418,6 +411,13 @@ export default function ProfilePage() {
       </div>
 
       <div style={{ maxWidth: 640, margin: '0 auto', padding: 16, display: 'flex', flexDirection: 'column', gap: 14 }}>
+        {/* ── Stat tiles — the identity numbers, animated count-up ── */}
+        <ProfileStats
+          aura={profile?.aura_points || 0}
+          karma={profile?.karma_points || 0}
+          streak={profile?.streak_days || 0}
+          connections={connections.length}
+        />
         {/* ── Premium Profile Card with gradient banner ── */}
         <div
           style={{
@@ -526,48 +526,6 @@ export default function ProfilePage() {
               {isAdmin && <span style={badgeStyle('var(--danger-light)', 'var(--danger)')}>Admin</span>}
               {profile?.college_email_verified && (
                 <span style={badgeStyle('var(--accent-light)', 'var(--accent)')}>✓ College Verified</span>
-              )}
-              {profile?.streak_days > 0 && (
-                <span
-                  style={{
-                    fontSize: 11,
-                    padding: '3px 8px',
-                    borderRadius: 20,
-                    background: 'var(--orange-light)',
-                    color: 'var(--orange-text)',
-                    fontWeight: 600,
-                  }}
-                >
-                  🔥 {profile.streak_days} day streak
-                </span>
-              )}
-              {profile?.aura_points > 0 && (
-                <span
-                  style={{
-                    fontSize: 11,
-                    padding: '3px 8px',
-                    borderRadius: 20,
-                    background: 'var(--accent-light)',
-                    color: 'var(--accent-text)',
-                    fontWeight: 600,
-                  }}
-                >
-                  ⚡ {profile.aura_points} aura
-                </span>
-              )}
-              {profile?.karma_points > 0 && (
-                <span
-                  style={{
-                    fontSize: 11,
-                    padding: '3px 8px',
-                    borderRadius: 20,
-                    background: 'var(--yellow-light)',
-                    color: 'var(--yellow-text)',
-                    fontWeight: 600,
-                  }}
-                >
-                  ⭐ {profile.karma_points} karma
-                </span>
               )}
             </div>
 
@@ -722,6 +680,7 @@ export default function ProfilePage() {
 
         {/* Connections — requests + accepted, with messaging */}
         <div
+          className="profile-reveal-2"
           style={{
             background: 'var(--bg)',
             borderRadius: 14,
@@ -872,6 +831,7 @@ export default function ProfilePage() {
 
         {/* Campus Info */}
         <div
+          className="profile-reveal-3"
           style={{
             background: 'var(--bg)',
             borderRadius: 14,
@@ -926,20 +886,11 @@ export default function ProfilePage() {
               profile stay with you.
             </p>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-              <select
-                value={campusPick.college_id}
-                onChange={(e) =>
-                  setCampusPick((p) => ({ ...p, college_id: e.target.value, campus_id: '', department_id: '' }))
-                }
-                style={inputStyle}
-              >
-                <option value="">Select your college…</option>
-                {campusColleges.map((c) => (
-                  <option key={c.id} value={c.id}>
-                    {c.name}
-                  </option>
-                ))}
-              </select>
+              <CollegeSearch
+                selectedId={campusPick.college_id}
+                onSelect={(c) => setCampusPick((p) => ({ ...p, college_id: c.id, campus_id: '', department_id: '' }))}
+                maxHeight={220}
+              />
               {campusPick.college_id && (
                 <select
                   value={campusPick.campus_id}
@@ -994,6 +945,7 @@ export default function ProfilePage() {
 
         {/* Links */}
         <div
+          className="profile-reveal-4"
           style={{
             background: 'var(--bg)',
             borderRadius: 14,
@@ -1065,6 +1017,7 @@ export default function ProfilePage() {
 
         {/* Interaction scope — who can connect with you */}
         <div
+          className="profile-reveal-5"
           style={{
             background: 'var(--bg)',
             borderRadius: 14,
@@ -1182,6 +1135,64 @@ export default function ProfilePage() {
         pathname={pathname}
         onClose={() => setMenuOpen(false)}
         onNavigate={(href) => router.push(href)}
+      />
+    </div>
+  )
+}
+
+/**
+ * STAT TILES — Aura / Karma / Streak / Connections, each a count-up number.
+ * The zero state still renders (subtle dash) — a fresh student sees the four
+ * dials of progression, not an empty row.
+ */
+function ProfileStats({
+  aura,
+  karma,
+  streak,
+  connections,
+}: {
+  aura: number
+  karma: number
+  streak: number
+  connections: number
+}) {
+  return (
+    <div
+      className="profile-reveal"
+      style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 8 }}
+      aria-label="Profile statistics"
+    >
+      <CountUpStat
+        label="Aura"
+        sub="season"
+        value={aura}
+        color="var(--accent-text)"
+        bg="var(--accent-light)"
+        border="var(--accent-border)"
+      />
+      <CountUpStat
+        label="Karma"
+        sub="lifetime"
+        value={karma}
+        color="var(--yellow-text)"
+        bg="var(--yellow-light)"
+        border="var(--warning-border)"
+      />
+      <CountUpStat
+        label="Streak"
+        sub="days"
+        value={streak}
+        color="var(--orange-text)"
+        bg="var(--orange-light)"
+        border="var(--orange-border)"
+      />
+      <CountUpStat
+        label="Friends"
+        sub="connected"
+        value={connections}
+        color="var(--blue-text)"
+        bg="var(--blue-light, var(--bg-secondary))"
+        border="var(--blue-border, var(--border))"
       />
     </div>
   )

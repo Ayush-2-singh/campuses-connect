@@ -32,6 +32,7 @@ import { subscribeVoiceBroadcast } from '@/lib/voiceBroadcast'
 import { Icon } from '@/components/icons'
 import {
   isPulseVisible,
+  mentionFlash,
   readPulsePrefs,
   readSessionHidden,
   setPulseMuted,
@@ -102,6 +103,13 @@ export default function LivePulseFeed({ userId }: { userId: string | null }) {
   // first paint identical for everyone until the stored choice is known.
   const [prefs, setPrefs] = useState<PulsePrefs | null>(null)
   const [hiddenNow, setHiddenNow] = useState(false)
+  // MENTION FLASH: a brand-new @tag surfaces the card for 5s even when the
+  // card is muted or session-hidden — a direct notification deserves eyes.
+  // `until` gates both prefs and hiddenNow; `seenMentions` persists this
+  // session so nothing replays on navigation.
+  const [mentionUntil, setMentionUntil] = useState(0)
+  const seenMentionsRef = useRef<Set<string>>(new Set())
+  const bootstrappedRef = useRef(false)
   const [voiceLive, setVoiceLive] = useState(false)
   const supabaseRef = useRef<ReturnType<typeof createClient> | null>(null)
   const usernameRef = useRef<string | null>(null)
@@ -141,6 +149,7 @@ export default function LivePulseFeed({ userId }: { userId: string | null }) {
   const collect = useCallback(async () => {
     const sb = getSupabase()
     const found: PulseItem[] = []
+    const mentionKeys: string[] = []
     const sinceIso = new Date(Date.now() - ACTIVITY_WINDOW_MS).toISOString()
 
     // Usernames for mention detection (cheap: only when signed in).
@@ -194,6 +203,7 @@ export default function LivePulseFeed({ userId }: { userId: string | null }) {
           href: `/chat/${key}`,
           at: new Date(m.created_at).getTime(),
         })
+        if (isMention) mentionKeys.push(`chat-${m.id}`)
         if (seenRooms.size >= 5) break
       }
     } catch (err) {
@@ -330,6 +340,23 @@ export default function LivePulseFeed({ userId }: { userId: string | null }) {
     found.sort((a, b) => b.at - a.at)
     setItems(found.slice(0, 8))
     setIdx((i) => (found.length ? i % found.length : 0))
+
+    // MENTION FLASH decision — after the first load, any @tag not yet seen
+    // this session flashes the card for 5s (even muted). The first load's
+    // mentions are marked seen WITHOUT flashing: a refresh must not replay
+    // old tags; only tags arriving while the page is open are notifications.
+    if (mentionKeys.length > 0) {
+      if (!bootstrappedRef.current) {
+        for (const k of mentionKeys) seenMentionsRef.current.add(k)
+      } else {
+        const flash = mentionFlash(seenMentionsRef.current, mentionKeys, true, Date.now())
+        if (flash) {
+          seenMentionsRef.current.add(flash.key)
+          setMentionUntil(flash.until)
+        }
+      }
+    }
+    if (!bootstrappedRef.current) bootstrappedRef.current = true
   }, [getSupabase, userId])
 
   // Initial + interval refresh. Realtime makes it instant when chat/voice move.
@@ -390,9 +417,19 @@ export default function LivePulseFeed({ userId }: { userId: string | null }) {
   }, [])
 
   // Not allowed on screen: user choice, a live voice call, a surface the card
-  // would cover, or the user dismissed it this session.
+  // would cover, or the user dismissed it this session — UNLESS a brand-new
+  // @tag is flashing (a notification overrides hide/mute for 5s, never for
+  // keeps, and only on surfaces where the card is normally welcome).
   const coveredSurface = HIDDEN_PREFIXES.some((p) => pathname.startsWith(p))
-  if (!prefs || !isPulseVisible(prefs) || hiddenNow || voiceLive || coveredSurface || dismissed) return null
+  const mentionActive = mentionUntil > Date.now()
+  useEffect(() => {
+    if (!mentionActive) return
+    const t = setTimeout(() => setMentionUntil(0), mentionUntil - Date.now())
+    return () => clearTimeout(t)
+  }, [mentionActive, mentionUntil])
+  if (!prefs) return null
+  if (!mentionActive && (!isPulseVisible(prefs) || hiddenNow || voiceLive || coveredSurface || dismissed)) return null
+  if (voiceLive || coveredSurface) return null
 
   if (items.length === 0) return null // a brand-new platform stays silent
 

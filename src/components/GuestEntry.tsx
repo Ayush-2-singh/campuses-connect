@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
 import { Icon } from '@/components/icons'
+import CollegeSearch from '@/components/CollegeSearch'
 
 /**
  * Guest entry: type your name → pick your campus → you're in.
@@ -20,20 +21,11 @@ export default function GuestEntry({ onClose }: { onClose: () => void }) {
 
   const [step, setStep] = useState(0)
   const [fullName, setFullName] = useState('')
-  const [colleges, setColleges] = useState<any[]>([])
   const [campuses, setCampuses] = useState<any[]>([])
   const [collegeId, setCollegeId] = useState('')
   const [campusId, setCampusId] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
-
-  useEffect(() => {
-    supabase
-      .from('colleges')
-      .select('*')
-      .eq('is_active', true)
-      .then(({ data }) => setColleges(data || []))
-  }, [supabase])
 
   useEffect(() => {
     if (!collegeId) return setCampuses([])
@@ -174,22 +166,14 @@ export default function GuestEntry({ onClose }: { onClose: () => void }) {
           />
         ) : (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-            <select
-              value={collegeId}
-              onChange={(e) => {
-                setCollegeId(e.target.value)
+            <CollegeSearch
+              selectedId={collegeId}
+              onSelect={(c) => {
+                setCollegeId(c.id)
                 setCampusId('')
               }}
-              style={selectStyle}
-              aria-label="College"
-            >
-              <option value="">Select your college…</option>
-              {colleges.map((c) => (
-                <option key={c.id} value={c.id}>
-                  {c.name}
-                </option>
-              ))}
-            </select>
+              maxHeight={200}
+            />
             {collegeId && campuses.length > 0 && (
               <select
                 value={campusId}

@@ -969,6 +969,54 @@ a,
   }
 }
 
+/* ── Profile polish ──
+   Reveals stagger in on mount, count-up tiles animate the numbers, and the
+   progress ring fills to the week's contribution share. All respect
+   prefers-reduced-motion (the reveal just doesn't translate/fade). */
+@keyframes profileReveal {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+.profile-reveal {
+  animation: profileReveal 0.45s ease both;
+}
+.profile-reveal-2 {
+  animation: profileReveal 0.45s ease 0.06s both;
+}
+.profile-reveal-3 {
+  animation: profileReveal 0.45s ease 0.12s both;
+}
+.profile-reveal-4 {
+  animation: profileReveal 0.45s ease 0.18s both;
+}
+.profile-reveal-5 {
+  animation: profileReveal 0.45s ease 0.24s both;
+}
+
+/* Stat tile hover — a gentle lift shared by both profile pages. */
+.profile-stat {
+  transition:
+    transform 0.18s ease,
+    box-shadow 0.18s ease;
+}
+.profile-stat:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow);
+}
+
+/* The conic-gradient activity ring fills via CSS var --ring-p (0–1).
+   The circle wraps the number; the number counts up via JS. */
+.profile-ring {
+  background: conic-gradient(var(--accent) calc(var(--ring-p) * 360deg), var(--border) 0);
+  transition: --ring-p 0.9s ease;
+}
+
 /* Deep-linked Library note (/notes?uid=CC-NOTE-XXXX): a short accent flash
    so the tag's destination is unmistakable, then it settles. */
 .note-highlight {

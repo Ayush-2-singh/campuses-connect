@@ -1,8 +1,35 @@
 'use client'
 
+/**
+ * Count-up hook — animates a stat from 0 to its value once mounted.
+ * Shared design with /profile; respects reduced motion.
+ */
+function useCountUp(target: number, durationMs = 900): number {
+  const [value, setValue] = useState(0)
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+      setValue(target)
+      return
+    }
+    let raf = 0
+    const t0 = performance.now()
+    const tick = (t: number) => {
+      const p = Math.min(1, (t - t0) / durationMs)
+      const eased = 1 - Math.pow(1 - p, 3)
+      setValue(Math.round(target * eased))
+      if (p < 1) raf = requestAnimationFrame(tick)
+    }
+    raf = requestAnimationFrame(tick)
+    return () => cancelAnimationFrame(raf)
+  }, [target, durationMs])
+  return value
+}
+
 import { useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { useRouter, useParams, usePathname } from 'next/navigation'
+import { CountUpStat } from '@/components/CountUpStat'
 
 import MobileBottomNav from '@/components/MobileBottomNav'
 import MobileMenu from '@/components/MobileMenu'
@@ -260,6 +287,7 @@ export default function UserProfilePage() {
       <div style={{ maxWidth: 640, margin: '0 auto', padding: '24px 16px' }}>
         {/* Profile card — premium with gradient banner */}
         <div
+          className="profile-reveal"
           style={{
             background: 'var(--bg)',
             border: '1px solid var(--border)',
@@ -483,58 +511,45 @@ export default function UserProfilePage() {
               {profile.batch_year && <span>· Batch {profile.batch_year}</span>}
             </div>
 
-            {(profile.karma_points > 0 || profile.streak_days > 0 || profile.aura_points > 0) && (
-              <div style={{ display: 'flex', gap: 12, marginTop: 14, flexWrap: 'wrap' }}>
-                {profile.aura_points > 0 && (
-                  <div
-                    style={{
-                      background: 'var(--accent-light)',
-                      border: '1px solid var(--accent-border)',
-                      borderRadius: 10,
-                      padding: '8px 14px',
-                      textAlign: 'center',
-                    }}
-                  >
-                    <p style={{ fontSize: 15, fontWeight: 700, color: 'var(--accent-text)', margin: 0 }}>
-                      ⚡ {profile.aura_points}
-                    </p>
-                    <p style={{ fontSize: 11, color: 'var(--text-muted)', margin: '2px 0 0' }}>Aura · Season</p>
-                  </div>
-                )}
-                {profile.karma_points > 0 && (
-                  <div
-                    style={{
-                      background: 'var(--yellow-light)',
-                      border: '1px solid var(--warning-border)',
-                      borderRadius: 10,
-                      padding: '8px 14px',
-                      textAlign: 'center',
-                    }}
-                  >
-                    <p style={{ fontSize: 15, fontWeight: 700, color: 'var(--yellow-text)', margin: 0 }}>
-                      ⭐ {profile.karma_points}
-                    </p>
-                    <p style={{ fontSize: 11, color: 'var(--text-muted)', margin: '2px 0 0' }}>Karma · Lifetime</p>
-                  </div>
-                )}
-                {profile.streak_days > 0 && (
-                  <div
-                    style={{
-                      background: 'var(--orange-light)',
-                      border: '1px solid var(--orange-border)',
-                      borderRadius: 10,
-                      padding: '8px 14px',
-                      textAlign: 'center',
-                    }}
-                  >
-                    <p style={{ fontSize: 15, fontWeight: 700, color: 'var(--orange-text)', margin: 0 }}>
-                      🔥 {profile.streak_days}
-                    </p>
-                    <p style={{ fontSize: 11, color: 'var(--text-muted)', margin: '2px 0 0' }}>Day Streak</p>
-                  </div>
-                )}
-              </div>
-            )}
+            {/* Contribution + identity numbers — count-up tiles */}
+            <div
+              className="profile-reveal-2"
+              style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 8, marginTop: 14 }}
+              aria-label="Profile statistics"
+            >
+              <CountUpStat
+                label="Aura"
+                sub="season"
+                value={profile.aura_points || 0}
+                color="var(--accent-text)"
+                bg="var(--accent-light)"
+                border="var(--accent-border)"
+              />
+              <CountUpStat
+                label="Karma"
+                sub="lifetime"
+                value={profile.karma_points || 0}
+                color="var(--yellow-text)"
+                bg="var(--yellow-light)"
+                border="var(--warning-border)"
+              />
+              <CountUpStat
+                label="Streak"
+                sub="days"
+                value={profile.streak_days || 0}
+                color="var(--orange-text)"
+                bg="var(--orange-light)"
+                border="var(--orange-border)"
+              />
+              <CountUpStat
+                label="Posts"
+                sub="shared"
+                value={posts.length}
+                color="var(--blue-text)"
+                bg="var(--blue-light, var(--bg-secondary))"
+                border="var(--blue-border, var(--border))"
+              />
+            </div>
 
             {(profile.github_url || profile.linkedin_url || profile.portfolio_url) && (
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginTop: 14 }}>

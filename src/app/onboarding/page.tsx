@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
+import CollegeSearch from '@/components/CollegeSearch'
 
 const STEPS = ['College', 'Campus', 'Department', 'Profile']
 
@@ -113,7 +114,6 @@ export default function OnboardingPage() {
     setRequestSent(true)
   }
 
-  const filteredColleges = colleges.filter((c) => c.name.toLowerCase().includes(q.college.toLowerCase()))
   const filteredCampuses = campuses.filter((c) => c.name.toLowerCase().includes(q.campus.toLowerCase()))
   const filteredDepartments = departments.filter((d) =>
     (d.name + ' ' + d.short_name).toLowerCase().includes(q.department.toLowerCase())
@@ -302,30 +302,11 @@ export default function OnboardingPage() {
               </button>
 
               <p style={{ fontSize: 13, color: 'var(--text-muted)', marginBottom: 12 }}>…or pick your college</p>
-              <input
-                type="text"
-                value={q.college}
-                onChange={(e) => setQ((s) => ({ ...s, college: e.target.value }))}
-                placeholder="Search your college…"
-                style={{ ...inputStyle, marginBottom: 10 }}
-                autoComplete="off"
+              <CollegeSearch
+                selectedId={selected.college_id}
+                onSelect={(c) => setSelected((s) => ({ ...s, college_id: c.id }))}
+                onRequestCollege={() => setRequestOpen(true)}
               />
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 8, maxHeight: 300, overflowY: 'auto' }}>
-                {filteredColleges.map((c) => (
-                  <button
-                    key={c.id}
-                    onClick={() => setSelected((s) => ({ ...s, college_id: c.id }))}
-                    style={cardStyle(selected.college_id === c.id)}
-                  >
-                    {c.name}
-                  </button>
-                ))}
-                {filteredColleges.length === 0 && (
-                  <p style={{ fontSize: 13, color: 'var(--text-muted)', textAlign: 'center', padding: '16px 0' }}>
-                    No colleges match “{q.college}”. Clear the search or join globally below.
-                  </p>
-                )}
-              </div>
               <button
                 disabled={!selected.college_id}
                 onClick={next}

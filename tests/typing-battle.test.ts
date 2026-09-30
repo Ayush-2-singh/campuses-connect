@@ -176,7 +176,9 @@ describe('typing battle — SQL surface', () => {
     expect(sql).toMatch(/FUNCTION public\.complete_typing_match/)
     expect(sql).toMatch(/now\(\) - v_room\.round_started_at/)
     expect(sql).toMatch(/impossible_time/)
-    expect(sql).toMatch(/v_wpm := ROUND\(\(v_correct::NUMERIC \/ 5\) \/ \(v_elapsed \/ 60\), 2\)/)
+    // WPM is recomputed from the server clock (the ::NUMERIC cast keeps
+    // round(numeric, 2) — round(double, int) does not exist in Postgres).
+    expect(sql).toMatch(/v_wpm := ROUND\(\(\(v_correct::NUMERIC \/ 5\) \/ \(v_elapsed \/ 60\)\)::NUMERIC, 2\)/)
   })
 
   it('prevents double submission and double wins', () => {
