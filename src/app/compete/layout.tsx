@@ -8,5 +8,9 @@ export const metadata: Metadata = {
 }
 
 export default function CompeteLayout({ children }: { children: React.ReactNode }) {
-  return children
+  // The whole Compete section speaks GREEN (homepage feature-card identity:
+  // "green for compete"). One shell sets the accent family so every button,
+  // badge, active tab, hover glow and icon tile inside inherits it — no
+  // per-component hex colors.
+  return <div data-accent="green">{children}</div>
 }

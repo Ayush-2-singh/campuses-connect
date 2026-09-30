@@ -12,10 +12,15 @@ import ChallengeTab from './ChallengeTab'
 import ClashTab from './ClashTab'
 import type { Tab, Problem, Submission, SeasonInfo } from './types'
 
-const TABS: { key: Tab; label: string; icon: string }[] = [
-  { key: 'rankings', label: 'Rankings', icon: '🏆' },
-  { key: 'challenge', label: 'Daily Challenge', icon: '🧩' },
-  { key: 'clash', label: 'Games & Clash', icon: '🎮' },
+const TABS: { key: Tab; label: string; icon: string; d: string }[] = [
+  { key: 'rankings', label: 'Rankings', icon: 'trophy', d: 'M4 19h16M4 19 2.5 8l5.5 4L12 4l4 8 5.5-4L20 19' },
+  { key: 'challenge', label: 'Daily Challenge', icon: 'code', d: 'm16 18 6-6-6-6M8 6l-6 6 6 6' },
+  {
+    key: 'clash',
+    label: 'Games & Clash',
+    icon: 'gamepad',
+    d: 'M6 12h4M8 10v4M15 11h.01M18 13h.01M17.32 5H6.68a4 4 0 0 0-3.978 3.59c-.006.052-.01.101-.017.152C2.604 9.416 2 14.456 2 16a3 3 0 0 0 3 3c1 0 1.5-.5 2-1l1.414-1.414A2 2 0 0 1 9.828 16h4.344a2 2 0 0 1 1.414.586L17 18c.5.5 1 1 2 1a3 3 0 0 0 3-3c0-1.544-.604-6.584-.685-7.258a4 4 0 0 0-3.995-3.742Z',
+  },
 ]
 
 const TAB_FROM_URL: Record<string, Tab> = {
@@ -79,7 +84,7 @@ function CompetePageInner() {
     const load = async () => {
       try {
         // Fire auth + all data queries SIMULTANEOUSLY
-        const [authRes, seasonRes, dcRes, problemsRes, subsRes, contestsRes] = await Promise.all([
+        const [authRes, seasonRes, dcRes, problemsRes, , contestsRes] = await Promise.all([
           supabase.auth.getUser(),
           supabase
             .from('seasons')
@@ -195,11 +200,21 @@ function CompetePageInner() {
   }
 
   const register = async () => {
+    if (!user) {
+      router.push('/auth/login?redirect=/compete?tab=clash')
+      return
+    }
     if (!contest) return
     try {
-      await supabase.from('contest_registrations').insert({ contest_id: contest.id, user_id: user?.id })
-    } catch {}
-    setRegistered(true)
+      const { error: regErr } = await supabase
+        .from('contest_registrations')
+        .insert({ contest_id: contest.id, user_id: user.id })
+      if (regErr) throw regErr
+      setRegistered(true)
+    } catch {
+      // duplicate registration is fine — treat as registered
+      setRegistered(true)
+    }
   }
 
   const selectProblem = (p: Problem) => {
@@ -212,7 +227,7 @@ function CompetePageInner() {
     <Layout user={user} profile={profile}>
       <ErrorBoundary pageName="compete">
         <div className="ambient" style={{ maxWidth: 1100, margin: '0 auto', padding: '22px 24px 48px' }}>
-          {/* Header strip — homepage pattern (green compete accent) */}
+          {/* Header strip — the section's green accent flows through every tile */}
           <div
             style={{
               background: 'var(--bg)',
@@ -232,8 +247,8 @@ function CompetePageInner() {
                 width: 42,
                 height: 42,
                 borderRadius: 12,
-                background: 'var(--success-light)',
-                color: 'var(--success-text)',
+                background: 'var(--accent-light)',
+                color: 'var(--accent-text)',
                 display: 'inline-flex',
                 alignItems: 'center',
                 justifyContent: 'center',
@@ -256,7 +271,7 @@ function CompetePageInner() {
                     display: 'block',
                     fontSize: 16,
                     fontWeight: 800,
-                    color: 'var(--success-text)',
+                    color: 'var(--accent-text)',
                     lineHeight: 1.15,
                   }}
                 >
@@ -295,64 +310,15 @@ function CompetePageInner() {
                   fontWeight: 700,
                   cursor: 'pointer',
                   fontFamily: 'inherit',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: 7,
                 }}
               >
-                🎮 Play Games
+                <Icon name="gamepad" size={15} strokeWidth={2} />
+                Play Games
               </button>
             )}
-          </div>
-          {/* Karma / XP / Aura / Rating definitions — visible text (user request) */}
-          <div
-            style={{
-              display: 'flex',
-              gap: 8,
-              flexWrap: 'wrap',
-              marginBottom: 16,
-              fontSize: 11.5,
-              color: 'var(--text-muted)',
-            }}
-          >
-            <span
-              style={{
-                background: 'var(--bg)',
-                border: '1px solid var(--border)',
-                borderRadius: 8,
-                padding: '5px 10px',
-              }}
-            >
-              🏆 <strong style={{ color: 'var(--text-secondary)' }}>Karma</strong> — lifetime contribution points
-            </span>
-            <span
-              style={{
-                background: 'var(--bg)',
-                border: '1px solid var(--border)',
-                borderRadius: 8,
-                padding: '5px 10px',
-              }}
-            >
-              📈 <strong style={{ color: 'var(--text-secondary)' }}>XP</strong> — progress from solving & playing
-            </span>
-            <span
-              style={{
-                background: 'var(--bg)',
-                border: '1px solid var(--border)',
-                borderRadius: 8,
-                padding: '5px 10px',
-              }}
-            >
-              ✨ <strong style={{ color: 'var(--text-secondary)' }}>Aura</strong> — today&apos;s competitive momentum,
-              resets daily
-            </span>
-            <span
-              style={{
-                background: 'var(--bg)',
-                border: '1px solid var(--border)',
-                borderRadius: 8,
-                padding: '5px 10px',
-              }}
-            >
-              ⭐ <strong style={{ color: 'var(--text-secondary)' }}>Rating</strong> — skill per season, grows win by win
-            </span>
           </div>
 
           {/* The four metrics, kept separate: Rating / Aura / XP / Karma.
@@ -360,7 +326,7 @@ function CompetePageInner() {
               accumulator "Aura" — contradicting the daily definition. */}
           <ScoreHeader userId={user?.id} />
 
-          {/* Tabs */}
+          {/* Tabs — SVG icons, accent underline follows the section green */}
           <div
             style={{
               display: 'flex',
@@ -384,14 +350,20 @@ function CompetePageInner() {
                   border: 'none',
                   background: 'none',
                   cursor: 'pointer',
-                  color: tab === t.key ? 'var(--accent)' : 'var(--text-secondary)',
+                  color: tab === t.key ? 'var(--accent-text)' : 'var(--text-secondary)',
                   fontFamily: 'inherit',
                   whiteSpace: 'nowrap',
                   borderBottom: tab === t.key ? '2px solid var(--accent)' : '2px solid transparent',
                   marginBottom: -1,
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: 7,
                 }}
               >
-                {t.icon} {t.label}
+                <span style={{ display: 'inline-flex' }} aria-hidden="true">
+                  <Icon name={t.icon} size={15} strokeWidth={2} />
+                </span>
+                {t.label}
               </button>
             ))}
           </div>

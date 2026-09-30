@@ -16,7 +16,24 @@ type WinnerRow = {
   last_won_at: string
 }
 
-const medal = (i: number) => (i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : null)
+const medal = (i: number) => (i === 0 ? '1st' : i === 1 ? '2nd' : i === 2 ? '3rd' : null)
+
+/** Tiny SVG trophy for the header — replaces the emoji tile. */
+const TrophyGlyph = () => (
+  <svg
+    width={20}
+    height={20}
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth={1.9}
+    strokeLinecap="round"
+    strokeLinejoin="round"
+    aria-hidden="true"
+  >
+    <path d="M4 19h16M4 19 2.5 8l5.5 4L12 4l4 8 5.5-4L20 19" />
+  </svg>
+)
 
 export default function GameChampions({ limit = 10 }: { limit?: number }) {
   const supabase = createClient()
@@ -60,14 +77,15 @@ export default function GameChampions({ limit = 10 }: { limit?: number }) {
             height: 40,
             borderRadius: 12,
             background: 'var(--accent-light)',
+            color: 'var(--accent-text)',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            fontSize: 20,
             flexShrink: 0,
           }}
+          aria-hidden="true"
         >
-          🏆
+          <TrophyGlyph />
         </div>
         <div>
           <h3 style={{ fontSize: 16, fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>Game Champions</h3>
@@ -81,7 +99,7 @@ export default function GameChampions({ limit = 10 }: { limit?: number }) {
         </p>
       ) : winners.length === 0 ? (
         <p style={{ fontSize: 13, color: 'var(--text-muted)', textAlign: 'center', padding: '16px 0', margin: 0 }}>
-          No games finished yet — play Quick Math to crown the first champion! 🏆
+          No games finished yet — play a match to crown the first champion!
         </p>
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
@@ -108,10 +126,11 @@ export default function GameChampions({ limit = 10 }: { limit?: number }) {
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  fontSize: 11,
-                  fontWeight: 700,
+                  fontSize: 10,
+                  fontWeight: 800,
                   flexShrink: 0,
                 }}
+                aria-hidden="true"
               >
                 {medal(idx) || idx + 1}
               </div>

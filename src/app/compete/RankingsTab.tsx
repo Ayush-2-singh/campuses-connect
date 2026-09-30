@@ -11,6 +11,100 @@ import { useRouter } from 'next/navigation'
 import Avatar from '@/components/Avatar'
 import type { LeaderEntry, SeasonInfo, RankScope } from './types'
 
+// ── Inline SVG glyphs (no emoji anywhere in this tab) ──────────────────────
+const BoltGlyph = ({ size = 12 }: { size?: number }) => (
+  <svg
+    width={size}
+    height={size}
+    viewBox="0 0 24 24"
+    fill="currentColor"
+    aria-hidden="true"
+    style={{ verticalAlign: '-1px' }}
+  >
+    <path d="M13 2 4 14h6l-1 8 9-12h-6z" />
+  </svg>
+)
+
+const StarGlyph = ({ size = 12 }: { size?: number }) => (
+  <svg
+    width={size}
+    height={size}
+    viewBox="0 0 24 24"
+    fill="currentColor"
+    aria-hidden="true"
+    style={{ verticalAlign: '-1px' }}
+  >
+    <path d="m12 2 2.9 6.26L21.5 9.3l-4.75 4.4L18 20.5l-6-3.5-6 3.5 1.25-6.8L2.5 9.3l6.6-1.04L12 2Z" />
+  </svg>
+)
+
+const GlobeGlyph = ({ size = 11 }: { size?: number }) => (
+  <svg
+    width={size}
+    height={size}
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth={2}
+    strokeLinecap="round"
+    strokeLinejoin="round"
+    aria-hidden="true"
+    style={{ verticalAlign: '-1px' }}
+  >
+    <path d="M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18ZM3 12h18M12 3a14 14 0 0 1 0 18M12 3a14 14 0 0 0 0 18" />
+  </svg>
+)
+
+const CampusGlyph = ({ size = 11 }: { size?: number }) => (
+  <svg
+    width={size}
+    height={size}
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth={2}
+    strokeLinecap="round"
+    strokeLinejoin="round"
+    aria-hidden="true"
+    style={{ verticalAlign: '-1px' }}
+  >
+    <path d="M4 21V6a1 1 0 0 1 1-1h8v16M13 10h6a1 1 0 0 1 1 1v10M8 9h.01M8 13h.01M8 17h.01M16 14h.01M16 18h.01M2 21h20" />
+  </svg>
+)
+
+const UsersGlyph = ({ size = 11 }: { size?: number }) => (
+  <svg
+    width={size}
+    height={size}
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth={2}
+    strokeLinecap="round"
+    strokeLinejoin="round"
+    aria-hidden="true"
+    style={{ verticalAlign: '-1px' }}
+  >
+    <path d="M8 11a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7ZM2 20c0-3 3-4.5 6-4.5s6 1.5 6 4.5M16 4.6a3.5 3.5 0 0 1 0 6.8M17 15.6c2.4.4 5 1.7 5 4.4" />
+  </svg>
+)
+
+const MEDAL_COLORS = ['#f6c453', '#c7ccd8', '#e09b62']
+
+/** Podium medal — SVG circle + ribbon with rank number (replaces 🥇🥈🥉 emoji). */
+function RankGlyph({ pos, size = 22 }: { pos: number; size?: number }) {
+  const c = MEDAL_COLORS[pos] || 'var(--text-muted)'
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" aria-hidden="true" style={{ verticalAlign: '-4px' }}>
+      <path d="M8 1h8l-2.5 7.5h-3L8 1Z" fill={c} opacity={0.75} />
+      <circle cx="12" cy="15" r="7.5" fill={c} />
+      <text x="12" y="18.6" textAnchor="middle" fontSize="9.5" fontWeight="800" fill="rgba(0,0,0,0.72)">
+        {pos + 1}
+      </text>
+    </svg>
+  )
+}
+
 const RANK_SORTS = ['aura', 'karma'] as const
 const LEADERBOARD_LIMIT = 50
 
@@ -141,7 +235,6 @@ export default function RankingsTab({
   const myEntry = myPosition >= 0 ? sorted[myPosition] : null
   const top3 = sorted.slice(0, 3)
   const rest = sorted.slice(3)
-  const medal = (i: number) => (i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : null)
 
   if (loading)
     return (
@@ -169,7 +262,21 @@ export default function RankingsTab({
           boxShadow: 'var(--shadow-sm)',
         }}
       >
-        <p style={{ fontSize: 40, margin: '0 0 10px' }}>🏆</p>
+        <div style={{ margin: '0 0 10px', color: 'var(--accent-text)', display: 'flex', justifyContent: 'center' }}>
+          <svg
+            width={40}
+            height={40}
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth={1.6}
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            aria-hidden="true"
+          >
+            <path d="M4 19h16M4 19 2.5 8l5.5 4L12 4l4 8 5.5-4L20 19" />
+          </svg>
+        </div>
         <p style={{ fontSize: 16, fontWeight: 700, color: 'var(--text-primary)', margin: '0 0 6px' }}>
           Rankings are getting ready
         </p>
@@ -197,7 +304,20 @@ export default function RankingsTab({
           flexWrap: 'wrap',
         }}
       >
-        <div style={{ fontSize: 24 }}>🗓️</div>
+        <svg
+          width={26}
+          height={26}
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="var(--accent-text)"
+          strokeWidth={1.8}
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          aria-hidden="true"
+          style={{ flexShrink: 0 }}
+        >
+          <path d="M8 2v4M16 2v4M3 10h18M5 4h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2Z" />
+        </svg>
         <div style={{ flex: 1, minWidth: 160 }}>
           <p style={{ fontSize: 13, fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>
             {season?.name || 'Season 1'} · {scopeLabel}
@@ -263,13 +383,13 @@ export default function RankingsTab({
           <div style={{ display: 'flex', gap: 16, alignItems: 'center' }}>
             <div style={{ textAlign: 'center' }}>
               <p style={{ fontSize: 16, fontWeight: 800, color: 'var(--accent-text)', margin: 0 }}>
-                ⚡ {myEntry ? myEntry.aura_points : (karma?.aura ?? 0)}
+                <BoltGlyph /> {myEntry ? myEntry.aura_points : (karma?.aura ?? 0)}
               </p>
               <p style={{ fontSize: 10, color: 'var(--text-muted)', margin: 0 }}>Aura</p>
             </div>
             <div style={{ textAlign: 'center' }}>
-              <p style={{ fontSize: 16, fontWeight: 800, color: '#eab308', margin: 0 }}>
-                ⭐ {myEntry ? myEntry.karma_points : (karma?.lifetime ?? 0)}
+              <p style={{ fontSize: 16, fontWeight: 800, color: 'var(--yellow-text)', margin: 0 }}>
+                <StarGlyph /> {myEntry ? myEntry.karma_points : (karma?.lifetime ?? 0)}
               </p>
               <p style={{ fontSize: 10, color: 'var(--text-muted)', margin: 0 }}>Karma</p>
             </div>
@@ -306,7 +426,15 @@ export default function RankingsTab({
                 color: sortBy === m ? 'var(--on-accent)' : 'var(--text-secondary)',
               }}
             >
-              {m === 'aura' ? '⚡ Aura' : '⭐ Karma'}
+              {m === 'aura' ? (
+                <>
+                  <BoltGlyph /> Aura
+                </>
+              ) : (
+                <>
+                  <StarGlyph /> Karma
+                </>
+              )}
             </button>
           ))}
         </div>
@@ -331,7 +459,19 @@ export default function RankingsTab({
                   color: filterScope === s ? 'var(--on-accent)' : 'var(--text-secondary)',
                 }}
               >
-                {s === 'global' ? '🌐 Global' : s === 'campus' ? '🏫 Campus' : '🤝 Friends'}
+                {s === 'global' ? (
+                  <>
+                    <GlobeGlyph /> Global
+                  </>
+                ) : s === 'campus' ? (
+                  <>
+                    <CampusGlyph /> Campus
+                  </>
+                ) : (
+                  <>
+                    <UsersGlyph /> Friends
+                  </>
+                )}
               </button>
             )
           })}
@@ -385,7 +525,7 @@ export default function RankingsTab({
                         lineHeight: 1,
                       }}
                     >
-                      {medal(pos)}
+                      <RankGlyph pos={pos} size={medalSize} />
                     </p>
                     <p
                       style={{
@@ -419,7 +559,15 @@ export default function RankingsTab({
                         margin: '3px 0 0',
                       }}
                     >
-                      {sortBy === 'aura' ? `⚡ ${p.aura_points}` : `⭐ ${p.karma_points}`}
+                      {sortBy === 'aura' ? (
+                        <>
+                          <BoltGlyph /> {p.aura_points}
+                        </>
+                      ) : (
+                        <>
+                          <StarGlyph /> {p.karma_points}
+                        </>
+                      )}
                     </p>
                   </div>
 
@@ -520,10 +668,13 @@ export default function RankingsTab({
               </div>
               <div style={{ display: 'flex', alignItems: 'baseline', gap: 12, flexShrink: 0 }}>
                 <p style={{ fontSize: 15, fontWeight: 800, color: 'var(--accent-text)', margin: 0 }}>
-                  ⚡ {entry.aura_points}
+                  <BoltGlyph /> {entry.aura_points}
                 </p>
-                <p className="hide-mobile-soft" style={{ fontSize: 12, fontWeight: 600, color: '#eab308', margin: 0 }}>
-                  ⭐ {entry.karma_points}
+                <p
+                  className="hide-mobile-soft"
+                  style={{ fontSize: 12, fontWeight: 600, color: 'var(--yellow-text)', margin: 0 }}
+                >
+                  <StarGlyph /> {entry.karma_points}
                 </p>
               </div>
             </div>

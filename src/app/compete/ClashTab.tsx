@@ -3,12 +3,10 @@
 // ═══════════════════════════════════════════════════════════════════════════
 // ClashTab — GAMES & CLASH hub
 //
-// Desktop game-hub composition (Lichess-style structure, CampusConnect skin):
-//   [mode nav: Arena | Daily | Rankings]  (owned by compete/page tabs above)
-//   ┌ main: Typing Battle + Campus Clash contest ┐ ┌ side: quick actions ┐
-//   └ full-width: recent activity / champions ┘
-// The old Programming Arena (DSA/Java/Python/… MCQ grid) was removed — the
-// hub leads with the real-time games now.
+//   ┌ HERO: Typing Battle (real-time 1v1) ┐ ┌ side: quick actions ┐
+//   ┌ Campus Clash contest ┌ ┌ GameChampions ┘
+// The section's green accent flows from the layout shell; icons are the
+// shared inline-SVG set — no emoji-as-icon anywhere.
 // ═══════════════════════════════════════════════════════════════════════════
 
 import { useMemo } from 'react'
@@ -36,13 +34,13 @@ function fmtDate(iso: string): string {
   })
 }
 
-// Inline SVG icon set — no emoji-as-icon, no new icon library (spec §8).
-const Icon = ({ d, size = 22 }: { d: string; size?: number }) => (
+// Inline SVG icon set — one visual language across the hub.
+const Icon = ({ d, size = 20, filled = false }: { d: string; size?: number; filled?: boolean }) => (
   <svg
     width={size}
     height={size}
     viewBox="0 0 24 24"
-    fill="none"
+    fill={filled ? 'currentColor' : 'none'}
     stroke="currentColor"
     strokeWidth="1.8"
     strokeLinecap="round"
@@ -53,12 +51,41 @@ const Icon = ({ d, size = 22 }: { d: string; size?: number }) => (
   </svg>
 )
 
-const PATHS = {
+const P = {
+  keyboard:
+    'M6 10h.01M10 10h.01M14 10h.01M18 10h.01M7 14h10M4 6h16a1 1 0 0 1 1 1v10a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1Z',
+  keyboardAlt: 'M2 7h20v10H2zM6 11h.01M10 11h.01M14 11h.01M18 11h.01M7 14h10',
   play: 'M7 5l12 7-12 7z',
-  bolt: 'M13 2L4 14h6l-1 8 9-12h-6z',
+  bolt: 'M13 2 4 14h6l-1 8 9-12h-6z',
   users:
-    'M8 11a3.5 3.5 0 100-7 3.5 3.5 0 000 7zM2 20c0-3 3-4.5 6-4.5s6 1.5 6 4.5M16 4.6a3.5 3.5 0 010 6.8M17 15.6c2.4.4 5 1.7 5 4.4',
-  clock: 'M12 21a9 9 0 100-18 9 9 0 000 18zM12 7v5l3 3',
+    'M8 11a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7ZM2 20c0-3 3-4.5 6-4.5s6 1.5 6 4.5M16 4.6a3.5 3.5 0 0 1 0 6.8M17 15.6c2.4.4 5 1.7 5 4.4',
+  clock: 'M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18ZM12 7v5l3 3',
+  calendar: 'M8 2v4M16 2v4M3 10h18M5 4h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2Z',
+  chat: 'M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z',
+  trophy: 'M4 19h16M4 19 2.5 8l5.5 4L12 4l4 8 5.5-4L20 19',
+  arrow: 'M5 12h14M13 6l6 6-6 6',
+  gamepad:
+    'M6 12h4M8 10v4M15 11h.01M18 13h.01M17.32 5H6.68a4 4 0 0 0-3.978 3.59c-.006.052-.01.101-.017.152C2.604 9.416 2 14.456 2 16a3 3 0 0 0 3 3c1 0 1.5-.5 2-1l1.414-1.414A2 2 0 0 1 9.828 16h4.344a2 2 0 0 1 1.414.586L17 18c.5.5 1 1 2 1a3 3 0 0 0 3-3c0-1.544-.604-6.584-.685-7.258a4 4 0 0 0-3.995-3.742Z',
+  target:
+    'M12 22a10 10 0 1 0 0-20 10 10 0 0 0 0 20ZM12 18a6 6 0 1 0 0-12 6 6 0 0 0 0 12ZM12 14a2 2 0 1 0 0-4 2 2 0 0 0 0 4Z',
+  check: 'M20 6 9 17l-5-5',
+  pin: 'M12 17v5M9 10.76V5a3 3 0 1 1 6 0v5.76L19 14H5l4-3.24z',
+}
+
+function StatusDot({ live }: { live: boolean }) {
+  return (
+    <span
+      aria-hidden
+      style={{
+        display: 'inline-block',
+        width: 8,
+        height: 8,
+        borderRadius: '50%',
+        background: live ? 'var(--danger)' : 'var(--warning-text)',
+        boxShadow: live ? '0 0 6px var(--danger)' : 'none',
+      }}
+    />
+  )
 }
 
 export default function ClashTab({
@@ -81,67 +108,244 @@ export default function ClashTab({
     return fmtCountdown(new Date(contest.starts_at).getTime() - now)
   }, [contest, now, isLive])
 
+  const card = {
+    background: 'var(--bg)',
+    border: '1px solid var(--border)',
+    borderRadius: 16,
+    boxShadow: 'var(--shadow-sm)',
+  } as const
+
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-      {/* ── Typing Battle — 1v1 keyboard race (real-time rooms) ───────── */}
+      {/* ═══ HERO — Typing Battle ═══ */}
       <div
+        className="card-hover"
+        role="link"
+        tabIndex={0}
+        onClick={() => router.push('/games/typing')}
+        onKeyDown={(e) => (e.key === 'Enter' || e.key === ' ') && router.push('/games/typing')}
         style={{
-          background: 'var(--bg)',
-          border: '1px solid var(--border)',
-          borderRadius: 16,
-          padding: '18px 18px 20px',
-          boxShadow: 'var(--shadow-sm)',
+          ...card,
+          padding: '22px 22px 24px',
+          cursor: 'pointer',
           display: 'flex',
           alignItems: 'center',
-          gap: 14,
+          gap: 18,
           flexWrap: 'wrap',
+          position: 'relative',
+          overflow: 'hidden',
         }}
       >
+        {/* soft accent wash, top-left origin */}
+        <span
+          aria-hidden="true"
+          style={{
+            position: 'absolute',
+            inset: 0,
+            background: 'radial-gradient(600px 160px at 12% 0%, var(--accent-light), transparent 70%)',
+            pointerEvents: 'none',
+          }}
+        />
         <span
           style={{
-            width: 40,
-            height: 40,
-            borderRadius: 12,
+            width: 52,
+            height: 52,
+            borderRadius: 14,
             background: 'var(--accent-light)',
             color: 'var(--accent-text)',
             display: 'inline-flex',
             alignItems: 'center',
             justifyContent: 'center',
-            fontSize: 20,
             flexShrink: 0,
+            position: 'relative',
           }}
           aria-hidden="true"
         >
-          ⌨️
+          <Icon d={P.keyboard} size={26} />
         </span>
-        <div style={{ flex: 1, minWidth: 200 }}>
-          <h3 style={{ fontSize: 15.5, fontWeight: 800, color: 'var(--text-primary)', margin: '0 0 2px' }}>
+        <div style={{ flex: 1, minWidth: 220, position: 'relative' }}>
+          <p
+            style={{
+              fontSize: 10.5,
+              fontWeight: 800,
+              letterSpacing: '0.1em',
+              color: 'var(--accent-text)',
+              textTransform: 'uppercase',
+              margin: '0 0 3px',
+            }}
+          >
+            Live 1v1 · Real-time rooms
+          </p>
+          <h3 style={{ fontSize: 19, fontWeight: 900, color: 'var(--text-primary)', margin: '0 0 4px' }}>
             Typing Battle
           </h3>
-          <p style={{ fontSize: 12.5, color: 'var(--text-muted)', margin: 0 }}>
-            Race another student. Type faster. Make fewer mistakes.
+          <p style={{ fontSize: 13, color: 'var(--text-muted)', margin: 0 }}>
+            Quick Match against any student, or create a room and share the code. Same words, fastest fingers win.
           </p>
         </div>
         <button
-          onClick={() => router.push('/games/typing')}
+          onClick={(e) => {
+            e.stopPropagation()
+            router.push('/games/typing')
+          }}
           style={{
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: 8,
             background: 'var(--accent)',
             color: 'var(--on-accent)',
             border: 'none',
-            borderRadius: 10,
-            padding: '10px 22px',
-            fontSize: 13.5,
+            borderRadius: 12,
+            padding: '12px 24px',
+            fontSize: 14,
             fontWeight: 800,
             cursor: 'pointer',
             fontFamily: 'inherit',
             flexShrink: 0,
+            position: 'relative',
           }}
         >
+          <Icon d={P.play} size={15} filled />
           Play Now
         </button>
       </div>
 
-      {/* ── Desktop: main + side rail; mobile: stacked ─────────────────── */}
+      {/* ═══ Quick actions row ═══ */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 12 }}>
+        <button
+          onClick={() => router.push('/games')}
+          className="card-hover"
+          style={{
+            ...card,
+            display: 'flex',
+            alignItems: 'center',
+            gap: 12,
+            padding: '15px 16px',
+            fontSize: 13.5,
+            fontWeight: 700,
+            color: 'var(--text-primary)',
+            cursor: 'pointer',
+            fontFamily: 'inherit',
+            textAlign: 'left',
+          }}
+        >
+          <span
+            style={{
+              width: 38,
+              height: 38,
+              borderRadius: 11,
+              background: 'var(--accent-light)',
+              color: 'var(--accent-text)',
+              display: 'inline-flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              flexShrink: 0,
+            }}
+            aria-hidden="true"
+          >
+            <Icon d={P.gamepad} size={19} />
+          </span>
+          <span style={{ flex: 1 }}>
+            Quick Math
+            <span style={{ display: 'block', fontSize: 11.5, fontWeight: 600, color: 'var(--text-muted)' }}>
+              Real-time math rooms
+            </span>
+          </span>
+          <span style={{ display: 'inline-flex', color: 'var(--text-muted)' }} aria-hidden="true">
+            <Icon d={P.arrow} size={16} />
+          </span>
+        </button>
+
+        <button
+          onClick={() => router.push('/compete?tab=daily')}
+          className="card-hover"
+          style={{
+            ...card,
+            display: 'flex',
+            alignItems: 'center',
+            gap: 12,
+            padding: '15px 16px',
+            fontSize: 13.5,
+            fontWeight: 700,
+            color: 'var(--text-primary)',
+            cursor: 'pointer',
+            fontFamily: 'inherit',
+            textAlign: 'left',
+          }}
+        >
+          <span
+            style={{
+              width: 38,
+              height: 38,
+              borderRadius: 11,
+              background: 'var(--accent-light)',
+              color: 'var(--accent-text)',
+              display: 'inline-flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              flexShrink: 0,
+            }}
+            aria-hidden="true"
+          >
+            <Icon d={P.bolt} size={19} />
+          </span>
+          <span style={{ flex: 1 }}>
+            Daily Challenge
+            <span style={{ display: 'block', fontSize: 11.5, fontWeight: 600, color: 'var(--text-muted)' }}>
+              Today&apos;s DSA problem
+            </span>
+          </span>
+          <span style={{ display: 'inline-flex', color: 'var(--text-muted)' }} aria-hidden="true">
+            <Icon d={P.arrow} size={16} />
+          </span>
+        </button>
+
+        <button
+          onClick={() => router.push('/tournaments')}
+          className="card-hover"
+          style={{
+            ...card,
+            display: 'flex',
+            alignItems: 'center',
+            gap: 12,
+            padding: '15px 16px',
+            fontSize: 13.5,
+            fontWeight: 700,
+            color: 'var(--text-primary)',
+            cursor: 'pointer',
+            fontFamily: 'inherit',
+            textAlign: 'left',
+          }}
+        >
+          <span
+            style={{
+              width: 38,
+              height: 38,
+              borderRadius: 11,
+              background: 'var(--accent-light)',
+              color: 'var(--accent-text)',
+              display: 'inline-flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              flexShrink: 0,
+            }}
+            aria-hidden="true"
+          >
+            <Icon d={P.trophy} size={19} />
+          </span>
+          <span style={{ flex: 1 }}>
+            Tournaments
+            <span style={{ display: 'block', fontSize: 11.5, fontWeight: 600, color: 'var(--text-muted)' }}>
+              Free Fire &amp; campus esports
+            </span>
+          </span>
+          <span style={{ display: 'inline-flex', color: 'var(--text-muted)' }} aria-hidden="true">
+            <Icon d={P.arrow} size={16} />
+          </span>
+        </button>
+      </div>
+
+      {/* ═══ Campus Clash contest + side rail ═══ */}
       <div
         style={{
           display: 'grid',
@@ -150,20 +354,26 @@ export default function ClashTab({
           alignItems: 'start',
         }}
       >
-        {/* MAIN — Campus Clash contest (highlighted panel) */}
-        <div
-          style={{
-            background: 'var(--bg)',
-            border: '1px solid var(--accent-border, var(--border))',
-            borderRadius: 16,
-            padding: '20px 18px',
-            boxShadow: 'var(--shadow-sm)',
-            textAlign: 'center',
-          }}
-        >
+        {/* MAIN — contest panel */}
+        <div style={{ ...card, padding: '20px 18px', textAlign: 'center' }}>
           {!contest ? (
             <>
-              <p style={{ fontSize: 26, margin: '0 0 8px' }}>🏆</p>
+              <span
+                style={{
+                  width: 48,
+                  height: 48,
+                  borderRadius: 13,
+                  background: 'var(--accent-light)',
+                  color: 'var(--accent-text)',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  margin: '0 auto 10px',
+                }}
+                aria-hidden="true"
+              >
+                <Icon d={P.target} size={24} />
+              </span>
               <p style={{ fontSize: 14, fontWeight: 700, color: 'var(--text-primary)', margin: '0 0 4px' }}>
                 Campus Clash
               </p>
@@ -175,20 +385,34 @@ export default function ClashTab({
             <>
               <p
                 style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: 6,
                   fontSize: 11,
-                  fontWeight: 700,
+                  fontWeight: 800,
                   color: 'var(--accent-text)',
                   textTransform: 'uppercase',
                   letterSpacing: 1,
                   margin: '0 0 6px',
                 }}
               >
+                <Icon d={P.pin} size={12} />
                 Campus Clash
               </p>
               <h3 style={{ fontSize: 20, fontWeight: 800, color: 'var(--text-primary)', margin: '0 0 6px' }}>
                 {contest.name}
               </h3>
-              <p style={{ fontSize: 12.5, color: 'var(--text-muted)', margin: '0 0 4px' }}>
+              <p
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: 6,
+                  fontSize: 12.5,
+                  color: 'var(--text-muted)',
+                  margin: '0 0 4px',
+                }}
+              >
+                <Icon d={P.calendar} size={13} />
                 {fmtDate(contest.starts_at)} — {fmtDate(contest.ends_at)}
               </p>
               <p
@@ -197,11 +421,10 @@ export default function ClashTab({
                   fontWeight: 800,
                   margin: '12px 0 4px',
                   fontVariantNumeric: 'tabular-nums',
-                  color: isLive ? 'var(--danger)' : 'var(--accent)',
+                  color: isLive ? 'var(--success-text)' : 'var(--accent-text)',
                 }}
               >
-                {isLive ? '🔴 ' : '⏳ '}
-                {countdown}
+                <StatusDot live={isLive} /> {countdown}
               </p>
               <p style={{ fontSize: 12, color: 'var(--text-muted)', margin: '0 0 14px' }}>
                 {isLive
@@ -213,7 +436,9 @@ export default function ClashTab({
               {registered ? (
                 <span
                   style={{
-                    display: 'inline-block',
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: 6,
                     fontSize: 13,
                     fontWeight: 700,
                     color: 'var(--success-text)',
@@ -222,7 +447,8 @@ export default function ClashTab({
                     borderRadius: 10,
                   }}
                 >
-                  ✓ Registered
+                  <Icon d={P.check} size={14} />
+                  Registered
                 </span>
               ) : (
                 <button
@@ -249,99 +475,24 @@ export default function ClashTab({
           )}
         </div>
 
-        {/* SIDE — quick actions (spec §7). Challenge-a-Friend is honest about
-            not existing yet; no fake multiplayer. */}
+        {/* SIDE — recent activity teaser (real data lives in GameChampions below) */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-          <button
-            onClick={() => router.push('/games/typing')}
-            className="card-hover"
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: 10,
-              background: 'var(--accent)',
-              color: 'var(--on-accent)',
-              border: 'none',
-              borderRadius: 12,
-              padding: '13px 16px',
-              fontSize: 14,
-              fontWeight: 700,
-              cursor: 'pointer',
-              fontFamily: 'inherit',
-            }}
-          >
-            <Icon d={PATHS.play} size={18} />
-            Start Typing Battle
-          </button>
-          <button
-            onClick={() => router.push('/compete?tab=daily')}
-            className="card-hover"
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: 10,
-              background: 'var(--bg)',
-              color: 'var(--text-primary)',
-              border: '1px solid var(--border)',
-              borderRadius: 12,
-              padding: '13px 16px',
-              fontSize: 14,
-              fontWeight: 700,
-              cursor: 'pointer',
-              fontFamily: 'inherit',
-            }}
-          >
-            <Icon d={PATHS.bolt} size={18} />
-            Daily Challenge
-          </button>
-          <button
-            disabled
-            title="Real-time 1v1 MCQ battles are coming soon"
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: 10,
-              background: 'var(--bg-secondary)',
-              color: 'var(--text-muted)',
-              border: '1px dashed var(--border)',
-              borderRadius: 12,
-              padding: '13px 16px',
-              fontSize: 14,
-              fontWeight: 600,
-              cursor: 'default',
-              fontFamily: 'inherit',
-            }}
-          >
-            <Icon d={PATHS.users} size={18} />
-            Challenge a Friend
-            <span
+          <div style={{ ...card, padding: 16 }}>
+            <p
               style={{
-                marginLeft: 'auto',
-                fontSize: 10,
+                display: 'flex',
+                alignItems: 'center',
+                gap: 7,
+                fontSize: 12.5,
                 fontWeight: 800,
-                textTransform: 'uppercase',
-                letterSpacing: 0.5,
-                color: 'var(--text-muted)',
-                border: '1px solid var(--border)',
-                borderRadius: 6,
-                padding: '2px 6px',
+                color: 'var(--text-primary)',
+                margin: '0 0 4px',
               }}
             >
-              Soon
-            </span>
-          </button>
-
-          {/* Recent/live activity — REAL data only (game winners). */}
-          <div
-            style={{
-              background: 'var(--bg)',
-              border: '1px solid var(--border)',
-              borderRadius: 12,
-              padding: 14,
-            }}
-          >
-            <p style={{ fontSize: 12.5, fontWeight: 800, color: 'var(--text-primary)', margin: '0 0 4px' }}>
-              🔥 Recent Activity
+              <span style={{ display: 'inline-flex', color: 'var(--accent-text)' }} aria-hidden="true">
+                <Icon d={P.users} size={15} />
+              </span>
+              Recent Activity
             </p>
             <p style={{ fontSize: 11.5, color: 'var(--text-muted)', margin: 0 }}>
               Live results from finished game rooms — winners stream in below.
@@ -350,27 +501,8 @@ export default function ClashTab({
         </div>
       </div>
 
-      {/* ── Full-width: champions / recent activity (existing RPC) ────── */}
+      {/* ═══ Full-width champions board ═══ */}
       <GameChampions />
-
-      {/* Legacy math game entry moved out of the main flow (spec §15): it
-          still exists for players who want it, at its own route. */}
-      <button
-        onClick={() => router.push('/games')}
-        style={{
-          alignSelf: 'flex-start',
-          background: 'none',
-          border: 'none',
-          color: 'var(--text-muted)',
-          fontSize: 12.5,
-          fontWeight: 600,
-          cursor: 'pointer',
-          fontFamily: 'inherit',
-          padding: 0,
-        }}
-      >
-        Quick Math (real-time rooms) →
-      </button>
     </div>
   )
 }
