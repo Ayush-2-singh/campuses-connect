@@ -280,11 +280,16 @@ export default function FeedView() {
               </button>
             ))}
           </div>
-          {/* HOME REDESIGN — reference-blueprint homepage (stats, feature
-              grid, hero, announcements, quick actions, what's new).
-              Replaces the old HomeDashboard cards (spec §13); the Feed
-              itself stays right below, fully intact. */}
-          <HomeRedesign signedIn={!!user} />
+          {/* HOME DASHBOARD — personalized "my student life" view:
+              personal actions, real scoped activity, live rooms, learning
+              and play loops, real opportunities. The Feed itself stays
+              right below, fully intact. */}
+          <HomeRedesign
+            signedIn={!!user}
+            firstName={firstName}
+            campusName={profile?.campuses?.name}
+            interests={Array.isArray(profile?.skills) ? profile.skills : []}
+          />
 
           {/* Feed column stays narrow for readability; the dashboard above
               uses the full desktop width. */}
