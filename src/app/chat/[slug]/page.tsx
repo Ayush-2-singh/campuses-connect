@@ -573,6 +573,12 @@ export default function ChatRoomPage() {
       haptic.success()
       return
     }
+    // Locked user-groups keep their password in a zero-policy store the chat
+    // gateway cannot read — the join (and its password step) lives on /groups.
+    if (result === 'wrong_password' && community.is_global === false) {
+      router.push(`/groups?code=${encodeURIComponent(community.invite_code || '')}`)
+      return
+    }
     // The room has an entry gate (test / password / approval) — send the student
     // through the existing community flow rather than bypassing it.
     router.push(`/communities/${community.key}`)
