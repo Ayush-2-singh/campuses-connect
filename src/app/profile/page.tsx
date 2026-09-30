@@ -111,7 +111,7 @@ export default function ProfilePage() {
       .eq('id', user.id)
       .single()
     setProfile(data)
-    toast('Welcome to your campus! 🎉', { tone: 'success' })
+    toast('Welcome to your campus!', { tone: 'success' })
   }
 
   useEffect(() => {
@@ -432,7 +432,8 @@ export default function ProfilePage() {
           <div
             style={{
               height: 84,
-              background: 'linear-gradient(120deg, #FD8F01 0%, #41C8D8 55%, #A97BF0 100%)',
+              background:
+                'linear-gradient(120deg, var(--accent-gold) 0%, var(--accent-cyan) 55%, var(--accent-purple) 100%)',
               position: 'relative',
             }}
           >
@@ -525,7 +526,9 @@ export default function ProfilePage() {
             <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 12 }}>
               {isAdmin && <span style={badgeStyle('var(--danger-light)', 'var(--danger)')}>Admin</span>}
               {profile?.college_email_verified && (
-                <span style={badgeStyle('var(--accent-light)', 'var(--accent)')}>✓ College Verified</span>
+                <span style={badgeStyle('var(--accent-light)', 'var(--accent)')}>
+                  <Icon name="check" size={11} style={{ verticalAlign: '-1px' }} /> College Verified
+                </span>
               )}
             </div>
 
@@ -671,7 +674,8 @@ export default function ProfilePage() {
                 </div>
               ) : (
                 <p style={{ fontSize: 13, color: 'var(--text-muted)', margin: 0 }}>
-                  No skills yet. Add skills to get sharper AI matches on opportunities. ✨
+                  No skills yet. Add skills to get sharper AI matches on opportunities.{' '}
+                  <Icon name="sparkles" size={12} style={{ verticalAlign: '-2px' }} />
                 </p>
               )}
             </div>
@@ -690,7 +694,7 @@ export default function ProfilePage() {
           }}
         >
           <h3 style={{ fontSize: 14, fontWeight: 700, color: 'var(--text-primary)', margin: '0 0 14px' }}>
-            🤝 Connections
+            <Icon name="users" size={14} style={{ verticalAlign: '-2px', marginRight: 6 }} /> Connections
           </h3>
 
           {connRequests.length > 0 && (
@@ -845,8 +849,8 @@ export default function ProfilePage() {
           </h3>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
             {[
-              { label: 'College', value: profile?.colleges?.name || (profile?.campus_id ? null : '🌐 Global Campus') },
-              { label: 'Campus', value: profile?.campuses?.name || (!profile?.campus_id ? '🌐 Global Campus' : null) },
+              { label: 'College', value: profile?.colleges?.name || (profile?.campus_id ? null : 'Global Campus') },
+              { label: 'Campus', value: profile?.campuses?.name || (!profile?.campus_id ? 'Global Campus' : null) },
               { label: 'Department', value: profile?.departments?.short_name },
               { label: 'Year', value: profile?.current_year ? `Year ${profile.current_year}` : null },
               { label: 'Batch', value: profile?.batch_year },
@@ -879,7 +883,8 @@ export default function ProfilePage() {
             }}
           >
             <h3 style={{ fontSize: 14, fontWeight: 700, color: 'var(--text-primary)', margin: '0 0 4px' }}>
-              🎓 You&apos;re at the Global Campus
+              <Icon name="grad" size={14} style={{ verticalAlign: '-2px', marginRight: 6 }} /> You&apos;re at the Global
+              Campus
             </h3>
             <p style={{ fontSize: 12.5, color: 'var(--text-muted)', margin: '0 0 14px' }}>
               Anyone can join the Global Campus. When your college goes live, move to your own campus — your posts and
@@ -980,10 +985,10 @@ export default function ProfilePage() {
           ) : (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
               {[
-                { url: profile?.github_url, label: 'GitHub', icon: '🐙' },
-                { url: profile?.linkedin_url, label: 'LinkedIn', icon: '💼' },
-                { url: profile?.portfolio_url, label: 'Portfolio', icon: '🌐' },
-                { url: profile?.twitter_url, label: 'Twitter/X', icon: '🐦' },
+                { url: profile?.github_url, label: 'GitHub', icon: 'github', filled: true },
+                { url: profile?.linkedin_url, label: 'LinkedIn', icon: 'linkedin', filled: true },
+                { url: profile?.portfolio_url, label: 'Portfolio', icon: 'globe', filled: false },
+                { url: profile?.twitter_url, label: 'Twitter/X', icon: 'twitter', filled: true },
               ]
                 .filter((l) => l.url)
                 .map((link) => (
@@ -1002,7 +1007,7 @@ export default function ProfilePage() {
                       textDecoration: 'none',
                     }}
                   >
-                    <span>{link.icon}</span>
+                    <Icon name={link.icon} size={15} filled={link.filled} style={{ color: 'var(--accent-text)' }} />
                     <span style={{ fontSize: 13, color: 'var(--accent)' }}>{link.url}</span>
                   </a>
                 ))}
@@ -1027,7 +1032,7 @@ export default function ProfilePage() {
           }}
         >
           <h3 style={{ fontSize: 14, fontWeight: 700, color: 'var(--text-primary)', margin: '0 0 4px' }}>
-            🔐 Who can connect with you?
+            <Icon name="lock" size={14} style={{ verticalAlign: '-2px', marginRight: 6 }} /> Who can connect with you?
           </h3>
           <p style={{ fontSize: 12.5, color: 'var(--text-muted)', margin: '0 0 12px' }}>
             Choose who can send you connect requests and start chats with you.
@@ -1036,7 +1041,7 @@ export default function ProfilePage() {
             {[
               {
                 val: 'global',
-                icon: '🌐',
+                icon: 'globe',
                 title: 'Everyone (Global)',
                 desc: 'Any student can connect with you and message you.',
               },
@@ -1044,7 +1049,7 @@ export default function ProfilePage() {
                 ? [
                     {
                       val: 'campus',
-                      icon: '🏫',
+                      icon: 'school',
                       title: 'My campus only',
                       desc: 'Only students from your own campus can connect with you.',
                     },
@@ -1072,10 +1077,18 @@ export default function ProfilePage() {
                     color: 'var(--text-primary)',
                   }}
                 >
-                  <span style={{ fontSize: 20, flexShrink: 0 }}>{opt.icon}</span>
+                  <span
+                    style={{
+                      display: 'flex',
+                      flexShrink: 0,
+                      color: active ? 'var(--accent-text)' : 'var(--text-secondary)',
+                    }}
+                  >
+                    <Icon name={opt.icon} size={20} />
+                  </span>
                   <span style={{ flex: 1 }}>
                     <span style={{ display: 'block', fontSize: 13.5, fontWeight: 700 }}>
-                      {opt.title} {active && '✓'}
+                      {opt.title} {active && <Icon name="check" size={12} style={{ verticalAlign: '-1px' }} />}
                     </span>
                     <span style={{ display: 'block', fontSize: 12, color: 'var(--text-muted)' }}>{opt.desc}</span>
                   </span>
@@ -1100,7 +1113,7 @@ export default function ProfilePage() {
             }}
           >
             <p style={{ fontSize: 14, fontWeight: 700, color: 'var(--text-primary)', margin: '0 0 2px' }}>
-              ⚙️ Admin Panel
+              <Icon name="wrench" size={14} style={{ verticalAlign: '-2px', marginRight: 6 }} /> Admin Panel
             </p>
             <p style={{ fontSize: 12, color: 'var(--text-muted)', margin: 0 }}>Manage users, posts and colleges</p>
           </button>

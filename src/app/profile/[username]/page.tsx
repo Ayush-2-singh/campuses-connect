@@ -300,7 +300,8 @@ export default function UserProfilePage() {
           <div
             style={{
               height: 68,
-              background: 'linear-gradient(120deg, #FD8F01 0%, #41C8D8 55%, #A97BF0 100%)',
+              background:
+                'linear-gradient(120deg, var(--accent-gold) 0%, var(--accent-cyan) 55%, var(--accent-purple) 100%)',
               position: 'relative',
             }}
           >
@@ -350,9 +351,20 @@ export default function UserProfilePage() {
                       fontFamily: 'inherit',
                     }}
                   >
-                    💬 Message
+                    <Icon name="message" size={14} style={{ verticalAlign: '-2px', marginRight: 5 }} /> Message
                   </button>
-                  <span style={{ fontSize: 12.5, fontWeight: 600, color: 'var(--success-text)' }}>Connected ✓</span>
+                  <span
+                    style={{
+                      fontSize: 12.5,
+                      fontWeight: 600,
+                      color: 'var(--success-text)',
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: 4,
+                    }}
+                  >
+                    <Icon name="check" size={12} /> Connected
+                  </span>
                 </div>
               )}
               {!isOwnProfile && user && connState === 'pending_sent' && (
@@ -505,7 +517,11 @@ export default function UserProfilePage() {
             )}
 
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, fontSize: 13, color: 'var(--text-muted)' }}>
-              {profile.campuses?.name && <span>🏫 {profile.campuses.name}</span>}
+              {profile.campuses?.name && (
+                <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+                  <Icon name="school" size={13} /> {profile.campuses.name}
+                </span>
+              )}
               {profile.departments?.short_name && <span>· {profile.departments.short_name}</span>}
               {profile.current_year && <span>· Year {profile.current_year}</span>}
               {profile.batch_year && <span>· Batch {profile.batch_year}</span>}
