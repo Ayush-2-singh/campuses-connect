@@ -49,6 +49,16 @@
 | Sep 2026 | **Chunked-cookie API auth** | Shared API guards reassemble `@supabase/ssr` chunked cookies; passing the request is optional |
 | Sep 2026 | **AI Admin Copilot** | Gemini pre-publish screening, `held` posts and a moderator queue (see feature 28) |
 | Sep 2026 | **Global UI scale** | One tunable root zoom (`--ui-scale`) makes every page read bigger/closer on desktop and mobile; `--app-vh/--app-dvh/--app-vw` tokens stop the zoom from cropping content |
+| Oct 2026 | **Free Fire Tournaments** | Tournament management system: stages, matches, raw-kill scoring engine, verified results, realtime leaderboards (050_tournaments.sql) |
+| Oct 2026 | **Tournament Organizer RBAC** | Scoped roles — owners run their tournament without platform-wide admin power |
+| Oct 2026 | **Compete rebuild** | Green-accent shell → unified brand orange; SVG tab icons, URL tab sync (`?tab=`), parallel queries, e-sports hub panel, rebuilt Clash hub |
+| Oct 2026 | **Games routes** | Typing Battle and Quick Math get deep-linkable pages (`/games/typing`, `/games/math/[code]`); Quick Math no longer dead-ends through the /games redirect |
+| Oct 2026 | **Tournament error UX** | RPC failures show a human retry screen instead of a silent "not found" |
+| Oct 2026 | **Profile polish** | All emoji → shared SVG Icon set; brand glyphs (GitHub/LinkedIn/X); gradient banner on design tokens |
+| Oct 2026 | **Brand consistency** | Whole site unified on the brand orange; per-section accent overrides removed; header wordmark uses accent tokens |
+| Oct 2026 | **Icon system** | Leaderboard, badges, tournaments, profile de-emojified — product UI uses the shared `Icon` SVG system; user content untouched |
+| Oct 2026 | **Asset diet** | Deleted ~500KB of unused images (6 icon jpegs + opportunity png); PNG logos restored after an SVG experiment, original brand mark kept |
+| Oct 2026 | **Perf polish** | Lazy+async decoding on feed/list images; compositor-friendly micro-transitions; `:focus-visible` ring; `tabular-nums` for tickers |
 
 ---
 

@@ -7,23 +7,39 @@ import Layout from '@/components/Layout'
 import SectionShell from '@/components/SectionShell'
 import Avatar from '@/components/Avatar'
 import RegionPicker, { type Scope } from '@/components/RegionPicker'
+import { Icon } from '@/components/icons'
 
 type Tab = 'overall' | 'github' | 'leetcode' | 'karma'
 
+/** Podium medal — SVG circle + ribbon + rank number (emoji-free, crisp). */
+function RankGlyph({ pos, size = 24 }: { pos: number; size?: number }) {
+  const colors = ['#f6c453', '#c7ccd8', '#e09b62']
+  const c = colors[pos] || 'var(--text-muted)'
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" aria-hidden="true" style={{ verticalAlign: '-4px' }}>
+      <path d="M8 1h8l-2.5 7.5h-3L8 1Z" fill={c} opacity={0.75} />
+      <circle cx="12" cy="15" r="7.5" fill={c} />
+      <text x="12" y="18.6" textAnchor="middle" fontSize="9.5" fontWeight="800" fill="rgba(0,0,0,0.72)">
+        {pos + 1}
+      </text>
+    </svg>
+  )
+}
+
 const TABS: { key: Tab; label: string; icon: string; color: string }[] = [
-  { key: 'overall', label: 'Overall', icon: '🏆', color: 'var(--accent)' },
-  { key: 'github', label: 'GitHub', icon: '🐙', color: '#333' },
-  { key: 'leetcode', label: 'LeetCode', icon: '🧩', color: '#FFA116' },
-  { key: 'karma', label: 'Karma', icon: '⭐', color: '#eab308' },
+  { key: 'overall', label: 'Overall', icon: 'trophy', color: 'var(--accent)' },
+  { key: 'github', label: 'GitHub', icon: 'github', color: 'var(--text-secondary)' },
+  { key: 'leetcode', label: 'LeetCode', icon: 'code', color: 'var(--warning-text)' },
+  { key: 'karma', label: 'Karma', icon: 'star', color: 'var(--yellow-text)' },
 ]
 
 // ── Scoring formula display ──────────────────────────────
 const FORMULA = [
-  { label: 'Karma', multiplier: '×1', emoji: '⭐', color: '#eab308' },
-  { label: 'Contributions', multiplier: '×0.5', emoji: '💻', color: '#333' },
-  { label: 'LC Solved', multiplier: '×0.3', emoji: '✅', color: '#00b8a3' },
-  { label: 'Rating', multiplier: '×0.2', emoji: '🏆', color: '#FFA116' },
-  { label: 'Streak', multiplier: '×2', emoji: '🔥', color: '#f97316' },
+  { label: 'Karma', multiplier: '×1', icon: 'star', color: 'var(--yellow-text)' },
+  { label: 'Contributions', multiplier: '×0.5', icon: 'github', color: 'var(--text-secondary)' },
+  { label: 'LC Solved', multiplier: '×0.3', icon: 'check', color: 'var(--success-text)' },
+  { label: 'Rating', multiplier: '×0.2', icon: 'trending-up', color: 'var(--warning-text)' },
+  { label: 'Streak', multiplier: '×2', icon: 'flame', color: 'var(--orange-text)' },
 ]
 
 export default function LeaderboardPage() {
@@ -177,15 +193,16 @@ export default function LeaderboardPage() {
     }
   })
 
-  const medal = (i: number) => (i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : null)
-  const medalBg = (i: number) =>
+  // Rank chip — "1st" text + medal-colored dot (no emoji, WCAG-legible).
+  const medal = (i: number) => (i === 0 ? '1st' : i === 1 ? '2nd' : i === 2 ? '3rd' : null)
+  const medalColor = (i: number) =>
     i === 0
-      ? 'linear-gradient(135deg, #fef3c7, #fde68a)'
+      ? 'var(--yellow-text)'
       : i === 1
-        ? 'linear-gradient(135deg, #f3f4f6, #d1d5db)'
+        ? 'var(--text-secondary)'
         : i === 2
-          ? 'linear-gradient(135deg, #fed7aa, #fdba74)'
-          : 'none'
+          ? 'var(--orange-text)'
+          : 'var(--text-muted)'
 
   // ── Compute combined score breakdown ────────────────────
   const computeBreakdown = (l: any) => {
@@ -264,7 +281,19 @@ export default function LeaderboardPage() {
               boxShadow: 'var(--shadow-sm)',
             }}
           >
-            <p style={{ fontSize: 24, fontWeight: 800, color: '#333', margin: '0 0 2px' }}>🐙 {withGitHub}</p>
+            <p
+              style={{
+                fontSize: 24,
+                fontWeight: 800,
+                color: 'var(--text-primary)',
+                margin: '0 0 2px',
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: 6,
+              }}
+            >
+              <Icon name="github" size={18} filled style={{ color: 'var(--text-secondary)' }} /> {withGitHub}
+            </p>
             <p style={{ fontSize: 10, color: 'var(--text-muted)', margin: 0 }}>
               GitHub · {totalGitHub.toLocaleString()} commits
             </p>
@@ -279,7 +308,19 @@ export default function LeaderboardPage() {
               boxShadow: 'var(--shadow-sm)',
             }}
           >
-            <p style={{ fontSize: 24, fontWeight: 800, color: '#FFA116', margin: '0 0 2px' }}>🧩 {withLC}</p>
+            <p
+              style={{
+                fontSize: 24,
+                fontWeight: 800,
+                color: 'var(--text-primary)',
+                margin: '0 0 2px',
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: 6,
+              }}
+            >
+              <Icon name="code" size={18} style={{ color: 'var(--warning-text)' }} /> {withLC}
+            </p>
             <p style={{ fontSize: 10, color: 'var(--text-muted)', margin: 0 }}>
               LeetCode · {totalLC.toLocaleString()} solved
             </p>
@@ -357,8 +398,17 @@ export default function LeaderboardPage() {
             >
               {FORMULA.map((f, i) => (
                 <span key={f.label} style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
-                  <span style={{ fontSize: 12, color: f.color, fontWeight: 700 }}>
-                    {f.emoji} {f.label}
+                  <span
+                    style={{
+                      fontSize: 12,
+                      color: 'var(--text-secondary)',
+                      fontWeight: 700,
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: 4,
+                    }}
+                  >
+                    <Icon name={f.icon} size={12} filled={f.icon === 'github'} style={{ color: f.color }} /> {f.label}
                   </span>
                   <span
                     style={{
@@ -405,8 +455,19 @@ export default function LeaderboardPage() {
                           : 13
                 return (
                   <div key={f.label} style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
-                    <span style={{ fontSize: 10, color: 'var(--text-muted)', width: 80, textAlign: 'right' }}>
-                      {f.emoji} {f.label}
+                    <span
+                      style={{
+                        fontSize: 10,
+                        color: 'var(--text-muted)',
+                        width: 80,
+                        textAlign: 'right',
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: 4,
+                        justifyContent: 'flex-end',
+                      }}
+                    >
+                      <Icon name={f.icon} size={10} filled={f.icon === 'github'} style={{ color: f.color }} /> {f.label}
                     </span>
                     <div
                       style={{
@@ -524,7 +585,15 @@ export default function LeaderboardPage() {
                 transition: 'all 0.2s',
               }}
             >
-              {tab.icon} {tab.label}
+              <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+                <Icon
+                  name={tab.icon}
+                  size={13}
+                  filled={tab.icon === 'github'}
+                  style={{ color: activeTab === tab.key ? 'var(--on-accent)' : tab.color }}
+                />
+                {tab.label}
+              </span>
             </button>
           ))}
         </div>
@@ -547,7 +616,9 @@ export default function LeaderboardPage() {
               style={{ flex: 1, textAlign: 'center', cursor: 'pointer' }}
             >
               <Avatar name={sorted[1].full_name} avatarUrl={sorted[1].avatar_url} size={44} />
-              <p style={{ fontSize: 24, margin: '4px 0 2px' }}>🥈</p>
+              <p style={{ fontSize: 24, margin: '4px 0 2px' }}>
+                <RankGlyph pos={1} size={24} />
+              </p>
               <p
                 style={{
                   fontSize: 12,
@@ -579,7 +650,9 @@ export default function LeaderboardPage() {
               style={{ flex: 1, textAlign: 'center', cursor: 'pointer' }}
             >
               <Avatar name={sorted[0].full_name} avatarUrl={sorted[0].avatar_url} size={52} />
-              <p style={{ fontSize: 32, margin: '4px 0 2px' }}>🥇</p>
+              <p style={{ fontSize: 32, margin: '4px 0 2px' }}>
+                <RankGlyph pos={0} size={32} />
+              </p>
               <p
                 style={{
                   fontSize: 13,
@@ -611,7 +684,9 @@ export default function LeaderboardPage() {
               style={{ flex: 1, textAlign: 'center', cursor: 'pointer' }}
             >
               <Avatar name={sorted[2].full_name} avatarUrl={sorted[2].avatar_url} size={40} />
-              <p style={{ fontSize: 22, margin: '4px 0 2px' }}>🥉</p>
+              <p style={{ fontSize: 22, margin: '4px 0 2px' }}>
+                <RankGlyph pos={2} size={22} />
+              </p>
               <p
                 style={{
                   fontSize: 12,
@@ -657,7 +732,9 @@ export default function LeaderboardPage() {
               boxShadow: 'var(--shadow-sm)',
             }}
           >
-            <p style={{ fontSize: 36, margin: '0 0 8px' }}>🏆</p>
+            <div style={{ margin: '0 0 8px', color: 'var(--accent-text)', display: 'flex', justifyContent: 'center' }}>
+              <Icon name="trophy" size={36} strokeWidth={1.6} />
+            </div>
             <p style={{ fontSize: 16, fontWeight: 600, color: 'var(--text-primary)', margin: '0 0 4px' }}>
               No rankings yet
             </p>
@@ -713,7 +790,22 @@ export default function LeaderboardPage() {
                     {/* Rank */}
                     <div style={{ width: 32, textAlign: 'center', flexShrink: 0 }}>
                       {medal(i) ? (
-                        <span style={{ fontSize: 22 }}>{medal(i)}</span>
+                        <span
+                          style={{
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            minWidth: 26,
+                            height: 18,
+                            borderRadius: 9,
+                            fontSize: 9.5,
+                            fontWeight: 800,
+                            color: 'rgba(0,0,0,0.75)',
+                            background: medalColor(i),
+                          }}
+                        >
+                          {medal(i)}
+                        </span>
                       ) : (
                         <span style={{ fontSize: 14, fontWeight: 700, color: 'var(--text-muted)' }}>{i + 1}</span>
                       )}
@@ -728,13 +820,15 @@ export default function LeaderboardPage() {
                             position: 'absolute',
                             bottom: -2,
                             right: -4,
-                            fontSize: 12,
+                            display: 'inline-flex',
+                            color: 'var(--text-secondary)',
                             background: 'var(--bg)',
                             borderRadius: 10,
-                            padding: '0 2px',
+                            padding: '1px',
                           }}
+                          title="GitHub contributor"
                         >
-                          🐙
+                          <Icon name="github" size={11} filled />
                         </span>
                       )}
                       {leader.leetcode_solved > 0 && (
@@ -743,13 +837,15 @@ export default function LeaderboardPage() {
                             position: 'absolute',
                             top: -2,
                             right: -4,
-                            fontSize: 12,
+                            display: 'inline-flex',
+                            color: 'var(--warning-text)',
                             background: 'var(--bg)',
                             borderRadius: 10,
-                            padding: '0 2px',
+                            padding: '1px',
                           }}
+                          title="LeetCode solver"
                         >
-                          🧩
+                          <Icon name="code" size={11} />
                         </span>
                       )}
                     </div>
@@ -822,36 +918,36 @@ export default function LeaderboardPage() {
                           {
                             label: 'Karma',
                             value: leader.karma_points || 0,
-                            emoji: '⭐',
-                            color: '#eab308',
+                            icon: 'star',
+                            color: 'var(--yellow-text)',
                             calc: breakdown.karma,
                           },
                           {
                             label: 'Contrib',
                             value: leader.github_contributions || 0,
-                            emoji: '💻',
-                            color: '#333',
+                            icon: 'github',
+                            color: 'var(--text-secondary)',
                             calc: breakdown.contrib,
                           },
                           {
                             label: 'Solved',
                             value: leader.leetcode_solved || 0,
-                            emoji: '✅',
-                            color: '#00b8a3',
+                            icon: 'check',
+                            color: 'var(--success-text)',
                             calc: breakdown.solved,
                           },
                           {
                             label: 'Rating',
                             value: leader.leetcode_rating || 0,
-                            emoji: '🏆',
-                            color: '#FFA116',
+                            icon: 'trending-up',
+                            color: 'var(--warning-text)',
                             calc: breakdown.rating,
                           },
                           {
                             label: 'Streak',
                             value: leader.streak_days || 0,
-                            emoji: '🔥',
-                            color: '#f97316',
+                            icon: 'flame',
+                            color: 'var(--orange-text)',
                             calc: breakdown.streak,
                           },
                         ].map((item) => (
@@ -864,7 +960,17 @@ export default function LeaderboardPage() {
                               textAlign: 'center',
                             }}
                           >
-                            <p style={{ fontSize: 14, margin: '0 0 2px' }}>{item.emoji}</p>
+                            <p
+                              style={{
+                                fontSize: 14,
+                                margin: '0 0 2px',
+                                display: 'flex',
+                                justifyContent: 'center',
+                                color: item.color,
+                              }}
+                            >
+                              <Icon name={item.icon} size={13} filled={item.icon === 'github'} />
+                            </p>
                             <p style={{ fontSize: 13, fontWeight: 700, color: item.color, margin: '0 0 1px' }}>
                               {item.value.toLocaleString()}
                             </p>
@@ -887,8 +993,17 @@ export default function LeaderboardPage() {
                           borderRadius: 10,
                         }}
                       >
-                        <span style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-secondary)' }}>
-                          🏆 Combined Score
+                        <span
+                          style={{
+                            fontSize: 12,
+                            fontWeight: 600,
+                            color: 'var(--text-secondary)',
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: 5,
+                          }}
+                        >
+                          <Icon name="trophy" size={12} /> Combined Score
                         </span>
                         <span style={{ fontSize: 16, fontWeight: 800, color: 'var(--accent)' }}>{breakdown.total}</span>
                       </div>
