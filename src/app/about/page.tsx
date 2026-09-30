@@ -5,14 +5,23 @@ import { useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { Icon } from '@/components/icons'
 import GuestEntry from '@/components/GuestEntry'
-import { BrandMark } from '@/components/LogoToggle'
+import { getLogoSrc } from '@/components/LogoToggle'
 
 export default function AboutPage() {
   const [user, setUser] = useState<any>(null)
   const [pulse, setPulse] = useState({ notes: 0, opportunities: 0, discussions: 0, hackathons: 0 })
   const [liveColleges, setLiveColleges] = useState<{ name: string; campuses: string[] }[]>([])
   const [guestOpen, setGuestOpen] = useState(false)
+  const [logoSrc, setLogoSrc] = useState('/connect-to-campus-logo-dark.png')
   const router = useRouter()
+
+  // Sync logo with theme
+  useEffect(() => {
+    setLogoSrc(getLogoSrc())
+    const handler = () => setLogoSrc(getLogoSrc())
+    window.addEventListener('cc-theme-change', handler)
+    return () => window.removeEventListener('cc-theme-change', handler)
+  }, [])
   const supabase = createClient()
 
   // PROFESSIONAL PATTERN: Single useEffect, ALL queries in parallel.
@@ -110,7 +119,7 @@ export default function AboutPage() {
           }}
         >
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-            <BrandMark size={32} />
+            <img src={logoSrc} alt="CTC" width={32} height={32} style={{ borderRadius: 9 }} />
             <h1 style={{ fontSize: 19, fontWeight: 800, margin: 0, color: 'var(--text-primary)' }}>
               Connect<span style={{ color: 'var(--accent-text)' }}>ToCampus</span>
             </h1>

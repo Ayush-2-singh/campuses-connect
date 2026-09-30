@@ -5,7 +5,7 @@ import dynamic from 'next/dynamic'
 import { createClient } from '@/lib/supabase/client'
 import { useRouter, usePathname } from 'next/navigation'
 import ThemeToggle from '@/components/ThemeToggle'
-import LogoToggle, { BrandMark } from '@/components/LogoToggle'
+import LogoToggle, { getLogoSrc } from '@/components/LogoToggle'
 import MobileBottomNav from '@/components/MobileBottomNav'
 import MobileMenu from '@/components/MobileMenu'
 import Avatar from '@/components/Avatar'
@@ -101,6 +101,15 @@ export default function Layout({ children, user, profile }: { children: React.Re
   const [discoveryOpen, setDiscoveryOpen] = React.useState(false)
   const [communityOpen, setCommunityOpen] = React.useState(false)
   const [libraryOpen, setLibraryOpen] = React.useState(false)
+  const [logoSrc, setLogoSrc] = React.useState('/connect-to-campus-logo-dark.png')
+
+  // Sync logo with theme changes
+  React.useEffect(() => {
+    setLogoSrc(getLogoSrc())
+    const sync = () => setLogoSrc(getLogoSrc())
+    window.addEventListener('cc-theme-change', sync)
+    return () => window.removeEventListener('cc-theme-change', sync)
+  }, [])
 
   // Close the mobile ☰ menu whenever the route changes.
   React.useEffect(() => {
@@ -231,7 +240,7 @@ export default function Layout({ children, user, profile }: { children: React.Re
             gap: 10,
           }}
         >
-          <BrandMark size={36} />
+          <img src={logoSrc} alt="CTC" width={36} height={36} style={{ flexShrink: 0, borderRadius: 11 }} />
           <div>
             <h1
               style={{
@@ -780,7 +789,7 @@ export default function Layout({ children, user, profile }: { children: React.Re
             {/* flex 1 1 auto: the brand absorbs all the shrink (ellipsis) and
                 the controls keep their full touch size. */}
             <div style={{ display: 'flex', alignItems: 'center', gap: 8, minWidth: 0, flex: '1 1 auto' }}>
-              <BrandMark size={30} />
+              <img src={logoSrc} alt="CTC" width={30} height={30} style={{ borderRadius: 9, flexShrink: 0 }} />
               <h1
                 style={{
                   fontSize: 17,
