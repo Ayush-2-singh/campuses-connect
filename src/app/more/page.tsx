@@ -5,42 +5,63 @@ import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
 import Layout from '@/components/Layout'
 import { isPulseVisible, readPulsePrefs, setPulseMuted, type PulsePrefs } from '@/lib/livePulsePrefs'
+import { Icon } from '@/components/icons'
 
 const SECTIONS = [
-  { icon: '👥', label: 'Groups', desc: 'Create your circle — class batch, project team, hostel wing', href: '/groups' },
-  { icon: '🌐', label: 'Global', desc: 'Post & connect with students everywhere', href: '/global' },
-  { icon: '⚔️', label: 'Compete', desc: 'Daily DSA challenges, Campus Clash & Aura rankings', href: '/compete' },
-  { icon: '🎪', label: 'Events', desc: 'Campus events, hackathons & memories', href: '/events' },
-  { icon: '🤝', label: 'Find Teammates', desc: 'Post or join hackathon teams', href: '/teams' },
-  { icon: '🤝', label: 'My Network', desc: 'Chats, connections, requests & DMs — like LinkedIn', href: '/connections' },
   {
-    icon: '🎙️',
+    icon: 'users',
+    label: 'Groups',
+    desc: 'Create your circle — class batch, project team, hostel wing',
+    href: '/groups',
+  },
+  { icon: 'globe', label: 'Global', desc: 'Post & connect with students everywhere', href: '/global' },
+  { icon: 'zap', label: 'Compete', desc: 'Daily DSA challenges, Campus Clash & Aura rankings', href: '/compete' },
+  { icon: 'calendar', label: 'Events', desc: 'Campus events, hackathons & memories', href: '/events' },
+  { icon: 'users', label: 'Find Teammates', desc: 'Post or join hackathon teams', href: '/teams' },
+  {
+    icon: 'link',
+    label: 'My Network',
+    desc: 'Chats, connections, requests & DMs — like LinkedIn',
+    href: '/connections',
+  },
+  {
+    icon: 'mic',
     label: 'Live Voice Chat',
     desc: 'Join live voice rooms with your campusmates',
     href: '/live-voice-chat',
   },
-  { icon: '📚', label: 'Notes Library', desc: 'Subject-wise notes, PYQs and resources', href: '/notes' },
-  { icon: '⭐', label: 'Talent', desc: 'Discover students by skill', href: '/talent' },
-  { icon: '🧠', label: 'AI Brain', desc: 'Your personal academic memory — ask your notes anything', href: '/brain' },
-  { icon: '👤', label: 'My Profile', desc: 'Your identity, links and activity', href: '/profile' },
-  { icon: '❓', label: 'Ask a Senior', desc: 'Doubt-solving with your college seniors', href: '/ask' },
-  { icon: '📝', label: 'Blog', desc: 'Read & write campus stories, guides & experiences', href: '/blog' },
-  { icon: '📊', label: 'Campus Polls', desc: 'Vote on what matters — live results', href: '/polls' },
-  { icon: '🌐', label: 'Global Communities', desc: 'DSA, Web Development & Startups', href: '/communities' },
-  { icon: '🔖', label: 'Saved', desc: 'Posts you bookmarked', href: '/saved' },
+  { icon: 'notebook', label: 'Notes Library', desc: 'Subject-wise notes, PYQs and resources', href: '/notes' },
+  { icon: 'star', label: 'Talent', desc: 'Discover students by skill', href: '/talent' },
   {
-    icon: '🏫',
+    icon: 'sparkles',
+    label: 'AI Brain',
+    desc: 'Your personal academic memory — ask your notes anything',
+    href: '/brain',
+  },
+  { icon: 'user', label: 'My Profile', desc: 'Your identity, links and activity', href: '/profile' },
+  { icon: 'message', label: 'Ask a Senior', desc: 'Doubt-solving with your college seniors', href: '/ask' },
+  { icon: 'pencil', label: 'Blog', desc: 'Read & write campus stories, guides & experiences', href: '/blog' },
+  { icon: 'layout', label: 'Campus Polls', desc: 'Vote on what matters — live results', href: '/polls' },
+  { icon: 'users', label: 'Global Communities', desc: 'DSA, Web Development & Startups', href: '/communities' },
+  { icon: 'bookmark', label: 'Saved', desc: 'Posts you bookmarked', href: '/saved' },
+  {
+    icon: 'school',
     label: 'Change Campus',
     desc: 'Switch to a different campus (ID verification required)',
     href: '/campus-change',
   },
-  { icon: '🏢', label: 'Companies & Jobs', desc: 'Explore companies, openings & interview exp', href: '/companies' },
-  { icon: '🔗', label: 'Integrations', desc: 'Connect GitHub & LeetCode for the leaderboard', href: '/integrations' },
-  { icon: '🏆', label: 'Leaderboard', desc: 'Top contributors on your campus', href: '/leaderboard' },
-  { icon: '📊', label: 'Weekly Wrap', desc: 'This week on your campus', href: '/weekly' },
-  { icon: '🔔', label: 'Notifications', desc: 'Your latest activity', href: '/notifications' },
-  { icon: '⏰', label: 'Smart Reminders', desc: 'Never miss a deadline or event', href: '/reminders' },
-  { icon: '🏆', label: 'Badges & Streaks', desc: 'Earn badges, maintain streaks, unlock features', href: '/badges' },
+  {
+    icon: 'building',
+    label: 'Companies & Jobs',
+    desc: 'Explore companies, openings & interview exp',
+    href: '/companies',
+  },
+  { icon: 'link', label: 'Integrations', desc: 'Connect GitHub & LeetCode for the leaderboard', href: '/integrations' },
+  { icon: 'trophy', label: 'Leaderboard', desc: 'Top contributors on your campus', href: '/leaderboard' },
+  { icon: 'trending-up', label: 'Weekly Wrap', desc: 'This week on your campus', href: '/weekly' },
+  { icon: 'bell', label: 'Notifications', desc: 'Your latest activity', href: '/notifications' },
+  { icon: 'clock', label: 'Smart Reminders', desc: 'Never miss a deadline or event', href: '/reminders' },
+  { icon: 'medal', label: 'Badges & Streaks', desc: 'Earn badges, maintain streaks, unlock features', href: '/badges' },
 ]
 
 export default function MorePage() {
@@ -98,7 +119,18 @@ export default function MorePage() {
                 <p style={{ fontSize: 28, fontWeight: 800, color: 'var(--accent-text)', margin: '0 0 4px' }}>
                   {profile.aura_points || 0}
                 </p>
-                <p style={{ fontSize: 12, color: 'var(--text-muted)', margin: 0 }}>Aura ⚡ (season)</p>
+                <p
+                  style={{
+                    fontSize: 12,
+                    color: 'var(--text-muted)',
+                    margin: 0,
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: 4,
+                  }}
+                >
+                  <Icon name="zap" size={11} style={{ color: 'var(--accent-text)' }} /> Aura (season)
+                </p>
               </div>
               <div
                 style={{ background: 'var(--bg-secondary)', borderRadius: 12, padding: '14px', textAlign: 'center' }}
@@ -106,7 +138,18 @@ export default function MorePage() {
                 <p style={{ fontSize: 28, fontWeight: 800, color: 'var(--yellow-text)', margin: '0 0 4px' }}>
                   {profile.karma_points || 0}
                 </p>
-                <p style={{ fontSize: 12, color: 'var(--text-muted)', margin: 0 }}>Karma ⭐ (lifetime)</p>
+                <p
+                  style={{
+                    fontSize: 12,
+                    color: 'var(--text-muted)',
+                    margin: 0,
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: 4,
+                  }}
+                >
+                  <Icon name="star" size={11} style={{ color: 'var(--yellow-text)' }} /> Karma (lifetime)
+                </p>
               </div>
             </div>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 14 }}>
@@ -116,7 +159,18 @@ export default function MorePage() {
                 <p style={{ fontSize: 28, fontWeight: 800, color: 'var(--orange-text)', margin: '0 0 4px' }}>
                   {profile.streak_days || 0}
                 </p>
-                <p style={{ fontSize: 12, color: 'var(--text-muted)', margin: 0 }}>Day Streak 🔥</p>
+                <p
+                  style={{
+                    fontSize: 12,
+                    color: 'var(--text-muted)',
+                    margin: 0,
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: 4,
+                  }}
+                >
+                  <Icon name="flame" size={11} style={{ color: 'var(--orange-text)' }} /> Day Streak
+                </p>
               </div>
               <div
                 style={{ background: 'var(--bg-secondary)', borderRadius: 12, padding: '14px', textAlign: 'center' }}
@@ -124,7 +178,18 @@ export default function MorePage() {
                 <p style={{ fontSize: 28, fontWeight: 800, color: 'var(--purple-text)', margin: '0 0 4px' }}>
                   {profile.streak_freezes || 0}
                 </p>
-                <p style={{ fontSize: 12, color: 'var(--text-muted)', margin: 0 }}>Freezes ❄️</p>
+                <p
+                  style={{
+                    fontSize: 12,
+                    color: 'var(--text-muted)',
+                    margin: 0,
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: 4,
+                  }}
+                >
+                  <Icon name="lock" size={11} style={{ color: 'var(--blue-text)' }} /> Streak Freezes
+                </p>
               </div>
             </div>
             <button
@@ -163,8 +228,21 @@ export default function MorePage() {
               fontFamily: 'inherit',
             }}
           >
-            <span style={{ fontSize: 24, flexShrink: 0 }} aria-hidden="true">
-              ⚡
+            <span
+              aria-hidden="true"
+              style={{
+                width: 38,
+                height: 38,
+                borderRadius: 11,
+                background: 'var(--accent-light)',
+                color: 'var(--accent-text)',
+                display: 'inline-flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                flexShrink: 0,
+              }}
+            >
+              <Icon name="zap" size={18} />
             </span>
             <div style={{ flex: 1 }}>
               <p style={{ fontSize: 14, fontWeight: 600, color: 'var(--text-primary)', margin: '0 0 2px' }}>
@@ -229,7 +307,22 @@ export default function MorePage() {
                 fontFamily: 'inherit',
               }}
             >
-              <span style={{ fontSize: 28, flexShrink: 0 }}>{s.icon}</span>
+              <span
+                aria-hidden="true"
+                style={{
+                  width: 40,
+                  height: 40,
+                  borderRadius: 12,
+                  background: 'var(--accent-light)',
+                  color: 'var(--accent-text)',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  flexShrink: 0,
+                }}
+              >
+                <Icon name={s.icon} size={19} />
+              </span>
               <div style={{ flex: 1 }}>
                 <p style={{ fontSize: 14, fontWeight: 600, color: 'var(--text-primary)', margin: '0 0 3px' }}>
                   {s.label}

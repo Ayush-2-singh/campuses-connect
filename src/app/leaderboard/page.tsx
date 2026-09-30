@@ -520,16 +520,14 @@ export default function LeaderboardPage() {
               fontFamily: 'inherit',
             }}
           >
-            <option value="global:">🌍 Global</option>
+            <option value="global:">Global</option>
             {scope === 'college' || scope === 'city' || scope === 'state' ? (
-              <option value={`${scope}:${regionId || ''}`}>
-                {scope === 'college' ? '🎓' : scope === 'city' ? '🏙' : '🗺'} {regionLabel || scope}
-              </option>
+              <option value={`${scope}:${regionId || ''}`}>{regionLabel || scope}</option>
             ) : (
               <>
-                <option value="college:">🎓 College…</option>
-                <option value="city:">🏙 City…</option>
-                <option value="state:">🗺 State…</option>
+                <option value="college:">College…</option>
+                <option value="city:">City…</option>
+                <option value="state:">State…</option>
               </>
             )}
           </select>
