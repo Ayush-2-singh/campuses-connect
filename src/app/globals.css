@@ -1248,6 +1248,27 @@ a,
   color: var(--accent-text);
 }
 
+/* ───────────────────────── Smoothness polish ───────────────────────── */
+/* Buttons/links get ONE consistent micro-transition. transform-only changes
+   stay on the compositor thread (no layout, no paint) — cards lift without
+   jank even on low-end phones. */
+button:not([disabled]),
+a,
+[role='button'] {
+  transition-timing-function: cubic-bezier(0.3, 0.9, 0.4, 1);
+}
+
+/* Focus visibility — keyboard users get the accent ring everywhere. */
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+/* Countdowns, scores, timers — digits stop jittering as they tick. */
+.tabular-nums {
+  font-variant-numeric: tabular-nums;
+}
+
 /* Topbar search — accent ring + glow on hover/focus */
 .search-pill {
   transition:

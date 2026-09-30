@@ -86,6 +86,7 @@ export default function TournamentPage() {
   const supabase = createClient()
   const [ov, setOv] = useState<Overview | null>(null)
   const [notFound, setNotFound] = useState(false)
+  const [loadErr, setLoadErr] = useState<string | null>(null)
   const [tab, setTab] = useState<Tab>('standings')
   const [stageFilter, setStageFilter] = useState<string>('all')
   const [board, setBoard] = useState<TeamRow[]>([])
@@ -93,7 +94,14 @@ export default function TournamentPage() {
   const [openMatch, setOpenMatch] = useState<{ id: string; label: string; result: MatchResult[] } | null>(null)
 
   const loadOverview = useCallback(async () => {
-    const { data } = await supabase.rpc('get_tournament_overview', { p_tournament: id })
+    setLoadErr(null)
+    const { data, error } = await supabase.rpc('get_tournament_overview', { p_tournament: id })
+    if (error) {
+      // Real failure (RLS/network/permission) — NOT "not found". Show a retry
+      // screen instead of silently pretending the tournament doesn't exist.
+      setLoadErr(error.message)
+      return
+    }
     if (!data) {
       setNotFound(true)
       return
@@ -107,6 +115,10 @@ export default function TournamentPage() {
       supabase.rpc('get_tournament_team_leaderboard', { p_tournament: id, p_stage: stageId }),
       supabase.rpc('get_tournament_player_leaderboard', { p_tournament: id, p_stage: stageId, p_limit: 50 }),
     ])
+    if (teamRes.error || playerRes.error) {
+      setLoadErr(teamRes.error?.message || playerRes.error?.message || 'Could not load standings')
+      return
+    }
     setBoard((teamRes.data as TeamRow[]) || [])
     setFraggers((playerRes.data as PlayerRow[]) || [])
   }, [supabase, id, stageFilter])
@@ -145,8 +157,63 @@ export default function TournamentPage() {
     })
   }
 
-  const medal = (r: number) => (r === 1 ? '🥇' : r === 2 ? '🥈' : r === 3 ? '🥉' : null)
+  const medal = (r: number) => (r === 1 ? '1st' : r === 2 ? '2nd' : r === 3 ? '3rd' : null)
   const stageTabs = useMemo(() => ov?.stages ?? [], [ov])
+
+  if (loadErr) {
+    return (
+      <Layout>
+        <div style={{ maxWidth: 720, margin: '0 auto', padding: '60px 20px', textAlign: 'center' }}>
+          <div style={{ margin: '0 auto 12px', color: 'var(--danger)', display: 'flex', justifyContent: 'center' }}>
+            <svg
+              width={40}
+              height={40}
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth={1.8}
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              aria-hidden="true"
+            >
+              <path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0Z" />
+              <path d="M12 9v4M12 17h.01" />
+            </svg>
+          </div>
+          <p style={{ fontSize: 16, fontWeight: 800, color: 'var(--text-primary)', margin: '0 0 6px' }}>
+            Tournament couldn&apos;t load
+          </p>
+          <p
+            style={{
+              fontSize: 13,
+              color: 'var(--text-muted)',
+              margin: '0 0 18px',
+              maxWidth: 460,
+              marginInline: 'auto',
+            }}
+          >
+            This usually means a temporary network or permissions issue — not a login problem. Try again in a moment.
+          </p>
+          <button
+            onClick={() => window.location.reload()}
+            style={{
+              background: 'var(--accent)',
+              color: 'var(--on-accent)',
+              border: 'none',
+              padding: '10px 24px',
+              borderRadius: 10,
+              fontSize: 14,
+              fontWeight: 700,
+              cursor: 'pointer',
+              fontFamily: 'inherit',
+            }}
+          >
+            Retry
+          </button>
+        </div>
+      </Layout>
+    )
+  }
 
   if (notFound) {
     return (
@@ -231,9 +298,9 @@ export default function TournamentPage() {
         <div style={{ display: 'flex', gap: 6, marginBottom: 14 }}>
           {(
             [
-              ['standings', '🏆 Standings'],
-              ['matches', '📅 Matches'],
-              ['fraggers', '🔥 Top Fraggers'],
+              ['standings', 'Standings'],
+              ['matches', 'Matches'],
+              ['fraggers', 'Top Fraggers'],
             ] as [Tab, string][]
           ).map(([key, label]) => (
             <button

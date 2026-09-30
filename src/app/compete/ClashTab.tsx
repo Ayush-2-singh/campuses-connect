@@ -70,6 +70,9 @@ const P = {
     'M12 22a10 10 0 1 0 0-20 10 10 0 0 0 0 20ZM12 18a6 6 0 1 0 0-12 6 6 0 0 0 0 12ZM12 14a2 2 0 1 0 0-4 2 2 0 0 0 0 4Z',
   check: 'M20 6 9 17l-5-5',
   pin: 'M12 17v5M9 10.76V5a3 3 0 1 1 6 0v5.76L19 14H5l4-3.24z',
+  flame:
+    'M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z',
+  padlock: 'M7 10V8a5 5 0 0 1 10 0v2M5 10h14v11H5zM12 14.5v3',
 }
 
 function StatusDot({ live }: { live: boolean }) {
@@ -213,7 +216,7 @@ export default function ClashTab({
       {/* ═══ Quick actions row ═══ */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 12 }}>
         <button
-          onClick={() => router.push('/games')}
+          onClick={() => router.push('/games/math')}
           className="card-hover"
           style={{
             ...card,
@@ -248,7 +251,7 @@ export default function ClashTab({
           <span style={{ flex: 1 }}>
             Quick Math
             <span style={{ display: 'block', fontSize: 11.5, fontWeight: 600, color: 'var(--text-muted)' }}>
-              Real-time math rooms
+              Real-time math duels
             </span>
           </span>
           <span style={{ display: 'inline-flex', color: 'var(--text-muted)' }} aria-hidden="true">
@@ -342,6 +345,85 @@ export default function ClashTab({
           <span style={{ display: 'inline-flex', color: 'var(--text-muted)' }} aria-hidden="true">
             <Icon d={P.arrow} size={16} />
           </span>
+        </button>
+      </div>
+
+      {/* ═══ E-SPORTS — Free Fire Tournaments ═══ */}
+      <div
+        className="card-hover"
+        style={{
+          ...card,
+          padding: '18px 20px',
+          position: 'relative',
+          overflow: 'hidden',
+          display: 'flex',
+          alignItems: 'center',
+          gap: 16,
+          flexWrap: 'wrap',
+        }}
+      >
+        <span
+          aria-hidden="true"
+          style={{
+            position: 'absolute',
+            inset: 0,
+            background: 'radial-gradient(420px 120px at 88% 0%, var(--accent-light), transparent 70%)',
+            pointerEvents: 'none',
+          }}
+        />
+        <span
+          style={{
+            width: 46,
+            height: 46,
+            borderRadius: 12,
+            background: 'var(--accent)',
+            color: 'var(--on-accent)',
+            display: 'inline-flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            flexShrink: 0,
+            position: 'relative',
+          }}
+          aria-hidden="true"
+        >
+          <Icon d={P.flame} size={22} />
+        </span>
+        <div style={{ flex: 1, minWidth: 220, position: 'relative' }}>
+          <p
+            style={{
+              fontSize: 10.5,
+              fontWeight: 800,
+              letterSpacing: '0.1em',
+              color: 'var(--accent-text)',
+              textTransform: 'uppercase',
+              margin: '0 0 3px',
+            }}
+          >
+            E-sports Hub
+          </p>
+          <h3 style={{ fontSize: 17, fontWeight: 900, color: 'var(--text-primary)', margin: '0 0 4px' }}>
+            Free Fire Tournaments
+          </h3>
+          <p style={{ fontSize: 12.5, color: 'var(--text-muted)', margin: 0 }}>
+            Squad up for campus Battle Royale — live brackets, verified kills, champion trophies.
+          </p>
+        </div>
+        <button
+          onClick={() => router.push('/tournaments')}
+          style={{
+            background: 'var(--accent)',
+            color: 'var(--on-accent)',
+            border: 'none',
+            padding: '10px 20px',
+            borderRadius: 10,
+            fontSize: 13.5,
+            fontWeight: 800,
+            cursor: 'pointer',
+            fontFamily: 'inherit',
+            position: 'relative',
+          }}
+        >
+          Enter Arena
         </button>
       </div>
 

@@ -1117,6 +1117,8 @@ export default function DiscoverPage() {
                           <img
                             src={i.user_avatar}
                             alt=""
+                            loading="lazy"
+                            decoding="async"
                             style={{ width: '100%', height: '100%', objectFit: 'cover' }}
                           />
                         ) : (

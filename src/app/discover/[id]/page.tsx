@@ -325,6 +325,8 @@ export default function DiscoveryDetailPage() {
                 >
                   {post.author_avatar ? (
                     <img
+                      loading="lazy"
+                      decoding="async"
                       src={post.author_avatar}
                       alt=""
                       style={{ width: '100%', height: '100%', objectFit: 'cover' }}

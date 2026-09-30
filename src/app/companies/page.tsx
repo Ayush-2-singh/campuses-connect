@@ -256,6 +256,8 @@ export default function CompaniesPage() {
                 >
                   {c.logo_url ? (
                     <img
+                      loading="lazy"
+                      decoding="async"
                       src={c.logo_url}
                       alt=""
                       style={{ width: 48, height: 48, borderRadius: 12, objectFit: 'cover' }}

@@ -104,7 +104,10 @@ describe('discovery refactor guard', () => {
     expect(layout).toContain('COMMUNITY_CHILDREN')
     expect(layout).toContain("href: '/chat'")
     expect(layout).toContain("href: '/connections'")
-    expect(layout).toContain("href: '/compete'")
+    // Compete appears ONCE — Games & Clash is its clash tab, not a second
+    // section (user request: one unified Compete entry in the sidebar).
+    expect(layout).toContain("href: '/compete?tab=clash'")
+    expect(layout.match(/href: '\/compete/g)?.length).toBe(1)
     expect(layout).toContain("href: '/live-voice-chat'")
     // Live Chat must NOT be a top-level primary item anymore.
     const primaryBlock = layout.slice(layout.indexOf('const NAV_ITEMS'), layout.indexOf('COMMUNITY_CHILDREN'))

@@ -5,7 +5,7 @@ import dynamic from 'next/dynamic'
 import { createClient } from '@/lib/supabase/client'
 import { useRouter, usePathname } from 'next/navigation'
 import ThemeToggle from '@/components/ThemeToggle'
-import LogoToggle, { getLogoSrc } from '@/components/LogoToggle'
+import LogoToggle, { BrandMark } from '@/components/LogoToggle'
 import MobileBottomNav from '@/components/MobileBottomNav'
 import MobileMenu from '@/components/MobileMenu'
 import Avatar from '@/components/Avatar'
@@ -48,8 +48,9 @@ const COMMUNITY_CHILDREN = [
   { label: 'Groups', href: '/groups', icon: 'users' },
   { label: 'Live Chat', href: '/chat', icon: 'message' },
   { label: 'Confessions', href: '/community?view=confessions', icon: 'eyeOff' },
-  { label: 'Games & Clash', href: '/compete?tab=clash', icon: 'zap' },
-  { label: 'Compete & Rankings', href: '/compete', icon: 'star' },
+  // One Compete entry — /compete?tab=clash is the same page, so the second
+  // item previously duplicated the section (two entries, one destination).
+  { label: 'Compete, Games & Clash', href: '/compete?tab=clash', icon: 'zap' },
   { label: 'Live Voice', href: '/live-voice-chat', icon: 'mic' },
   { label: 'Connect', href: '/connections', icon: 'link' },
 ]
@@ -100,15 +101,6 @@ export default function Layout({ children, user, profile }: { children: React.Re
   const [discoveryOpen, setDiscoveryOpen] = React.useState(false)
   const [communityOpen, setCommunityOpen] = React.useState(false)
   const [libraryOpen, setLibraryOpen] = React.useState(false)
-  const [logoSrc, setLogoSrc] = React.useState('/connect-to-campus-logo-dark.png')
-
-  // Sync logo with theme changes
-  React.useEffect(() => {
-    setLogoSrc(getLogoSrc())
-    const sync = () => setLogoSrc(getLogoSrc())
-    window.addEventListener('cc-theme-change', sync)
-    return () => window.removeEventListener('cc-theme-change', sync)
-  }, [])
 
   // Close the mobile ☰ menu whenever the route changes.
   React.useEffect(() => {
@@ -239,7 +231,7 @@ export default function Layout({ children, user, profile }: { children: React.Re
             gap: 10,
           }}
         >
-          <img src={logoSrc} alt="CTC" width={36} height={36} style={{ flexShrink: 0, borderRadius: 11 }} />
+          <BrandMark size={36} />
           <div>
             <h1
               style={{
@@ -251,7 +243,7 @@ export default function Layout({ children, user, profile }: { children: React.Re
                 letterSpacing: '-0.02em',
               }}
             >
-              Connect<span style={{ color: '#FD8F01' }}>ToCampus</span>
+              Connect<span style={{ color: 'var(--accent-text)' }}>ToCampus</span>
             </h1>
             <p style={{ fontSize: 10.5, color: 'var(--text-muted)', margin: 0 }}>Your campus, connected.</p>
           </div>
@@ -788,7 +780,7 @@ export default function Layout({ children, user, profile }: { children: React.Re
             {/* flex 1 1 auto: the brand absorbs all the shrink (ellipsis) and
                 the controls keep their full touch size. */}
             <div style={{ display: 'flex', alignItems: 'center', gap: 8, minWidth: 0, flex: '1 1 auto' }}>
-              <img src={logoSrc} alt="CTC" width={30} height={30} style={{ borderRadius: 9, flexShrink: 0 }} />
+              <BrandMark size={30} />
               <h1
                 style={{
                   fontSize: 17,
@@ -801,7 +793,7 @@ export default function Layout({ children, user, profile }: { children: React.Re
                   minWidth: 0,
                 }}
               >
-                Connect<span style={{ color: '#FD8F01' }}>ToCampus</span>
+                Connect<span style={{ color: 'var(--accent-text)' }}>ToCampus</span>
               </h1>
             </div>
             <div

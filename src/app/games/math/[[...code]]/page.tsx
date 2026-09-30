@@ -1,15 +1,16 @@
 'use client'
 
 // ═══════════════════════════════════════════════════════════════════════════
-// /games/typing — deep-linkable route (shareable room codes land here)
+// /games/math — Quick Math deep-linkable route (mirrors /games/typing)
+// Shareable room codes land here: /games/math/ABC123
 // ═══════════════════════════════════════════════════════════════════════════
 
 import { useParams } from 'next/navigation'
 import dynamic from 'next/dynamic'
 
-const TypingBattle = dynamic(() => import('@/components/games/TypingBattle'), { ssr: false })
+const QuickMath = dynamic(() => import('@/components/games/QuickMath'), { ssr: false })
 
-export default function TypingPage() {
+export default function MathGamePage() {
   const params = useParams()
   const code = typeof params?.code === 'string' ? params.code : ''
 
@@ -35,14 +36,12 @@ export default function TypingPage() {
           ← Back to Compete
         </a>
 
-        <h1 style={{ fontSize: 22, fontWeight: 800, color: 'var(--text-primary)', margin: '0 0 4px' }}>
-          ⌨️ Typing Battle
-        </h1>
+        <h1 style={{ fontSize: 22, fontWeight: 800, color: 'var(--text-primary)', margin: '0 0 4px' }}>Quick Math</h1>
         <p style={{ fontSize: 13, color: 'var(--text-muted)', margin: '0 0 20px' }}>
-          {code ? `Join room ${code}` : 'Race another student. Type faster. Make fewer mistakes.'}
+          {code ? `Join room ${code}` : 'Race another student. Solve faster. Beat the clock.'}
         </p>
 
-        <TypingBattle initialRoomCode={code} />
+        <QuickMath initialRoomCode={code} />
       </div>
     </div>
   )

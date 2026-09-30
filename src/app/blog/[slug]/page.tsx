@@ -518,7 +518,7 @@ export default function BlogPostPage() {
 
   useEffect(() => {
     loadPost()
-  }, [loadPost])  
+  }, [loadPost])
   useEffect(() => {
     if (post) loadComments(post.id)
   }, [reloadKey]) // eslint-disable-line react-hooks/exhaustive-deps
@@ -649,7 +649,13 @@ export default function BlogPostPage() {
               background: 'var(--bg-tertiary)',
             }}
           >
-            <img src={post.cover_url} alt={post.title} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+            <img
+              src={post.cover_url}
+              alt={post.title}
+              loading="lazy"
+              decoding="async"
+              style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+            />
           </div>
         )}
 

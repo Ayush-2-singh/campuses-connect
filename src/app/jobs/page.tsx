@@ -160,7 +160,13 @@ export default function JobsPage() {
                       }}
                     >
                       {company?.logo_url ? (
-                        <img src={company.logo_url} alt="" style={{ width: 40, height: 40, borderRadius: 10 }} />
+                        <img
+                          src={company.logo_url}
+                          alt=""
+                          loading="lazy"
+                          decoding="async"
+                          style={{ width: 40, height: 40, borderRadius: 10 }}
+                        />
                       ) : (
                         '🏢'
                       )}

@@ -256,7 +256,13 @@ export default function DiscoveryCard({ card, draggable = false }: { card: Disco
           }}
         >
           {card.author_avatar ? (
-            <img src={card.author_avatar} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+            <img
+              src={card.author_avatar}
+              alt=""
+              loading="lazy"
+              decoding="async"
+              style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+            />
           ) : (
             (card.author_name || card.author_username || '?').charAt(0).toUpperCase()
           )}

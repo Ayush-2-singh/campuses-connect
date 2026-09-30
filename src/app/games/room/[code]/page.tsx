@@ -14,7 +14,7 @@ export default function GameRoomPage() {
   const code = (params.code as string) || ''
 
   return (
-    <div data-accent="cyan" style={{ minHeight: 'var(--app-vh)' }}>
+    <div data-accent="gold" style={{ minHeight: 'var(--app-vh)' }}>
       <div
         style={{
           maxWidth: 500,
