@@ -16,6 +16,13 @@ import Layout from '@/components/Layout'
 import { Icon } from '@/components/icons'
 import { useAdminContext } from '@/lib/permissions'
 import {
+  resolveRole,
+  tournamentAllows,
+  roleLabel,
+  type TournamentAction,
+  type TournamentRole,
+} from '@/lib/tournaments/rbac'
+import {
   calculateTeamScore,
   toCsv,
   validateResultEntry,
@@ -23,7 +30,17 @@ import {
   type TeamResultInput,
 } from '@/lib/tournaments/scoring'
 
-type Section = 'setup' | 'stages' | 'matches' | 'teams' | 'results' | 'qualification' | 'announcements' | 'audit'
+type Section =
+  | 'overview'
+  | 'setup'
+  | 'stages'
+  | 'matches'
+  | 'teams'
+  | 'results'
+  | 'qualification'
+  | 'announcements'
+  | 'organizers'
+  | 'audit'
 
 interface TournamentRow {
   id: string
@@ -84,16 +101,24 @@ interface QualificationRecord {
   is_manual: boolean
   reason: string | null
 }
+interface OrganizerRow {
+  user_id: string
+  display_name: string
+  username: string | null
+  role: string
+  is_me: boolean
+}
 
-const SECTIONS: [Section, string, string][] = [
-  ['setup', '⚙️', 'Setup'],
-  ['stages', '🪜', 'Stages'],
-  ['matches', '📅', 'Matches'],
-  ['teams', '👥', 'Teams'],
-  ['results', '📝', 'Results'],
-  ['qualification', '✅', 'Qualification'],
-  ['announcements', '📢', 'Announcements'],
-  ['audit', '🧾', 'Audit Log'],
+const SECTIONS: [Section, string, string, TournamentAction | null][] = [
+  ['overview', '📊', 'Overview', 'view'],
+  ['stages', '🪜', 'Stages', 'manage_matches'],
+  ['matches', '📅', 'Matches', 'manage_matches'],
+  ['teams', '👥', 'Teams', 'manage_teams'],
+  ['results', '📝', 'Results', 'enter_kills'],
+  ['qualification', '✅', 'Qualification', 'manage_qualification'],
+  ['announcements', '📢', 'Announcements', 'add_announcement'],
+  ['audit', '🧾', 'Audit Log', 'view_audit'],
+  ['organizers', '🛡️', 'Organizers', 'manage_organizers'],
 ]
 
 export default function TournamentAdminPage() {
@@ -109,7 +134,12 @@ export default function TournamentAdminPage() {
   const [rules, setRules] = useState<Record<number, number>>({})
   const [audit, setAudit] = useState<AuditRow[]>([])
   const [quals, setQuals] = useState<QualificationRecord[]>([])
-  const [section, setSection] = useState<Section>('setup')
+  const [myTournaments, setMyTournaments] = useState<
+    { id: string; name: string; game: string; status: string; my_role: string }[]
+  >([])
+  const [organizers, setOrganizers] = useState<OrganizerRow[]>([])
+  const [myRole, setMyRole] = useState<TournamentRole | null>(null)
+  const [section, setSection] = useState<Section>('overview')
   const [msg, setMsg] = useState('')
   const [busy, setBusy] = useState(false)
 
@@ -131,15 +161,48 @@ export default function TournamentAdminPage() {
   const [preview, setPreview] = useState<QualifierRow[]>([])
 
   const active = tournaments.find((t) => t.id === activeId) || null
-  const isAdmin = admin.isPlatformAdmin
+  // §9: authorization = platform admin OR scoped tournament role. A plain
+  // CampusConnect user who owns a tournament lands here with full OWNER power
+  // over THIS tournament and nothing else.
+  const isAdmin = admin.isPlatformAdmin || !!myRole
+  const can = useCallback(
+    (action: TournamentAction) => tournamentAllows(myRole, action) || (admin.isPlatformAdmin && !!activeId),
+    [myRole, admin.isPlatformAdmin, activeId]
+  )
+  const visibleSectionsList = useMemo(() => {
+    const list: Section[] = ['overview']
+    if (can('manage_matches')) list.push('stages', 'matches')
+    if (can('manage_teams')) list.push('teams')
+    if (can('enter_kills')) list.push('results')
+    if (can('manage_qualification')) list.push('qualification')
+    if (can('add_announcement')) list.push('announcements')
+    if (can('view_audit')) list.push('audit')
+    if (can('change_scoring')) list.push('setup')
+    if (can('manage_organizers')) list.push('organizers')
+    return list
+  }, [can])
+
+  useEffect(() => {
+    if (section !== 'overview' && !visibleSectionsList.includes(section)) setSection('overview')
+  }, [visibleSectionsList, section])
+
+  // ── Early-exit screens (AFTER all hooks — rules of hooks) ──
 
   const loadAll = useCallback(async () => {
-    if (!isAdmin) return
-    const { data: list } = await supabase.from('tournaments').select('*').order('created_at', { ascending: false })
+    const { data: auth } = await supabase.auth.getUser()
+    if (!auth.user) return
+    // My Tournaments (§24): scoped memberships + platform-admin全域view
+    const { data: mine } = await supabase.rpc('get_my_tournaments')
+    setMyTournaments((mine as any[]) || [])
+    if (!admin.isPlatformAdmin) return
+    const { data: list } = await supabase
+      .from('tournaments')
+      .select('id, name, game, status, team_size, kill_point_value, description, champion_team_id')
+      .order('created_at', { ascending: false })
     setTournaments((list as TournamentRow[]) || [])
     const first = (list as TournamentRow[] | null)?.[0]
     if (first && !activeId) setActiveId(first.id)
-  }, [supabase, isAdmin, activeId])
+  }, [supabase, admin.isPlatformAdmin, activeId])
 
   const loadDetail = useCallback(async () => {
     if (!activeId) return
@@ -180,7 +243,22 @@ export default function TournamentAdminPage() {
     setRules(Object.fromEntries(((rRes.data as any[]) || []).map((r) => [r.placement, r.points])))
     setAudit((aRes.data as AuditRow[]) || [])
     setQuals((qRes.data as QualificationRecord[]) || [])
-  }, [supabase, activeId])
+
+    // My scoped role + permission set for THIS tournament (§25)
+    const { data: perm } = await supabase.rpc('get_my_tournament_permissions', { p_tournament: activeId })
+    if (perm) {
+      const p = perm as { role: string | null; allowed: string[] }
+      const platformFallback = admin.isPlatformAdmin && !p.role ? 'PLATFORM_ADMIN' : p.role
+      setMyRole(resolveRole(platformFallback, admin.isPlatformAdmin))
+    } else {
+      setMyRole(admin.isPlatformAdmin ? 'PLATFORM_ADMIN' : null)
+    }
+
+    if (can('manage_organizers') || admin.isPlatformAdmin) {
+      const { data: org } = await supabase.rpc('get_tournament_organizers', { p_tournament: activeId })
+      setOrganizers((org as OrganizerRow[]) || [])
+    }
+  }, [supabase, activeId, admin.isPlatformAdmin, can])
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data }) => setUser(data.user))
@@ -192,10 +270,52 @@ export default function TournamentAdminPage() {
     void loadDetail()
   }, [loadDetail])
 
-  const scoringConfig: ScoringConfig = useMemo(
-    () => ({ killPointValue: active?.kill_point_value ?? 1, placementPoints: rules }),
-    [active, rules]
-  )
+  // Non-members with no platform role: no UI, and the server would 403 anyway.
+  if (!admin.loading && user && !isAdmin) {
+    return (
+      <Layout user={user}>
+        <div style={{ maxWidth: 720, margin: '0 auto', padding: '40px 20px' }}>
+          <h1 style={{ fontSize: 20, fontWeight: 900, color: 'var(--text-primary)', margin: '0 0 6px' }}>
+            My Tournaments
+          </h1>
+          {myTournaments.length === 0 ? (
+            <p style={{ fontSize: 13, color: 'var(--text-muted)' }}>
+              You are not an organizer of any tournament yet. Tournament access is granted per-event by its owner — it
+              never changes your CampusConnect account.
+            </p>
+          ) : (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+              {myTournaments.map((t) => (
+                <div
+                  key={t.id}
+                  style={{
+                    background: 'var(--bg)',
+                    border: '1px solid var(--border)',
+                    borderRadius: 12,
+                    padding: 14,
+                    display: 'flex',
+                    gap: 10,
+                  }}
+                >
+                  <span style={{ flex: 1, fontSize: 13.5, fontWeight: 800, color: 'var(--text-primary)' }}>
+                    {t.name}
+                  </span>
+                  <span style={{ fontSize: 10.5, fontWeight: 800, color: 'var(--text-muted)' }}>
+                    {roleLabel(t.my_role)}
+                  </span>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      </Layout>
+    )
+  }
+
+  const scoringConfig: ScoringConfig = {
+    killPointValue: active?.kill_point_value ?? 1,
+    placementPoints: rules,
+  }
 
   const say = (s: string) => {
     setMsg(s)
@@ -313,19 +433,16 @@ export default function TournamentAdminPage() {
     setEntries(rows)
   }
 
-  const liveScores = useMemo(() => {
-    if (!entryMatch) return []
-    return entries.map((e) =>
-      calculateTeamScore(
-        {
-          team_id: e.team_id,
-          placement: e.placement ? Number(e.placement) : null,
-          players: e.players.map((p) => ({ player_id: p.player_id, kills: Number(p.kills || 0) })),
-        },
-        scoringConfig
-      )
+  const liveScores = entries.map((e) =>
+    calculateTeamScore(
+      {
+        team_id: e.team_id,
+        placement: e.placement ? Number(e.placement) : null,
+        players: e.players.map((p) => ({ player_id: p.player_id, kills: Number(p.kills || 0) })),
+      },
+      scoringConfig
     )
-  }, [entries, entryMatch, scoringConfig])
+  )
 
   const saveResult = async (asDraft: boolean) => {
     if (!entryMatch) return
@@ -431,15 +548,15 @@ export default function TournamentAdminPage() {
     a.click()
   }
 
-  if (!admin.loading && !isAdmin) {
+  if (!admin.loading && !user) {
     return (
-      <Layout user={user}>
+      <Layout user={null}>
         <div style={{ maxWidth: 720, margin: '0 auto', padding: '60px 20px', textAlign: 'center' }}>
           <p style={{ fontSize: 15, fontWeight: 700, color: 'var(--text-primary)', margin: '0 0 6px' }}>
-            Tournament admin only
+            Sign in to manage tournaments
           </p>
           <p style={{ fontSize: 13, color: 'var(--text-muted)' }}>
-            Ask a platform admin for access. Public results live at /tournaments.
+            Tournament organizers use their normal CampusConnect account — no separate login.
           </p>
         </div>
       </Layout>
@@ -472,47 +589,65 @@ export default function TournamentAdminPage() {
   return (
     <Layout user={user} profile={null}>
       <div style={{ maxWidth: 860, margin: '0 auto', padding: '24px 20px 60px' }}>
-        <h1 style={{ fontSize: 21, fontWeight: 900, color: 'var(--text-primary)', margin: '0 0 4px' }}>
-          🏆 Tournament Admin
-        </h1>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap', marginBottom: 4 }}>
+          <h1 style={{ fontSize: 21, fontWeight: 900, color: 'var(--text-primary)', margin: 0 }}>
+            🏆 Tournament Admin
+          </h1>
+          {myRole && (
+            <span
+              style={{
+                fontSize: 10,
+                fontWeight: 800,
+                letterSpacing: '0.06em',
+                padding: '3px 10px',
+                borderRadius: 999,
+                background: myRole === 'VIEWER' ? 'var(--bg-secondary, var(--bg))' : 'var(--accent-light)',
+                color: myRole === 'VIEWER' ? 'var(--text-muted)' : 'var(--accent-text)',
+              }}
+            >
+              {roleLabel(myRole).toUpperCase()}
+            </span>
+          )}
+        </div>
         <p style={{ fontSize: 12.5, color: 'var(--text-muted)', margin: '0 0 16px' }}>
-          Enter facts — placements and raw kills. Everything else is calculated.
+          Enter facts — placements and raw kills. Everything else is calculated. Your powers are scoped to this
+          tournament only.
         </p>
-
         {msg && (
           <p role="status" style={{ fontSize: 12.5, fontWeight: 700, color: 'var(--accent-text)', margin: '0 0 12px' }}>
             {msg}
           </p>
-        )}
-
-        {/* Tournament selector */}
+        )}{' '}
+        {/* Tournament selector — platform admins see all; organizers see theirs */}
         <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 16 }}>
           <select
             value={activeId}
             onChange={(e) => setActiveId(e.target.value)}
             style={{ ...input, flex: 1, minWidth: 200 }}
           >
-            {tournaments.map((t) => (
+            {(admin.isPlatformAdmin
+              ? tournaments
+              : myTournaments.map((t) => ({ id: t.id, name: t.name, status: t.status }))
+            ).map((t: any) => (
               <option key={t.id} value={t.id}>
                 {t.name} ({t.status})
               </option>
             ))}
           </select>
-          {active && active.status !== 'LIVE' && active.status !== 'COMPLETED' && (
+          {active && can('publish') && active.status !== 'LIVE' && active.status !== 'COMPLETED' && (
             <button onClick={() => setTournamentStatus('LIVE')} style={btn()} disabled={busy}>
               🟢 Go LIVE
             </button>
           )}
-          {active && active.status === 'LIVE' && (
+          {active && can('publish') && active.status === 'LIVE' && (
             <button onClick={() => setTournamentStatus('COMPLETED')} style={btn()} disabled={busy}>
               Complete
             </button>
           )}
         </div>
-
-        {/* Section tabs */}
+        {/* Section tabs — role-adaptive (§25): hidden ≠ secure, the RPCs enforce */}
         <div style={{ display: 'flex', gap: 6, overflowX: 'auto', paddingBottom: 6, marginBottom: 18 }}>
-          {SECTIONS.map(([key, icon, label]) => (
+          {SECTIONS.filter(([, , , action]) => !action || can(action)).map(([key, icon, label]) => (
             <button
               key={key}
               onClick={() => setSection(key)}
@@ -537,7 +672,54 @@ export default function TournamentAdminPage() {
             </button>
           ))}
         </div>
-
+        {/* ═══ ORGANIZERS — owner-only management (§13–§18) ═══ */}
+        {section === 'organizers' && (
+          <OrganizersManager
+            organizers={organizers}
+            myRole={myRole}
+            busy={busy}
+            input={input}
+            btn={btn}
+            onAdd={async (userId, role) => {
+              const res = await run(
+                () =>
+                  supabase.rpc('add_tournament_organizer', { p_tournament: activeId, p_user: userId, p_role: role }),
+                'Organizer added'
+              )
+              if (res && res.data && res.data !== 'ok') say(String(res.data))
+              void loadDetail()
+            }}
+            onRemove={async (userId) => {
+              if (!window.confirm("Remove this organizer's access?")) return
+              const res = await run(
+                () => supabase.rpc('remove_tournament_organizer', { p_tournament: activeId, p_user: userId }),
+                'Access removed'
+              )
+              if (res && res.data && res.data !== 'ok') {
+                say(
+                  res.data === 'is_owner'
+                    ? 'Assign a new owner first — a tournament cannot be ownerless'
+                    : String(res.data)
+                )
+              }
+              void loadDetail()
+            }}
+            onTransfer={async (userId) => {
+              const target = organizers.find((o) => o.user_id === userId)
+              const ok = window.confirm(
+                `You are transferring ownership of: ${active?.name}\n\nNew owner: ${target?.display_name}\n\nThis will remove your OWNER role (you become ADMIN). Confirm?`
+              )
+              if (!ok) return
+              const res = await run(
+                () => supabase.rpc('transfer_tournament_ownership', { p_tournament: activeId, p_new_owner: userId }),
+                'Ownership transferred'
+              )
+              if (res && res.data && res.data !== 'ok') say(String(res.data))
+              void loadAll()
+              void loadDetail()
+            }}
+          />
+        )}
         {/* ═══ SETUP ═══ */}
         {section === 'setup' && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
@@ -615,10 +797,8 @@ export default function TournamentAdminPage() {
             )}
           </div>
         )}
-
         {/* ═══ STAGES ═══ */}
         {section === 'stages' && <StageManager stages={stages} onAdd={addStage} busy={busy} input={input} btn={btn} />}
-
         {/* ═══ MATCHES ═══ */}
         {section === 'matches' && (
           <MatchManager
@@ -631,10 +811,8 @@ export default function TournamentAdminPage() {
             btn={btn}
           />
         )}
-
         {/* ═══ TEAMS ═══ */}
         {section === 'teams' && <TeamManager teams={teams} onAdd={addTeam} busy={busy} input={input} btn={btn} />}
-
         {/* ═══ RESULTS ═══ */}
         {section === 'results' && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
@@ -839,7 +1017,6 @@ export default function TournamentAdminPage() {
             )}
           </div>
         )}
-
         {/* ═══ QUALIFICATION ═══ */}
         {section === 'qualification' && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
@@ -915,12 +1092,10 @@ export default function TournamentAdminPage() {
             </p>
           </div>
         )}
-
         {/* ═══ ANNOUNCEMENTS ═══ */}
         {section === 'announcements' && (
           <AnnouncementManager onAdd={addAnnouncement} busy={busy} input={input} btn={btn} />
         )}
-
         {/* ═══ AUDIT ═══ */}
         {section === 'audit' && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
@@ -956,7 +1131,6 @@ export default function TournamentAdminPage() {
             )}
           </div>
         )}
-
         {/* Export */}
         {active && (
           <button
@@ -972,6 +1146,154 @@ export default function TournamentAdminPage() {
 }
 
 // ── Section sub-components ────────────────────────────────────────────────────
+
+function OrganizersManager({
+  organizers,
+  myRole,
+  busy,
+  input,
+  btn,
+  onAdd,
+  onRemove,
+  onTransfer,
+}: {
+  organizers: OrganizerRow[]
+  myRole: TournamentRole | null
+  busy: boolean
+  input: React.CSSProperties
+  btn: (p?: boolean) => React.CSSProperties
+  onAdd: (userId: string, role: string) => void
+  onRemove: (userId: string) => void
+  onTransfer: (userId: string) => void
+}) {
+  const [search, setSearch] = useState('')
+  const [role, setRole] = useState('ADMIN')
+  const [results, setResults] = useState<{ id: string; full_name: string | null; username: string | null }[]>([])
+
+  // Search existing CampusConnect users (§14: no account creation here).
+  useEffect(() => {
+    if (search.trim().length < 2) {
+      setResults([])
+      return
+    }
+    const t = setTimeout(async () => {
+      const { createClient } = await import('@/lib/supabase/client')
+      const sb = createClient()
+      const { data } = await sb
+        .from('profiles')
+        .select('id, full_name, username')
+        .or(`full_name.ilike.%${search.trim()}%,username.ilike.%${search.trim()}%`)
+        .limit(6)
+      setResults((data as any[]) || [])
+    }, 250)
+    return () => clearTimeout(t)
+  }, [search])
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+      {tournamentAllows(myRole, 'manage_organizers') && (
+        <div style={{ background: 'var(--bg)', border: '1px solid var(--border)', borderRadius: 14, padding: 16 }}>
+          <h3 style={{ fontSize: 14, fontWeight: 800, margin: '0 0 8px', color: 'var(--text-primary)' }}>
+            Add organizer — must already have a CampusConnect account
+          </h3>
+          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 8 }}>
+            <input
+              style={{ ...input, flex: 1, minWidth: 180 }}
+              placeholder="Search by name or @username"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+            />
+            <select style={input} value={role} onChange={(e) => setRole(e.target.value)}>
+              <option value="ADMIN">ADMIN — manage everything except ownership/scoring</option>
+              <option value="VIEWER">VIEWER — read-only</option>
+            </select>
+          </div>
+          {results.map((r) => (
+            <div
+              key={r.id}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 10,
+                padding: '8px 4px',
+                borderBottom: '1px solid var(--border)',
+              }}
+            >
+              <span style={{ flex: 1, fontSize: 13, fontWeight: 600, color: 'var(--text-primary)' }}>
+                {r.full_name || r.username}
+                {r.username ? <span style={{ color: 'var(--text-muted)', fontSize: 11.5 }}> @{r.username}</span> : null}
+              </span>
+              <button
+                onClick={() => {
+                  onAdd(r.id, role)
+                  setSearch('')
+                  setResults([])
+                }}
+                style={btn(true)}
+                disabled={busy}
+              >
+                Add as {role}
+              </button>
+            </div>
+          ))}
+        </div>
+      )}
+
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+        {organizers.map((o) => (
+          <div
+            key={o.user_id}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 10,
+              background: 'var(--bg)',
+              border: '1px solid var(--border)',
+              borderRadius: 12,
+              padding: '11px 14px',
+            }}
+          >
+            <span style={{ flex: 1, minWidth: 0 }}>
+              <span style={{ display: 'block', fontSize: 13.5, fontWeight: 800, color: 'var(--text-primary)' }}>
+                {o.display_name}
+                {o.is_me ? ' (you)' : ''}
+              </span>
+              {o.username && (
+                <span style={{ display: 'block', fontSize: 11, color: 'var(--text-muted)' }}>@{o.username}</span>
+              )}
+            </span>
+            <span
+              style={{
+                fontSize: 10,
+                fontWeight: 800,
+                padding: '2px 8px',
+                borderRadius: 6,
+                background: o.role === 'OWNER' ? 'var(--accent-light)' : 'var(--bg-secondary, var(--bg))',
+                color: o.role === 'OWNER' ? 'var(--accent-text)' : 'var(--text-muted)',
+              }}
+            >
+              {o.role}
+            </span>
+            {tournamentAllows(myRole, 'manage_organizers') && o.role !== 'OWNER' && (
+              <button onClick={() => onRemove(o.user_id)} style={btn()} disabled={busy}>
+                Remove
+              </button>
+            )}
+            {tournamentAllows(myRole, 'transfer_ownership') && !o.is_me && (
+              <button onClick={() => onTransfer(o.user_id)} style={btn(o.role !== 'OWNER')} disabled={busy}>
+                {o.role === 'OWNER' ? 'Transfer away' : 'Make Owner'}
+              </button>
+            )}
+          </div>
+        ))}
+      </div>
+      <p style={{ fontSize: 11.5, color: 'var(--text-muted)', margin: 0 }}>
+        A tournament must always have an owner. Ownership transfers are explicit, confirmed, and audited — access
+        removal never creates an ownerless tournament.
+      </p>
+    </div>
+  )
+}
 
 function StageManager({
   stages,

@@ -10,6 +10,7 @@ import {
   validateResultEntry,
   type ScoringConfig,
 } from '@/lib/tournaments/scoring'
+import { resolveRole, roleLabel, tournamentAllows } from '@/lib/tournaments/rbac'
 
 const root = process.cwd()
 const read = (p: string) => fs.readFileSync(path.join(root, p), 'utf8')
@@ -179,6 +180,139 @@ describe('tournaments — CSV export', () => {
 })
 
 // ─── SQL surface & security guards (spec §48/§49) ─────────────────────────────
+
+// ─── Scoped RBAC (051): role matrix, isolation, ownership (spec §41) ────────────
+
+describe('tournaments — RBAC permission matrix', () => {
+  it('OWNER can do everything including scoring, organizers and transfer', () => {
+    for (const a of [
+      'enter_kills',
+      'submit_result',
+      'verify_result',
+      'lock_result',
+      'reopen_result',
+      'manage_qualification',
+      'reverse_qualification',
+      'change_scoring',
+      'manage_organizers',
+      'transfer_ownership',
+      'cancel_tournament',
+      'view_audit',
+    ] as const) {
+      expect(tournamentAllows('OWNER', a)).toBe(true)
+    }
+  })
+
+  it('ADMIN manages results/teams/qualification but NEVER scoring, organizers, ownership, cancellation', () => {
+    for (const a of ['enter_kills', 'submit_result', 'verify_result', 'manage_qualification', 'view_audit'] as const) {
+      expect(tournamentAllows('ADMIN', a)).toBe(true)
+    }
+    for (const a of [
+      'change_scoring',
+      'manage_organizers',
+      'transfer_ownership',
+      'cancel_tournament',
+      'lock_result',
+      'reopen_result',
+      'reverse_qualification',
+    ] as const) {
+      expect(tournamentAllows('ADMIN', a)).toBe(false)
+    }
+  })
+
+  it('VIEWER is read-only — every mutation denied', () => {
+    expect(tournamentAllows('VIEWER', 'view')).toBe(true)
+    for (const a of [
+      'enter_kills',
+      'submit_result',
+      'manage_teams',
+      'manage_qualification',
+      'change_scoring',
+      'manage_organizers',
+    ] as const) {
+      expect(tournamentAllows('VIEWER', a)).toBe(false)
+    }
+  })
+
+  it('PLATFORM_ADMIN outranks everything; no role means nothing', () => {
+    expect(tournamentAllows('PLATFORM_ADMIN', 'change_scoring')).toBe(true)
+    expect(tournamentAllows('PLATFORM_ADMIN', 'transfer_ownership')).toBe(true)
+    expect(tournamentAllows(null, 'view')).toBe(false)
+    expect(tournamentAllows(undefined, 'enter_kills')).toBe(false)
+  })
+
+  it('roles resolve per-tournament: same user, different roles, no global leak', () => {
+    // §8/§34: Ayush OWNER of A; Rahul ADMIN in A but OWNER of B — all valid
+    expect(resolveRole('OWNER', false)).toBe('OWNER')
+    expect(resolveRole('ADMIN', false)).toBe('ADMIN')
+    expect(resolveRole('VIEWER', false)).toBe('VIEWER')
+    expect(resolveRole(null, false)).toBeNull()
+    // a membership never manufactures platform power
+    expect(resolveRole('OWNER', false)).not.toBe('PLATFORM_ADMIN')
+    expect(resolveRole(null, true)).toBe('PLATFORM_ADMIN')
+  })
+
+  it('dashboard copy never calls an organizer a CampusConnect admin (§40)', () => {
+    expect(roleLabel('OWNER')).toMatch(/owner/i)
+    expect(roleLabel('ADMIN')).toMatch(/organizer/i)
+    expect(roleLabel('ADMIN')).not.toMatch(/^admin$/i)
+  })
+})
+
+describe('tournaments — RBAC SQL surface (051)', () => {
+  const rbac = read('supabase/migrations/051_tournament_rbac.sql')
+
+  it('memberships are tournament-scoped: one owner, many admins/viewers', () => {
+    expect(rbac).toMatch(/CREATE TABLE IF NOT EXISTS public\.tournament_members/)
+    expect(rbac).toMatch(/idx_tournament_members_one_owner/)
+    expect(rbac).toMatch(/WHERE role = 'OWNER'/)
+    expect(rbac).toMatch(/UNIQUE \(tournament_id, user_id\)/)
+  })
+
+  it('authorization is isPlatformAdmin OR hasTournamentRole — never just isAdmin (§9)', () => {
+    expect(rbac).toMatch(/FUNCTION public\.tournament_role/)
+    expect(rbac).toMatch(/FUNCTION public\.tournament_allows/)
+  })
+
+  it('creation auto-assigns OWNER without global grants (§11)', () => {
+    expect(rbac).toMatch(/'OWNER', auth\.uid\(\)/)
+  })
+
+  it('every sensitive RPC now checks the scoped role, not the global one', () => {
+    for (const rpc of [
+      'submit_match_result',
+      'set_match_result_state',
+      'confirm_stage_qualifications',
+      'reverse_qualification',
+      'manual_qualification_override',
+      'add_tournament_announcement',
+      'finalize_tournament',
+      'set_scoring_rule',
+    ]) {
+      const fn = rbac.indexOf(`FUNCTION public.${rpc}`)
+      expect(fn).toBeGreaterThan(-1)
+    }
+    expect(rbac).toMatch(/tournament_allows\(v_tour, 'enter_kills'\)/)
+    expect(rbac).toMatch(/tournament_allows\(p_tournament, 'change_scoring'\)/)
+  })
+
+  it('organizer management is OWNER-only and membership writes bypass nothing', () => {
+    expect(rbac).toMatch(/FUNCTION public\.add_tournament_organizer/)
+    expect(rbac).toMatch(/REVOKE ALL ON public\.tournament_members FROM anon, authenticated/)
+    expect(rbac).not.toMatch(/POLICY \w+ ON public\.tournament_members\s+FOR (INSERT|UPDATE|DELETE)/)
+  })
+
+  it('ownership transfer is explicit, audited, and ownerless is impossible (§17/§18)', () => {
+    expect(rbac).toMatch(/FUNCTION public\.transfer_tournament_ownership/)
+    expect(rbac).toMatch(/'ownership_transferred'/)
+    expect(rbac).toMatch(/IF v_role = 'OWNER' THEN RETURN 'is_owner'/)
+    expect(rbac).toMatch(/role = 'ADMIN', updated_at = now\(\)/)
+  })
+
+  it('members table SELECT is scoped to self or platform admin (§21)', () => {
+    expect(rbac).toMatch(/user_id = auth\.uid\(\)/)
+  })
+})
 
 describe('tournaments — SQL surface', () => {
   const sql = read('supabase/migrations/050_tournaments.sql')
