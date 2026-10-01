@@ -59,12 +59,12 @@ type Tab = 'foryou' | DiscoveryCategory | 'blogs' | 'people'
 // their own linked surfaces.
 const TABS: { key: Tab; label: string }[] = [
   { key: 'foryou', label: 'For You' },
-  { key: 'startup', label: '🚀 Startups' },
-  { key: 'project', label: '🛠 Projects' },
-  { key: 'hackathon', label: '⚡ Hackathons' },
-  { key: 'collab', label: '🤝 Collab' },
-  { key: 'blogs', label: '✍️ Blogs' },
-  { key: 'people', label: '👥 People' },
+  { key: 'startup', label: 'Startups' },
+  { key: 'project', label: 'Projects' },
+  { key: 'hackathon', label: 'Hackathons' },
+  { key: 'collab', label: 'Collab' },
+  { key: 'blogs', label: 'Blogs' },
+  { key: 'people', label: 'People' },
 ]
 
 const PAGE = 10
@@ -94,7 +94,7 @@ const HUB_ITEMS: {
     key: 'foryou',
     title: 'For You',
     desc: 'Personalized ideas, projects and builders worth discovering',
-    icon: '🚀',
+    icon: 'flame',
     accent: 'var(--accent-light)',
     accentText: 'var(--accent-text)',
   },
@@ -102,7 +102,7 @@ const HUB_ITEMS: {
     key: 'startup',
     title: 'Startups & Ideas',
     desc: 'Discover startup ideas and concepts worth building',
-    icon: '💡',
+    icon: 'sparkles',
     accent: 'var(--orange-light)',
     accentText: 'var(--orange-text)',
   },
@@ -110,7 +110,7 @@ const HUB_ITEMS: {
     key: 'project',
     title: 'Projects',
     desc: 'Discover projects and the people building them',
-    icon: '🛠',
+    icon: 'code',
     accent: 'var(--blue-light)',
     accentText: 'var(--blue-text)',
   },
@@ -118,7 +118,7 @@ const HUB_ITEMS: {
     key: 'hackathon',
     title: 'Hackathons',
     desc: 'Discover hackathons, competitions and upcoming opportunities',
-    icon: '⚡',
+    icon: 'zap',
     accent: 'var(--success-light)',
     accentText: 'var(--success-text)',
   },
@@ -126,7 +126,7 @@ const HUB_ITEMS: {
     key: 'collab',
     title: 'Collaboration',
     desc: 'Find builders and projects looking for collaborators',
-    icon: '🤝',
+    icon: 'users',
     accent: 'var(--purple-light)',
     accentText: 'var(--purple-text)',
   },
@@ -134,7 +134,7 @@ const HUB_ITEMS: {
     key: 'blogs',
     title: 'Developer Blogs',
     desc: 'Read what students are building, learning and sharing',
-    icon: '✍️',
+    icon: 'book',
     accent: 'var(--yellow-light)',
     accentText: 'var(--yellow-text)',
   },
@@ -142,7 +142,7 @@ const HUB_ITEMS: {
     key: 'people',
     title: 'People & Builders',
     desc: 'Discover students, developers and builders',
-    icon: '👥',
+    icon: 'users',
     accent: 'var(--cyan-light)',
     accentText: 'var(--cyan-text)',
   },
@@ -348,7 +348,7 @@ export default function DiscoverPage() {
       if (isDemoCardId(postId)) {
         setCards((prev) => prev.filter((c) => c.id !== postId))
         haptic.tap()
-        toast.show('Demo idea — post your own to match with real builders 🚀')
+        toast.show('Demo idea — post your own to match with real builders')
         return
       }
 
@@ -412,7 +412,7 @@ export default function DiscoverPage() {
   const openCard = useCallback(
     (postId: string) => {
       if (isDemoCardId(postId)) {
-        toast.show('Demo idea — post your own to match with real builders 🚀')
+        toast.show('Demo idea — post your own to match with real builders')
         return
       }
       router.push(`/discover/${postId}`)
@@ -454,7 +454,7 @@ export default function DiscoverPage() {
       return
     }
     haptic.tap()
-    toast.show('Idea published to Discovery 🎉', { tone: 'success' })
+    toast.show('Idea published to Discovery', { tone: 'success' })
     setShowCreate(false)
     setForm({
       title: '',
@@ -685,7 +685,8 @@ export default function DiscoverPage() {
                           marginBottom: 8,
                         }}
                       >
-                        🔥 Swipe • Match • Build
+                        <Icon name="flame" size={11} style={{ verticalAlign: '-1px', marginRight: 4 }} /> Swipe • Match
+                        • Build
                       </span>
                       <span style={{ fontSize: 21, fontWeight: 800, color: '#fff', lineHeight: 1.2 }}>
                         Swap Startup Ideas &amp; Projects
@@ -801,7 +802,7 @@ export default function DiscoverPage() {
                                 flexShrink: 0,
                               }}
                             >
-                              {item.icon}
+                              <Icon name={item.icon} size={19} />
                             </span>
                             <span style={{ flex: 1, minWidth: 0 }}>
                               <span
@@ -851,7 +852,7 @@ export default function DiscoverPage() {
                   <ListSkeleton count={2} />
                 ) : error ? (
                   <EmptyState
-                    icon="⚠️"
+                    icon="alert"
                     title="Could not load ideas"
                     body={error}
                     cta="Retry"
@@ -1183,7 +1184,7 @@ export default function DiscoverPage() {
                           flexShrink: 0,
                         }}
                       >
-                        {accepting === i.id ? '…' : '🤝 Accept'}
+                        {accepting === i.id ? '…' : 'Accept'}
                       </button>
                     </div>
                   ))}
@@ -1230,7 +1231,9 @@ export default function DiscoverPage() {
                 textAlign: 'center',
               }}
             >
-              <p style={{ fontSize: 44, margin: 0 }}>🎉</p>
+              <div style={{ margin: 0, color: 'var(--accent-text)', display: 'flex', justifyContent: 'center' }}>
+                <Icon name="sparkles" size={44} strokeWidth={1.4} />
+              </div>
               <h3 style={{ fontSize: 20, fontWeight: 800, color: 'var(--text-primary)', margin: '10px 0 4px' }}>
                 It&apos;s a Match!
               </h3>

@@ -4,19 +4,11 @@ import { useEffect, useState, useCallback } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
 import Layout from '@/components/Layout'
+import { Icon } from '@/components/icons'
 
 const INDUSTRIES = ['all', 'tech', 'finance', 'consulting', 'startup', 'ecommerce', 'fintech', 'edtech', 'other']
 
-const INDUSTRY_EMOJIS: Record<string, string> = {
-  tech: '💻',
-  finance: '💰',
-  consulting: '🏢',
-  startup: '🚀',
-  ecommerce: '🛒',
-  fintech: '💳',
-  edtech: '📚',
-  other: '🏢',
-}
+// Industry chips are text-only — the company logo tile carries the visual.
 
 export default function CompaniesPage() {
   const [user, setUser] = useState<any>(null)
@@ -90,7 +82,22 @@ export default function CompaniesPage() {
           >
             ←
           </button>
-          <h2 style={{ fontSize: 22, fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>🏢 Companies</h2>
+          <h2
+            style={{
+              fontSize: 22,
+              fontWeight: 700,
+              color: 'var(--text-primary)',
+              margin: 0,
+              display: 'flex',
+              alignItems: 'center',
+              gap: 8,
+            }}
+          >
+            <span style={{ display: 'inline-flex', color: 'var(--accent-text)' }} aria-hidden="true">
+              <Icon name="building" size={22} />
+            </span>
+            Companies
+          </h2>
         </div>
         <p style={{ fontSize: 13, color: 'var(--text-muted)', margin: '0 0 20px', marginLeft: 34 }}>
           Explore companies, job openings & interview experiences
@@ -135,9 +142,7 @@ export default function CompaniesPage() {
                 color: industry === ind ? 'var(--on-accent)' : 'var(--text-secondary)',
               }}
             >
-              {ind === 'all'
-                ? '🌐 All'
-                : `${INDUSTRY_EMOJIS[ind] || '🏢'} ${ind.charAt(0).toUpperCase() + ind.slice(1)}`}
+              {ind === 'all' ? 'All' : ind.charAt(0).toUpperCase() + ind.slice(1)}
             </button>
           ))}
         </div>
@@ -165,7 +170,9 @@ export default function CompaniesPage() {
               boxShadow: 'var(--shadow-sm)',
             }}
           >
-            <p style={{ fontSize: 20, margin: '0 0 4px' }}>💼</p>
+            <p style={{ margin: '0 0 4px', display: 'flex', justifyContent: 'center', color: 'var(--accent-text)' }}>
+              <Icon name="briefcase" size={20} />
+            </p>
             <p style={{ fontSize: 11, fontWeight: 600, color: 'var(--text-primary)', margin: 0 }}>All Jobs</p>
           </button>
           <button
@@ -181,7 +188,9 @@ export default function CompaniesPage() {
               boxShadow: 'var(--shadow-sm)',
             }}
           >
-            <p style={{ fontSize: 20, margin: '0 0 4px' }}>📋</p>
+            <p style={{ margin: '0 0 4px', display: 'flex', justifyContent: 'center', color: 'var(--accent-text)' }}>
+              <Icon name="copy" size={20} />
+            </p>
             <p style={{ fontSize: 11, fontWeight: 600, color: 'var(--text-primary)', margin: 0 }}>Applications</p>
           </button>
           <button
@@ -197,7 +206,9 @@ export default function CompaniesPage() {
               boxShadow: 'var(--shadow-sm)',
             }}
           >
-            <p style={{ fontSize: 20, margin: '0 0 4px' }}>📝</p>
+            <p style={{ margin: '0 0 4px', display: 'flex', justifyContent: 'center', color: 'var(--accent-text)' }}>
+              <Icon name="pencil" size={20} />
+            </p>
             <p style={{ fontSize: 11, fontWeight: 600, color: 'var(--text-primary)', margin: 0 }}>Experiences</p>
           </button>
         </div>
@@ -216,7 +227,9 @@ export default function CompaniesPage() {
               boxShadow: 'var(--shadow-sm)',
             }}
           >
-            <p style={{ fontSize: 32, margin: '0 0 8px' }}>🏢</p>
+            <div style={{ margin: '0 0 8px', color: 'var(--accent-text)', display: 'flex', justifyContent: 'center' }}>
+              <Icon name="building" size={32} strokeWidth={1.6} />
+            </div>
             <p style={{ fontSize: 15, fontWeight: 600, color: 'var(--text-primary)', margin: '0 0 4px' }}>
               No companies found
             </p>
@@ -263,13 +276,13 @@ export default function CompaniesPage() {
                       style={{ width: 48, height: 48, borderRadius: 12, objectFit: 'cover' }}
                     />
                   ) : (
-                    INDUSTRY_EMOJIS[c.industry] || '🏢'
+                    <Icon name="building" size={22} style={{ color: 'var(--text-muted)' }} />
                   )}
                 </div>
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                     <p style={{ fontSize: 15, fontWeight: 600, color: 'var(--text-primary)', margin: 0 }}>{c.name}</p>
-                    {c.is_verified && <span style={{ fontSize: 12 }}>✅</span>}
+                    {c.is_verified && <Icon name="check" size={13} style={{ color: 'var(--success-text)' }} />}
                   </div>
                   <p style={{ fontSize: 12, color: 'var(--text-muted)', margin: '2px 0 0' }}>
                     {c.industry} · {c.company_size} · {c.hq_location || 'Global'}
@@ -294,10 +307,21 @@ export default function CompaniesPage() {
                   )}
                 </div>
                 <div style={{ textAlign: 'right', flexShrink: 0 }}>
-                  <p style={{ fontSize: 12, color: 'var(--text-muted)', margin: 0 }}>👥 {c.follower_count}</p>
+                  <p
+                    style={{
+                      fontSize: 12,
+                      color: 'var(--text-muted)',
+                      margin: 0,
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: 4,
+                    }}
+                  >
+                    <Icon name="users" size={11} /> {c.follower_count}
+                  </p>
                   {c.glassdoor_rating && (
                     <p style={{ fontSize: 12, color: 'var(--yellow-text)', margin: '2px 0 0' }}>
-                      ⭐ {c.glassdoor_rating}
+                      <Icon name="star" size={11} style={{ verticalAlign: '-1px' }} /> {c.glassdoor_rating}
                     </p>
                   )}
                 </div>

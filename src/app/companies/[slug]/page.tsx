@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { useRouter, useParams } from 'next/navigation'
 import Layout from '@/components/Layout'
+import { Icon } from '@/components/icons'
 
 export default function CompanyPage() {
   const [user, setUser] = useState<any>(null)
@@ -80,14 +81,13 @@ export default function CompanyPage() {
       </Layout>
     )
 
-  const jobTypeEmoji: Record<string, string> = {
-    internship: '🎓',
-    full_time: '💼',
-    part_time: '⏰',
-    contract: '📋',
-    freelance: '🌐',
+  // Result pill: token color carries the verdict — no emoji glyphs.
+  const resultStyle: Record<string, { bg: string; fg: string }> = {
+    selected: { bg: 'var(--success-light)', fg: 'var(--success-text)' },
+    rejected: { bg: 'var(--danger-light)', fg: 'var(--danger-text)' },
+    pending: { bg: 'var(--warning-light)', fg: 'var(--warning-text)' },
+    withdrawn: { bg: 'var(--bg-secondary)', fg: 'var(--text-muted)' },
   }
-  const resultEmoji: Record<string, string> = { selected: '✅', rejected: '❌', pending: '⏳', withdrawn: '↩️' }
   const diffColor: Record<string, string> = {
     easy: 'var(--success-text)',
     medium: 'var(--yellow-text)',
@@ -148,7 +148,7 @@ export default function CompanyPage() {
                   style={{ width: 64, height: 64, borderRadius: 14, objectFit: 'cover' }}
                 />
               ) : (
-                '🏢'
+                <Icon name="building" size={28} style={{ color: 'var(--text-muted)' }} />
               )}
             </div>
             <div style={{ flex: 1 }}>
@@ -156,7 +156,7 @@ export default function CompanyPage() {
                 <h2 style={{ fontSize: 20, fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>
                   {company.name}
                 </h2>
-                {company.is_verified && <span style={{ fontSize: 14 }}>✅</span>}
+                {company.is_verified && <Icon name="check" size={15} style={{ color: 'var(--success-text)' }} />}
               </div>
               <p style={{ fontSize: 13, color: 'var(--text-muted)', margin: '0 0 8px' }}>
                 {company.industry} · {company.company_size} · {company.hq_location || 'Global'}
@@ -181,9 +181,21 @@ export default function CompanyPage() {
                     color: isFollowing ? 'var(--danger)' : 'var(--on-accent)',
                   }}
                 >
-                  {isFollowing ? '💔 Unfollow' : '❤️ Follow'} ({followerCount})
+                  {isFollowing ? 'Unfollow' : 'Follow'} ({followerCount})
                 </button>
-                {avgRating && <span style={{ fontSize: 12, color: 'var(--yellow-text)' }}>⭐ {avgRating}</span>}
+                {avgRating && (
+                  <span
+                    style={{
+                      fontSize: 12,
+                      color: 'var(--yellow-text)',
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: 3,
+                    }}
+                  >
+                    <Icon name="star" size={11} /> {avgRating}
+                  </span>
+                )}
                 {company.website && (
                   <a
                     href={company.website}
@@ -191,7 +203,7 @@ export default function CompanyPage() {
                     rel="noopener noreferrer"
                     style={{ fontSize: 12, color: 'var(--accent)', textDecoration: 'none' }}
                   >
-                    🌐 Website
+                    <Icon name="link" size={11} style={{ verticalAlign: '-1px' }} /> Website
                   </a>
                 )}
               </div>
@@ -246,7 +258,7 @@ export default function CompanyPage() {
                 fontFamily: 'inherit',
               }}
             >
-              {tab === 'jobs' ? `💼 Jobs (${jobs.length})` : `📝 Experiences (${experiences.length})`}
+              {tab === 'jobs' ? `Jobs (${jobs.length})` : `Experiences (${experiences.length})`}
             </button>
           ))}
         </div>
@@ -264,7 +276,11 @@ export default function CompanyPage() {
                   textAlign: 'center',
                 }}
               >
-                <p style={{ fontSize: 28, margin: '0 0 8px' }}>💼</p>
+                <div
+                  style={{ margin: '0 0 8px', color: 'var(--accent-text)', display: 'flex', justifyContent: 'center' }}
+                >
+                  <Icon name="briefcase" size={28} strokeWidth={1.6} />
+                </div>
                 <p style={{ fontSize: 14, color: 'var(--text-muted)', margin: 0 }}>No active job postings yet</p>
               </div>
             ) : (
@@ -297,7 +313,7 @@ export default function CompanyPage() {
                             fontWeight: 600,
                           }}
                         >
-                          {jobTypeEmoji[job.job_type] || '💼'} {job.job_type.replace('_', ' ')}
+                          {job.job_type.replace('_', ' ')}
                         </span>
                         {job.location_type && (
                           <span
@@ -310,20 +326,20 @@ export default function CompanyPage() {
                             }}
                           >
                             {job.location_type === 'remote'
-                              ? '🌍 Remote'
+                              ? 'Remote'
                               : job.location_type === 'hybrid'
-                                ? '🔄 Hybrid'
-                                : '🏢 Onsite'}
+                                ? 'Hybrid'
+                                : 'Onsite'}
                           </span>
                         )}
                         {job.stipend && (
                           <span style={{ fontSize: 11, color: 'var(--success-text)', fontWeight: 600 }}>
-                            💰 {job.stipend}
+                            {job.stipend}
                           </span>
                         )}
                         {job.salary_range && (
                           <span style={{ fontSize: 11, color: 'var(--success-text)', fontWeight: 600 }}>
-                            💰 {job.salary_range}
+                            {job.salary_range}
                           </span>
                         )}
                       </div>
@@ -348,12 +364,21 @@ export default function CompanyPage() {
                     </div>
                     <div style={{ textAlign: 'right', flexShrink: 0 }}>
                       {job.deadline && (
-                        <p style={{ fontSize: 11, color: 'var(--danger)', margin: 0 }}>
-                          ⏰ {new Date(job.deadline).toLocaleDateString()}
+                        <p
+                          style={{
+                            fontSize: 11,
+                            color: 'var(--danger)',
+                            margin: 0,
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: 3,
+                          }}
+                        >
+                          <Icon name="clock" size={10} /> {new Date(job.deadline).toLocaleDateString()}
                         </p>
                       )}
                       <p style={{ fontSize: 11, color: 'var(--text-muted)', margin: '4px 0 0' }}>
-                        👁️ {job.view_count} · 📋 {job.apply_count} applied
+                        {job.view_count} views · {job.apply_count} applied
                       </p>
                     </div>
                   </div>
@@ -381,7 +406,7 @@ export default function CompanyPage() {
                 marginBottom: 4,
               }}
             >
-              ✍️ Share your experience
+              <Icon name="pencil" size={13} style={{ verticalAlign: '-2px', marginRight: 5 }} /> Share your experience
             </button>
             {experiences.length === 0 ? (
               <div
@@ -393,7 +418,11 @@ export default function CompanyPage() {
                   textAlign: 'center',
                 }}
               >
-                <p style={{ fontSize: 28, margin: '0 0 8px' }}>📝</p>
+                <div
+                  style={{ margin: '0 0 8px', color: 'var(--accent-text)', display: 'flex', justifyContent: 'center' }}
+                >
+                  <Icon name="pencil" size={28} strokeWidth={1.6} />
+                </div>
                 <p style={{ fontSize: 14, color: 'var(--text-muted)', margin: 0 }}>
                   No interview experiences yet. Be the first!
                 </p>
@@ -449,15 +478,26 @@ export default function CompanyPage() {
                             fontSize: 11,
                             padding: '2px 8px',
                             borderRadius: 8,
-                            background: 'var(--bg-secondary)',
+                            background: resultStyle[exp.result]?.bg || 'var(--bg-secondary)',
+                            color: resultStyle[exp.result]?.fg || 'var(--text-secondary)',
                             fontWeight: 600,
                           }}
                         >
-                          {resultEmoji[exp.result]} {exp.result}
+                          {exp.result}
                         </span>
                       )}
                       {exp.rating && (
-                        <span style={{ fontSize: 12, color: 'var(--yellow-text)' }}>⭐ {exp.rating}/5</span>
+                        <span
+                          style={{
+                            fontSize: 12,
+                            color: 'var(--yellow-text)',
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: 3,
+                          }}
+                        >
+                          <Icon name="star" size={11} /> {exp.rating}/5
+                        </span>
                       )}
                     </div>
                   </div>
@@ -484,20 +524,26 @@ export default function CompanyPage() {
                         lineHeight: 1.5,
                       }}
                     >
-                      💡 {exp.tips}
+                      <Icon name="sparkles" size={12} style={{ verticalAlign: '-2px', marginRight: 5 }} /> {exp.tips}
                     </p>
                   )}
                   <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginTop: 6 }}>
                     <span
-                      style={{ fontSize: 12, color: exp.upvotes > 0 ? 'var(--success-text)' : 'var(--text-muted)' }}
+                      style={{
+                        fontSize: 12,
+                        color: exp.upvotes > 0 ? 'var(--success-text)' : 'var(--text-muted)',
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: 4,
+                      }}
                     >
-                      👍 {exp.upvotes} helpful
+                      <Icon name="heart" size={11} /> {exp.upvotes} helpful
                     </span>
                     {exp.round_count && (
                       <span style={{ fontSize: 11, color: 'var(--text-muted)' }}>{exp.round_count} rounds</span>
                     )}
                     {exp.offer_salary && (
-                      <span style={{ fontSize: 11, color: 'var(--success-text)' }}>💰 {exp.offer_salary}</span>
+                      <span style={{ fontSize: 11, color: 'var(--success-text)' }}>{exp.offer_salary}</span>
                     )}
                   </div>
                 </div>

@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { useRouter, useParams } from 'next/navigation'
 import Layout from '@/components/Layout'
+import { Icon } from '@/components/icons'
 
 export default function JobDetailPage() {
   const [user, setUser] = useState<any>(null)
@@ -78,7 +79,7 @@ export default function JobDetailPage() {
       if (!res.ok) throw new Error(data.error)
       setApplied(true)
       setShowApply(false)
-      setSuccess('Application submitted! 🎉')
+      setSuccess('Application submitted!')
       setJob((j: any) => ({ ...j, apply_count: (j.apply_count || 0) + 1 }))
     } catch (err: any) {
       setError(err.message)
@@ -105,13 +106,7 @@ export default function JobDetailPage() {
     )
 
   const company = job.companies
-  const jobTypeEmoji: Record<string, string> = {
-    internship: '🎓',
-    full_time: '💼',
-    part_time: '⏰',
-    contract: '📋',
-    freelance: '🌐',
-  }
+
   const isExpired = job.deadline && new Date(job.deadline) < new Date()
 
   return (
@@ -161,7 +156,7 @@ export default function JobDetailPage() {
               marginBottom: 16,
             }}
           >
-            ✅ {success}
+            <Icon name="check" size={13} style={{ verticalAlign: '-2px', marginRight: 5 }} /> {success}
           </div>
         )}
 
@@ -201,7 +196,7 @@ export default function JobDetailPage() {
                   style={{ width: 52, height: 52, borderRadius: 12 }}
                 />
               ) : (
-                '🏢'
+                <Icon name="building" size={24} style={{ color: 'var(--text-muted)' }} />
               )}
             </div>
             <div>
@@ -228,7 +223,7 @@ export default function JobDetailPage() {
                 color: 'var(--accent)',
               }}
             >
-              {jobTypeEmoji[job.job_type]} {job.job_type.replace('_', ' ')}
+              {job.job_type.replace('_', ' ')}
             </span>
             {job.location_type && (
               <span
@@ -241,11 +236,7 @@ export default function JobDetailPage() {
                   color: 'var(--text-secondary)',
                 }}
               >
-                {job.location_type === 'remote'
-                  ? '🌍 Remote'
-                  : job.location_type === 'hybrid'
-                    ? '🔄 Hybrid'
-                    : '🏢 Onsite'}
+                {job.location_type === 'remote' ? 'Remote' : job.location_type === 'hybrid' ? 'Hybrid' : 'Onsite'}
               </span>
             )}
             {job.location && (
@@ -258,7 +249,7 @@ export default function JobDetailPage() {
                   color: 'var(--text-muted)',
                 }}
               >
-                📍 {job.location}
+                <Icon name="pin" size={11} style={{ verticalAlign: '-1px', marginRight: 4 }} /> {job.location}
               </span>
             )}
           </div>
@@ -268,14 +259,14 @@ export default function JobDetailPage() {
               style={{ background: 'var(--success-light)', borderRadius: 10, padding: '10px 14px', marginBottom: 12 }}
             >
               <p style={{ fontSize: 13, color: 'var(--success-text)', fontWeight: 600, margin: 0 }}>
-                💰 {job.stipend || job.salary_range}
+                {job.stipend || job.salary_range}
               </p>
             </div>
           )}
 
           {job.deadline && (
             <p style={{ fontSize: 12, color: isExpired ? 'var(--danger)' : 'var(--text-muted)', margin: 0 }}>
-              ⏰ Deadline: {new Date(job.deadline).toLocaleDateString()} {isExpired ? '(EXPIRED)' : ''}
+              Deadline: {new Date(job.deadline).toLocaleDateString()} {isExpired ? '(EXPIRED)' : ''}
             </p>
           )}
         </div>
@@ -293,7 +284,7 @@ export default function JobDetailPage() {
             }}
           >
             <h3 style={{ fontSize: 15, fontWeight: 700, color: 'var(--text-primary)', margin: '0 0 10px' }}>
-              📋 Description
+              Description
             </h3>
             <p
               style={{
@@ -322,7 +313,7 @@ export default function JobDetailPage() {
             }}
           >
             <h3 style={{ fontSize: 15, fontWeight: 700, color: 'var(--text-primary)', margin: '0 0 10px' }}>
-              🛠️ Skills Required
+              Skills Required
             </h3>
             <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
               {job.skills_required.map((s: string) => (
@@ -364,7 +355,7 @@ export default function JobDetailPage() {
             }}
           >
             <p style={{ fontSize: 12, color: 'var(--text-muted)', margin: 0 }}>
-              👁️ {job.view_count} views · 📋 {job.apply_count} applicants
+              {job.view_count} views · {job.apply_count} applicants
             </p>
             <div style={{ display: 'flex', gap: 8, flexShrink: 0 }}>
               {applied ? (
@@ -378,7 +369,7 @@ export default function JobDetailPage() {
                     color: 'var(--success-text)',
                   }}
                 >
-                  ✅ Applied
+                  <Icon name="check" size={12} style={{ verticalAlign: '-2px', marginRight: 4 }} /> Applied
                 </span>
               ) : isExpired ? (
                 <span
@@ -391,7 +382,7 @@ export default function JobDetailPage() {
                     color: 'var(--danger)',
                   }}
                 >
-                  ⏰ Expired
+                  Expired
                 </span>
               ) : !showApply ? (
                 <button
@@ -417,7 +408,7 @@ export default function JobDetailPage() {
           {showApply && (
             <div style={{ marginTop: 16, paddingTop: 16, borderTop: '1px solid var(--border)' }}>
               <h4 style={{ fontSize: 14, fontWeight: 600, color: 'var(--text-primary)', margin: '0 0 10px' }}>
-                ✍️ Cover Note (optional)
+                Cover Note (optional)
               </h4>
               <textarea
                 value={coverNote}
@@ -496,7 +487,8 @@ export default function JobDetailPage() {
                 textDecoration: 'none',
               }}
             >
-              🌐 Apply directly on company website
+              <Icon name="link" size={12} style={{ verticalAlign: '-2px', marginRight: 5 }} /> Apply directly on company
+              website
             </a>
           )}
         </div>

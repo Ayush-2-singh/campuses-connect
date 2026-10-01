@@ -5,15 +5,9 @@ import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
 import Layout from '@/components/Layout'
 import SectionShell from '@/components/SectionShell'
+import { Icon } from '@/components/icons'
 
 const JOB_TYPES = ['all', 'internship', 'full_time', 'part_time', 'contract', 'freelance']
-const TYPE_EMOJI: Record<string, string> = {
-  internship: '🎓',
-  full_time: '💼',
-  part_time: '⏰',
-  contract: '📋',
-  freelance: '🌐',
-}
 
 export default function JobsPage() {
   const [user, setUser] = useState<any>(null)
@@ -107,7 +101,7 @@ export default function JobsPage() {
                 color: jobType === t ? 'var(--on-accent)' : 'var(--text-secondary)',
               }}
             >
-              {t === 'all' ? '🌐 All' : `${TYPE_EMOJI[t]} ${t.replace('_', ' ')}`}
+              {t === 'all' ? 'All' : t.replace('_', ' ')}
             </button>
           ))}
         </div>
@@ -125,7 +119,9 @@ export default function JobsPage() {
               boxShadow: 'var(--shadow-sm)',
             }}
           >
-            <p style={{ fontSize: 32, margin: '0 0 8px' }}>💼</p>
+            <div style={{ margin: '0 0 8px', color: 'var(--accent-text)', display: 'flex', justifyContent: 'center' }}>
+              <Icon name="briefcase" size={32} strokeWidth={1.6} />
+            </div>
             <p style={{ fontSize: 15, fontWeight: 600, color: 'var(--text-primary)', margin: 0 }}>No jobs found</p>
           </div>
         ) : (
@@ -168,7 +164,7 @@ export default function JobsPage() {
                           style={{ width: 40, height: 40, borderRadius: 10 }}
                         />
                       ) : (
-                        '🏢'
+                        <Icon name="building" size={18} style={{ color: 'var(--text-muted)' }} />
                       )}
                     </div>
                     <div style={{ flex: 1 }}>
@@ -191,7 +187,7 @@ export default function JobsPage() {
                         fontWeight: 600,
                       }}
                     >
-                      {TYPE_EMOJI[job.job_type]} {job.job_type.replace('_', ' ')}
+                      {job.job_type.replace('_', ' ')}
                     </span>
                     {job.location_type && (
                       <span
@@ -204,10 +200,10 @@ export default function JobsPage() {
                         }}
                       >
                         {job.location_type === 'remote'
-                          ? '🌍 Remote'
+                          ? 'Remote'
                           : job.location_type === 'hybrid'
-                            ? '🔄 Hybrid'
-                            : '🏢 Onsite'}
+                            ? 'Hybrid'
+                            : 'Onsite'}
                       </span>
                     )}
                     {(job.stipend || job.salary_range) && (
@@ -221,7 +217,7 @@ export default function JobsPage() {
                           fontWeight: 600,
                         }}
                       >
-                        💰 {job.stipend || job.salary_range}
+                        {job.stipend || job.salary_range}
                       </span>
                     )}
                   </div>
@@ -254,12 +250,20 @@ export default function JobsPage() {
                     }}
                   >
                     {job.deadline && (
-                      <span style={{ fontSize: 11, color: 'var(--danger)' }}>
-                        ⏰ {new Date(job.deadline).toLocaleDateString()}
+                      <span
+                        style={{
+                          fontSize: 11,
+                          color: 'var(--danger)',
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: 3,
+                        }}
+                      >
+                        <Icon name="clock" size={10} /> {new Date(job.deadline).toLocaleDateString()}
                       </span>
                     )}
                     <span style={{ fontSize: 11, color: 'var(--text-muted)' }}>
-                      👁️ {job.view_count} · 📋 {job.apply_count}
+                      {job.view_count} views · {job.apply_count} applied
                     </span>
                   </div>
                 </div>
