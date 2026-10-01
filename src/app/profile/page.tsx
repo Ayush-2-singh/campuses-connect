@@ -13,6 +13,7 @@ import { useToast } from '@/components/Toast'
 import { CountUpStat } from '@/components/CountUpStat'
 import CollegeSearch from '@/components/CollegeSearch'
 import { isNativePlatform } from '@/lib/native'
+import { fetchMyHistory, type TournamentHistoryEntry } from '@/lib/tournaments/rosters'
 
 const AVATAR_BUCKET = 'avatars'
 
@@ -37,6 +38,9 @@ export default function ProfilePage() {
     skillsInput: '',
   })
   const [isAdmin, setIsAdmin] = useState(false)
+  // Free Fire tournament history — fetched lazily; the section renders only
+  // when non-empty (progressive disclosure, spec §21).
+  const [history, setHistory] = useState<TournamentHistoryEntry[]>([])
 
   const updateInteraction = async (scope: string) => {
     if (!user) return
@@ -126,6 +130,10 @@ export default function ProfilePage() {
         return
       }
       setUser(user)
+      // Tournament history loads in parallel — it never blocks the profile.
+      fetchMyHistory(supabase)
+        .then(setHistory)
+        .catch(() => undefined)
       const { data } = await supabase
         .from('profiles')
         .select('*, colleges(name), campuses(name), departments(name, short_name)')
@@ -681,6 +689,112 @@ export default function ProfilePage() {
             </div>
           </div>
         </div>
+
+        {/* Competitive (Free Fire) — progressive disclosure (spec §21): renders
+            only when the student actually has tournament history. */}
+        {history.length > 0 && (
+          <div
+            className="profile-reveal-2"
+            style={{
+              background: 'var(--bg)',
+              borderRadius: 14,
+              border: '1px solid var(--border)',
+              padding: 20,
+              boxShadow: 'var(--shadow-sm)',
+            }}
+          >
+            <h3 style={{ fontSize: 14, fontWeight: 700, color: 'var(--text-primary)', margin: '0 0 12px' }}>
+              <Icon name="gamepad" size={14} style={{ verticalAlign: '-2px', marginRight: 6 }} /> Competitive — Free
+              Fire
+            </h3>
+            <div style={{ display: 'flex', gap: 8, marginBottom: 12 }}>
+              {[
+                { label: 'Tournaments', value: history.length },
+                {
+                  label: 'Matches',
+                  value: history.reduce((s, h) => s + (h.matches_played || 0), 0),
+                },
+                {
+                  label: 'Kills',
+                  value: history.reduce((s, h) => s + (h.total_kills || 0), 0),
+                },
+              ].map((s) => (
+                <div
+                  key={s.label}
+                  style={{
+                    flex: 1,
+                    background: 'var(--bg-secondary)',
+                    borderRadius: 10,
+                    padding: '10px 12px',
+                    textAlign: 'center',
+                  }}
+                >
+                  <p style={{ fontSize: 18, fontWeight: 800, color: 'var(--accent-text)', margin: 0 }}>
+                    {s.value.toLocaleString()}
+                  </p>
+                  <p style={{ fontSize: 10, color: 'var(--text-muted)', margin: 0 }}>{s.label}</p>
+                </div>
+              ))}
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+              {history.slice(0, 3).map((h) => (
+                <div
+                  key={h.tournament_id}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 10,
+                    padding: '9px 12px',
+                    borderRadius: 10,
+                    background: 'var(--bg-secondary)',
+                  }}
+                >
+                  <span style={{ flex: 1, minWidth: 0 }}>
+                    <span
+                      style={{
+                        display: 'block',
+                        fontSize: 12.5,
+                        fontWeight: 700,
+                        color: 'var(--text-primary)',
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis',
+                        whiteSpace: 'nowrap',
+                      }}
+                    >
+                      {h.tournament_name}
+                    </span>
+                    <span style={{ display: 'block', fontSize: 11, color: 'var(--text-muted)' }}>
+                      {h.team_name}
+                      {h.ff_ign ? ` · IGN ${h.ff_ign}` : ''}
+                      {` · ${h.matches_played} matches`}
+                    </span>
+                  </span>
+                  {h.best_placement && (
+                    <span
+                      style={{
+                        fontSize: 11,
+                        fontWeight: 800,
+                        color: h.best_placement === 1 ? 'var(--yellow-text)' : 'var(--text-secondary)',
+                        flexShrink: 0,
+                      }}
+                    >
+                      {h.best_placement === 1
+                        ? '1st'
+                        : h.best_placement === 2
+                          ? '2nd'
+                          : h.best_placement === 3
+                            ? '3rd'
+                            : `#${h.best_placement}`}
+                    </span>
+                  )}
+                  <span style={{ fontSize: 13, fontWeight: 900, color: 'var(--danger)', flexShrink: 0 }}>
+                    {h.total_kills} kills
+                  </span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
 
         {/* Connections — requests + accepted, with messaging */}
         <div

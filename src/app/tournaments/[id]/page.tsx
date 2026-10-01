@@ -10,6 +10,9 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useParams } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import Layout from '@/components/Layout'
+import IglTeamPanel from '@/components/tournaments/IglTeamPanel'
+import { Icon } from '@/components/icons'
+import { fetchRoomCreds, type RoomCreds } from '@/lib/tournaments/rosters'
 
 interface StageMatch {
   id: string
@@ -92,6 +95,23 @@ export default function TournamentPage() {
   const [board, setBoard] = useState<TeamRow[]>([])
   const [fraggers, setFraggers] = useState<PlayerRow[]>([])
   const [openMatch, setOpenMatch] = useState<{ id: string; label: string; result: MatchResult[] } | null>(null)
+  const [isIgl, setIsIgl] = useState(false)
+  const [roomCreds, setRoomCreds] = useState<{ matchId: string; creds: RoomCreds } | null>(null)
+
+  // The IGL sees their team-management panel on this page (server decides via
+  // get_my_tournament_team — a non-leader gets null and the panel is hidden).
+  useEffect(() => {
+    if (!id) return
+    let cancelled = false
+    void import('@/lib/tournaments/rosters').then(({ fetchMyTeam }) =>
+      fetchMyTeam(supabase, id)
+        .then((t) => !cancelled && setIsIgl(!!t))
+        .catch(() => undefined)
+    )
+    return () => {
+      cancelled = true
+    }
+  }, [supabase, id])
 
   const loadOverview = useCallback(async () => {
     setLoadErr(null)
@@ -149,12 +169,16 @@ export default function TournamentPage() {
   }, [supabase, id, loadBoard, loadOverview])
 
   const openMatchResult = async (m: StageMatch, stage: Stage) => {
-    const { data } = await supabase.rpc('get_match_result', { p_match: m.id })
+    const [resultRes, creds] = await Promise.all([
+      supabase.rpc('get_match_result', { p_match: m.id }),
+      fetchRoomCreds(supabase, m.id),
+    ])
     setOpenMatch({
       id: m.id,
       label: `${stage.name} · Match ${m.match_number}`,
-      result: ((data as any)?.teams as MatchResult[]) || [],
+      result: ((resultRes.data as any)?.teams as MatchResult[]) || [],
     })
+    setRoomCreds({ matchId: m.id, creds })
   }
 
   const medal = (r: number) => (r === 1 ? '1st' : r === 2 ? '2nd' : r === 3 ? '3rd' : null)
@@ -264,7 +288,7 @@ export default function TournamentPage() {
               color: t.status === 'LIVE' ? 'var(--success-text)' : 'var(--accent-text)',
             }}
           >
-            {t.status === 'LIVE' ? '🟢 LIVE' : t.status}
+            {t.status === 'LIVE' ? 'LIVE' : t.status}
           </span>
         </div>
         <p style={{ fontSize: 12.5, color: 'var(--text-muted)', margin: '0 0 18px' }}>
@@ -285,7 +309,7 @@ export default function TournamentPage() {
             }}
           >
             <p style={{ fontSize: 12, fontWeight: 900, letterSpacing: '0.1em', color: '#f59e0b', margin: '0 0 4px' }}>
-              👑 GRAND CHAMPION
+              GRAND CHAMPION
             </p>
             <p style={{ fontSize: 22, fontWeight: 900, color: 'var(--text-primary)', margin: 0 }}>
               {ov.champion.team_name}
@@ -293,6 +317,9 @@ export default function TournamentPage() {
             </p>
           </div>
         )}
+
+        {/* ── My Team (IGL only — server-gated via get_my_tournament_team) ── */}
+        {isIgl && <IglTeamPanel tournamentId={id} />}
 
         {/* ── Tabs ── */}
         <div style={{ display: 'flex', gap: 6, marginBottom: 14 }}>
@@ -444,7 +471,7 @@ export default function TournamentPage() {
                 >
                   {s.name.toUpperCase()}
                   {s.qualification_limit ? ` · top ${s.qualification_limit} qualify` : ''}
-                  {s.stage_type === 'FINAL' ? ' · 👑 FINAL' : ''}
+                  {s.stage_type === 'FINAL' ? ' · FINAL' : ''}
                 </h3>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
                   {s.matches.map((m) => (
@@ -514,7 +541,7 @@ export default function TournamentPage() {
                 margin: '0 0 10px',
               }}
             >
-              🔥 TOP FRAGGERS — individual kills only
+              TOP FRAGGERS — individual kills only
             </h3>
             {fraggers.length === 0 ? (
               <p style={{ fontSize: 13, color: 'var(--text-muted)' }}>No kills recorded yet.</p>
@@ -600,6 +627,82 @@ export default function TournamentPage() {
               <p style={{ fontSize: 14, fontWeight: 900, color: 'var(--text-primary)', margin: '0 0 14px' }}>
                 {openMatch.label}
               </p>
+              {/* Room credentials — server gates the release (spec §27) */}
+              {roomCreds?.matchId === openMatch.id &&
+                (roomCreds.creds.released && roomCreds.creds.room_id ? (
+                  <div
+                    style={{
+                      background: 'var(--bg-secondary)',
+                      borderRadius: 10,
+                      padding: '11px 13px',
+                      marginBottom: 14,
+                    }}
+                  >
+                    <p
+                      style={{
+                        fontSize: 10.5,
+                        fontWeight: 800,
+                        letterSpacing: '0.08em',
+                        color: 'var(--text-muted)',
+                        textTransform: 'uppercase',
+                        margin: '0 0 6px',
+                      }}
+                    >
+                      Room credentials
+                    </p>
+                    <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
+                      <span
+                        style={{
+                          fontSize: 13.5,
+                          fontWeight: 800,
+                          fontFamily: 'monospace',
+                          color: 'var(--text-primary)',
+                        }}
+                      >
+                        {roomCreds.creds.room_id}
+                      </span>
+                      <button
+                        onClick={() => void navigator.clipboard.writeText(roomCreds.creds.room_id || '')}
+                        aria-label="Copy room ID"
+                        style={{
+                          background: 'none',
+                          border: 'none',
+                          color: 'var(--accent)',
+                          cursor: 'pointer',
+                          display: 'inline-flex',
+                          padding: 2,
+                        }}
+                      >
+                        <Icon name="copy" size={13} />
+                      </button>
+                      {roomCreds.creds.room_password && (
+                        <span
+                          style={{
+                            fontSize: 13,
+                            fontWeight: 700,
+                            fontFamily: 'monospace',
+                            color: 'var(--text-secondary)',
+                          }}
+                        >
+                          pw: {roomCreds.creds.room_password}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                ) : (
+                  <p
+                    style={{
+                      fontSize: 12,
+                      color: 'var(--text-muted)',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 5,
+                      marginBottom: 14,
+                    }}
+                  >
+                    <Icon name="lock" size={12} /> Room credentials appear here when the organizer releases them.
+                  </p>
+                ))}
               {openMatch.result.length === 0 ? (
                 <p style={{ fontSize: 13, color: 'var(--text-muted)' }}>No result entered yet.</p>
               ) : (

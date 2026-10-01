@@ -51,6 +51,7 @@ interface TournamentRow {
   kill_point_value: number
   description: string | null
   champion_team_id: string | null
+  registration_closed?: boolean
 }
 interface Stage {
   id: string
@@ -74,7 +75,18 @@ interface Team {
   team_name: string
   team_tag: string | null
   status: string
-  players: { id: string; display_name_snapshot: string; role: string }[]
+  roster_locked?: boolean
+  join_code?: string | null
+  players: {
+    id: string
+    display_name_snapshot: string
+    role: string
+    ff_ign?: string | null
+    ff_uid?: string | null
+    joined_via?: string
+    user_id?: string | null
+    user_confirmed?: boolean
+  }[]
 }
 interface AuditRow {
   id: number
@@ -110,15 +122,15 @@ interface OrganizerRow {
 }
 
 const SECTIONS: [Section, string, string, TournamentAction | null][] = [
-  ['overview', '📊', 'Overview', 'view'],
-  ['stages', '🪜', 'Stages', 'manage_matches'],
-  ['matches', '📅', 'Matches', 'manage_matches'],
-  ['teams', '👥', 'Teams', 'manage_teams'],
-  ['results', '📝', 'Results', 'enter_kills'],
-  ['qualification', '✅', 'Qualification', 'manage_qualification'],
-  ['announcements', '📢', 'Announcements', 'add_announcement'],
-  ['audit', '🧾', 'Audit Log', 'view_audit'],
-  ['organizers', '🛡️', 'Organizers', 'manage_organizers'],
+  ['overview', 'layout', 'Overview', 'view'],
+  ['stages', 'layers', 'Stages', 'manage_matches'],
+  ['matches', 'calendar', 'Matches', 'manage_matches'],
+  ['teams', 'users', 'Teams', 'manage_teams'],
+  ['results', 'pencil', 'Results', 'enter_kills'],
+  ['qualification', 'check', 'Qualification', 'manage_qualification'],
+  ['announcements', 'megaphone', 'Announcements', 'add_announcement'],
+  ['audit', 'notebook', 'Audit Log', 'view_audit'],
+  ['organizers', 'shield', 'Organizers', 'manage_organizers'],
 ]
 
 export default function TournamentAdminPage() {
@@ -153,7 +165,7 @@ export default function TournamentAdminPage() {
       team_id: string
       team_name: string
       placement: string
-      players: { player_id: string; name: string; kills: string }[]
+      players: { player_id: string; name: string; ff_ign?: string | null; kills: string }[]
     }[]
   >([])
   // qualification
@@ -414,6 +426,38 @@ export default function TournamentAdminPage() {
     )
   }
 
+  // ── Roster formation (051): IGL assignment, roster lock, join code, identity ──
+  const assignIgl = async (teamId: string, username: string) => {
+    const uname = username.trim().replace(/^@/, '')
+    if (!uname) return
+    await run(() => supabase.rpc('assign_team_igl', { p_team: teamId, p_username: uname }), `@${uname} is now the IGL`)
+  }
+
+  const toggleRosterLock = async (teamId: string, locked: boolean) => {
+    await run(
+      () => supabase.rpc('set_team_roster_lock', { p_team: teamId, p_locked: locked, p_reason: null }),
+      locked ? 'Roster locked' : 'Roster unlocked'
+    )
+  }
+
+  const setRegistration = async (closed: boolean) => {
+    await run(
+      () => supabase.rpc('set_registration_closed', { p_tournament: activeId, p_closed: closed }),
+      closed ? 'Registration closed' : 'Registration reopened'
+    )
+  }
+
+  const regenCode = async (teamId: string) => {
+    await run(() => supabase.rpc('regenerate_team_join_code', { p_team: teamId }), 'New join code generated')
+  }
+
+  const saveIdentity = async (playerId: string, ign: string, uid: string) => {
+    await run(
+      () => supabase.rpc('set_player_ff_identity', { p_player: playerId, p_ign: ign, p_ff_uid: uid, p_reason: null }),
+      'FF identity saved'
+    )
+  }
+
   // ── Result entry ──
   const openResultEntry = async (m: Match) => {
     setEntryMatch(m)
@@ -426,6 +470,7 @@ export default function TournamentAdminPage() {
       const players = ((team?.tournament_team_players as any[]) || []).map((p) => ({
         player_id: p.id,
         name: p.display_name_snapshot,
+        ff_ign: p.ff_ign || null,
         kills: '',
       }))
       return { team_id: r.team_id, team_name: team?.team_name || 'Team', placement: '', players }
@@ -590,9 +635,7 @@ export default function TournamentAdminPage() {
     <Layout user={user} profile={null}>
       <div style={{ maxWidth: 860, margin: '0 auto', padding: '24px 20px 60px' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap', marginBottom: 4 }}>
-          <h1 style={{ fontSize: 21, fontWeight: 900, color: 'var(--text-primary)', margin: 0 }}>
-            🏆 Tournament Admin
-          </h1>
+          <h1 style={{ fontSize: 21, fontWeight: 900, color: 'var(--text-primary)', margin: 0 }}>Tournament Admin</h1>
           {myRole && (
             <span
               style={{
@@ -636,7 +679,7 @@ export default function TournamentAdminPage() {
           </select>
           {active && can('publish') && active.status !== 'LIVE' && active.status !== 'COMPLETED' && (
             <button onClick={() => setTournamentStatus('LIVE')} style={btn()} disabled={busy}>
-              🟢 Go LIVE
+              Go LIVE
             </button>
           )}
           {active && can('publish') && active.status === 'LIVE' && (
@@ -668,7 +711,7 @@ export default function TournamentAdminPage() {
                 fontFamily: 'inherit',
               }}
             >
-              {icon} {label}
+              <Icon name={icon} size={12} /> {label}
             </button>
           ))}
         </div>
@@ -812,7 +855,22 @@ export default function TournamentAdminPage() {
           />
         )}
         {/* ═══ TEAMS ═══ */}
-        {section === 'teams' && <TeamManager teams={teams} onAdd={addTeam} busy={busy} input={input} btn={btn} />}
+        {section === 'teams' && (
+          <TeamManager
+            teams={teams}
+            onAdd={addTeam}
+            busy={busy}
+            input={input}
+            btn={btn}
+            registrationClosed={!!active?.registration_closed}
+            onSetRegistration={setRegistration}
+            onAssignIgl={assignIgl}
+            onToggleLock={toggleRosterLock}
+            onRegenCode={regenCode}
+            onSaveIdentity={saveIdentity}
+            teamSize={active?.team_size ?? 4}
+          />
+        )}
         {/* ═══ RESULTS ═══ */}
         {section === 'results' && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
@@ -926,30 +984,138 @@ export default function TournamentAdminPage() {
                       {e.players.map((p, pi) => (
                         <div
                           key={p.player_id}
-                          style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '3px 0' }}
+                          style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '4px 0' }}
                         >
-                          <span style={{ flex: 1, fontSize: 13, color: 'var(--text-secondary)' }}>{p.name}</span>
-                          <input
-                            style={{ ...input, width: 70 }}
-                            type="number"
-                            min={0}
-                            placeholder="kills"
-                            value={p.kills}
-                            onChange={(ev) =>
-                              setEntries((rows) =>
-                                rows.map((r, i) =>
-                                  i === ti
-                                    ? {
-                                        ...r,
-                                        players: r.players.map((pp, j) =>
-                                          j === pi ? { ...pp, kills: ev.target.value } : pp
-                                        ),
-                                      }
-                                    : r
+                          {/* IGN leads the row during match ops; CTC name after (spec §9/§14) */}
+                          <span
+                            style={{
+                              flex: 1,
+                              minWidth: 0,
+                              fontSize: 13,
+                              color: 'var(--text-primary)',
+                              fontWeight: 600,
+                              overflow: 'hidden',
+                              textOverflow: 'ellipsis',
+                              whiteSpace: 'nowrap',
+                            }}
+                          >
+                            {p.ff_ign || p.name}
+                            {p.ff_ign && p.ff_ign !== p.name && (
+                              <span
+                                style={{ fontSize: 11, color: 'var(--text-muted)', fontWeight: 500, marginLeft: 6 }}
+                              >
+                                {p.name}
+                              </span>
+                            )}
+                          </span>
+                          {/* [-] count [+] — speed entry, negative-proof (spec §15) */}
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 0, flexShrink: 0 }}>
+                            <button
+                              type="button"
+                              aria-label={`Remove one kill from ${p.ff_ign || p.name}`}
+                              onClick={() =>
+                                setEntries((rows) =>
+                                  rows.map((r, i) =>
+                                    i === ti
+                                      ? {
+                                          ...r,
+                                          players: r.players.map((pp, j) =>
+                                            j === pi
+                                              ? { ...pp, kills: String(Math.max(0, (Number(pp.kills) || 0) - 1)) }
+                                              : pp
+                                          ),
+                                        }
+                                      : r
+                                  )
                                 )
-                              )
-                            }
-                          />
+                              }
+                              style={{
+                                width: 34,
+                                height: 34,
+                                borderRadius: '9px 0 0 9px',
+                                border: '1px solid var(--border)',
+                                borderRight: 'none',
+                                background: 'var(--bg-secondary)',
+                                color: 'var(--text-secondary)',
+                                fontSize: 16,
+                                fontWeight: 800,
+                                cursor: 'pointer',
+                                fontFamily: 'inherit',
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                              }}
+                            >
+                              −
+                            </button>
+                            <input
+                              style={{
+                                ...input,
+                                width: 46,
+                                height: 34,
+                                textAlign: 'center',
+                                padding: 0,
+                                borderRadius: 0,
+                                fontSize: 14,
+                                fontWeight: 800,
+                              }}
+                              type="number"
+                              min={0}
+                              inputMode="numeric"
+                              aria-label={`Kills for ${p.ff_ign || p.name}`}
+                              value={p.kills}
+                              onChange={(ev) =>
+                                setEntries((rows) =>
+                                  rows.map((r, i) =>
+                                    i === ti
+                                      ? {
+                                          ...r,
+                                          players: r.players.map((pp, j) =>
+                                            j === pi ? { ...pp, kills: ev.target.value } : pp
+                                          ),
+                                        }
+                                      : r
+                                  )
+                                )
+                              }
+                            />
+                            <button
+                              type="button"
+                              aria-label={`Add one kill to ${p.ff_ign || p.name}`}
+                              onClick={() =>
+                                setEntries((rows) =>
+                                  rows.map((r, i) =>
+                                    i === ti
+                                      ? {
+                                          ...r,
+                                          players: r.players.map((pp, j) =>
+                                            j === pi ? { ...pp, kills: String((Number(pp.kills) || 0) + 1) } : pp
+                                          ),
+                                        }
+                                      : r
+                                  )
+                                )
+                              }
+                              style={{
+                                width: 34,
+                                height: 34,
+                                borderRadius: '0 9px 9px 0',
+                                border: '1px solid var(--border)',
+                                borderLeft: 'none',
+                                background: 'var(--bg-secondary)',
+                                color: 'var(--accent-text)',
+                                fontSize: 16,
+                                fontWeight: 800,
+                                cursor: 'pointer',
+                                fontFamily: 'inherit',
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                              }}
+                            >
+                              +
+                            </button>
+                          </div>
                         </div>
                       ))}
                       {/* LIVE PREVIEW — read-only, from the shared engine */}
@@ -996,7 +1162,7 @@ export default function TournamentAdminPage() {
                     )}
                     {entryMatch.result_state === 'VERIFIED' && (
                       <button onClick={() => lifecycle('lock')} style={btn(true)} disabled={busy}>
-                        🔒 Lock Result
+                        Lock Result
                       </button>
                     )}
                     {entryMatch.result_state === 'LOCKED' && (
@@ -1370,6 +1536,66 @@ function StageManager({
   )
 }
 
+function RoomCredsEditor({
+  matchId,
+  input,
+  btn,
+}: {
+  matchId: string
+  input: React.CSSProperties
+  btn: (p?: boolean) => React.CSSProperties
+}) {
+  const supabase = createClient()
+  const [roomId, setRoomId] = useState('')
+  const [pw, setPw] = useState('')
+  const [busy, setBusy] = useState(false)
+  const [saved, setSaved] = useState(false)
+
+  useEffect(() => {
+    let cancelled = false
+    void supabase.rpc('get_room_credentials', { p_match: matchId }).then(({ data }: any) => {
+      if (cancelled || !data?.released) return
+      setRoomId(data.room_id || '')
+      setPw(data.room_password || '')
+    })
+    return () => {
+      cancelled = true
+    }
+  }, [supabase, matchId])
+
+  return (
+    <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', alignItems: 'center', marginTop: 8 }}>
+      <input
+        style={{ ...input, flex: 1, minWidth: 130, padding: '8px 10px' }}
+        placeholder="Room ID"
+        value={roomId}
+        onChange={(e) => setRoomId(e.target.value)}
+        aria-label="Room ID"
+      />
+      <input
+        style={{ ...input, width: 120, padding: '8px 10px' }}
+        placeholder="Password"
+        value={pw}
+        onChange={(e) => setPw(e.target.value)}
+        aria-label="Room password"
+      />
+      <button
+        onClick={async () => {
+          setBusy(true)
+          await supabase.rpc('set_room_credentials', { p_match: matchId, p_room_id: roomId, p_password: pw })
+          setBusy(false)
+          setSaved(true)
+          setTimeout(() => setSaved(false), 1800)
+        }}
+        style={btn(true)}
+        disabled={busy}
+      >
+        {saved ? 'Released' : 'Release room'}
+      </button>
+    </div>
+  )
+}
+
 function MatchManager({
   stages,
   matches,
@@ -1464,16 +1690,18 @@ function MatchManager({
             border: '1px solid var(--border)',
             borderRadius: 12,
             padding: '11px 14px',
-            display: 'flex',
-            gap: 10,
           }}
         >
-          <span style={{ flex: 1, fontSize: 13, fontWeight: 700, color: 'var(--text-primary)' }}>
-            {stages.find((s) => s.id === m.stage_id)?.name} · Match {m.match_number}
-          </span>
-          <span style={{ fontSize: 10.5, fontWeight: 800, color: 'var(--text-muted)' }}>
-            {m.status} · {m.result_state}
-          </span>
+          <div style={{ display: 'flex', gap: 10 }}>
+            <span style={{ flex: 1, fontSize: 13, fontWeight: 700, color: 'var(--text-primary)' }}>
+              {stages.find((s) => s.id === m.stage_id)?.name} · Match {m.match_number}
+            </span>
+            <span style={{ fontSize: 10.5, fontWeight: 800, color: 'var(--text-muted)' }}>
+              {m.status} · {m.result_state}
+            </span>
+          </div>
+          {/* Room credentials — release flow (spec §27): organizer controls timing */}
+          <RoomCredsEditor matchId={m.id} input={input} btn={btn} />
         </div>
       ))}
       {stage && matches.length === 0 && null}
@@ -1487,21 +1715,97 @@ function TeamManager({
   busy,
   input,
   btn,
+  registrationClosed,
+  onSetRegistration,
+  onAssignIgl,
+  onToggleLock,
+  onRegenCode,
+  onSaveIdentity,
+  teamSize,
 }: {
   teams: Team[]
   onAdd: (name: string, tag: string, players: string) => void
   busy: boolean
   input: React.CSSProperties
   btn: (p?: boolean) => React.CSSProperties
+  registrationClosed: boolean
+  onSetRegistration: (closed: boolean) => void
+  onAssignIgl: (teamId: string, username: string) => void
+  onToggleLock: (teamId: string, locked: boolean) => void
+  onRegenCode: (teamId: string) => void
+  onSaveIdentity: (playerId: string, ign: string, uid: string) => void
+  teamSize: number
 }) {
   const [name, setName] = useState('')
   const [tag, setTag] = useState('')
   const [players, setPlayers] = useState('')
+  const [iglFor, setIglFor] = useState('')
+  const [iglName, setIglName] = useState('')
+  const [editingId, setEditingId] = useState<string | null>(null)
+  const [editIgn, setEditIgn] = useState('')
+  const [editUid, setEditUid] = useState('')
+
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+      {/* Registration control (spec §25) */}
+      <div
+        style={{
+          background: 'var(--bg)',
+          border: '1px solid var(--border)',
+          borderRadius: 14,
+          padding: 16,
+          display: 'flex',
+          alignItems: 'center',
+          gap: 10,
+          flexWrap: 'wrap',
+        }}
+      >
+        <span style={{ flex: 1, minWidth: 180 }}>
+          <span
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 6,
+              fontSize: 13.5,
+              fontWeight: 800,
+              color: 'var(--text-primary)',
+            }}
+          >
+            <Icon
+              name={registrationClosed ? 'lock' : 'unlock'}
+              size={14}
+              style={{ color: registrationClosed ? 'var(--text-muted)' : 'var(--success-text)' }}
+            />
+            Registration {registrationClosed ? 'closed' : 'open'}
+          </span>
+          <span style={{ display: 'block', fontSize: 11.5, color: 'var(--text-muted)', marginTop: 2 }}>
+            Closed = no new joins via invite codes
+          </span>
+        </span>
+        <button onClick={() => onSetRegistration(!registrationClosed)} style={btn()} disabled={busy}>
+          {registrationClosed ? 'Reopen registration' : 'Close registration'}
+        </button>
+      </div>
+
+      {/* Add team (name + tag only — players join themselves via invites) */}
       <div style={{ background: 'var(--bg)', border: '1px solid var(--border)', borderRadius: 14, padding: 16 }}>
-        <h3 style={{ fontSize: 14, fontWeight: 800, margin: '0 0 10px', color: 'var(--text-primary)' }}>Add team</h3>
-        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 8 }}>
+        <h3
+          style={{
+            fontSize: 14,
+            fontWeight: 800,
+            margin: '0 0 4px',
+            color: 'var(--text-primary)',
+            display: 'flex',
+            alignItems: 'center',
+            gap: 6,
+          }}
+        >
+          <Icon name="plus" size={14} style={{ color: 'var(--accent-text)' }} /> Add team
+        </h3>
+        <p style={{ fontSize: 11.5, color: 'var(--text-muted)', margin: '0 0 10px' }}>
+          Create the shell, assign an IGL below — the roster fills itself via invite codes. No manual player cards.
+        </p>
+        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 10 }}>
           <input
             style={{ ...input, flex: 1, minWidth: 140 }}
             placeholder="Team name"
@@ -1516,12 +1820,6 @@ function TeamManager({
             onChange={(e) => setTag(e.target.value.toUpperCase())}
           />
         </div>
-        <input
-          style={{ ...input, width: '100%', marginBottom: 10 }}
-          placeholder="Players, comma-separated (names are snapshotted)"
-          value={players}
-          onChange={(e) => setPlayers(e.target.value)}
-        />
         <button
           onClick={() =>
             name.trim() && (onAdd(name.trim(), tag.trim(), players), setName(''), setTag(''), setPlayers(''))
@@ -1532,23 +1830,253 @@ function TeamManager({
           Add team
         </button>
       </div>
-      {teams.map((t) => (
-        <div
-          key={t.id}
-          style={{ background: 'var(--bg)', border: '1px solid var(--border)', borderRadius: 12, padding: '11px 14px' }}
-        >
-          <p style={{ fontSize: 13, fontWeight: 800, color: 'var(--text-primary)', margin: '0 0 4px' }}>
-            {t.team_name}
-            {t.team_tag ? ` [${t.team_tag}]` : ''}
-            <span style={{ fontSize: 10.5, fontWeight: 800, color: 'var(--text-muted)', marginLeft: 8 }}>
-              {t.status}
-            </span>
-          </p>
-          <p style={{ fontSize: 11.5, color: 'var(--text-muted)', margin: 0 }}>
-            {t.players.map((p) => p.display_name_snapshot).join(' · ')}
-          </p>
-        </div>
-      ))}
+
+      {/* Team cards with roster formation controls */}
+      {teams.map((t) => {
+        const filled = t.players.length
+        const locked = !!t.roster_locked
+        const state = locked ? 'locked' : filled >= teamSize ? 'complete' : 'incomplete'
+        const leader = t.players.find((p) => p.role === 'leader')
+        return (
+          <div
+            key={t.id}
+            style={{
+              background: 'var(--bg)',
+              border: '1px solid var(--border)',
+              borderRadius: 12,
+              padding: '13px 15px',
+            }}
+          >
+            {/* Header + roster state pill */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+              <p
+                style={{
+                  fontSize: 13.5,
+                  fontWeight: 800,
+                  color: 'var(--text-primary)',
+                  margin: 0,
+                  flex: 1,
+                  minWidth: 140,
+                }}
+              >
+                {t.team_name}
+                {t.team_tag ? ` [${t.team_tag}]` : ''}
+              </p>
+              <span
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: 4,
+                  fontSize: 10,
+                  fontWeight: 800,
+                  padding: '3px 9px',
+                  borderRadius: 9,
+                  background:
+                    state === 'locked'
+                      ? 'var(--bg-tertiary)'
+                      : state === 'complete'
+                        ? 'var(--success-light)'
+                        : 'var(--warning-light)',
+                  color:
+                    state === 'locked'
+                      ? 'var(--text-muted)'
+                      : state === 'complete'
+                        ? 'var(--success-text)'
+                        : 'var(--warning-text)',
+                }}
+              >
+                <Icon name={state === 'locked' ? 'lock' : state === 'complete' ? 'check' : 'clock'} size={10} />
+                {filled}/{teamSize} {state === 'locked' ? 'LOCKED' : state === 'complete' ? 'COMPLETE' : 'INCOMPLETE'}
+              </span>
+              <span style={{ fontSize: 10.5, fontWeight: 800, color: 'var(--text-muted)' }}>{t.status}</span>
+            </div>
+
+            {/* IGL row */}
+            <p
+              style={{
+                fontSize: 11.5,
+                color: 'var(--text-muted)',
+                margin: '7px 0 0',
+                display: 'flex',
+                alignItems: 'center',
+                gap: 5,
+              }}
+            >
+              <Icon name="user" size={11} /> IGL:{' '}
+              <strong style={{ color: leader ? 'var(--text-primary)' : 'var(--warning-text)', fontWeight: 700 }}>
+                {leader ? leader.display_name_snapshot : 'not assigned'}
+              </strong>
+            </p>
+
+            {/* Roster rows with FF identity (§14: IGN shown for match ops) */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 4, margin: '10px 0' }}>
+              {t.players.map((p) => (
+                <div
+                  key={p.id}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 8,
+                    padding: '6px 10px',
+                    borderRadius: 8,
+                    background: 'var(--bg-secondary)',
+                    fontSize: 12,
+                  }}
+                >
+                  <span
+                    style={{
+                      display: 'inline-flex',
+                      color: p.user_confirmed ? 'var(--success-text)' : 'var(--text-muted)',
+                    }}
+                    aria-hidden="true"
+                  >
+                    <Icon name={p.user_confirmed ? 'check' : 'clock'} size={11} />
+                  </span>
+                  <span style={{ fontWeight: 700, color: 'var(--text-primary)' }}>{p.display_name_snapshot}</span>
+                  <span style={{ color: 'var(--text-muted)', fontSize: 11 }}>
+                    {p.role}
+                    {p.ff_ign ? ` · IGN ${p.ff_ign}` : ''}
+                    {p.ff_uid ? ` · UID ····${p.ff_uid.slice(-4)}` : ''}
+                  </span>
+                  <span style={{ flex: 1 }} />
+                  <button
+                    onClick={() => {
+                      setEditingId(editingId === p.id ? null : p.id)
+                      setEditIgn(p.ff_ign || '')
+                      setEditUid(p.ff_uid || '')
+                    }}
+                    aria-label={`Edit Free Fire identity for ${p.display_name_snapshot}`}
+                    style={{
+                      background: 'none',
+                      border: 'none',
+                      color: 'var(--text-muted)',
+                      cursor: 'pointer',
+                      display: 'inline-flex',
+                      padding: 2,
+                    }}
+                  >
+                    <Icon name="pencil" size={12} />
+                  </button>
+                </div>
+              ))}
+              {/* FF identity inline editor (audited override) */}
+              {editingId && (
+                <div
+                  style={{
+                    display: 'flex',
+                    gap: 6,
+                    flexWrap: 'wrap',
+                    padding: '8px 10px',
+                    borderRadius: 8,
+                    border: '1px solid var(--border)',
+                  }}
+                >
+                  <input
+                    style={{ ...input, flex: 1, minWidth: 120, padding: '8px 10px' }}
+                    placeholder="IGN"
+                    value={editIgn}
+                    onChange={(e) => setEditIgn(e.target.value)}
+                    maxLength={20}
+                  />
+                  <input
+                    style={{ ...input, width: 140, padding: '8px 10px' }}
+                    placeholder="FF UID"
+                    value={editUid}
+                    onChange={(e) => setEditUid(e.target.value.replace(/\D/g, ''))}
+                    inputMode="numeric"
+                    maxLength={12}
+                  />
+                  <button
+                    onClick={() => {
+                      onSaveIdentity(editingId, editIgn, editUid)
+                      setEditingId(null)
+                    }}
+                    style={btn(true)}
+                    disabled={busy}
+                  >
+                    Save
+                  </button>
+                </div>
+              )}
+            </div>
+
+            {/* Controls row: IGL assign · lock · code */}
+            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
+              {iglFor === t.id ? (
+                <>
+                  <input
+                    style={{ ...input, flex: 1, minWidth: 160, padding: '8px 10px' }}
+                    placeholder="ConnectToCampus @username"
+                    value={iglName}
+                    onChange={(e) => setIglName(e.target.value)}
+                  />
+                  <button
+                    onClick={() => {
+                      onAssignIgl(t.id, iglName)
+                      setIglFor('')
+                      setIglName('')
+                    }}
+                    style={btn(true)}
+                    disabled={busy || !iglName.trim() || locked}
+                  >
+                    Assign
+                  </button>
+                  <button onClick={() => setIglFor('')} style={btn()} disabled={busy}>
+                    Cancel
+                  </button>
+                </>
+              ) : (
+                <button onClick={() => setIglFor(t.id)} style={btn()} disabled={busy || locked}>
+                  {leader ? 'Reassign IGL' : 'Assign IGL'}
+                </button>
+              )}
+              <button onClick={() => onToggleLock(t.id, !locked)} style={btn()} disabled={busy}>
+                {locked ? 'Unlock roster' : 'Lock roster'}
+              </button>
+              {t.join_code && !locked && (
+                <span
+                  style={{
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: 6,
+                    fontSize: 11.5,
+                    color: 'var(--text-muted)',
+                    background: 'var(--bg-secondary)',
+                    borderRadius: 8,
+                    padding: '6px 10px',
+                  }}
+                >
+                  code
+                  <strong
+                    style={{
+                      letterSpacing: '0.14em',
+                      color: 'var(--accent-text)',
+                      fontFamily: 'monospace',
+                      fontSize: 12.5,
+                    }}
+                  >
+                    {t.join_code}
+                  </strong>
+                  <button
+                    onClick={() => onRegenCode(t.id)}
+                    aria-label="Generate new join code"
+                    style={{
+                      background: 'none',
+                      border: 'none',
+                      color: 'var(--text-secondary)',
+                      cursor: 'pointer',
+                      display: 'inline-flex',
+                      padding: 1,
+                    }}
+                  >
+                    <Icon name="shuffle" size={12} />
+                  </button>
+                </span>
+              )}
+            </div>
+          </div>
+        )
+      })}
     </div>
   )
 }
@@ -1595,7 +2123,7 @@ function AnnouncementManager({
         style={btn(true)}
         disabled={busy}
       >
-        📢 Publish
+        Publish
       </button>
     </div>
   )
