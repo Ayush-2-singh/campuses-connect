@@ -189,7 +189,10 @@ export default function VoiceChatCard() {
       const { error: joinErr } = await sb.rpc('join_live_voice_chat_group', { p_group_id: state.groupId })
       if (joinErr) {
         setBusy(false)
-        router.push('/live-voice-chat')
+        // Send to the ROOM page (not the hub): it renders the actual error —
+        // e.g. the password prompt for private rooms — instead of silently
+        // dropping the user back on the list with no feedback.
+        router.push(`/live-voice-chat/${state.groupId}`)
         return
       }
     }

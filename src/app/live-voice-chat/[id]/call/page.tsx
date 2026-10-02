@@ -55,6 +55,11 @@ function CallRoom() {
       })
       const json = await res.json()
       if (!res.ok) return setError(json.error ?? 'Could not get a call token.')
+      if (!json.url) {
+        return setError(
+          'The voice server address is missing on this deployment. Add NEXT_PUBLIC_LIVEKIT_URL (or LIVEKIT_URL) to the environment and redeploy.'
+        )
+      }
       setConn(json)
     }
     getToken()
