@@ -25,21 +25,11 @@ const VoiceChatCard = dynamic(() => import('@/components/VoiceChatCard'), { ssr:
 // at the top of every page. Client-only: it runs realtime subscriptions.
 const LivePulseFeed = dynamic(() => import('@/components/LivePulseFeed'), { ssr: false })
 
-// Final desktop IA: five pillars, with Discovery/Community (and Classroom-
-// inside-Library) expandable so secondary features live under their pillar
-// instead of crowding the sidebar. Mirrors the mobile bar in mobileNav.ts.
-const NAV_ITEMS = [{ label: 'Home', href: '/feed', icon: 'home' }]
-
-// Discovery pillar children — the hub's surfaces, one tap deeper.
-const DISCOVERY_CHILDREN = [
-  { label: 'For You', href: '/discover?tab=foryou', icon: 'flame' },
-  { label: 'Startups & Ideas', href: '/discover?tab=startup', icon: 'flame' },
-  { label: 'Projects', href: '/discover?tab=project', icon: 'flame' },
-  { label: 'Hackathons', href: '/discover?tab=hackathon', icon: 'flame' },
-  { label: 'Collaboration', href: '/discover?tab=collab', icon: 'flame' },
-  { label: 'Blogs', href: '/discover?tab=blogs', icon: 'book' },
-  { label: 'People', href: '/discover?tab=people', icon: 'users' },
-]
+// Final desktop IA: Global/Community pillars, with Community expandable
+// so secondary features live under their pillar instead of crowding the
+// sidebar. Mirrors the mobile bar in mobileNav.ts. (Home feed, Discovery
+// and Library were removed.)
+const NAV_ITEMS = [{ label: 'Global', href: '/global', icon: 'globe' }]
 
 // Community pillar children — existing systems, relinked (no rebuilds).
 // Games & Clash surfaced as its own child (was hidden inside Compete tabs).
@@ -51,22 +41,20 @@ const COMMUNITY_CHILDREN = [
   // One Compete entry — /compete?tab=clash is the same page, so the second
   // item previously duplicated the section (two entries, one destination).
   { label: 'Compete, Games & Clash', href: '/compete?tab=clash', icon: 'zap' },
+  // Esports — Free Fire tournaments, team join by code, room credentials.
+  { label: 'Esports', href: '/tournaments', icon: 'trophy' },
   { label: 'Live Voice', href: '/live-voice-chat', icon: 'mic' },
   { label: 'Connect', href: '/connections', icon: 'link' },
 ]
 
-// Library = academic/resources; Classroom is academic, so it nests here.
-const LIBRARY_CHILDREN = [{ label: 'Classroom', href: '/college', icon: 'grad' }]
-
 const PROFILE_NAV = [{ label: 'Profile', href: '/profile', icon: 'user' }]
 
 // Warmed right after mount — first click on any pillar is instant.
-const PREFETCH_ROUTES = ['/feed', '/discover', '/community', '/notes', '/profile', '/groups']
+const PREFETCH_ROUTES = ['/global', '/community', '/profile', '/groups']
 
 const FAB_ACTIONS = [
   { label: 'Ask ConnectToCampus', desc: 'Search, shortcuts & questions', icon: 'sparkles', action: 'cmd' as const },
-  { label: 'Upload Note', desc: 'Add a resource to the library', icon: 'notebook', href: '/notes' },
-  { label: 'Post an Idea', desc: 'Startups, projects & collabs', icon: 'flame', href: '/discover' },
+  { label: 'Post an Idea', desc: 'Startups, projects & collabs', icon: 'flame', href: '/communities' },
   { label: 'Explore More', desc: 'All features in one place', icon: 'more', href: '/more' },
 ]
 
@@ -97,10 +85,8 @@ export default function Layout({ children, user, profile }: { children: React.Re
   const [cmdOpen, setCmdOpen] = React.useState(false)
   const [fabOpen, setFabOpen] = React.useState(false)
   const [menuOpen, setMenuOpen] = React.useState(false)
-  // Desktop sidebar expandable pillars (Discovery, Community, Library).
-  const [discoveryOpen, setDiscoveryOpen] = React.useState(false)
+  // Desktop sidebar expandable pillars (Community, Library).
   const [communityOpen, setCommunityOpen] = React.useState(false)
-  const [libraryOpen, setLibraryOpen] = React.useState(false)
   const [logoSrc, setLogoSrc] = React.useState('/connect-to-campus-logo-dark.png')
 
   // Sync logo with theme changes
@@ -162,19 +148,12 @@ export default function Layout({ children, user, profile }: { children: React.Re
   }, [cmdOpen])
 
   const isActive = (href: string) => pathname === href || pathname.startsWith(href + '/')
-  // A pillar reads active when any of its children is the current page.
-  // Discovery children are ?tab= variants of the same route — the tab is
-  // matched via query, so just check the path.
-  const discoveryActive = pathname === '/discover' || pathname.startsWith('/discover/')
   const communityActive =
     COMMUNITY_CHILDREN.some((c) => isActive(c.href)) || pathname === '/community' || pathname.startsWith('/community/')
-  const libraryActive = LIBRARY_CHILDREN.some((c) => isActive(c.href)) || pathname.startsWith('/notes')
-  // Landing on a Discovery/Community/Library page auto-expands its group.
+  // Landing on a Community page auto-expands its group.
   React.useEffect(() => {
-    if (discoveryActive) setDiscoveryOpen(true)
     if (communityActive) setCommunityOpen(true)
-    if (libraryActive) setLibraryOpen(true)
-  }, [discoveryActive, communityActive, libraryActive])
+  }, [communityActive])
 
   // Prefetch pages on hover for instant navigation
   const prefetch = (href: string) => {
@@ -292,73 +271,6 @@ export default function Layout({ children, user, profile }: { children: React.Re
             )
           })}
 
-          {/* Discovery pillar — expandable, mirrors the Community/Library
-              pillars. Children deep-link into the hub's ?tab= surfaces. */}
-          <div>
-            <button
-              onClick={() => {
-                setDiscoveryOpen((v) => !v)
-                navigate('/discover')
-              }}
-              style={{
-                width: '100%',
-                textAlign: 'left',
-                padding: '9px 12px',
-                borderRadius: 'var(--radius-sm)',
-                background: discoveryActive
-                  ? 'linear-gradient(90deg, var(--accent-light), transparent)'
-                  : 'transparent',
-                color: discoveryActive ? 'var(--accent-text)' : 'var(--text-secondary)',
-                border: 'none',
-                fontSize: 14,
-                fontWeight: discoveryActive ? 600 : 500,
-                cursor: 'pointer',
-                marginBottom: 2,
-                fontFamily: 'inherit',
-                display: 'flex',
-                alignItems: 'center',
-                gap: 12,
-                boxShadow: discoveryActive ? 'inset 2px 0 0 var(--accent)' : 'none',
-              }}
-              className="nav-pill"
-            >
-              <NavIcon icon="flame" active={discoveryActive} />
-              <span style={{ flex: 1 }}>Discovery</span>
-              <span style={{ fontSize: 10, color: 'var(--text-muted)' }}>{discoveryOpen ? '▾' : '▸'}</span>
-            </button>
-            {discoveryOpen &&
-              DISCOVERY_CHILDREN.map((item) => {
-                const active = isActive(item.href)
-                return (
-                  <button
-                    key={item.href}
-                    onClick={() => navigate(item.href)}
-                    onMouseEnter={() => prefetch(item.href)}
-                    style={{
-                      width: '100%',
-                      textAlign: 'left',
-                      padding: '7px 12px 7px 40px',
-                      borderRadius: 'var(--radius-sm)',
-                      background: active ? 'linear-gradient(90deg, var(--accent-light), transparent)' : 'transparent',
-                      color: active ? 'var(--accent-text)' : 'var(--text-muted)',
-                      border: 'none',
-                      fontSize: 13,
-                      fontWeight: active ? 600 : 500,
-                      cursor: 'pointer',
-                      marginBottom: 2,
-                      fontFamily: 'inherit',
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: 10,
-                    }}
-                  >
-                    <NavIcon icon={item.icon} active={active} />
-                    {item.label}
-                  </button>
-                )
-              })}
-          </div>
-
           {/* Community pillar — expandable on desktop (spec: secondary nav
               exposed through the sidebar; Live Chat etc. are NOT top-level). */}
           <div>
@@ -395,70 +307,6 @@ export default function Layout({ children, user, profile }: { children: React.Re
             </button>
             {communityOpen &&
               COMMUNITY_CHILDREN.map((item) => {
-                const active = isActive(item.href)
-                return (
-                  <button
-                    key={item.href}
-                    onClick={() => navigate(item.href)}
-                    onMouseEnter={() => prefetch(item.href)}
-                    style={{
-                      width: '100%',
-                      textAlign: 'left',
-                      padding: '7px 12px 7px 40px',
-                      borderRadius: 'var(--radius-sm)',
-                      background: active ? 'linear-gradient(90deg, var(--accent-light), transparent)' : 'transparent',
-                      color: active ? 'var(--accent-text)' : 'var(--text-muted)',
-                      border: 'none',
-                      fontSize: 13,
-                      fontWeight: active ? 600 : 500,
-                      cursor: 'pointer',
-                      marginBottom: 2,
-                      fontFamily: 'inherit',
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: 10,
-                    }}
-                  >
-                    <NavIcon icon={item.icon} active={active} />
-                    {item.label}
-                  </button>
-                )
-              })}
-          </div>
-
-          {/* Library pillar — Classroom nests here (academic purpose). */}
-          <div>
-            <button
-              onClick={() => {
-                setLibraryOpen((v) => !v)
-                navigate('/notes')
-              }}
-              style={{
-                width: '100%',
-                textAlign: 'left',
-                padding: '9px 12px',
-                borderRadius: 'var(--radius-sm)',
-                background: libraryActive ? 'linear-gradient(90deg, var(--accent-light), transparent)' : 'transparent',
-                color: libraryActive ? 'var(--accent-text)' : 'var(--text-secondary)',
-                border: 'none',
-                fontSize: 14,
-                fontWeight: libraryActive ? 600 : 500,
-                cursor: 'pointer',
-                marginBottom: 2,
-                fontFamily: 'inherit',
-                display: 'flex',
-                alignItems: 'center',
-                gap: 12,
-                boxShadow: libraryActive ? 'inset 2px 0 0 var(--accent)' : 'none',
-              }}
-              className="nav-pill"
-            >
-              <NavIcon icon="notebook" active={libraryActive} />
-              <span style={{ flex: 1 }}>Library</span>
-              <span style={{ fontSize: 10, color: 'var(--text-muted)' }}>{libraryOpen ? '▾' : '▸'}</span>
-            </button>
-            {libraryOpen &&
-              LIBRARY_CHILDREN.map((item) => {
                 const active = isActive(item.href)
                 return (
                   <button

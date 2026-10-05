@@ -16,6 +16,12 @@ const SECTIONS = [
   },
   { icon: 'globe', label: 'Global', desc: 'Post & connect with students everywhere', href: '/global' },
   { icon: 'zap', label: 'Compete', desc: 'Daily DSA challenges, Campus Clash & Aura rankings', href: '/compete' },
+  {
+    icon: 'trophy',
+    label: 'Esports — Free Fire',
+    desc: 'Tournaments, team roster & join a squad with a code',
+    href: '/tournaments',
+  },
   { icon: 'calendar', label: 'Events', desc: 'Campus events, hackathons & memories', href: '/events' },
   { icon: 'users', label: 'Find Teammates', desc: 'Post or join hackathon teams', href: '/teams' },
   {
@@ -30,7 +36,6 @@ const SECTIONS = [
     desc: 'Join live voice rooms with your campusmates',
     href: '/live-voice-chat',
   },
-  { icon: 'notebook', label: 'Notes Library', desc: 'Subject-wise notes, PYQs and resources', href: '/notes' },
   { icon: 'star', label: 'Talent', desc: 'Discover students by skill', href: '/talent' },
   {
     icon: 'sparkles',
@@ -39,7 +44,6 @@ const SECTIONS = [
     href: '/brain',
   },
   { icon: 'user', label: 'My Profile', desc: 'Your identity, links and activity', href: '/profile' },
-  { icon: 'message', label: 'Ask a Senior', desc: 'Doubt-solving with your college seniors', href: '/ask' },
   { icon: 'pencil', label: 'Blog', desc: 'Read & write campus stories, guides & experiences', href: '/blog' },
   { icon: 'layout', label: 'Campus Polls', desc: 'Vote on what matters — live results', href: '/polls' },
   { icon: 'users', label: 'Global Communities', desc: 'DSA, Web Development & Startups', href: '/communities' },

@@ -1,31 +1,41 @@
 'use client'
 
+// ═══════════════════════════════════════════════════════════════════════════
+// /global — the landing dashboard. FUN ONLY.
+//
+// What a student sees here: who is live in voice right now, the chat groups
+// they run/joined, and the Free Fire esports board. The study-shaped blocks
+// (hackathons, internships) were removed from this surface — those live in
+// their own sections. The feed stays: it is the social half of "masti".
+// ═══════════════════════════════════════════════════════════════════════════
+
 import { useCallback, useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
 import Layout from '@/components/Layout'
 import PostCard from '@/components/PostCard'
 import PostComposer from '@/components/PostComposer'
+import EsportsSection from '@/components/esports/EsportsSection'
 import { useAdminContext } from '@/lib/permissions'
 import { ListSkeleton } from '@/components/Skeleton'
 import EmptyState from '@/components/EmptyState'
 import { Icon } from '@/components/icons'
+import { fetchLiveVoiceRooms, voiceIcon, type LiveVoiceRoom } from '@/lib/liveVoice'
 import type { Post } from '@/types'
 
-const daysLeft = (deadline: string) => {
-  if (!deadline) return null
-  const days = Math.ceil((new Date(deadline).getTime() - Date.now()) / 86400000)
-  if (days < 0) return { label: 'Closed', tone: 'var(--text-muted)' }
-  if (days === 0) return { label: 'Last day!', tone: 'var(--orange-text)' }
-  return { label: `${days}d left`, tone: 'var(--text-secondary)' }
+interface MyGroup {
+  id: string
+  key: string
+  name: string
+  icon: string | null
 }
 
 export default function GlobalPage() {
   const [user, setUser] = useState<any>(null)
   const [profile, setProfile] = useState<any>(null)
   const [posts, setPosts] = useState<Post[]>([])
-  const [hackathons, setHackathons] = useState<Post[]>([])
-  const [internships, setInternships] = useState<any[]>([])
+  const [voiceRooms, setVoiceRooms] = useState<LiveVoiceRoom[]>([])
+  const [myGroups, setMyGroups] = useState<MyGroup[]>([])
   const [loading, setLoading] = useState(true)
   const [hasMore, setHasMore] = useState(true)
   const [loadingMore, setLoadingMore] = useState(false)
@@ -39,8 +49,6 @@ export default function GlobalPage() {
 
   const fetchPosts = useCallback(
     async (offset = 0) => {
-      // One global query, split client-side: hackathons get their own block,
-      // everything else is the main feed.
       const { data } = await supabase
         .from('posts')
         .select(POST_SELECT)
@@ -48,15 +56,9 @@ export default function GlobalPage() {
         .order('is_pinned', { ascending: false })
         .order('created_at', { ascending: false })
         .range(offset, offset + PAGE_SIZE - 1)
-      const all = data || []
-      const hacks = all.filter((p) => p.categories?.key === 'hackathon')
-      const regular = all.filter((p) => p.categories?.key !== 'hackathon')
-      if (offset === 0) {
-        setHackathons(hacks.slice(0, 4))
-        setPosts(regular)
-      } else {
-        setPosts((prev) => [...prev, ...regular])
-      }
+      const all = (data as Post[]) || []
+      if (offset === 0) setPosts(all)
+      else setPosts((prev) => [...prev, ...all])
       setHasMore(all.length === PAGE_SIZE)
       setLoading(false)
       setLoadingMore(false)
@@ -69,18 +71,6 @@ export default function GlobalPage() {
     await fetchPosts(posts.length)
   }
 
-  const fetchInternships = useCallback(async () => {
-    try {
-      const res = await fetch('/api/opportunities?opp_type=internship&limit=4', { credentials: 'include' })
-      if (res.ok) {
-        const json = await res.json()
-        setInternships(json.data ?? [])
-      }
-    } catch {
-      /* internships block is optional — hide quietly */
-    }
-  }, [])
-
   useEffect(() => {
     const load = async () => {
       const {
@@ -90,12 +80,23 @@ export default function GlobalPage() {
         setUser(user)
         const { data: prof } = await supabase.from('profiles').select('*').eq('id', user.id).single()
         setProfile(prof)
-        fetchInternships()
+        // Groups read needs the signed-in id, so it is scoped here.
+        const { data: mineRaw } = await supabase
+          .from('community_members')
+          .select('communities(id, key, name, icon, created_by)')
+          .eq('user_id', user.id)
+          .eq('status', 'approved')
+        const groups = ((mineRaw as any[]) || [])
+          .map((r) => r.communities)
+          .filter((c) => c && c.created_by)
+          .slice(0, 4) as MyGroup[]
+        setMyGroups(groups)
+        setVoiceRooms(await fetchLiveVoiceRooms(supabase))
       }
       fetchPosts()
     }
-    load()
-  }, [fetchPosts, fetchInternships, supabase])
+    void load()
+  }, [fetchPosts, supabase])
 
   return (
     <Layout user={user} profile={profile}>
@@ -120,8 +121,7 @@ export default function GlobalPage() {
             <h2 style={{ fontSize: 26, fontWeight: 800, color: 'var(--text-primary)', margin: 0 }}>Global</h2>
           </div>
           <p style={{ fontSize: 13.5, color: 'var(--text-muted)', margin: '6px 0 0', paddingLeft: 44 }}>
-            The Global Campus — open to every student, anywhere in India. Join now, move to your own college when it
-            goes live.
+            Voice rooms, your circles and the esports board — all in one place.
           </p>
         </div>
 
@@ -161,153 +161,301 @@ export default function GlobalPage() {
           </div>
         )}
 
+        {/* ── Live Voice Chat ── rooms that are genuinely live right now */}
+        <section style={{ marginBottom: 24 }} aria-label="Live voice chat">
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
+            <h3
+              style={{
+                fontSize: 16,
+                fontWeight: 800,
+                color: 'var(--text-primary)',
+                margin: 0,
+                display: 'flex',
+                alignItems: 'center',
+                gap: 7,
+              }}
+            >
+              <Icon name="mic" size={16} style={{ color: 'var(--accent-text)' }} />
+              Live Voice Chat
+            </h3>
+            <button
+              onClick={() => router.push('/live-voice-chat')}
+              style={{
+                fontSize: 12.5,
+                fontWeight: 600,
+                color: 'var(--accent)',
+                background: 'none',
+                border: 'none',
+                cursor: 'pointer',
+                fontFamily: 'inherit',
+              }}
+            >
+              {voiceRooms.length > 0 ? 'All rooms →' : 'Start a room →'}
+            </button>
+          </div>
+
+          {voiceRooms.length === 0 ? (
+            <div
+              style={{
+                background: 'var(--bg)',
+                border: '1px dashed var(--border-strong, var(--border))',
+                borderRadius: 14,
+                padding: '16px 18px',
+                display: 'flex',
+                alignItems: 'center',
+                gap: 12,
+              }}
+            >
+              <span style={{ display: 'inline-flex', color: 'var(--text-muted)', flexShrink: 0 }} aria-hidden="true">
+                <Icon name="mic" size={18} />
+              </span>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <p style={{ fontSize: 13.5, fontWeight: 700, color: 'var(--text-primary)', margin: '0 0 2px' }}>
+                  Nobody is talking right now
+                </p>
+                <p style={{ fontSize: 12, color: 'var(--text-muted)', margin: 0 }}>
+                  Jump in first — the room lights up for your campusmates.
+                </p>
+              </div>
+              <button
+                onClick={() => router.push('/live-voice-chat')}
+                style={{
+                  background: 'var(--accent)',
+                  color: 'var(--on-accent)',
+                  border: 'none',
+                  borderRadius: 10,
+                  padding: '9px 15px',
+                  fontSize: 12.5,
+                  fontWeight: 800,
+                  cursor: 'pointer',
+                  fontFamily: 'inherit',
+                  flexShrink: 0,
+                }}
+              >
+                Go live
+              </button>
+            </div>
+          ) : (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+              {voiceRooms.slice(0, 3).map((r) => (
+                <button
+                  key={r.callId}
+                  onClick={() => router.push(`/live-voice-chat/${r.groupId}`)}
+                  className="card-hover"
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 11,
+                    textAlign: 'left',
+                    background: 'var(--bg)',
+                    border: '1px solid var(--border)',
+                    borderRadius: 12,
+                    padding: '11px 14px',
+                    cursor: 'pointer',
+                    fontFamily: 'inherit',
+                    boxShadow: 'var(--shadow-sm)',
+                  }}
+                >
+                  <span
+                    style={{ display: 'inline-flex', color: 'var(--accent-text)', flexShrink: 0 }}
+                    aria-hidden="true"
+                  >
+                    <Icon name={voiceIcon(r.icon)} size={17} />
+                  </span>
+                  <span style={{ flex: 1, minWidth: 0 }}>
+                    <span
+                      style={{
+                        display: 'block',
+                        fontSize: 13.5,
+                        fontWeight: 700,
+                        color: 'var(--text-primary)',
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis',
+                        whiteSpace: 'nowrap',
+                      }}
+                    >
+                      {r.name}
+                    </span>
+                    <span style={{ display: 'block', fontSize: 11.5, color: 'var(--text-muted)', marginTop: 1 }}>
+                      {r.participantCount} in the room
+                    </span>
+                  </span>
+                  <span
+                    style={{
+                      fontSize: 9.5,
+                      fontWeight: 800,
+                      letterSpacing: '0.06em',
+                      padding: '3px 9px',
+                      borderRadius: 999,
+                      background: 'var(--success-light)',
+                      color: 'var(--success-text)',
+                      flexShrink: 0,
+                    }}
+                  >
+                    LIVE
+                  </span>
+                </button>
+              ))}
+            </div>
+          )}
+        </section>
+
+        {/* ── Your chat groups ── circles the students make themselves */}
+        <section style={{ marginBottom: 24 }} aria-label="Your chat groups">
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
+            <h3
+              style={{
+                fontSize: 16,
+                fontWeight: 800,
+                color: 'var(--text-primary)',
+                margin: 0,
+                display: 'flex',
+                alignItems: 'center',
+                gap: 7,
+              }}
+            >
+              <Icon name="message" size={16} style={{ color: 'var(--accent-text)' }} />
+              Your Groups
+            </h3>
+            <button
+              onClick={() => router.push('/groups')}
+              style={{
+                fontSize: 12.5,
+                fontWeight: 600,
+                color: 'var(--accent)',
+                background: 'none',
+                border: 'none',
+                cursor: 'pointer',
+                fontFamily: 'inherit',
+              }}
+            >
+              {myGroups.length > 0 ? 'All groups →' : 'Create one →'}
+            </button>
+          </div>
+
+          {myGroups.length === 0 ? (
+            <div
+              style={{
+                background: 'var(--bg)',
+                border: '1px dashed var(--border-strong, var(--border))',
+                borderRadius: 14,
+                padding: '16px 18px',
+                display: 'flex',
+                alignItems: 'center',
+                gap: 12,
+              }}
+            >
+              <span style={{ display: 'inline-flex', color: 'var(--text-muted)', flexShrink: 0 }} aria-hidden="true">
+                <Icon name="users" size={18} />
+              </span>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <p style={{ fontSize: 13.5, fontWeight: 700, color: 'var(--text-primary)', margin: '0 0 2px' }}>
+                  No groups yet
+                </p>
+                <p style={{ fontSize: 12, color: 'var(--text-muted)', margin: 0 }}>
+                  Make your own circle — batch, hostel wing, gaming squad — or join with a code.
+                </p>
+              </div>
+              <button
+                onClick={() => router.push('/groups')}
+                style={{
+                  background: 'var(--accent)',
+                  color: 'var(--on-accent)',
+                  border: 'none',
+                  borderRadius: 10,
+                  padding: '9px 15px',
+                  fontSize: 12.5,
+                  fontWeight: 800,
+                  cursor: 'pointer',
+                  fontFamily: 'inherit',
+                  flexShrink: 0,
+                }}
+              >
+                New group
+              </button>
+            </div>
+          ) : (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+              {myGroups.map((g) => (
+                <button
+                  key={g.id}
+                  onClick={() => router.push(`/chat/${g.key}`)}
+                  className="card-hover"
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 11,
+                    textAlign: 'left',
+                    background: 'var(--bg)',
+                    border: '1px solid var(--border)',
+                    borderRadius: 12,
+                    padding: '11px 14px',
+                    cursor: 'pointer',
+                    fontFamily: 'inherit',
+                    boxShadow: 'var(--shadow-sm)',
+                  }}
+                >
+                  <span style={{ fontSize: 18, flexShrink: 0 }} aria-hidden="true">
+                    {g.icon || '💬'}
+                  </span>
+                  <span
+                    style={{
+                      flex: 1,
+                      minWidth: 0,
+                      fontSize: 13.5,
+                      fontWeight: 700,
+                      color: 'var(--text-primary)',
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis',
+                      whiteSpace: 'nowrap',
+                    }}
+                  >
+                    {g.name}
+                  </span>
+                  <span style={{ display: 'inline-flex', color: 'var(--text-muted)', flexShrink: 0 }}>
+                    <Icon name="chevron" size={15} />
+                  </span>
+                </button>
+              ))}
+              <button
+                onClick={() => router.push('/groups')}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: 6,
+                  border: '1px dashed var(--border-strong, var(--border))',
+                  background: 'transparent',
+                  color: 'var(--text-muted)',
+                  borderRadius: 12,
+                  padding: '10px',
+                  fontSize: 12.5,
+                  fontWeight: 700,
+                  cursor: 'pointer',
+                  fontFamily: 'inherit',
+                }}
+              >
+                <Icon name="plus" size={14} /> New group
+              </button>
+            </div>
+          )}
+        </section>
+
+        {/* ── Esports — the Free Fire board + team join by code ── */}
+        <EsportsSection signedIn={!!user} />
+
+        {/* ── Feed — the social half of the dashboard ── */}
         {loading ? (
           <ListSkeleton count={3} />
         ) : (
           <>
-            {/* ⚡ Hackathons — separate block */}
-            {hackathons.length > 0 && (
-              <div style={{ marginBottom: 24 }}>
-                <div
-                  style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}
-                >
-                  <h3 style={{ fontSize: 16, fontWeight: 800, color: 'var(--text-primary)', margin: 0 }}>
-                    ⚡ Hackathons
-                  </h3>
-                  <button
-                    onClick={() => router.push('/opportunities?type=hackathon')}
-                    style={{
-                      fontSize: 12.5,
-                      fontWeight: 600,
-                      color: 'var(--accent)',
-                      background: 'none',
-                      border: 'none',
-                      cursor: 'pointer',
-                      fontFamily: 'inherit',
-                    }}
-                  >
-                    View all →
-                  </button>
-                </div>
-                <div className="h-scroll-cards">
-                  {hackathons.map((post) => (
-                    <PostCard
-                      key={post.id}
-                      post={post}
-                      currentUserId={user?.id}
-                      canInteract={!!user}
-                      onChanged={fetchPosts}
-                      isAdmin={admin.isAdmin}
-                    />
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {/* 💼 Internships — separate block (needs an account to read) */}
-            {user && internships.length > 0 && (
-              <div style={{ marginBottom: 24 }}>
-                <div
-                  style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}
-                >
-                  <h3 style={{ fontSize: 16, fontWeight: 800, color: 'var(--text-primary)', margin: 0 }}>
-                    💼 Internships
-                  </h3>
-                  <button
-                    onClick={() => router.push('/opportunities?type=internship')}
-                    style={{
-                      fontSize: 12.5,
-                      fontWeight: 600,
-                      color: 'var(--accent)',
-                      background: 'none',
-                      border: 'none',
-                      cursor: 'pointer',
-                      fontFamily: 'inherit',
-                    }}
-                  >
-                    View all →
-                  </button>
-                </div>
-                <div className="h-scroll-cards">
-                  {internships.map((opp) => {
-                    const dl = daysLeft(opp.deadline)
-                    return (
-                      <div
-                        key={opp.id}
-                        style={{
-                          background: 'var(--bg)',
-                          border: '1px solid var(--border)',
-                          borderRadius: 14,
-                          padding: '14px 16px',
-                          boxShadow: 'var(--shadow-sm)',
-                          height: 'auto',
-                        }}
-                      >
-                        <div
-                          style={{
-                            display: 'flex',
-                            alignItems: 'flex-start',
-                            justifyContent: 'space-between',
-                            gap: 10,
-                          }}
-                        >
-                          <div style={{ minWidth: 0 }}>
-                            <p
-                              style={{ fontSize: 14, fontWeight: 700, color: 'var(--text-primary)', margin: '0 0 3px' }}
-                            >
-                              {opp.title}
-                            </p>
-                            <p style={{ fontSize: 12, color: 'var(--text-muted)', margin: 0 }}>
-                              {opp.company_org ? `${opp.company_org} · ` : ''}
-                              {opp.is_paid && opp.stipend_range ? `💰 ${opp.stipend_range} · ` : ''}
-                              <span style={{ textTransform: 'capitalize' }}>{opp.location_type || 'remote'}</span>
-                            </p>
-                          </div>
-                          <div
-                            style={{
-                              display: 'flex',
-                              flexDirection: 'column',
-                              alignItems: 'flex-end',
-                              gap: 6,
-                              flexShrink: 0,
-                            }}
-                          >
-                            {dl && <span style={{ fontSize: 11, fontWeight: 600, color: dl.tone }}>{dl.label}</span>}
-                            {opp.apply_link && (
-                              <a
-                                href={opp.apply_link}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                style={{
-                                  background: 'var(--accent)',
-                                  color: 'var(--on-accent)',
-                                  padding: '6px 14px',
-                                  borderRadius: 8,
-                                  fontSize: 12.5,
-                                  fontWeight: 600,
-                                  textDecoration: 'none',
-                                }}
-                              >
-                                Apply →
-                              </a>
-                            )}
-                          </div>
-                        </div>
-                      </div>
-                    )
-                  })}
-                </div>
-              </div>
-            )}
-
-            {/* Main feed — recent global posts */}
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
               <h3 style={{ fontSize: 16, fontWeight: 800, color: 'var(--text-primary)', margin: 0 }}>
                 Recent from Global
               </h3>
               <span style={{ fontSize: 11.5, color: 'var(--text-muted)' }}>🇮🇳 all of India</span>
             </div>
-            {posts.length === 0 && hackathons.length === 0 ? (
+            {posts.length === 0 ? (
               <EmptyState
                 icon="globe"
                 title="No global posts yet"
@@ -316,12 +464,6 @@ export default function GlobalPage() {
                     ? 'Be the first to share something with students everywhere.'
                     : 'Join free to make the first global post.'
                 }
-              />
-            ) : posts.length === 0 ? (
-              <EmptyState
-                icon="globe"
-                title="More posts coming soon"
-                body="Hackathons and internships are above — the general feed fills up as students post."
               />
             ) : (
               <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
