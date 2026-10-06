@@ -442,7 +442,7 @@ export default function GlobalPage() {
         </section>
 
         {/* ── Esports — the Free Fire board + team join by code ── */}
-        <EsportsSection signedIn={!!user} />
+        <EsportsSection signedIn={!!user} isPlatformAdmin={admin.isPlatformAdmin} />
 
         {/* ── Feed — the social half of the dashboard ── */}
         {loading ? (

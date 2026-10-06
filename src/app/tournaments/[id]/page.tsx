@@ -184,6 +184,31 @@ export default function TournamentPage() {
   const medal = (r: number) => (r === 1 ? '1st' : r === 2 ? '2nd' : r === 3 ? '3rd' : null)
   const stageTabs = useMemo(() => ov?.stages ?? [], [ov])
 
+  // Match Center: walk every match with the stage that owns it. The overview
+  // RPC nests matches under stages and does NOT repeat stage_id on each match,
+  // so pair them as we flatten (looking up m.stage_id would always miss).
+  const allMatches = useMemo(
+    () => (ov ? ov.stages.flatMap((s) => s.matches.map((match) => ({ match, stage: s }))) : []),
+    [ov]
+  )
+  const currentEntry = useMemo(() => allMatches.find((e) => e.match.status === 'LIVE') ?? null, [allMatches])
+  const currentMatch = currentEntry?.match ?? null
+  const currentStage = currentEntry?.stage ?? null
+  const nextEntryRaw = useMemo(() => {
+    if (!currentEntry) {
+      // No live match: the first match still pending or locked.
+      return allMatches.find((e) => e.match.result_state === 'NONE' || e.match.result_state === 'LOCKED') ?? null
+    }
+    // Otherwise: the next pending/locked match, in stage order.
+    const idx = allMatches.indexOf(currentEntry)
+    return (
+      allMatches.slice(idx + 1).find((e) => e.match.result_state === 'NONE' || e.match.result_state === 'LOCKED') ??
+      null
+    )
+  }, [allMatches, currentEntry])
+  const nextMatch = nextEntryRaw?.match ?? null
+  const nextStage = nextEntryRaw?.stage ?? null
+
   if (loadErr) {
     return (
       <Layout>
@@ -276,25 +301,211 @@ export default function TournamentPage() {
           🎮 CAMPUSCONNECT TOURNAMENT
         </p>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap', marginBottom: 6 }}>
-          <h1 style={{ fontSize: 24, fontWeight: 900, color: 'var(--text-primary)', margin: 0 }}>{t.name}</h1>
-          <span
+          <h1
             style={{
-              fontSize: 10,
-              fontWeight: 800,
-              letterSpacing: '0.06em',
-              padding: '3px 10px',
-              borderRadius: 999,
-              background: t.status === 'LIVE' ? 'var(--success-light)' : 'var(--accent-light)',
-              color: t.status === 'LIVE' ? 'var(--success-text)' : 'var(--accent-text)',
+              fontSize: 22,
+              fontWeight: 900,
+              color: 'var(--text-primary)',
+              margin: 0,
+              overflow: 'hidden',
+              textOverflow: 'ellipsis',
+              whiteSpace: 'nowrap',
             }}
           >
-            {t.status === 'LIVE' ? 'LIVE' : t.status}
-          </span>
+            {t.name}
+          </h1>
+          {t.status === 'LIVE' ? (
+            <span
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: 6,
+                fontSize: 10,
+                fontWeight: 800,
+                letterSpacing: '0.06em',
+                padding: '4px 10px',
+                borderRadius: 999,
+                background: 'var(--danger-light)',
+                color: 'var(--danger)',
+                animation: 'pulse-live 2s ease-in-out infinite',
+              }}
+            >
+              <span
+                style={{
+                  width: 7,
+                  height: 7,
+                  borderRadius: '50%',
+                  background: 'var(--danger)',
+                  boxShadow: '0 0 6px var(--danger)',
+                  animation: 'pulse-dot 1.5s ease-in-out infinite',
+                }}
+              />
+              LIVE NOW
+            </span>
+          ) : (
+            <span
+              style={{
+                fontSize: 9.5,
+                fontWeight: 800,
+                letterSpacing: '0.06em',
+                padding: '3px 9px',
+                borderRadius: 999,
+                background: t.status === 'UPCOMING' ? 'var(--accent-light)' : 'var(--bg-secondary, var(--bg))',
+                color: t.status === 'UPCOMING' ? 'var(--accent-text)' : 'var(--text-muted)',
+              }}
+            >
+              {t.status}
+            </span>
+          )}
         </div>
         <p style={{ fontSize: 12.5, color: 'var(--text-muted)', margin: '0 0 18px' }}>
           {ov.team_count} teams · {ov.player_count} players · {ov.completed_matches}/{ov.match_count} matches scored
           {t.start_date ? ` · ${t.start_date}${t.end_date ? ` → ${t.end_date}` : ''}` : ''}
         </p>
+
+        {/* ── Match Center — compact current match status ── */}
+        {tab === 'standings' && (
+          <div
+            style={{
+              background: 'var(--bg-secondary)',
+              border: '1px solid var(--border)',
+              borderRadius: 14,
+              padding: '14px 16px',
+              marginBottom: 18,
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
+              <h3
+                style={{
+                  fontSize: 12,
+                  fontWeight: 800,
+                  color: 'var(--text-muted)',
+                  letterSpacing: '0.06em',
+                  margin: 0,
+                }}
+              >
+                MATCH CENTER
+              </h3>
+              {ov.stages.length > 0 && ov.stages[0].matches.length > 0 && (
+                <span style={{ fontSize: 10.5, color: 'var(--text-muted)' }}>
+                  {ov.stages[0].name} · {ov.stages[0].matches.length} matches
+                </span>
+              )}
+            </div>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+              {currentMatch && (
+                <div
+                  style={{
+                    background: 'var(--bg)',
+                    border: '1px solid var(--border)',
+                    borderRadius: 10,
+                    padding: '10px 12px',
+                  }}
+                >
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 4 }}>
+                    <span
+                      style={{ fontSize: 10, fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase' }}
+                    >
+                      Current
+                    </span>
+                    <span
+                      style={{
+                        width: 6,
+                        height: 6,
+                        borderRadius: '50%',
+                        background: 'var(--danger)',
+                        boxShadow: '0 0 6px var(--danger)',
+                        animation: 'pulse-dot 1.5s ease-in-out infinite',
+                      }}
+                    />
+                  </div>
+                  <p style={{ fontSize: 13, fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>
+                    Match {currentMatch.match_number}
+                  </p>
+                  <p style={{ fontSize: 11, color: 'var(--text-muted)', margin: '2px 0 0' }}>
+                    {currentStage?.name ?? ''}
+                  </p>
+                  <span
+                    style={{
+                      display: 'inline-block',
+                      marginTop: 6,
+                      fontSize: 9.5,
+                      fontWeight: 800,
+                      padding: '2px 7px',
+                      borderRadius: 6,
+                      background: 'var(--danger-light)',
+                      color: 'var(--danger)',
+                    }}
+                  >
+                    LIVE
+                  </span>
+                </div>
+              )}
+              {nextMatch && (
+                <div
+                  style={{
+                    background: 'var(--bg)',
+                    border: '1px solid var(--border)',
+                    borderRadius: 10,
+                    padding: '10px 12px',
+                  }}
+                >
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 4 }}>
+                    <span
+                      style={{ fontSize: 10, fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase' }}
+                    >
+                      Next
+                    </span>
+                  </div>
+                  <p style={{ fontSize: 13, fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>
+                    Match {nextMatch.match_number}
+                  </p>
+                  {nextStage && (
+                    <p style={{ fontSize: 11, color: 'var(--text-muted)', margin: '2px 0 0' }}>{nextStage.name}</p>
+                  )}
+                  <span
+                    style={{
+                      display: 'inline-block',
+                      marginTop: 6,
+                      fontSize: 9.5,
+                      fontWeight: 800,
+                      padding: '2px 7px',
+                      borderRadius: 6,
+                      background:
+                        nextMatch.result_state === 'LOCKED'
+                          ? 'var(--success-light)'
+                          : nextMatch.result_state === 'NONE'
+                            ? 'var(--bg-tertiary)'
+                            : 'var(--warning-light)',
+                      color:
+                        nextMatch.result_state === 'LOCKED'
+                          ? 'var(--success-text)'
+                          : nextMatch.result_state === 'NONE'
+                            ? 'var(--text-muted)'
+                            : 'var(--warning-text)',
+                    }}
+                  >
+                    {nextMatch.result_state === 'NONE' ? 'PENDING' : nextMatch.result_state}
+                  </span>
+                </div>
+              )}
+              {!currentMatch && !nextMatch && (
+                <div
+                  style={{
+                    gridColumn: '1 / -1',
+                    background: 'var(--bg)',
+                    border: '1px solid var(--border)',
+                    borderRadius: 10,
+                    padding: '10px 12px',
+                    textAlign: 'center',
+                  }}
+                >
+                  <p style={{ fontSize: 12, color: 'var(--text-muted)', margin: 0 }}>No matches available</p>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
 
         {/* ── Champion ── */}
         {ov.champion && (
@@ -319,7 +530,41 @@ export default function TournamentPage() {
         )}
 
         {/* ── My Team (IGL only — server-gated via get_my_tournament_team) ── */}
-        {isIgl && <IglTeamPanel tournamentId={id} />}
+        {isIgl ? (
+          <IglTeamPanel tournamentId={id} />
+        ) : (
+          <div
+            style={{
+              background: 'var(--bg)',
+              border: '1px solid var(--border)',
+              borderRadius: 14,
+              padding: '14px 16px',
+              marginBottom: 18,
+              display: 'flex',
+              alignItems: 'center',
+              gap: 10,
+            }}
+          >
+            <span
+              style={{
+                width: 36,
+                height: 36,
+                borderRadius: 10,
+                background: 'var(--bg-secondary)',
+                display: 'inline-flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                flexShrink: 0,
+              }}
+            >
+              <Icon name="shield" size={16} style={{ color: 'var(--text-muted)' }} />
+            </span>
+            <span style={{ flex: 1, fontSize: 12.5, color: 'var(--text-secondary)' }}>
+              <span style={{ fontWeight: 700, color: 'var(--text-primary)' }}>Team controls</span> are available to your
+              registered team leader (IGL).
+            </span>
+          </div>
+        )}
 
         {/* ── Tabs ── */}
         <div style={{ display: 'flex', gap: 6, marginBottom: 14 }}>
@@ -405,47 +650,79 @@ export default function TournamentPage() {
                     style={{
                       display: 'flex',
                       alignItems: 'center',
-                      gap: 12,
+                      gap: 10,
                       background: r.rank <= 3 ? 'var(--accent-light)' : 'var(--bg)',
                       border: r.rank <= 3 ? '1px solid var(--accent-border, var(--border))' : '1px solid var(--border)',
-                      borderRadius: 14,
-                      padding: '12px 14px',
+                      borderRadius: 12,
+                      padding: '10px 12px',
+                      boxShadow: r.rank <= 3 ? 'var(--shadow-md)' : 'var(--shadow-sm)',
                     }}
                   >
-                    <span style={{ width: 34, textAlign: 'center', fontSize: 15, fontWeight: 900, flexShrink: 0 }}>
+                    <span style={{ width: 28, textAlign: 'center', fontSize: 14, fontWeight: 900, flexShrink: 0 }}>
                       {medal(r.rank) ?? r.rank}
                     </span>
                     <span style={{ flex: 1, minWidth: 0 }}>
-                      <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                        <span style={{ fontSize: 13.5, fontWeight: 800, color: 'var(--text-primary)' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
+                        <span
+                          style={{
+                            fontSize: 13,
+                            fontWeight: 800,
+                            color: 'var(--text-primary)',
+                            overflow: 'hidden',
+                            textOverflow: 'ellipsis',
+                            whiteSpace: 'nowrap',
+                          }}
+                        >
                           {r.team_name}
                         </span>
                         {r.team_tag && (
-                          <span style={{ fontSize: 10.5, fontWeight: 700, color: 'var(--text-muted)' }}>
+                          <span style={{ fontSize: 10, fontWeight: 700, color: 'var(--text-muted)', flexShrink: 0 }}>
                             [{r.team_tag}]
                           </span>
                         )}
+                      </div>
+                      <div
+                        style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: 8,
+                          fontSize: 11,
+                          color: 'var(--text-muted)',
+                          marginTop: 2,
+                          flexWrap: 'wrap',
+                        }}
+                      >
+                        <span>{r.matches_played} matches</span>
+                        <span>{r.total_kills} kills</span>
+                        <span>{r.kill_points} KP</span>
+                        <span>{r.placement_points} PP</span>
                         {r.status === 'DISQUALIFIED' && (
                           <span
                             style={{
                               fontSize: 9,
                               fontWeight: 800,
-                              padding: '1px 6px',
+                              padding: '1px 5px',
                               borderRadius: 6,
                               background: 'var(--danger-light)',
                               color: 'var(--danger)',
+                              flexShrink: 0,
                             }}
                           >
                             DSQ
                           </span>
                         )}
-                      </span>
-                      <span style={{ display: 'block', fontSize: 11, color: 'var(--text-muted)', marginTop: 2 }}>
-                        {r.matches_played} matches · {r.total_kills} kills ({r.kill_points} KP) · {r.placement_points}{' '}
-                        PP
-                      </span>
+                      </div>
                     </span>
-                    <span style={{ fontSize: 17, fontWeight: 900, color: 'var(--accent-text)', flexShrink: 0 }}>
+                    <span
+                      style={{
+                        fontSize: 16,
+                        fontWeight: 900,
+                        color: 'var(--accent-text)',
+                        flexShrink: 0,
+                        minWidth: 32,
+                        textAlign: 'right',
+                      }}
+                    >
                       {r.total_points}
                     </span>
                   </div>

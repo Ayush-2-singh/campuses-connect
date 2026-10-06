@@ -29,7 +29,12 @@ const LivePulseFeed = dynamic(() => import('@/components/LivePulseFeed'), { ssr:
 // so secondary features live under their pillar instead of crowding the
 // sidebar. Mirrors the mobile bar in mobileNav.ts. (Home feed, Discovery
 // and Library were removed.)
-const NAV_ITEMS = [{ label: 'Global', href: '/global', icon: 'globe' }]
+const NAV_ITEMS = [
+  { label: 'Global', href: '/global', icon: 'globe' },
+  // Esports — its own top-level pillar. It used to sit inside Community, which
+  // buried the Free Fire board; it now stands next to Global.
+  { label: 'Esports', href: '/tournaments', icon: 'trophy' },
+]
 
 // Community pillar children — existing systems, relinked (no rebuilds).
 // Games & Clash surfaced as its own child (was hidden inside Compete tabs).
@@ -41,8 +46,6 @@ const COMMUNITY_CHILDREN = [
   // One Compete entry — /compete?tab=clash is the same page, so the second
   // item previously duplicated the section (two entries, one destination).
   { label: 'Compete, Games & Clash', href: '/compete?tab=clash', icon: 'zap' },
-  // Esports — Free Fire tournaments, team join by code, room credentials.
-  { label: 'Esports', href: '/tournaments', icon: 'trophy' },
   { label: 'Live Voice', href: '/live-voice-chat', icon: 'mic' },
   { label: 'Connect', href: '/connections', icon: 'link' },
 ]

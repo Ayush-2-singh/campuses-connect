@@ -355,7 +355,7 @@ export default function ProfilePage() {
         >
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
             <button
-              onClick={() => router.push('/feed')}
+              onClick={() => router.push('/global')}
               aria-label="Back"
               style={{
                 background: 'none',
@@ -704,8 +704,8 @@ export default function ProfilePage() {
             }}
           >
             <h3 style={{ fontSize: 14, fontWeight: 700, color: 'var(--text-primary)', margin: '0 0 12px' }}>
-              <Icon name="gamepad" size={14} style={{ verticalAlign: '-2px', marginRight: 6 }} /> Competitive — Free
-              Fire
+              <Icon name="gamepad" size={14} style={{ verticalAlign: '-2px', marginRight: 6 }} />{' '}
+              {'Competitive — Free Fire'}
             </h3>
             <div style={{ display: 'flex', gap: 8, marginBottom: 12 }}>
               {[

@@ -44,17 +44,27 @@ const STATUS_TONE: Record<string, { bg: string; fg: string }> = {
   COMPLETED: { bg: 'var(--bg-secondary, var(--bg))', fg: 'var(--text-muted)' },
 }
 
-export default function EsportsSection({ signedIn }: { signedIn: boolean }) {
+export default function EsportsSection({
+  signedIn,
+  isPlatformAdmin = false,
+}: {
+  signedIn: boolean
+  /** Only platform admins may create tournaments (see `create_tournament`). */
+  isPlatformAdmin?: boolean
+}) {
   const supabase = createClient()
   const router = useRouter()
 
   const [rows, setRows] = useState<TournamentRow[]>([])
   const [history, setHistory] = useState<EsportsHistoryEntry[]>([])
   const [loading, setLoading] = useState(true)
+  const [stats, setStats] = useState({ live: 0, upcoming: 0, completed: 0, totalPlayers: 0 })
 
   const [code, setCode] = useState('')
   const [checking, setChecking] = useState(false)
   const [codeErr, setCodeErr] = useState<string | null>(null)
+  const [codeValidated, setCodeValidated] = useState(false)
+  const [validatedTeamName, setValidatedTeamName] = useState<string | null>(null)
 
   useEffect(() => {
     let cancelled = false
@@ -66,6 +76,13 @@ export default function EsportsSection({ signedIn }: { signedIn: boolean }) {
       if (cancelled) return
       setRows(((listRes.data as TournamentRow[]) || []).slice(0, 4))
       setHistory((historyRes.data as EsportsHistoryEntry[]) || [])
+      const allRows = (listRes.data as TournamentRow[]) || []
+      setStats({
+        live: allRows.filter((r) => r.status === 'LIVE').length,
+        upcoming: allRows.filter((r) => r.status === 'UPCOMING').length,
+        completed: allRows.filter((r) => r.status === 'COMPLETED').length,
+        totalPlayers: allRows.reduce((acc, r) => acc + (r.team_count || 0) * 4, 0),
+      })
       setLoading(false)
     })()
     return () => {
@@ -74,25 +91,55 @@ export default function EsportsSection({ signedIn }: { signedIn: boolean }) {
   }, [supabase, signedIn])
 
   /** Validate the code SERVER-side, then hand off to the existing join page. */
+  const validateCode = useCallback(
+    async (rawCode: string) => {
+      const normalized = normalizeTeamCode(rawCode)
+      if (normalized.length === 0) {
+        setCodeValidated(false)
+        setValidatedTeamName(null)
+        setCodeErr(null)
+        return
+      }
+      if (!isPlausibleTeamCode(normalized)) {
+        setCodeValidated(false)
+        setValidatedTeamName(null)
+        setCodeErr(JOIN_ERROR_COPY.invalid_code)
+        return
+      }
+      setChecking(true)
+      setCodeErr(null)
+      const preview = await resolveInvite(supabase, normalized)
+      setChecking(false)
+      if (!preview.ok) {
+        setCodeValidated(false)
+        setValidatedTeamName(null)
+        const errorKey = preview.error || 'invalid_code'
+        setCodeErr(JOIN_ERROR_COPY[errorKey] || JOIN_ERROR_COPY.invalid_code)
+        return
+      }
+      setCodeValidated(true)
+      setValidatedTeamName(preview.team_name || null)
+      setCodeErr(null)
+    },
+    [supabase]
+  )
+
   const submitCode = useCallback(async () => {
-    if (checking) return
-    if (!isPlausibleTeamCode(code)) {
-      setCodeErr(JOIN_ERROR_COPY.invalid_code)
-      return
-    }
+    const normalized = normalizeTeamCode(code)
+    if (checking || normalized.length === 0) return
     if (!signedIn) {
-      router.push(`/auth/login?redirect=${encodeURIComponent(joinByCodeHref(code))}`)
+      router.push(`/auth/login?redirect=${encodeURIComponent(joinByCodeHref(normalized))}`)
       return
     }
     setChecking(true)
     setCodeErr(null)
-    const preview = await resolveInvite(supabase, normalizeTeamCode(code))
+    const preview = await resolveInvite(supabase, normalized)
     setChecking(false)
     if (!preview.ok) {
       setCodeErr(JOIN_ERROR_COPY[preview.error || 'invalid_code'])
       return
     }
-    router.push(joinByCodeHref(code))
+    router.push(joinByCodeHref(normalized))
   }, [checking, code, router, signedIn, supabase])
 
   const myTeam = activeTeamEntry(history)
@@ -131,6 +178,45 @@ export default function EsportsSection({ signedIn }: { signedIn: boolean }) {
           All tournaments →
         </button>
       </div>
+
+      {/* ── Quick Stats ── */}
+      {!loading && (
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 8, marginBottom: 14 }}>
+          {[
+            { label: 'LIVE', value: stats.live, color: 'var(--danger)', bg: 'var(--danger-light)' },
+            { label: 'UPCOMING', value: stats.upcoming, color: 'var(--accent-text)', bg: 'var(--accent-light)' },
+            { label: 'COMPLETED', value: stats.completed, color: 'var(--text-muted)', bg: 'var(--bg-secondary)' },
+            { label: 'SLOTS', value: stats.totalPlayers, color: 'var(--success-text)', bg: 'var(--success-light)' },
+          ].map((s) => (
+            <div
+              key={s.label}
+              style={{
+                background: s.bg,
+                borderRadius: 10,
+                padding: '10px 8px',
+                textAlign: 'center',
+                border: `1px solid ${s.color}20`,
+              }}
+            >
+              <p style={{ fontSize: 18, fontWeight: 900, color: s.color, margin: 0, lineHeight: 1.1 }}>{s.value}</p>
+              <p
+                style={{
+                  fontSize: 9.5,
+                  color: 'var(--text-muted)',
+                  margin: 0,
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.05em',
+                }}
+              >
+                {s.label}
+              </p>
+              {s.label === 'SLOTS' && (
+                <p style={{ fontSize: 8.5, color: 'var(--text-muted)', margin: 0, opacity: 0.7 }}>est. slots</p>
+              )}
+            </div>
+          ))}
+        </div>
+      )}
 
       {/* ── My team — only when the student is actually registered ── */}
       {myTeam && (
@@ -203,8 +289,10 @@ export default function EsportsSection({ signedIn }: { signedIn: boolean }) {
           <input
             value={code}
             onChange={(e) => {
-              setCode(normalizeTeamCode(e.target.value).slice(0, TEAM_CODE_LENGTH))
-              setCodeErr(null)
+              const raw = e.target.value.replace(/[^A-Za-z0-9]/g, '').toUpperCase()
+              const normalized = normalizeTeamCode(raw).slice(0, TEAM_CODE_LENGTH)
+              setCode(normalized)
+              void validateCode(normalized)
             }}
             onKeyDown={(e) => {
               if (e.key === 'Enter') void submitCode()
@@ -235,8 +323,22 @@ export default function EsportsSection({ signedIn }: { signedIn: boolean }) {
             onClick={() => void submitCode()}
             disabled={checking || normalizeTeamCode(code).length === 0}
             style={{
-              background: normalizeTeamCode(code).length && !checking ? 'var(--accent)' : 'var(--disabled)',
-              color: 'var(--on-accent)',
+              background:
+                normalizeTeamCode(code).length === 0
+                  ? 'var(--disabled)'
+                  : checking
+                    ? 'var(--text-muted)'
+                    : codeValidated
+                      ? 'var(--success)'
+                      : 'var(--accent)',
+              color:
+                normalizeTeamCode(code).length === 0
+                  ? 'var(--text-muted)'
+                  : checking
+                    ? 'var(--bg)'
+                    : codeValidated
+                      ? 'var(--bg)'
+                      : 'var(--on-accent)',
               border: 'none',
               borderRadius: 10,
               padding: '10px 18px',
@@ -245,12 +347,21 @@ export default function EsportsSection({ signedIn }: { signedIn: boolean }) {
               cursor: normalizeTeamCode(code).length && !checking ? 'pointer' : 'default',
               fontFamily: 'inherit',
               flexShrink: 0,
+              transition: 'all 0.2s ease',
             }}
           >
             {checking ? '…' : 'Join team'}
           </button>
         </div>
-        {codeErr ? (
+        {checking ? (
+          <p style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-muted)', margin: '8px 0 0 2px' }}>
+            Checking team code...
+          </p>
+        ) : codeValidated && validatedTeamName ? (
+          <p style={{ fontSize: 12, fontWeight: 600, color: 'var(--success-text)', margin: '8px 0 0 2px' }}>
+            ✓ Team found — {validatedTeamName}
+          </p>
+        ) : codeErr ? (
           <p style={{ fontSize: 12, fontWeight: 600, color: 'var(--danger-text)', margin: '8px 0 0 2px' }}>{codeErr}</p>
         ) : (
           <p style={{ fontSize: 11.5, color: 'var(--text-muted)', margin: '8px 0 0 2px' }}>
@@ -283,6 +394,36 @@ export default function EsportsSection({ signedIn }: { signedIn: boolean }) {
             </div>
           ))}
         </div>
+      )}
+
+      {/* ── Create Tournament CTA — platform admins only. The `create_tournament`
+          RPC rejects everyone else, so showing it to all signed-in students just
+          sent regular players into the admin page's "no access" wall. ── */}
+      {signedIn && isPlatformAdmin && (
+        <button
+          onClick={() => router.push('/tournaments/admin')}
+          style={{
+            width: '100%',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: 8,
+            background: 'var(--accent)',
+            color: 'var(--on-accent)',
+            border: 'none',
+            borderRadius: 12,
+            padding: '11px 16px',
+            fontSize: 13,
+            fontWeight: 800,
+            cursor: 'pointer',
+            fontFamily: 'inherit',
+            boxShadow: 'var(--shadow-sm)',
+            marginBottom: 14,
+          }}
+        >
+          <Icon name="plus" size={16} />
+          Create Tournament
+        </button>
       )}
 
       {/* ── Live / upcoming ── */}
