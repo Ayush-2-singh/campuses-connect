@@ -1,0 +1,457 @@
+/* ══════════════════════════════════════════════════════════════════════════
+   § Campus Voice Community — the standalone landing page (route `/`).
+   Modelled on the free4talk community board: its own header (logo + brand +
+   Sign in), a centred title, a quick-action row, a search bar with card-size
+   controls, category chips with counts, and a responsive card grid.
+
+   This page ships WITHOUT the app shell (no sidebar / bottom bar); the room
+   data + liveness logic lives in src/components/home/RoomDiscovery.tsx.
+   ══════════════════════════════════════════════════════════════════════════ */
+
+.f4-page {
+  /* The logo's own orange — matches src/components/BrandName.tsx. */
+  --f4-brand: #fc9000;
+  /* The landing speaks the BRAND orange, not the section gold (#FD8F01):
+     override the whole accent family on this page so the hero accent and the
+     primary buttons/tints use the logo colour instead of the route's gold. */
+  --accent: #fc9000;
+  --accent-light: color-mix(in srgb, #fc9000 14%, transparent);
+  --accent-border: color-mix(in srgb, #fc9000 42%, transparent);
+  min-height: var(--app-vh);
+  background: var(--bg);
+  padding: 18px 18px 72px;
+}
+
+/* Light theme mixes the tint with white, exactly like the [data-accent] rules
+   in globals.css, so the faint orange stays readable on a light surface. */
+[data-theme='light'] .f4-page {
+  --accent-light: color-mix(in srgb, #fc9000 14%, white);
+  --accent-border: color-mix(in srgb, #fc9000 46%, white);
+}
+
+/* ── Header ──────────────────────────────────────────────────────────────── */
+.f4-topbar {
+  max-width: 1180px;
+  margin: 0 auto 30px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+.f4-brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+.f4-logo {
+  border-radius: 11px;
+  flex-shrink: 0;
+}
+.f4-word {
+  font-size: 19px;
+  font-weight: 800;
+  color: var(--text-primary);
+  letter-spacing: -0.02em;
+}
+.f4-signin {
+  background: var(--f4-brand);
+  color: var(--on-accent);
+  border: none;
+  border-radius: 10px;
+  padding: 9px 18px;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  font-family: inherit;
+  flex-shrink: 0;
+}
+.f4-signin:hover {
+  filter: brightness(1.05);
+}
+
+/* ── Hero ────────────────────────────────────────────────────────────────── */
+.f4-hero {
+  max-width: 1180px;
+  margin: 0 auto 4px;
+  text-align: center;
+  font-size: clamp(26px, 4.4vw, 40px);
+  font-weight: 900;
+  color: var(--text-primary);
+  letter-spacing: -0.02em;
+}
+/* Brand-orange accent bar under the hero title — the landing's accent, in the
+   logo colour rather than the section gold. */
+.f4-hero::after {
+  content: '';
+  display: block;
+  width: 64px;
+  height: 4px;
+  margin: 12px auto 0;
+  border-radius: 999px;
+  background: var(--f4-brand);
+}
+.f4-hero-sub {
+  max-width: 1180px;
+  margin: 0 auto 22px;
+  text-align: center;
+  font-size: 14px;
+  color: var(--text-muted);
+}
+
+/* ── Quick actions ───────────────────────────────────────────────────────── */
+.f4-actions {
+  max-width: 1180px;
+  margin: 0 auto 14px;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 10px;
+}
+.f4-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--bg-secondary);
+  color: var(--text-secondary);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 10px 16px;
+  font-size: 13.5px;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: inherit;
+  transition:
+    background 0.15s ease,
+    border-color 0.15s ease;
+}
+.f4-btn:hover {
+  background: var(--bg-tertiary);
+  border-color: var(--border-strong);
+}
+.f4-btn-primary {
+  background: var(--f4-brand);
+  border-color: var(--f4-brand);
+  color: var(--on-accent);
+  font-weight: 700;
+}
+.f4-btn-primary:hover {
+  background: var(--f4-brand);
+  border-color: var(--f4-brand);
+  filter: brightness(1.05);
+}
+.f4-btn-amber {
+  background: var(--warning-light, #2a2312);
+  border-color: var(--warning-light, #2a2312);
+  color: var(--warning-text, #f5b544);
+  font-weight: 700;
+}
+.f4-btn-amber:hover {
+  filter: brightness(1.05);
+}
+
+/* ── Search + card-size controls ─────────────────────────────────────────── */
+.f4-searchbar {
+  max-width: 1180px;
+  margin: 0 auto 12px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 6px 6px 6px 14px;
+}
+.f4-search-icon {
+  display: inline-flex;
+  color: var(--text-muted);
+  flex-shrink: 0;
+}
+.f4-searchbar > input {
+  flex: 1;
+  min-width: 0;
+  background: none;
+  border: none;
+  outline: none;
+  color: var(--text-primary);
+  font-size: 14px;
+  font-family: inherit;
+  padding: 8px 4px;
+}
+.f4-searchbar > input::placeholder {
+  color: var(--text-muted);
+}
+.f4-search-btn {
+  background: var(--f4-brand);
+  color: var(--on-accent);
+  border: none;
+  border-radius: 9px;
+  padding: 9px 16px;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  font-family: inherit;
+  flex-shrink: 0;
+}
+.f4-zoom {
+  display: flex;
+  gap: 4px;
+  flex-shrink: 0;
+}
+.f4-zoom > button {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  color: var(--text-secondary);
+  font-size: 12px;
+  font-weight: 700;
+  padding: 8px 11px;
+  cursor: pointer;
+  font-family: inherit;
+}
+.f4-zoom > button.is-active {
+  background: var(--f4-brand);
+  border-color: var(--f4-brand);
+  color: var(--on-accent);
+}
+
+/* ── Category chips ──────────────────────────────────────────────────────── */
+.f4-chips {
+  max-width: 1180px;
+  margin: 0 auto 20px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.f4-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  padding: 7px 14px;
+  font-size: 12.5px;
+  font-weight: 700;
+  color: var(--text-secondary);
+  cursor: pointer;
+  font-family: inherit;
+}
+.f4-chip:hover {
+  border-color: var(--border-strong);
+}
+.f4-chip.is-active {
+  background: var(--f4-brand);
+  border-color: var(--f4-brand);
+  color: var(--on-accent);
+}
+.f4-chip-count {
+  font-variant-numeric: tabular-nums;
+  opacity: 0.85;
+}
+
+/* ── Error + empty states ────────────────────────────────────────────────── */
+.f4-error {
+  max-width: 1180px;
+  margin: 0 auto 14px;
+  background: var(--danger-light, transparent);
+  border: 1px solid var(--danger);
+  color: var(--danger);
+  border-radius: 12px;
+  padding: 10px 14px;
+  font-size: 13px;
+}
+.f4-empty {
+  max-width: 1180px;
+  margin: 10px auto;
+  text-align: center;
+  padding: 40px 20px;
+  border: 1px dashed var(--border);
+  border-radius: 16px;
+}
+.f4-empty-icon {
+  display: inline-flex;
+  color: var(--f4-brand);
+  margin-bottom: 10px;
+}
+.f4-empty-title {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin: 0 0 4px;
+}
+.f4-empty-body {
+  font-size: 13px;
+  color: var(--text-muted);
+  margin: 0 0 14px;
+}
+
+/* ── Card grid ───────────────────────────────────────────────────────────── */
+.f4-grid {
+  max-width: 1180px;
+  margin: 0 auto;
+  display: grid;
+  gap: 14px;
+  /* Column count is driven by the 3x/2x/1x control (inline --f4-cols). */
+  grid-template-columns: repeat(var(--f4-cols, 3), minmax(0, 1fr));
+}
+.f4-skeleton {
+  height: 196px;
+  border-radius: 16px;
+}
+
+.f4-card {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 16px;
+  box-shadow: var(--shadow-sm);
+  transition:
+    box-shadow 0.15s ease,
+    border-color 0.15s ease;
+}
+.f4-card:hover {
+  border-color: var(--border-strong);
+  box-shadow: var(--shadow-md);
+}
+.f4-card-head {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+}
+.f4-card-logo {
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--accent-light);
+  color: var(--f4-brand);
+  flex-shrink: 0;
+}
+.f4-card-title {
+  flex: 1;
+  min-width: 0;
+}
+.f4-card-name {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 14.5px;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.f4-card-level {
+  font-size: 12px;
+  color: var(--text-muted);
+  margin: 2px 0 0;
+}
+.f4-live {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  color: var(--danger);
+  background: var(--danger-light, transparent);
+  border-radius: 999px;
+  padding: 3px 8px;
+  flex-shrink: 0;
+}
+.f4-live-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--danger);
+}
+
+.f4-avatars {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 10px 0;
+}
+.f4-ava {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  border: 2px dashed var(--border-strong);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-muted);
+  background: transparent;
+}
+.f4-ava.is-filled {
+  border-color: transparent;
+  background: var(--accent-light);
+  color: var(--f4-brand);
+}
+
+.f4-card-foot {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.f4-meta {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-muted);
+}
+.f4-join {
+  width: 100%;
+  background: var(--success-text, #2e9e5b);
+  color: #ffffff;
+  border: none;
+  border-radius: 10px;
+  padding: 11px;
+  font-size: 13.5px;
+  font-weight: 700;
+  cursor: pointer;
+  font-family: inherit;
+}
+.f4-join:hover {
+  filter: brightness(1.05);
+}
+.f4-join:disabled {
+  background: var(--bg-tertiary);
+  color: var(--text-muted);
+  cursor: not-allowed;
+  filter: none;
+}
+
+/* ── Responsive ──────────────────────────────────────────────────────────── */
+@media (max-width: 1100px) {
+  .f4-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+@media (max-width: 640px) {
+  .f4-grid {
+    grid-template-columns: 1fr;
+  }
+  /* The board always shows one column on a phone, so the size control is moot. */
+  .f4-zoom {
+    display: none;
+  }
+  .f4-page {
+    padding: 14px 14px 64px;
+  }
+  .f4-ava {
+    width: 48px;
+    height: 48px;
+  }
+}

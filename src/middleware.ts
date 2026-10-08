@@ -100,12 +100,12 @@ export async function middleware(request: NextRequest) {
     const isAdmin = (grants as any[])?.some(
       (grant: any) => grant.admin_type === 'platform_admin' || grant.admin_type === 'campus_admin'
     )
-    if (!isAdmin) return NextResponse.redirect(new URL('/feed', request.url))
+    if (!isAdmin) return NextResponse.redirect(new URL('/global', request.url))
   }
 
   // Auth pages redirect to feed if already signed in
   if (user && isAuthPage) {
-    return NextResponse.redirect(new URL('/feed', request.url))
+    return NextResponse.redirect(new URL('/global', request.url))
   }
 
   // /onboarding: authenticated users only

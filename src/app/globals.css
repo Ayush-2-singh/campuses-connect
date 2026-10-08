@@ -439,22 +439,6 @@ button:disabled {
   background-image: url('/chat-doodles-dark.svg');
 }
 
-/* Discovery cards (deck + grid) — a clear clickable affordance: the card lifts
-   and picks up the section accent on hover. Desktop-only, motion-safe. */
-.discovery-card {
-  transition:
-    transform 0.18s ease,
-    border-color 0.18s ease,
-    box-shadow 0.18s ease;
-}
-@media (hover: hover) and (prefers-reduced-motion: no-preference) {
-  .discovery-card:hover {
-    transform: translateY(-3px);
-    border-color: var(--accent-border);
-    box-shadow: var(--shadow), var(--accent-glow);
-  }
-}
-
 /* Card hover — border + shadow pick up the section accent */
 .card-hover {
   transition:
@@ -1503,6 +1487,28 @@ a,
   50% {
     opacity: 0.55;
     transform: scale(0.8);
+  }
+}
+
+/* Tournament LIVE indicator — pulsing dot + subtle badge animation */
+@keyframes pulse-live {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 color-mix(in srgb, var(--danger) 30%, transparent);
+  }
+  50% {
+    box-shadow: 0 0 0 6px color-mix(in srgb, var(--danger) 8%, transparent);
+  }
+}
+@keyframes pulse-dot {
+  0%,
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.6;
+    transform: scale(1.3);
   }
 }
 

@@ -133,6 +133,23 @@ describe('typing — TypingTracker mechanics', () => {
     expect(payload.completed).toBe(2)
     expect(payload.total).toBe(2)
   })
+
+  it('counts wrong keystrokes against accuracy instead of always reporting 100%', () => {
+    const t = new TypingTracker(['code'], 0)
+    for (const ch of 'codx') t.handleKey(ch) // 'x' is wrong
+    t.handleKey(' ')
+    for (const ch of 'code') t.handleKey(ch)
+    t.handleKey(' ')
+    expect(t.completedWords).toBe(1)
+    expect(t.stats.totalTyped).toBeGreaterThan(t.stats.correctChars)
+    expect(Math.round(t.stats.accuracy)).toBeLessThan(100)
+  })
+
+  it('still reports 100% for a flawless run (typed chars are not double-counted)', () => {
+    const t = typeWords(['code', 'campus'])
+    expect(t.stats.correctChars).toBe(t.stats.totalTyped)
+    expect(t.stats.accuracy).toBe(100)
+  })
 })
 
 describe('typing — winner determination (spec §10)', () => {
@@ -159,6 +176,7 @@ describe('typing — anti-cheat duration window (spec §18)', () => {
 
 describe('typing battle — SQL surface', () => {
   const sql = read('supabase/migrations/049_typing_battle.sql')
+  const fix = read('supabase/migrations/20261104_typing_accuracy.sql')
 
   it('words live in a zero-policy table, handed out only via RPC', () => {
     expect(sql).toMatch(/CREATE TABLE IF NOT EXISTS public\.typing_words/)
@@ -172,13 +190,25 @@ describe('typing battle — SQL surface', () => {
     expect(sql).toMatch(/INSERT INTO public\.typing_words/)
   })
 
-  it('completion is server-authoritative: server clock, word re-validation, recomputed WPM', () => {
+  it('completion is server-authoritative: server clock, word re-validation, recomputed score', () => {
     expect(sql).toMatch(/FUNCTION public\.complete_typing_match/)
     expect(sql).toMatch(/now\(\) - v_room\.round_started_at/)
     expect(sql).toMatch(/impossible_time/)
-    // WPM is recomputed from the server clock (the ::NUMERIC cast keeps
-    // round(numeric, 2) — round(double, int) does not exist in Postgres).
-    expect(sql).toMatch(/v_wpm := ROUND\(\(\(v_correct::NUMERIC \/ 5\) \/ \(v_elapsed \/ 60\)\)::NUMERIC, 2\)/)
+  })
+
+  it('scores from characters, not a matched-word count (accuracy was always 100%)', () => {
+    // WPM is recomputed from the characters in the matched words (the ::NUMERIC
+    // cast keeps round(numeric, 2) — round(double, int) does not exist in PG).
+    expect(fix).toMatch(/v_wpm := ROUND\(\(\(v_matched_chars::NUMERIC \/ 5\) \/ \(v_elapsed \/ 60\)\)::NUMERIC, 2\)/)
+    expect(fix).toMatch(/v_correct_chars := GREATEST\(COALESCE\(p_correct_chars, v_matched_chars\), v_matched_chars\)/)
+    expect(fix).toMatch(/v_acc := ROUND\(\(v_correct_chars::NUMERIC \/ v_total_chars\) \* 100, 2\)/)
+    // The buggy word-count formula must be gone from the live definition.
+    expect(fix).not.toMatch(/v_correct::NUMERIC \/ 5/)
+  })
+
+  it('drops the old overloads so the fixed functions always win resolution', () => {
+    expect(fix).toMatch(/DROP FUNCTION IF EXISTS public\.complete_typing_match\(UUID, TEXT, TEXT\[\]\)/)
+    expect(fix).toMatch(/DROP FUNCTION IF EXISTS public\.typing_daily_attempt\(TEXT, TEXT, TEXT\[\], BIGINT, UUID\)/)
   })
 
   it('prevents double submission and double wins', () => {
@@ -254,6 +284,15 @@ describe('typing battle — client wiring', () => {
     const battle = read('src/components/games/TypingBattle.tsx')
     expect(arena).toMatch(/onWordCompleted/)
     expect(battle).toMatch(/update_typing_progress/)
+  })
+
+  it('submits honest character counts so accuracy reflects real mistakes', () => {
+    const arena = read('src/components/games/TypingArena.tsx')
+    const battle = read('src/components/games/TypingBattle.tsx')
+    expect(arena).toMatch(/correctChars: s\.correctChars/)
+    expect(arena).toMatch(/totalTyped: s\.totalTyped/)
+    expect(battle).toMatch(/p_correct_chars/)
+    expect(battle).toMatch(/p_total_chars/)
   })
 
   it('the game card exists in the Games hub', () => {

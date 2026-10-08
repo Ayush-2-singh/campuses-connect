@@ -8,7 +8,6 @@ import Avatar from '@/components/Avatar'
 import EmptyState from '@/components/EmptyState'
 import ErrorBoundary from '@/components/ErrorBoundary'
 import { CardSkeleton } from '@/components/Skeleton'
-import NoteTagCard from '@/components/NoteTagCard'
 import GroupMembersSheet from '@/components/GroupMembersSheet'
 import { Icon } from '@/components/icons'
 import { useAdminContext } from '@/lib/permissions'
@@ -143,44 +142,9 @@ export default function ChatRoomPage() {
   const [searchResults, setSearchResults] = useState<Message[] | null>(null)
   const [searching, setSearching] = useState(false)
 
-  // Library -> Chat handoff: /chat/<room>?resource=<noteId> carries a resource
-  // into the conversation so `[ Discuss ]` on a Library card lands here with
-  // context. Read from the URL directly rather than useSearchParams, which
-  // would force this client page behind a Suspense boundary at build time.
-  const [resource, setResource] = useState<{
-    id: string
-    title: string
-    resource_type?: string | null
-    author?: string | null
-    external_file_url?: string | null
-    drive_link?: string | null
-    external_link?: string | null
-    profiles?: { full_name?: string | null; username?: string | null } | null
-  } | null>(null)
-
   const bottomRef = useRef<HTMLDivElement>(null)
   const composerRef = useRef<HTMLTextAreaElement>(null)
   const nearBottomRef = useRef(true)
-
-  // Load the shared resource, if the URL carried one.
-  useEffect(() => {
-    const id = new URLSearchParams(window.location.search).get('resource')
-    if (!id) return
-    let cancelled = false
-    supabase
-      .from('notes')
-      .select(
-        'id, title, resource_type, author, external_file_url, drive_link, external_link, profiles!notes_uploaded_by_fkey(full_name, username)'
-      )
-      .eq('id', id)
-      .maybeSingle()
-      .then(({ data }) => {
-        if (!cancelled && data) setResource(data as any)
-      })
-    return () => {
-      cancelled = true
-    }
-  }, [supabase])
 
   const admin = useAdminContext(user?.id)
   const isModerator = admin.isPlatformAdmin || admin.communityIds.includes(community?.id || '')
@@ -828,90 +792,6 @@ export default function ChatRoomPage() {
             )}
           </div>
 
-          {/* ── Shared Library resource ── */}
-          {resource && (
-            <div
-              style={{
-                margin: '10px 12px 0',
-                padding: '10px 12px',
-                borderRadius: 12,
-                border: '1px solid var(--accent-light)',
-                background: 'var(--accent-light)',
-                display: 'flex',
-                alignItems: 'center',
-                gap: 10,
-              }}
-            >
-              <span style={{ flexShrink: 0, display: 'inline-flex', color: 'var(--accent-text)' }} aria-hidden="true">
-                <Icon name="book" size={20} />
-              </span>
-              <div style={{ flex: 1, minWidth: 0 }}>
-                <p
-                  style={{
-                    fontSize: 13.5,
-                    fontWeight: 700,
-                    color: 'var(--text-primary)',
-                    margin: 0,
-                    overflow: 'hidden',
-                    textOverflow: 'ellipsis',
-                    whiteSpace: 'nowrap',
-                  }}
-                >
-                  {resource.title}
-                </p>
-                <p style={{ fontSize: 11, color: 'var(--text-muted)', margin: 0 }}>
-                  Discussing this resource
-                  {resource.profiles?.username && (
-                    <>
-                      {' · '}
-                      <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
-                        <Icon name="user" size={12} strokeWidth={2.2} />
-                        {resource.profiles.full_name || resource.profiles.username}
-                      </span>
-                    </>
-                  )}
-                </p>
-              </div>
-              {(resource.external_file_url || resource.drive_link || resource.external_link) && (
-                <a
-                  href={(resource.external_file_url || resource.drive_link || resource.external_link) as string}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  style={{
-                    flexShrink: 0,
-                    fontSize: 12,
-                    fontWeight: 600,
-                    padding: '6px 12px',
-                    borderRadius: 8,
-                    background: 'var(--accent)',
-                    color: 'var(--on-accent)',
-                    textDecoration: 'none',
-                  }}
-                >
-                  Open
-                </a>
-              )}
-              <button
-                onClick={() => setResource(null)}
-                aria-label="Dismiss shared resource"
-                style={{
-                  flexShrink: 0,
-                  width: 32,
-                  height: 32,
-                  borderRadius: '50%',
-                  border: 'none',
-                  background: 'transparent',
-                  color: 'var(--text-muted)',
-                  fontSize: 16,
-                  cursor: 'pointer',
-                }}
-              >
-                <Icon name="x" size={16} />
-              </button>
-            </div>
-          )}
-
-          {/* ── Search panel ── */}
           {searchOpen && (
             <div style={{ padding: '12px 16px', borderBottom: '1px solid var(--border)' }}>
               <div style={{ display: 'flex', gap: 8 }}>
@@ -1850,25 +1730,18 @@ export default function ChatRoomPage() {
 }
 
 /**
- * Render message text: @mentions highlighted, [CC-NOTE-XXXX] Library tags
- * rendered as the dark NoteTagCard (contributor + deep-link to the note in
- * the Library). No dangerouslySetInnerHTML anywhere.
- *
- * React state inside the mapped parts is fine: parts are stable per body
- * string, and NoteTagCard caches its fetch per code.
+ * Render message text: @mentions highlighted. No dangerouslySetInnerHTML
+ * anywhere.
  */
 function renderBody(body: string, isMine: boolean) {
   if (!body) return null
-  return body.split(/(@[a-zA-Z0-9_]{2,32}|CC-NOTE-[A-HJ-NP-Z2-9]{4})/g).map((part, i) => {
+  return body.split(/(@[a-zA-Z0-9_]{2,32})/g).map((part, i) => {
     if (/^@[a-zA-Z0-9_]{2,32}$/.test(part)) {
       return (
         <span key={i} style={{ fontWeight: 700, color: isMine ? 'inherit' : 'var(--accent)' }}>
           {part}
         </span>
       )
-    }
-    if (/^CC-NOTE-[A-HJ-NP-Z2-9]{4}$/.test(part)) {
-      return <NoteTagCard key={i} uid={part} />
     }
     return <span key={i}>{part}</span>
   })

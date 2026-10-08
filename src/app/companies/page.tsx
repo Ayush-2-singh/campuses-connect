@@ -62,7 +62,7 @@ export default function CompaniesPage() {
         {/* Header */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 4 }}>
           <button
-            onClick={() => router.push('/discover')}
+            onClick={() => router.push('/global')}
             aria-label="Back"
             style={{
               background: 'none',

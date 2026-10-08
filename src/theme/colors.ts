@@ -58,7 +58,6 @@ export type AccentName = 'gold' | 'blue' | 'cyan' | 'purple' | 'green'
  *  - green   → networking / talent / success
  */
 export const ACCENT_BY_ROUTE: Record<string, AccentName> = {
-  '/feed': 'gold',
   '/global': 'cyan',
   '/leaderboard': 'gold',
   '/weekly': 'gold',
@@ -66,18 +65,14 @@ export const ACCENT_BY_ROUTE: Record<string, AccentName> = {
   '/notifications': 'gold',
   '/profile': 'gold',
 
-  '/college': 'blue',
   '/meetings': 'blue',
   '/events': 'blue',
 
   '/compete': 'green',
   '/opportunities': 'cyan',
-  '/discover': 'cyan',
   '/polls': 'cyan',
 
-  '/notes': 'purple',
   '/brain': 'purple',
-  '/ask': 'purple',
   '/saved': 'purple',
   '/communities': 'purple',
 

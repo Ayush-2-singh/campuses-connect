@@ -23,7 +23,7 @@ const root = process.cwd()
 const read = (p: string) => fs.readFileSync(path.join(root, p), 'utf8')
 
 const MIGRATION = 'supabase/migrations/20260928_confession_total_anonymity.sql'
-const TAB = 'src/components/discovery/ConfessionsTab.tsx'
+const TAB = 'src/components/community/ConfessionsTab.tsx'
 
 describe('confessions are anonymous at rest', () => {
   const migration = read(MIGRATION)

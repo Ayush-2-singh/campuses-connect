@@ -175,7 +175,9 @@ export default function TournamentsPage() {
           </div>
         ) : filteredRows.length === 0 ? (
           <div style={{ textAlign: 'center', padding: '40px 20px' }}>
-            <div style={{ fontSize: 32, marginBottom: 12 }}>🏆</div>
+            <div style={{ marginBottom: 12, display: 'flex', justifyContent: 'center', color: 'var(--text-muted)' }}>
+              <Icon name="trophy" size={32} strokeWidth={1.6} />
+            </div>
             <p style={{ fontSize: 14, fontWeight: 700, color: 'var(--text-primary)', margin: '0 0 4px' }}>
               {filter === 'all' ? 'No tournaments yet' : `No ${filter.toLowerCase()} tournaments`}
             </p>
@@ -227,7 +229,22 @@ export default function TournamentsPage() {
                     width: '100%',
                   }}
                 >
-                  <span style={{ fontSize: 26, flexShrink: 0 }}>{GAME_LABEL[t.game] || '🎮'}</span>
+                  <span
+                    style={{
+                      width: 40,
+                      height: 40,
+                      borderRadius: 10,
+                      background: 'var(--bg-secondary)',
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      flexShrink: 0,
+                      color: 'var(--accent-text)',
+                    }}
+                    aria-hidden="true"
+                  >
+                    <Icon name="gamepad" size={20} />
+                  </span>
                   <span style={{ flex: 1, minWidth: 0 }}>
                     <span
                       style={{
@@ -243,7 +260,7 @@ export default function TournamentsPage() {
                       {t.name}
                     </span>
                     <span style={{ display: 'block', fontSize: 11.5, color: 'var(--text-muted)', marginTop: 2 }}>
-                      {t.team_count} teams
+                      {GAME_LABEL[t.game] || t.game} · {t.team_count} teams
                       {t.start_date ? ` · ${t.start_date}` : ''}
                     </span>
                   </span>

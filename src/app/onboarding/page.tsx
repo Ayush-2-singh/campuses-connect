@@ -156,7 +156,7 @@ export default function OnboardingPage() {
       setLoading(false)
     }
     // No campus → land on Global so the user is never stuck with nothing to see.
-    else router.push(selected.campus_id ? '/feed' : '/global')
+    else router.push('/global')
   }
 
   const cardStyle = (active: boolean) => ({

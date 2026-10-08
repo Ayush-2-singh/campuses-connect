@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from 'next'
 import './globals.css'
+import './landing.css'
 import { ToastProvider } from '@/components/Toast'
 import OfflineIndicator from '@/components/OfflineIndicator'
 import LoadingBar from '@/components/LoadingBar'
@@ -129,7 +130,7 @@ const jsonLd = {
     '@type': 'SearchAction',
     target: {
       '@type': 'EntryPoint',
-      urlTemplate: `${APP_URL}/notes?q={search_term_string}`,
+      urlTemplate: `${APP_URL}/global?q={search_term_string}`,
     },
     'query-input': 'required name=search_term_string',
   },
@@ -177,7 +178,23 @@ const organizationJsonLd = {
 const themeScript = `(function(){try{var t=localStorage.getItem('cc-theme');document.documentElement.setAttribute('data-theme',t==='light'?'light':'dark');}catch(e){}})();`
 
 // Register the service worker (installable PWA).
-const swScript = `(function(){if('serviceWorker' in navigator){navigator.serviceWorker.register('/sw.js').catch(function(){})}})();`
+// Also: when a NEW service worker takes control (a deploy just activated), we
+// reload once so the client runs the fresh bundle instead of the old cached
+// one. Without it, a shipped nav change can stay invisible on an
+// already-installed PWA until the user manually clears site data. We also ask
+// for an update on load and hourly, since browsers otherwise re-check sw.js
+// only on a cold navigation.
+const swScript = `(function(){
+  if(!('serviceWorker' in navigator)) return;
+  var refreshing=false;
+  navigator.serviceWorker.addEventListener('controllerchange',function(){
+    if(refreshing) return; refreshing=true; window.location.reload();
+  });
+  navigator.serviceWorker.register('/sw.js').then(function(reg){
+    if(reg.update) reg.update();
+    setInterval(function(){ if(reg.update) reg.update(); }, 3600000);
+  }).catch(function(){});
+})();`
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (

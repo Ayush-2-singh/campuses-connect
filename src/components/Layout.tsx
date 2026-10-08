@@ -11,6 +11,7 @@ import MobileMenu from '@/components/MobileMenu'
 import Avatar from '@/components/Avatar'
 import { Icon } from '@/components/icons'
 import { accentForPath } from '@/theme/colors'
+import BrandName from '@/components/BrandName'
 
 // PROFESSIONAL PATTERN: Lazy-load heavy components (Vercel/Linear/Notion).
 // CommandPalette is only needed when user presses Cmd+K — no point loading
@@ -29,8 +30,9 @@ const LivePulseFeed = dynamic(() => import('@/components/LivePulseFeed'), { ssr:
 // so secondary features live under their pillar instead of crowding the
 // sidebar. Mirrors the mobile bar in mobileNav.ts. (Home feed, Discovery
 // and Library were removed.)
+// (Global is NOT listed here: it is rendered as its own expandable group
+// below so its Live Voice child sits under Global, never under Community.)
 const NAV_ITEMS = [
-  { label: 'Global', href: '/global', icon: 'globe' },
   // Esports — its own top-level pillar. It used to sit inside Community, which
   // buried the Free Fire board; it now stands next to Global.
   { label: 'Esports', href: '/tournaments', icon: 'trophy' },
@@ -49,9 +51,13 @@ const COMMUNITY_CHILDREN = [
   { label: 'Confessions', href: '/community?view=confessions', icon: 'eyeOff' },
   // Compete — rankings, daily challenge and the Campus Clash contest.
   { label: 'Compete', href: '/compete', icon: 'zap' },
-  { label: 'Live Voice', href: '/live-voice-chat', icon: 'mic' },
   { label: 'Connect', href: '/connections', icon: 'link' },
 ]
+
+// Global pillar children — Live Voice lives here (moved OUT of Community):
+// voice rooms are a platform-wide surface, and /global already hosts the
+// free4talk-style board that opens them.
+const GLOBAL_CHILDREN = [{ label: 'Live Voice', href: '/live-voice-chat', icon: 'mic' }]
 
 const PROFILE_NAV = [{ label: 'Profile', href: '/profile', icon: 'user' }]
 
@@ -84,6 +90,96 @@ function NavIcon({ icon, active }: { icon: string; active: boolean }) {
   )
 }
 
+/**
+ * SidebarGroup — an expandable sidebar pillar (Global, Community). The toggle
+ * navigates to the pillar's page and expands its children; children render
+ * indented with their own active state.
+ */
+function SidebarGroup({
+  label,
+  icon,
+  items,
+  open,
+  active,
+  pathname,
+  onToggle,
+  onNavigate,
+  onPrefetch,
+}: {
+  label: string
+  icon: string
+  items: { label: string; href: string; icon: string }[]
+  open: boolean
+  active: boolean
+  pathname: string
+  onToggle: () => void
+  onNavigate: (href: string) => void
+  onPrefetch: (href: string) => void
+}) {
+  const isActive = (href: string) => pathname === href || pathname.startsWith(href + '/')
+  return (
+    <div>
+      <button
+        onClick={onToggle}
+        style={{
+          width: '100%',
+          textAlign: 'left',
+          padding: '9px 12px',
+          borderRadius: 'var(--radius-sm)',
+          background: active ? 'linear-gradient(90deg, var(--accent-light), transparent)' : 'transparent',
+          color: active ? 'var(--accent-text)' : 'var(--text-secondary)',
+          border: 'none',
+          fontSize: 14,
+          fontWeight: active ? 600 : 500,
+          cursor: 'pointer',
+          marginBottom: 2,
+          fontFamily: 'inherit',
+          display: 'flex',
+          alignItems: 'center',
+          gap: 12,
+          boxShadow: active ? 'inset 2px 0 0 var(--accent)' : 'none',
+        }}
+        className="nav-pill"
+      >
+        <NavIcon icon={icon} active={active} />
+        <span style={{ flex: 1 }}>{label}</span>
+        <span style={{ fontSize: 10, color: 'var(--text-muted)' }}>{open ? '▾' : '▸'}</span>
+      </button>
+      {open &&
+        items.map((item) => {
+          const childActive = isActive(item.href)
+          return (
+            <button
+              key={item.href}
+              onClick={() => onNavigate(item.href)}
+              onMouseEnter={() => onPrefetch(item.href)}
+              style={{
+                width: '100%',
+                textAlign: 'left',
+                padding: '7px 12px 7px 40px',
+                borderRadius: 'var(--radius-sm)',
+                background: childActive ? 'linear-gradient(90deg, var(--accent-light), transparent)' : 'transparent',
+                color: childActive ? 'var(--accent-text)' : 'var(--text-muted)',
+                border: 'none',
+                fontSize: 13,
+                fontWeight: childActive ? 600 : 500,
+                cursor: 'pointer',
+                marginBottom: 2,
+                fontFamily: 'inherit',
+                display: 'flex',
+                alignItems: 'center',
+                gap: 10,
+              }}
+            >
+              <NavIcon icon={item.icon} active={childActive} />
+              {item.label}
+            </button>
+          )
+        })}
+    </div>
+  )
+}
+
 export default function Layout({ children, user, profile }: { children: React.ReactNode; user?: any; profile?: any }) {
   const router = useRouter()
   const pathname = usePathname()
@@ -93,6 +189,7 @@ export default function Layout({ children, user, profile }: { children: React.Re
   const [menuOpen, setMenuOpen] = React.useState(false)
   // Desktop sidebar expandable pillars (Community, Library).
   const [communityOpen, setCommunityOpen] = React.useState(false)
+  const [globalOpen, setGlobalOpen] = React.useState(false)
   const [logoSrc, setLogoSrc] = React.useState('/connect-to-campus-logo-dark.png')
 
   // Sync logo with theme changes
@@ -160,6 +257,13 @@ export default function Layout({ children, user, profile }: { children: React.Re
   React.useEffect(() => {
     if (communityActive) setCommunityOpen(true)
   }, [communityActive])
+
+  const globalActive =
+    GLOBAL_CHILDREN.some((c) => isActive(c.href)) || pathname === '/global' || pathname.startsWith('/global/')
+  // Landing on a Global page auto-expands its group.
+  React.useEffect(() => {
+    if (globalActive) setGlobalOpen(true)
+  }, [globalActive])
 
   // Prefetch pages on hover for instant navigation
   const prefetch = (href: string) => {
@@ -237,13 +341,29 @@ export default function Layout({ children, user, profile }: { children: React.Re
                 letterSpacing: '-0.02em',
               }}
             >
-              Connect<span style={{ color: 'var(--accent-text)' }}>ToCampus</span>
+              <BrandName />
             </h1>
             <p style={{ fontSize: 10.5, color: 'var(--text-muted)', margin: 0 }}>Your campus, connected.</p>
           </div>
         </div>
 
         <nav style={{ flex: 1, overflowY: 'auto', padding: '2px 0' }} aria-label="Main navigation">
+          {/* Global pillar — expandable so its Live Voice child sits here. */}
+          <SidebarGroup
+            label="Global"
+            icon="globe"
+            items={GLOBAL_CHILDREN}
+            open={globalOpen}
+            active={globalActive}
+            pathname={pathname}
+            onToggle={() => {
+              setGlobalOpen((v) => !v)
+              navigate('/global')
+            }}
+            onNavigate={navigate}
+            onPrefetch={prefetch}
+          />
+
           {NAV_ITEMS.map((item) => {
             const active = isActive(item.href)
             return (
@@ -279,70 +399,20 @@ export default function Layout({ children, user, profile }: { children: React.Re
 
           {/* Community pillar — expandable on desktop (spec: secondary nav
               exposed through the sidebar; Live Chat etc. are NOT top-level). */}
-          <div>
-            <button
-              onClick={() => {
-                setCommunityOpen((v) => !v)
-                navigate('/community')
-              }}
-              style={{
-                width: '100%',
-                textAlign: 'left',
-                padding: '9px 12px',
-                borderRadius: 'var(--radius-sm)',
-                background: communityActive
-                  ? 'linear-gradient(90deg, var(--accent-light), transparent)'
-                  : 'transparent',
-                color: communityActive ? 'var(--accent-text)' : 'var(--text-secondary)',
-                border: 'none',
-                fontSize: 14,
-                fontWeight: communityActive ? 600 : 500,
-                cursor: 'pointer',
-                marginBottom: 2,
-                fontFamily: 'inherit',
-                display: 'flex',
-                alignItems: 'center',
-                gap: 12,
-                boxShadow: communityActive ? 'inset 2px 0 0 var(--accent)' : 'none',
-              }}
-              className="nav-pill"
-            >
-              <NavIcon icon="users" active={communityActive} />
-              <span style={{ flex: 1 }}>Community</span>
-              <span style={{ fontSize: 10, color: 'var(--text-muted)' }}>{communityOpen ? '▾' : '▸'}</span>
-            </button>
-            {communityOpen &&
-              COMMUNITY_CHILDREN.map((item) => {
-                const active = isActive(item.href)
-                return (
-                  <button
-                    key={item.href}
-                    onClick={() => navigate(item.href)}
-                    onMouseEnter={() => prefetch(item.href)}
-                    style={{
-                      width: '100%',
-                      textAlign: 'left',
-                      padding: '7px 12px 7px 40px',
-                      borderRadius: 'var(--radius-sm)',
-                      background: active ? 'linear-gradient(90deg, var(--accent-light), transparent)' : 'transparent',
-                      color: active ? 'var(--accent-text)' : 'var(--text-muted)',
-                      border: 'none',
-                      fontSize: 13,
-                      fontWeight: active ? 600 : 500,
-                      cursor: 'pointer',
-                      marginBottom: 2,
-                      fontFamily: 'inherit',
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: 10,
-                    }}
-                  >
-                    <NavIcon icon={item.icon} active={active} />
-                    {item.label}
-                  </button>
-                )
-              })}
-          </div>
+          <SidebarGroup
+            label="Community"
+            icon="users"
+            items={COMMUNITY_CHILDREN}
+            open={communityOpen}
+            active={communityActive}
+            pathname={pathname}
+            onToggle={() => {
+              setCommunityOpen((v) => !v)
+              navigate('/community')
+            }}
+            onNavigate={navigate}
+            onPrefetch={prefetch}
+          />
 
           <div style={{ height: 1, background: 'var(--border)', margin: '12px 10px' }} />
 
@@ -656,7 +726,7 @@ export default function Layout({ children, user, profile }: { children: React.Re
                   minWidth: 0,
                 }}
               >
-                Connect<span style={{ color: 'var(--accent-text)' }}>ToCampus</span>
+                <BrandName />
               </h1>
             </div>
             <div

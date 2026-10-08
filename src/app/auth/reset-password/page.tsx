@@ -67,7 +67,7 @@ export default function ResetPasswordPage() {
       return
     }
     toast('Password updated successfully.', { tone: 'success' })
-    router.replace('/feed')
+    router.replace('/global')
     router.refresh()
   }
 

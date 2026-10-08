@@ -29,6 +29,7 @@ import {
   type ScoringConfig,
   type TeamResultInput,
 } from '@/lib/tournaments/scoring'
+import { JOIN_ERROR_COPY } from '@/lib/tournaments/rosters'
 
 type Section =
   | 'overview'
@@ -52,6 +53,10 @@ interface TournamentRow {
   description: string | null
   champion_team_id: string | null
   registration_closed?: boolean
+  registration_deadline?: string | null
+  max_teams?: number | null
+  rosters_locked?: boolean
+  substitute_limit?: number
 }
 interface Stage {
   id: string
@@ -143,6 +148,7 @@ export default function TournamentAdminPage() {
   const [stages, setStages] = useState<Stage[]>([])
   const [matches, setMatches] = useState<Match[]>([])
   const [teams, setTeams] = useState<Team[]>([])
+  const [teamCodes, setTeamCodes] = useState<Record<string, string | null>>({})
   const [rules, setRules] = useState<Record<number, number>>({})
   const [audit, setAudit] = useState<AuditRow[]>([])
   const [quals, setQuals] = useState<QualificationRecord[]>([])
@@ -209,7 +215,9 @@ export default function TournamentAdminPage() {
     if (!admin.isPlatformAdmin) return
     const { data: list } = await supabase
       .from('tournaments')
-      .select('id, name, game, status, team_size, kill_point_value, description, champion_team_id')
+      .select(
+        'id, name, game, status, team_size, kill_point_value, description, champion_team_id, registration_closed, registration_deadline, max_teams, rosters_locked, substitute_limit'
+      )
       .order('created_at', { ascending: false })
     setTournaments((list as TournamentRow[]) || [])
     const first = (list as TournamentRow[] | null)?.[0]
@@ -218,7 +226,7 @@ export default function TournamentAdminPage() {
 
   const loadDetail = useCallback(async () => {
     if (!activeId) return
-    const [stRes, mRes, tRes, rRes, aRes, qRes] = await Promise.all([
+    const [stRes, mRes, tRes, rRes, aRes, qRes, cRes] = await Promise.all([
       supabase.from('tournament_stages').select('*').eq('tournament_id', activeId).order('stage_number'),
       supabase
         .from('tournament_matches')
@@ -238,6 +246,8 @@ export default function TournamentAdminPage() {
         .order('created_at', { ascending: false })
         .limit(100),
       supabase.from('stage_qualifications').select('*').eq('tournament_id', activeId),
+      // Join codes live in a secrets table now — organizer-only read (052).
+      supabase.rpc('get_tournament_team_codes', { p_tournament: activeId }),
     ])
     setStages((stRes.data as Stage[]) || [])
     setMatches(
@@ -252,6 +262,9 @@ export default function TournamentAdminPage() {
       }))
     )
     setTeams((tRes.data as any[]) || [])
+    const codes: Record<string, string | null> = {}
+    for (const c of (cRes?.data as any[]) || []) codes[c.team_id] = c.join_code
+    setTeamCodes(codes)
     setRules(Object.fromEntries(((rRes.data as any[]) || []).map((r) => [r.placement, r.points])))
     setAudit((aRes.data as AuditRow[]) || [])
     setQuals((qRes.data as QualificationRecord[]) || [])
@@ -339,6 +352,30 @@ export default function TournamentAdminPage() {
     setBusy(false)
     if (res?.error) {
       say(res.error.message || 'That did not work')
+      return null
+    }
+    say(ok)
+    void loadDetail()
+    return res
+  }
+
+  // For the 052 RPCs that report a server-side rejection as a TEXT code
+  // ('ok' | 'forbidden' | 'full' | …) rather than a Postgres error. Anything
+  // that is not a known error code (a UUID, a join code) counts as success.
+  const runText = async (fn: () => PromiseLike<any>, ok: string) => {
+    setBusy(true)
+    const res = await fn()
+    setBusy(false)
+    if (res?.error) {
+      const errc = String(res.error.message || '')
+        .replace(/^exception:\s*/i, '')
+        .trim()
+      say(JOIN_ERROR_COPY[errc] || res.error.message || 'That did not work')
+      return null
+    }
+    const code = typeof res?.data === 'string' ? res.data : 'ok'
+    if (code !== 'ok' && JOIN_ERROR_COPY[code]) {
+      say(JOIN_ERROR_COPY[code])
       return null
     }
     say(ok)
@@ -440,13 +477,6 @@ export default function TournamentAdminPage() {
     )
   }
 
-  const setRegistration = async (closed: boolean) => {
-    await run(
-      () => supabase.rpc('set_registration_closed', { p_tournament: activeId, p_closed: closed }),
-      closed ? 'Registration closed' : 'Registration reopened'
-    )
-  }
-
   const regenCode = async (teamId: string) => {
     await run(() => supabase.rpc('regenerate_team_join_code', { p_team: teamId }), 'New join code generated')
   }
@@ -455,6 +485,60 @@ export default function TournamentAdminPage() {
     await run(
       () => supabase.rpc('set_player_ff_identity', { p_player: playerId, p_ign: ign, p_ff_uid: uid, p_reason: null }),
       'FF identity saved'
+    )
+  }
+
+  // ── Registration window (052): closed flag + deadline + max teams ──
+  const saveRegistration = async (closed: boolean, deadline: string | null, maxTeams: number | null) => {
+    await runText(
+      () =>
+        supabase.rpc('set_tournament_registration', {
+          p_tournament: activeId,
+          p_closed: closed,
+          p_deadline: deadline,
+          p_max_teams: maxTeams,
+        }),
+      'Registration settings saved'
+    )
+  }
+
+  // ── Freeze / release every roster at once (052) ──
+  const lockAllRosters = async (locked: boolean) => {
+    await runText(
+      () => supabase.rpc('set_tournament_roster_lock', { p_tournament: activeId, p_locked: locked, p_reason: null }),
+      locked ? 'All rosters locked' : 'All rosters unlocked'
+    )
+  }
+
+  // ── Player role: player ↔ substitute (bounded server-side) ──
+  const setPlayerRole = async (teamId: string, playerId: string, role: 'player' | 'substitute') => {
+    await runText(
+      () => supabase.rpc('set_player_role', { p_team: teamId, p_player: playerId, p_role: role }),
+      role === 'substitute' ? 'Marked as substitute' : 'Marked as main player'
+    )
+  }
+
+  // ── Match info: map + group (052) ──
+  const saveMatchInfo = async (matchId: string, map: string, group: string) => {
+    await runText(
+      () => supabase.rpc('set_match_info', { p_match: matchId, p_map: map || null, p_match_group: group || null }),
+      'Match info saved'
+    )
+  }
+
+  // ── Match lifecycle: SCHEDULED → LIVE → COMPLETED, or CANCELLED (052) ──
+  const changeMatchStatus = async (matchId: string, status: 'LIVE' | 'CANCELLED' | 'SCHEDULED') => {
+    let reason: string | null = null
+    if (status === 'CANCELLED') {
+      reason = window.prompt('Why is this match being cancelled?')?.trim() || ''
+      if (reason.length < 5) {
+        say('A reason of at least 5 characters is required to cancel a match')
+        return
+      }
+    }
+    await runText(
+      () => supabase.rpc('set_match_status', { p_match: matchId, p_status: status, p_reason: reason }),
+      status === 'LIVE' ? 'Match is now LIVE' : status === 'CANCELLED' ? 'Match cancelled' : 'Match reopened'
     )
   }
 
@@ -849,6 +933,8 @@ export default function TournamentAdminPage() {
             matches={matches}
             teams={teams}
             onAdd={addMatch}
+            onChangeStatus={changeMatchStatus}
+            onSetInfo={saveMatchInfo}
             busy={busy}
             input={input}
             btn={btn}
@@ -863,12 +949,19 @@ export default function TournamentAdminPage() {
             input={input}
             btn={btn}
             registrationClosed={!!active?.registration_closed}
-            onSetRegistration={setRegistration}
+            onSaveRegistration={saveRegistration}
+            onLockAllRosters={lockAllRosters}
+            onSetPlayerRole={setPlayerRole}
             onAssignIgl={assignIgl}
             onToggleLock={toggleRosterLock}
             onRegenCode={regenCode}
             onSaveIdentity={saveIdentity}
             teamSize={active?.team_size ?? 4}
+            teamCodes={teamCodes}
+            registrationDeadline={active?.registration_deadline ?? null}
+            maxTeams={active?.max_teams ?? null}
+            rostersLocked={!!active?.rosters_locked}
+            substituteLimit={active?.substitute_limit ?? 1}
           />
         )}
         {/* ═══ RESULTS ═══ */}
@@ -1540,23 +1633,33 @@ function RoomCredsEditor({
   matchId,
   input,
   btn,
+  onSetInfo,
 }: {
   matchId: string
   input: React.CSSProperties
   btn: (p?: boolean) => React.CSSProperties
+  onSetInfo: (matchId: string, map: string, group: string) => void
 }) {
   const supabase = createClient()
   const [roomId, setRoomId] = useState('')
   const [pw, setPw] = useState('')
+  const [map, setMap] = useState('')
+  const [group, setGroup] = useState('')
+  const [released, setReleased] = useState(false)
   const [busy, setBusy] = useState(false)
   const [saved, setSaved] = useState(false)
+  const [err, setErr] = useState<string | null>(null)
 
   useEffect(() => {
     let cancelled = false
     void supabase.rpc('get_room_credentials', { p_match: matchId }).then(({ data }: any) => {
-      if (cancelled || !data?.released) return
+      if (cancelled || !data?.ok) return
+      // Organizers receive the stored values even before release (052).
       setRoomId(data.room_id || '')
       setPw(data.room_password || '')
+      setMap(data.map || '')
+      setGroup(data.match_group || '')
+      setReleased(!!data.released)
     })
     return () => {
       cancelled = true
@@ -1564,34 +1667,69 @@ function RoomCredsEditor({
   }, [supabase, matchId])
 
   return (
-    <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', alignItems: 'center', marginTop: 8 }}>
-      <input
-        style={{ ...input, flex: 1, minWidth: 130, padding: '8px 10px' }}
-        placeholder="Room ID"
-        value={roomId}
-        onChange={(e) => setRoomId(e.target.value)}
-        aria-label="Room ID"
-      />
-      <input
-        style={{ ...input, width: 120, padding: '8px 10px' }}
-        placeholder="Password"
-        value={pw}
-        onChange={(e) => setPw(e.target.value)}
-        aria-label="Room password"
-      />
-      <button
-        onClick={async () => {
-          setBusy(true)
-          await supabase.rpc('set_room_credentials', { p_match: matchId, p_room_id: roomId, p_password: pw })
-          setBusy(false)
-          setSaved(true)
-          setTimeout(() => setSaved(false), 1800)
-        }}
-        style={btn(true)}
-        disabled={busy}
-      >
-        {saved ? 'Released' : 'Release room'}
-      </button>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginTop: 8 }}>
+      <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', alignItems: 'center' }}>
+        <input
+          style={{ ...input, flex: 1, minWidth: 130, padding: '8px 10px' }}
+          placeholder="Room ID"
+          value={roomId}
+          onChange={(e) => setRoomId(e.target.value)}
+          aria-label="Room ID"
+        />
+        <input
+          style={{ ...input, width: 120, padding: '8px 10px' }}
+          placeholder="Password"
+          value={pw}
+          onChange={(e) => setPw(e.target.value)}
+          aria-label="Room password"
+        />
+        <button
+          onClick={async () => {
+            setBusy(true)
+            setErr(null)
+            const { error } = await supabase.rpc('set_room_credentials', {
+              p_match: matchId,
+              p_room_id: roomId,
+              p_password: pw,
+            })
+            setBusy(false)
+            if (error) {
+              setErr(error.message)
+              return
+            }
+            setSaved(true)
+            setReleased(!!roomId.trim())
+            setTimeout(() => setSaved(false), 1800)
+          }}
+          style={btn(true)}
+          disabled={busy}
+        >
+          {saved ? (released ? 'Released' : 'Cleared') : 'Release room'}
+        </button>
+      </div>
+      <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', alignItems: 'center' }}>
+        <input
+          style={{ ...input, width: 130, padding: '8px 10px' }}
+          placeholder="Map"
+          value={map}
+          onChange={(e) => setMap(e.target.value)}
+          aria-label="Map"
+        />
+        <input
+          style={{ ...input, width: 110, padding: '8px 10px' }}
+          placeholder="Group"
+          value={group}
+          onChange={(e) => setGroup(e.target.value)}
+          aria-label="Match group"
+        />
+        <button onClick={() => onSetInfo(matchId, map.trim(), group.trim())} style={btn()} disabled={busy}>
+          Save map
+        </button>
+        {released && (
+          <span style={{ fontSize: 10.5, fontWeight: 800, color: 'var(--success-text)' }}>room released</span>
+        )}
+      </div>
+      {err && <span style={{ fontSize: 11, color: 'var(--danger-text)' }}>{err}</span>}
     </div>
   )
 }
@@ -1601,6 +1739,8 @@ function MatchManager({
   matches,
   teams,
   onAdd,
+  onChangeStatus,
+  onSetInfo,
   busy,
   input,
   btn,
@@ -1609,6 +1749,8 @@ function MatchManager({
   matches: Match[]
   teams: Team[]
   onAdd: (stageId: string, number: string, teamIds: string[]) => void
+  onChangeStatus: (matchId: string, status: 'LIVE' | 'CANCELLED' | 'SCHEDULED') => void
+  onSetInfo: (matchId: string, map: string, group: string) => void
   busy: boolean
   input: React.CSSProperties
   btn: (p?: boolean) => React.CSSProperties
@@ -1700,8 +1842,26 @@ function MatchManager({
               {m.status} · {m.result_state}
             </span>
           </div>
-          {/* Room credentials — release flow (spec §27): organizer controls timing */}
-          <RoomCredsEditor matchId={m.id} input={input} btn={btn} />
+          {/* Match lifecycle (052): organizer starts / cancels the match */}
+          <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginTop: 8 }}>
+            {m.status === 'SCHEDULED' && (
+              <button onClick={() => onChangeStatus(m.id, 'LIVE')} style={btn(true)} disabled={busy}>
+                Start match
+              </button>
+            )}
+            {(m.status === 'SCHEDULED' || m.status === 'LIVE') && (
+              <button onClick={() => onChangeStatus(m.id, 'CANCELLED')} style={btn()} disabled={busy}>
+                Cancel match
+              </button>
+            )}
+            {m.status === 'CANCELLED' && (
+              <button onClick={() => onChangeStatus(m.id, 'SCHEDULED')} style={btn()} disabled={busy}>
+                Reopen match
+              </button>
+            )}
+          </div>
+          {/* Room credentials + map/group — release flow (spec §27) */}
+          <RoomCredsEditor matchId={m.id} input={input} btn={btn} onSetInfo={onSetInfo} />
         </div>
       ))}
       {stage && matches.length === 0 && null}
@@ -1716,12 +1876,19 @@ function TeamManager({
   input,
   btn,
   registrationClosed,
-  onSetRegistration,
+  onSaveRegistration,
+  onLockAllRosters,
+  onSetPlayerRole,
   onAssignIgl,
   onToggleLock,
   onRegenCode,
   onSaveIdentity,
   teamSize,
+  teamCodes,
+  registrationDeadline,
+  maxTeams,
+  rostersLocked,
+  substituteLimit,
 }: {
   teams: Team[]
   onAdd: (name: string, tag: string, players: string) => void
@@ -1729,12 +1896,19 @@ function TeamManager({
   input: React.CSSProperties
   btn: (p?: boolean) => React.CSSProperties
   registrationClosed: boolean
-  onSetRegistration: (closed: boolean) => void
+  onSaveRegistration: (closed: boolean, deadline: string | null, maxTeams: number | null) => void
+  onLockAllRosters: (locked: boolean) => void
+  onSetPlayerRole: (teamId: string, playerId: string, role: 'player' | 'substitute') => void
   onAssignIgl: (teamId: string, username: string) => void
   onToggleLock: (teamId: string, locked: boolean) => void
   onRegenCode: (teamId: string) => void
   onSaveIdentity: (playerId: string, ign: string, uid: string) => void
   teamSize: number
+  teamCodes: Record<string, string | null>
+  registrationDeadline: string | null
+  maxTeams: number | null
+  rostersLocked: boolean
+  substituteLimit: number
 }) {
   const [name, setName] = useState('')
   const [tag, setTag] = useState('')
@@ -1744,10 +1918,17 @@ function TeamManager({
   const [editingId, setEditingId] = useState<string | null>(null)
   const [editIgn, setEditIgn] = useState('')
   const [editUid, setEditUid] = useState('')
+  const [deadline, setDeadline] = useState(
+    registrationDeadline ? new Date(registrationDeadline).toISOString().slice(0, 16) : ''
+  )
+  const [maxTeamInput, setMaxTeamInput] = useState(maxTeams != null ? String(maxTeams) : '')
+
+  const deadlineIso = () => (deadline ? new Date(deadline).toISOString() : null)
+  const maxTeamValue = () => (maxTeamInput.trim() ? Number(maxTeamInput) : null)
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-      {/* Registration control (spec §25) */}
+      {/* Registration window + tournament-wide roster lock (052) */}
       <div
         style={{
           background: 'var(--bg)',
@@ -1755,36 +1936,96 @@ function TeamManager({
           borderRadius: 14,
           padding: 16,
           display: 'flex',
-          alignItems: 'center',
-          gap: 10,
-          flexWrap: 'wrap',
+          flexDirection: 'column',
+          gap: 12,
         }}
       >
-        <span style={{ flex: 1, minWidth: 180 }}>
-          <span
+        <span style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+          <span style={{ flex: 1, minWidth: 180 }}>
+            <span
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 6,
+                fontSize: 13.5,
+                fontWeight: 800,
+                color: 'var(--text-primary)',
+              }}
+            >
+              <Icon
+                name={registrationClosed ? 'lock' : 'unlock'}
+                size={14}
+                style={{ color: registrationClosed ? 'var(--text-muted)' : 'var(--success-text)' }}
+              />
+              Registration {registrationClosed ? 'closed' : 'open'}
+            </span>
+            <span style={{ display: 'block', fontSize: 11.5, color: 'var(--text-muted)', marginTop: 2 }}>
+              Closed = no new teams and no new join-code redemptions
+            </span>
+          </span>
+          <button onClick={() => onLockAllRosters(!rostersLocked)} style={btn()} disabled={busy}>
+            <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+              <Icon name={rostersLocked ? 'unlock' : 'lock'} size={13} />
+              {rostersLocked ? 'Unlock all rosters' : 'Lock all rosters'}
+            </span>
+          </button>
+        </span>
+
+        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'flex-end' }}>
+          <label
             style={{
               display: 'flex',
-              alignItems: 'center',
-              gap: 6,
-              fontSize: 13.5,
-              fontWeight: 800,
-              color: 'var(--text-primary)',
+              flexDirection: 'column',
+              gap: 4,
+              fontSize: 11,
+              fontWeight: 700,
+              color: 'var(--text-muted)',
             }}
           >
-            <Icon
-              name={registrationClosed ? 'lock' : 'unlock'}
-              size={14}
-              style={{ color: registrationClosed ? 'var(--text-muted)' : 'var(--success-text)' }}
+            Registration deadline
+            <input
+              style={{ ...input, minWidth: 200, padding: '8px 10px' }}
+              type="datetime-local"
+              value={deadline}
+              onChange={(e) => setDeadline(e.target.value)}
             />
-            Registration {registrationClosed ? 'closed' : 'open'}
-          </span>
-          <span style={{ display: 'block', fontSize: 11.5, color: 'var(--text-muted)', marginTop: 2 }}>
-            Closed = no new joins via invite codes
-          </span>
-        </span>
-        <button onClick={() => onSetRegistration(!registrationClosed)} style={btn()} disabled={busy}>
-          {registrationClosed ? 'Reopen registration' : 'Close registration'}
-        </button>
+          </label>
+          <label
+            style={{
+              display: 'flex',
+              flexDirection: 'column',
+              gap: 4,
+              fontSize: 11,
+              fontWeight: 700,
+              color: 'var(--text-muted)',
+            }}
+          >
+            Max teams
+            <input
+              style={{ ...input, width: 110, padding: '8px 10px' }}
+              type="number"
+              min={2}
+              max={512}
+              placeholder="unlimited"
+              value={maxTeamInput}
+              onChange={(e) => setMaxTeamInput(e.target.value)}
+            />
+          </label>
+          <button
+            onClick={() => onSaveRegistration(registrationClosed, deadlineIso(), maxTeamValue())}
+            style={btn(true)}
+            disabled={busy}
+          >
+            Save window
+          </button>
+          <button
+            onClick={() => onSaveRegistration(!registrationClosed, deadlineIso(), maxTeamValue())}
+            style={btn()}
+            disabled={busy}
+          >
+            {registrationClosed ? 'Reopen registration' : 'Close registration'}
+          </button>
+        </div>
       </div>
 
       {/* Add team (name + tag only — players join themselves via invites) */}
@@ -1906,6 +2147,9 @@ function TeamManager({
               <strong style={{ color: leader ? 'var(--text-primary)' : 'var(--warning-text)', fontWeight: 700 }}>
                 {leader ? leader.display_name_snapshot : 'not assigned'}
               </strong>
+              <span style={{ marginLeft: 'auto' }}>
+                subs {t.players.filter((p) => p.role === 'substitute').length}/{substituteLimit}
+              </span>
             </p>
 
             {/* Roster rows with FF identity (§14: IGN shown for match ops) */}
@@ -1939,6 +2183,26 @@ function TeamManager({
                     {p.ff_uid ? ` · UID ····${p.ff_uid.slice(-4)}` : ''}
                   </span>
                   <span style={{ flex: 1 }} />
+                  {!locked && p.role !== 'leader' && (
+                    <button
+                      onClick={() => onSetPlayerRole(t.id, p.id, p.role === 'substitute' ? 'player' : 'substitute')}
+                      disabled={busy}
+                      title={p.role === 'substitute' ? 'Promote to main player' : 'Move to substitute'}
+                      style={{
+                        background: 'none',
+                        border: '1px solid var(--border)',
+                        borderRadius: 7,
+                        color: 'var(--text-muted)',
+                        cursor: 'pointer',
+                        fontFamily: 'inherit',
+                        fontSize: 10,
+                        fontWeight: 800,
+                        padding: '2px 7px',
+                      }}
+                    >
+                      {p.role === 'substitute' ? 'Make main' : 'Make sub'}
+                    </button>
+                  )}
                   <button
                     onClick={() => {
                       setEditingId(editingId === p.id ? null : p.id)
@@ -2033,7 +2297,7 @@ function TeamManager({
               <button onClick={() => onToggleLock(t.id, !locked)} style={btn()} disabled={busy}>
                 {locked ? 'Unlock roster' : 'Lock roster'}
               </button>
-              {t.join_code && !locked && (
+              {teamCodes[t.id] && !locked && (
                 <span
                   style={{
                     display: 'inline-flex',
@@ -2055,7 +2319,7 @@ function TeamManager({
                       fontSize: 12.5,
                     }}
                   >
-                    {t.join_code}
+                    {teamCodes[t.id]}
                   </strong>
                   <button
                     onClick={() => onRegenCode(t.id)}

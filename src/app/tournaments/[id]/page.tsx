@@ -11,8 +11,10 @@ import { useParams } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import Layout from '@/components/Layout'
 import IglTeamPanel from '@/components/tournaments/IglTeamPanel'
+import TeamRegistration from '@/components/tournaments/TeamRegistration'
 import { Icon } from '@/components/icons'
 import { fetchRoomCreds, type RoomCreds } from '@/lib/tournaments/rosters'
+import { fetchMyTeamInTournament, type MyTeam } from '@/lib/tournaments/teams'
 
 interface StageMatch {
   id: string
@@ -21,6 +23,9 @@ interface StageMatch {
   scheduled_at: string | null
   result_state: string
   team_count: number
+  room_released?: boolean
+  map?: string | null
+  match_group?: string | null
 }
 interface Stage {
   id: string
@@ -42,6 +47,11 @@ interface Overview {
     kill_point_value: number
     start_date: string | null
     end_date: string | null
+    registration_closed?: boolean
+    registration_deadline?: string | null
+    max_teams?: number | null
+    substitute_limit?: number
+    rosters_locked?: boolean
   }
   champion: { team_id: string; team_name: string; team_tag: string | null } | null
   stages: Stage[]
@@ -51,6 +61,7 @@ interface Overview {
   completed_matches: number
   latest_announcement: { title: string; body: string } | null
   top_fraggers: { rank: number; display_name: string; team_name: string; total_kills: number }[]
+  registration_state?: string
 }
 interface TeamRow {
   rank: number
@@ -95,23 +106,31 @@ export default function TournamentPage() {
   const [board, setBoard] = useState<TeamRow[]>([])
   const [fraggers, setFraggers] = useState<PlayerRow[]>([])
   const [openMatch, setOpenMatch] = useState<{ id: string; label: string; result: MatchResult[] } | null>(null)
-  const [isIgl, setIsIgl] = useState(false)
+  const [myTeam, setMyTeam] = useState<MyTeam | null>(null)
+  const [teamLoaded, setTeamLoaded] = useState(false)
+  const [authed, setAuthed] = useState(false)
   const [roomCreds, setRoomCreds] = useState<{ matchId: string; creds: RoomCreds } | null>(null)
 
-  // The IGL sees their team-management panel on this page (server decides via
-  // get_my_tournament_team — a non-leader gets null and the panel is hidden).
-  useEffect(() => {
+  // The caller's team in this tournament (IGL or player) — the server decides
+  // via get_my_team_in_tournament. It drives which self-service panel renders:
+  // IGL → IglTeamPanel, player → TeamRegistration, nobody → register/join CTA.
+  const loadMyTeam = useCallback(async () => {
     if (!id) return
-    let cancelled = false
-    void import('@/lib/tournaments/rosters').then(({ fetchMyTeam }) =>
-      fetchMyTeam(supabase, id)
-        .then((t) => !cancelled && setIsIgl(!!t))
-        .catch(() => undefined)
-    )
-    return () => {
-      cancelled = true
+    const { data: auth } = await supabase.auth.getUser()
+    setAuthed(!!auth.user)
+    try {
+      const t = await fetchMyTeamInTournament(supabase, id)
+      setMyTeam(t)
+    } catch {
+      setMyTeam(null)
+    } finally {
+      setTeamLoaded(true)
     }
   }, [supabase, id])
+
+  useEffect(() => {
+    void loadMyTeam()
+  }, [loadMyTeam])
 
   const loadOverview = useCallback(async () => {
     setLoadErr(null)
@@ -298,7 +317,7 @@ export default function TournamentPage() {
             margin: '0 0 6px',
           }}
         >
-          🎮 CAMPUSCONNECT TOURNAMENT
+          <Icon name="gamepad" size={11} style={{ verticalAlign: '-1px' }} /> CAMPUSCONNECT TOURNAMENT
         </p>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap', marginBottom: 6 }}>
           <h1
@@ -529,42 +548,18 @@ export default function TournamentPage() {
           </div>
         )}
 
-        {/* ── My Team (IGL only — server-gated via get_my_tournament_team) ── */}
-        {isIgl ? (
+        {/* ── My Team — IGL panel, player card, or register/join CTA ── */}
+        {teamLoaded && myTeam?.is_leader ? (
           <IglTeamPanel tournamentId={id} />
-        ) : (
-          <div
-            style={{
-              background: 'var(--bg)',
-              border: '1px solid var(--border)',
-              borderRadius: 14,
-              padding: '14px 16px',
-              marginBottom: 18,
-              display: 'flex',
-              alignItems: 'center',
-              gap: 10,
-            }}
-          >
-            <span
-              style={{
-                width: 36,
-                height: 36,
-                borderRadius: 10,
-                background: 'var(--bg-secondary)',
-                display: 'inline-flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                flexShrink: 0,
-              }}
-            >
-              <Icon name="shield" size={16} style={{ color: 'var(--text-muted)' }} />
-            </span>
-            <span style={{ flex: 1, fontSize: 12.5, color: 'var(--text-secondary)' }}>
-              <span style={{ fontWeight: 700, color: 'var(--text-primary)' }}>Team controls</span> are available to your
-              registered team leader (IGL).
-            </span>
-          </div>
-        )}
+        ) : teamLoaded ? (
+          <TeamRegistration
+            tournamentId={id}
+            team={myTeam}
+            authed={authed}
+            registrationState={ov.registration_state || (t.registration_closed ? 'closed' : 'open')}
+            onReload={loadMyTeam}
+          />
+        ) : null}
 
         {/* ── Tabs ── */}
         <div style={{ display: 'flex', gap: 6, marginBottom: 14 }}>
@@ -865,8 +860,18 @@ export default function TournamentPage() {
               padding: 16,
             }}
           >
-            <p style={{ fontSize: 12.5, fontWeight: 800, color: 'var(--text-primary)', margin: '0 0 4px' }}>
-              📢 {ov.latest_announcement.title}
+            <p
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 6,
+                fontSize: 12.5,
+                fontWeight: 800,
+                color: 'var(--text-primary)',
+                margin: '0 0 4px',
+              }}
+            >
+              <Icon name="megaphone" size={13} style={{ color: 'var(--accent-text)' }} /> {ov.latest_announcement.title}
             </p>
             <p style={{ fontSize: 12.5, color: 'var(--text-muted)', margin: 0, whiteSpace: 'pre-wrap' }}>
               {ov.latest_announcement.body}
@@ -906,7 +911,20 @@ export default function TournamentPage() {
               </p>
               {/* Room credentials — server gates the release (spec §27) */}
               {roomCreds?.matchId === openMatch.id &&
-                (roomCreds.creds.released && roomCreds.creds.room_id ? (
+                (roomCreds.creds.released && roomCreds.creds.restricted ? (
+                  <p
+                    style={{
+                      fontSize: 12,
+                      color: 'var(--text-muted)',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 5,
+                      marginBottom: 14,
+                    }}
+                  >
+                    <Icon name="lock" size={12} /> Room details are shared with the registered teams only.
+                  </p>
+                ) : roomCreds.creds.released && roomCreds.creds.room_id ? (
                   <div
                     style={{
                       background: 'var(--bg-secondary)',
@@ -965,6 +983,13 @@ export default function TournamentPage() {
                         </span>
                       )}
                     </div>
+                    {(roomCreds.creds.map || roomCreds.creds.match_group) && (
+                      <p style={{ fontSize: 11.5, color: 'var(--text-muted)', margin: '7px 0 0' }}>
+                        {roomCreds.creds.map ? `Map: ${roomCreds.creds.map}` : ''}
+                        {roomCreds.creds.map && roomCreds.creds.match_group ? ' · ' : ''}
+                        {roomCreds.creds.match_group ? `Group: ${roomCreds.creds.match_group}` : ''}
+                      </p>
+                    )}
                   </div>
                 ) : (
                   <p

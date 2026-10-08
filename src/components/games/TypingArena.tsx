@@ -23,7 +23,7 @@ interface Props {
   startedAtMs: number
   opponent: { nickname: string; completed: number; total: number } | null
   onWordCompleted: (progress: { completed: number; correct: number; total: number }) => void
-  onFinished: (result: { words: string[]; durationMs: number }) => void
+  onFinished: (result: { words: string[]; durationMs: number; correctChars: number; totalTyped: number }) => void
   /** Render prop fallback so parents can reach the tracker if needed. */
   trackerRef?: React.MutableRefObject<TypingTracker | null>
 }
@@ -79,6 +79,60 @@ function ProgressRow({
   )
 }
 
+/**
+ * ActiveWord — per-character feedback for the word being typed.
+ *
+ * Correct characters glow green, mistakes glow red (and stay visible even
+ * after the player types past the word's length), the remaining target
+ * characters stay muted, and a caret marks the cursor. This is the standard
+ * typing-test affordance and replaces the old rendering that drew the *typed*
+ * slice from the *target* word — which hid wrong characters entirely.
+ */
+function ActiveWord({ target, typed }: { target: string; typed: string }) {
+  const caretAt = Math.min(typed.length, target.length)
+  const total = Math.max(target.length, typed.length)
+  const parts: React.ReactNode[] = []
+
+  for (let i = 0; i <= total; i++) {
+    if (i === caretAt) {
+      parts.push(
+        <span
+          key="caret"
+          aria-hidden="true"
+          style={{
+            display: 'inline-block',
+            width: 2,
+            height: '1em',
+            background: 'var(--accent)',
+            marginLeft: 1,
+            verticalAlign: 'text-bottom',
+          }}
+        />
+      )
+    }
+    if (i === total) break
+
+    const expected = target[i]
+    const actual = typed[i]
+    const isTyped = i < typed.length
+    const ok = isTyped && actual === expected
+    parts.push(
+      <span
+        key={i}
+        style={{
+          color: isTyped ? (ok ? 'var(--success-text)' : 'var(--danger)') : 'var(--text-muted)',
+          background: isTyped && !ok ? 'var(--danger-light, transparent)' : 'transparent',
+          borderRadius: 3,
+        }}
+      >
+        {isTyped ? actual : expected}
+      </span>
+    )
+  }
+
+  return <>{parts}</>
+}
+
 const WordRow = memo(function WordRow({
   words,
   completed,
@@ -126,25 +180,7 @@ const WordRow = memo(function WordRow({
               whiteSpace: 'nowrap',
             }}
           >
-            {active ? (
-              <>
-                <span style={{ opacity: 0.35 }}>{w.slice(0, current.length)}</span>
-                <span style={{ color: 'var(--accent)' }}>{current.slice(w.length)}</span>
-                <span
-                  aria-hidden="true"
-                  style={{
-                    display: 'inline-block',
-                    width: 2,
-                    height: '1em',
-                    background: 'var(--accent)',
-                    marginLeft: 1,
-                    verticalAlign: 'text-bottom',
-                  }}
-                />
-              </>
-            ) : (
-              w
-            )}
+            {active ? <ActiveWord target={w} typed={current} /> : w}
           </span>
         )
       })}
@@ -225,7 +261,16 @@ export default function TypingArena({
           onWordCompleted(tr.progressPayload())
         }
         if (tr.isFinished) {
-          onFinished({ words, durationMs: tr.elapsedMs })
+          // Submit what the player actually typed (the tracker's validated
+          // sequence) plus honest character counts, never the target list —
+          // the server re-checks each word and clamps the counts.
+          const s = tr.stats
+          onFinished({
+            words: tr.submission,
+            durationMs: tr.elapsedMs,
+            correctChars: s.correctChars,
+            totalTyped: s.totalTyped,
+          })
         }
         return
       }

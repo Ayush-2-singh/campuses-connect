@@ -87,3 +87,20 @@ describe('every recreated RPC keeps explicit grants', () => {
     expect(sql).not.toMatch(/GRANT\s+EXECUTE ON FUNCTION public\.reserve_game_room/)
   })
 })
+
+describe('the reservation helper stays out of client hands on Supabase', () => {
+  // Revoking from PUBLIC alone is not enough: the public schema's default
+  // privileges grant EXECUTE to anon and authenticated explicitly, so those
+  // roles must be named directly or the helper stays callable by any client.
+  const lock = read('supabase/migrations/20261105_lock_reserve_game_room.sql')
+  const SIG = 'public\\.reserve_game_room\\(TEXT, TEXT, TEXT, INT, INT\\)'
+
+  it('revokes reserve_game_room from PUBLIC and the client roles', () => {
+    expect(lock).toMatch(new RegExp(`REVOKE EXECUTE ON FUNCTION ${SIG} FROM PUBLIC`))
+    expect(lock).toMatch(new RegExp(`REVOKE EXECUTE ON FUNCTION ${SIG} FROM anon, authenticated`))
+  })
+
+  it('never grants it to a client role', () => {
+    expect(lock).not.toMatch(/GRANT\s+EXECUTE ON FUNCTION public\.reserve_game_room/)
+  })
+})

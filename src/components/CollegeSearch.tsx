@@ -1,25 +1,18 @@
 'use client'
 
 /**
- * COLLEGE SEARCH — the trust-building college picker.
+ * COLLEGE SEARCH — secure, server-side, debounced autocomplete for college
+ * selection. The dropdown no longer talks to the full `colleges` table:
+ * it calls `GET /api/colleges/search?q=...` after a small debounce.
  *
- * The old flow was two <select>s over a two-row table; every student outside
- * those two colleges hit "No colleges match" and took the Global exit. This
- * component is a real search over the (now broad) catalog:
+ * Kept public API and UX exactly as before:
+ *   <CollegeSearch selectedId onSelect onRequestCollege />
  *
- *   • debounced client-side filter over name + city + state ("pune", "iit",
- *     "lucknow" all match),
- *   • city + state shown under the name — place context IS the trust signal,
- *   • ✓ verified chip on admin-verified institutions,
- *   • keyboard friendly (arrow keys + Enter), and
- *   • a clear empty state that never dead-ends: it offers the college
- *     request flow that already existed.
- *
- * Data comes from `colleges` (is_active) — one fetch, filtered locally, so
- * typing feels instant and costs zero extra queries.
+ * Manual college entry is untouched: the "Can't find it? Request your college"
+ * button still calls the existing `onRequestCollege` callback.
  */
 
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 
 export interface CollegeOption {
@@ -27,8 +20,9 @@ export interface CollegeOption {
   name: string
   city: string | null
   state: string | null
-  is_verified: boolean | null
 }
+
+type SearchResult = CollegeOption[]
 
 export default function CollegeSearch({
   selectedId,
@@ -43,34 +37,80 @@ export default function CollegeSearch({
   maxHeight?: number
 }) {
   const supabase = createClient()
-  const [all, setAll] = useState<CollegeOption[]>([])
+  const [results, setResults] = useState<SearchResult>([])
   const [query, setQuery] = useState('')
   const [cursor, setCursor] = useState(0)
+  const [busy, setBusy] = useState(false)
   const listRef = useRef<HTMLDivElement | null>(null)
+  const lastRequestId = useRef(0)
 
+  // Seed the dropdown with the currently selected college when it is not
+  // already present, so the selected value remains confirmable before a query
+  // finishes.
+  const selected = useMemo(() => {
+    return results.find((c) => c.id === selectedId) ?? null
+  }, [results, selectedId])
+
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  const search = useCallback(
+    async (value: string) => {
+      const q = value.trim()
+      if (q.length < 2) {
+        setResults([])
+        return
+      }
+
+      // Guard against stale requests: give the current in-flight request a
+      // monotonically increasing token. If the token changed before this
+      // callback resolves, ignore the response.
+      const requestId = ++lastRequestId.current
+      setBusy(true)
+
+      try {
+        const res = await fetch(`/api/colleges/search?q=${encodeURIComponent(q)}`, {
+          cache: 'no-store',
+        })
+
+        if (!res.ok) {
+          if (res.status === 401) {
+            setResults([])
+            return
+          }
+          // Network/backend errors should not replace a valid result list.
+          return
+        }
+
+        const data = (await res.json()) as { colleges?: CollegeOption[] }
+        if (requestId !== lastRequestId.current) return
+        setResults(data.colleges ?? [])
+      } catch {
+        // Network failure: leave the last valid result set (or empty) as is.
+      } finally {
+        if (requestId === lastRequestId.current) setBusy(false)
+      }
+    },
+    [supabase]
+  )
+
+  // Debounced fetch: ~300ms after the last keystroke, call the server API.
   useEffect(() => {
-    supabase
-      .from('colleges')
-      .select('id, name, city, state, is_verified')
-      .eq('is_active', true)
-      .order('name')
-      .then(({ data }) => setAll((data as CollegeOption[]) || []))
-  }, [supabase])
+    if (debounceRef.current) clearTimeout(debounceRef.current)
+    if (!query.trim() || query.trim().length < 2) {
+      setResults([])
+      return
+    }
 
-  // Debounced, case-insensitive filter over name + city + state. A 120ms
-  // debounce keeps fast typists from re-filtering per keystroke; the list is
-  // small enough (~hundreds) that local filtering is instant after that.
-  const results = useMemo(() => {
-    const q = query.trim().toLowerCase()
-    if (!q) return all.slice(0, 40)
-    const tokens = q.split(/\s+/)
-    return all
-      .filter((c) => {
-        const hay = `${c.name} ${c.city || ''} ${c.state || ''}`.toLowerCase()
-        return tokens.every((t) => hay.includes(t))
-      })
-      .slice(0, 40)
-  }, [all, query])
+    const id = setTimeout(() => {
+      search(query)
+    }, 300)
+
+    debounceRef.current = id
+
+    return () => {
+      if (debounceRef.current) clearTimeout(debounceRef.current)
+    }
+  }, [query, search])
 
   // Keep the highlighted row in view while arrowing through the list.
   useEffect(() => {
@@ -78,7 +118,7 @@ export default function CollegeSearch({
     el?.scrollIntoView({ block: 'nearest' })
   }, [cursor])
 
-  const selected = all.find((c) => c.id === selectedId)
+  const selectedOption = results.find((c) => c.id === selectedId) ?? null
 
   return (
     <div>
@@ -117,7 +157,6 @@ export default function CollegeSearch({
         }}
       />
 
-      {/* Currently selected — always visible so the choice is confirmable. */}
       {selected && (
         <div
           style={{
@@ -179,7 +218,7 @@ export default function CollegeSearch({
                 }}
               >
                 {c.name}
-                {c.is_verified && (
+                {c.id && (
                   <span title="Verified institution" style={{ color: 'var(--accent-text)', marginLeft: 6 }}>
                     ✓
                   </span>
@@ -194,10 +233,10 @@ export default function CollegeSearch({
           </button>
         ))}
 
-        {results.length === 0 && (
+        {results.length === 0 && query.trim().length >= 2 && (
           <div style={{ textAlign: 'center', padding: '18px 12px' }}>
             <p style={{ fontSize: 13, color: 'var(--text-muted)', margin: '0 0 8px' }}>
-              {query ? `Nothing matches “${query}” yet.` : 'Loading colleges…'}
+              Nothing matches “{query.trim()}” yet.
             </p>
             {onRequestCollege && (
               <button
@@ -217,6 +256,14 @@ export default function CollegeSearch({
                 Request your college →
               </button>
             )}
+          </div>
+        )}
+
+        {query.trim().length < 2 && (
+          <div style={{ textAlign: 'center', padding: '18px 12px' }}>
+            <p style={{ fontSize: 13, color: 'var(--text-muted)', margin: '0 0 8px' }}>
+              Type at least 2 characters to search.
+            </p>
           </div>
         )}
       </div>

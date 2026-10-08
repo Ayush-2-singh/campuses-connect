@@ -50,7 +50,7 @@ export default function GoogleSignInButton({ label = 'Continue with Google' }: {
     // The web flow below is completely unchanged.
     if (isNativePlatform()) {
       try {
-        const nativeNext = getSafeRedirect(new URLSearchParams(window.location.search).get('redirect'), '/feed')
+        const nativeNext = getSafeRedirect(new URLSearchParams(window.location.search).get('redirect'), '/global')
         await signInWithGoogleNative(nativeNext)
         // The browser is now open — the deep link finishes the sign-in, so stay
         // in the loading state until the app navigates away.
@@ -72,9 +72,9 @@ export default function GoogleSignInButton({ label = 'Continue with Google' }: {
       const supabase = createClient()
       // Preserve the original destination (?redirect=/protected-page) through
       // the OAuth round-trip; validated again server-side in the callback.
-      const next = getSafeRedirect(new URLSearchParams(window.location.search).get('redirect'), '/feed')
+      const next = getSafeRedirect(new URLSearchParams(window.location.search).get('redirect'), '/global')
       const callbackUrl = new URL('/auth/callback', window.location.origin)
-      if (next !== '/feed') callbackUrl.searchParams.set('next', next)
+      if (next !== '/global') callbackUrl.searchParams.set('next', next)
 
       // PKCE flow: @supabase/ssr's browser client defaults flowType to 'pkce',
       // storing the code verifier in an origin-scoped cookie (see guard above).

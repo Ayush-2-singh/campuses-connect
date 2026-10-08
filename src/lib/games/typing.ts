@@ -173,9 +173,11 @@ export class TypingTracker {
 
     if (key === ' ') {
       if (this.current.length === 0) return false // no empty submissions
-      this.totalTyped += this.current.length + 1 // + the space
+      // Each character was already counted as it was typed; the space is the
+      // one extra keystroke this submission adds (no double-counting).
+      this.totalTyped += 1
       if (this.current === this.words[this.completed]) {
-        this.correctChars += this.words[this.completed].length + 1
+        this.correctChars += 1 // the separating space was correct too
         this.completed += 1
         this.typedWords.push(this.current)
         this.current = ''
@@ -191,9 +193,16 @@ export class TypingTracker {
     }
 
     // Printable single characters only (ignore paste bursts / meta keys).
+    // Per-character correctness — a right character in a wrong word still
+    // counts, so accuracy reflects real keystroke mistakes, not just whole
+    // words that were fumbled and retyped.
     if (key.length === 1) {
-      this.current += key
+      const target = this.words[this.completed]
       this.totalTyped += 1
+      if (target !== undefined && key === target[this.current.length]) {
+        this.correctChars += 1
+      }
+      this.current += key
     }
     return false
   }

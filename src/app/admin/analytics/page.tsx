@@ -244,7 +244,7 @@ export default function AnalyticsPage() {
       const g = (grantData as any[]) || []
       setGrants(g)
       if (!g.some((x: any) => x.admin_type === 'platform_admin')) {
-        router.push('/feed')
+        router.push('/global')
         return
       }
       setLoading(false)

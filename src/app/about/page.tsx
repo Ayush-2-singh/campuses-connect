@@ -6,6 +6,7 @@ import { createClient } from '@/lib/supabase/client'
 import { Icon } from '@/components/icons'
 import GuestEntry from '@/components/GuestEntry'
 import { getLogoSrc } from '@/components/LogoToggle'
+import BrandName from '@/components/BrandName'
 
 export default function AboutPage() {
   const [user, setUser] = useState<any>(null)
@@ -32,7 +33,7 @@ export default function AboutPage() {
     const now = new Date().toISOString()
     const week = new Date(Date.now() + 7 * 86400000).toISOString()
 
-    // Fire ALL 6 queries simultaneously — no waterfall
+    // Fire ALL 5 queries simultaneously — no waterfall
     Promise.all([
       supabase.auth.getUser(),
       supabase
@@ -40,7 +41,6 @@ export default function AboutPage() {
         .select('id, name, campuses!inner(name)')
         .eq('is_active', true)
         .eq('campuses.is_active', true),
-      supabase.from('notes').select('id', { count: 'exact', head: true }),
       supabase.from('opportunities').select('id', { count: 'exact', head: true }).eq('is_active', true),
       supabase.from('posts').select('id', { count: 'exact', head: true }).eq('status', 'published'),
       supabase
@@ -50,7 +50,7 @@ export default function AboutPage() {
         .gte('deadline', now)
         .lte('deadline', week),
     ])
-      .then(([authRes, collegesRes, notesRes, oppsRes, postsRes, hacksRes]) => {
+      .then(([authRes, collegesRes, oppsRes, postsRes, hacksRes]) => {
         if (cancelled) return
         if (authRes.data.user) setUser(authRes.data.user)
         setLiveColleges(
@@ -60,7 +60,7 @@ export default function AboutPage() {
           }))
         )
         setPulse({
-          notes: notesRes.count || 0,
+          notes: 0,
           opportunities: oppsRes.count || 0,
           discussions: postsRes.count || 0,
           hackathons: hacksRes.count || 0,
@@ -74,8 +74,7 @@ export default function AboutPage() {
 
   const features = [
     { icon: 'home', title: 'Campus Feed', desc: 'Announcements, events and discussions for your campus.' },
-    { icon: 'book', title: 'Classroom', desc: 'Schedule, events, polls & ask seniors — all in one place.' },
-    { icon: 'notebook', title: 'Library', desc: 'Notes, PYQs, resources & AI Brain to ask anything.' },
+    { icon: 'sparkles', title: 'AI Brain', desc: 'Ask your study material anything — instant answers.' },
     { icon: 'zap', title: 'Compete', desc: 'DSA challenges, talent discovery & leaderboard rankings.' },
     { icon: 'briefcase', title: 'Opportunities', desc: 'Hackathons, internships, jobs & find teammates.' },
   ]
@@ -83,7 +82,6 @@ export default function AboutPage() {
   const totalCampuses = liveColleges.reduce((sum, c) => sum + c.campuses.length, 0)
 
   const stats = [
-    { label: 'Notes & resources', value: pulse.notes },
     { label: 'Live opportunities', value: pulse.opportunities },
     { label: 'Discussions (all-India)', value: pulse.discussions },
     { label: 'Hackathons this week', value: pulse.hackathons },
@@ -121,7 +119,7 @@ export default function AboutPage() {
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
             <img src={logoSrc} alt="CTC" width={32} height={32} style={{ borderRadius: 9 }} />
             <h1 style={{ fontSize: 19, fontWeight: 800, margin: 0, color: 'var(--text-primary)' }}>
-              Connect<span style={{ color: 'var(--accent-text)' }}>ToCampus</span>
+              <BrandName />
             </h1>
           </div>
           <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
@@ -142,7 +140,7 @@ export default function AboutPage() {
             </button>
             {user ? (
               <button
-                onClick={() => router.push('/feed')}
+                onClick={() => router.push('/global')}
                 style={{
                   background: 'var(--accent)',
                   color: 'var(--on-accent)',

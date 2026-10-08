@@ -13,9 +13,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
 
   const core: { path: string; priority: number; changeFrequency: 'daily' | 'weekly' | 'monthly' | 'yearly' }[] = [
     { path: '/', priority: 1, changeFrequency: 'daily' },
-    { path: '/feed', priority: 0.9, changeFrequency: 'daily' },
-    { path: '/discover', priority: 0.9, changeFrequency: 'daily' },
-    { path: '/notes', priority: 0.9, changeFrequency: 'daily' },
+    { path: '/global', priority: 0.9, changeFrequency: 'daily' },
     { path: '/blog', priority: 0.9, changeFrequency: 'daily' },
     { path: '/community', priority: 0.8, changeFrequency: 'daily' },
     { path: '/compete', priority: 0.8, changeFrequency: 'daily' },

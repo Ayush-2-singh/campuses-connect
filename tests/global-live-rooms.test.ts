@@ -48,3 +48,40 @@ describe('the free4talk-style board on /global', () => {
     expect(board).toMatch(/live-voice-chat\/\$\{g\.id\}/)
   })
 })
+
+describe('Live Voice lives under Global, never Community', () => {
+  const community = read('src/app/community/page.tsx')
+  const layout = read('src/components/Layout.tsx')
+  const mobileNav = read('src/components/mobileNav.ts')
+
+  it('the Community hub has no Live Voice card or link', () => {
+    expect(community).not.toContain('/live-voice-chat')
+    expect(community).not.toMatch(/title: 'Live Voice'/)
+  })
+
+  it('the desktop sidebar keeps it out of Community and inside Global', () => {
+    const communityChildren = layout.slice(
+      layout.indexOf('const COMMUNITY_CHILDREN'),
+      layout.indexOf('const GLOBAL_CHILDREN')
+    )
+    expect(communityChildren).not.toContain('/live-voice-chat')
+
+    const globalChildren = layout.slice(layout.indexOf('const GLOBAL_CHILDREN'), layout.indexOf('const PROFILE_NAV'))
+    expect(globalChildren).toContain('/live-voice-chat')
+    // Global must actually render its group, or the child is unreachable.
+    expect(layout).toMatch(/items=\{GLOBAL_CHILDREN\}/)
+  })
+
+  it('the mobile menu files it with Global', () => {
+    // Scope to the ☰ menu: the primary tab list also carries /global.
+    const menu = mobileNav.slice(mobileNav.indexOf('MOBILE_MENU_NAV'))
+    const globalIdx = menu.indexOf("href: '/global'")
+    const voiceIdx = menu.indexOf("href: '/live-voice-chat'")
+    expect(globalIdx).toBeGreaterThan(-1)
+    expect(voiceIdx).toBeGreaterThan(globalIdx)
+  })
+
+  it('/global still hosts the room board', () => {
+    expect(read('src/app/global/page.tsx')).toContain('<LiveRoomBrowser')
+  })
+})

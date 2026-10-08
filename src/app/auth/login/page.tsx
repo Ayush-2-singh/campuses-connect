@@ -8,6 +8,7 @@ import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import PasswordField from '@/components/PasswordField'
 import GoogleSignInButton from '@/components/GoogleSignInButton'
+import BrandName from '@/components/BrandName'
 import ThemeToggle from '@/components/ThemeToggle'
 
 const inputStyle = {
@@ -87,7 +88,7 @@ export default function LoginPage() {
       return
     }
     router.refresh()
-    const target = getSafeRedirect(new URLSearchParams(window.location.search).get('redirect'), '/feed')
+    const target = getSafeRedirect(new URLSearchParams(window.location.search).get('redirect'), '/global')
     router.replace(target)
   }
 
@@ -105,7 +106,7 @@ export default function LoginPage() {
       <div style={{ width: '100%', maxWidth: 400 }}>
         <div style={{ textAlign: 'center', marginBottom: 32 }}>
           <h1 style={{ fontSize: 28, fontWeight: 800, color: 'var(--text-primary)', margin: '0 0 6px' }}>
-            Connect<span style={{ color: '#FD8F01' }}>ToCampus</span>
+            <BrandName />
           </h1>
           <p style={{ fontSize: 14, color: 'var(--text-muted)', margin: 0 }}>Your campus. Your community.</p>
         </div>

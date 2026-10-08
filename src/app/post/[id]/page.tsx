@@ -85,7 +85,7 @@ export default function PostDetailPage() {
             title="Post not found"
             body="This post isn't available — it may have been removed or isn't visible to you."
             cta="Back to feed"
-            onCta={() => router.push('/feed')}
+            onCta={() => router.push('/global')}
           />
         ) : (
           <PostCard

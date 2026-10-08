@@ -96,8 +96,11 @@ export async function joinByCode(
   return { ok: true }
 }
 
-// Human copy for every server-side rejection (spec §31).
+// Human copy for every server-side rejection (spec §31). Every error code the
+// roster/tournament RPCs can raise has a sentence here — the UI never shows a
+// raw database message.
 export const JOIN_ERROR_COPY: Record<string, string> = {
+  // joining
   invalid_code: 'This team invite is invalid or expired.',
   roster_locked: 'This roster is locked. Contact the tournament organizer.',
   registration_closed: 'Registration has closed.',
@@ -106,6 +109,38 @@ export const JOIN_ERROR_COPY: Record<string, string> = {
   duplicate_uid: 'This Free Fire UID is already registered in this tournament.',
   unauthenticated: 'Please log in to ConnectToCampus first.',
   error: 'Something went wrong — try again.',
+  // registration (052)
+  tournament_not_found: 'That tournament no longer exists.',
+  not_accepting: 'This tournament is no longer accepting registrations.',
+  deadline_passed: 'The registration deadline has passed.',
+  registration_deadline_passed: 'The registration deadline has passed.',
+  full: 'This tournament has reached its maximum number of teams.',
+  tournament_full: 'This tournament has reached its maximum number of teams.',
+  already_registered: 'You are already registered for this tournament.',
+  team_name_taken: 'That team name is already taken in this tournament.',
+  invalid_team_name: 'Team name must be between 3 and 40 characters.',
+  invalid_tag: 'Team tag can be at most 6 characters.',
+  invalid_uid: 'Free Fire UID must be 6–12 digits.',
+  invalid_ign: 'Enter your in-game name (1–20 characters).',
+  rate_limited: 'Too many attempts. Please wait a minute and try again.',
+  // roster management (052)
+  not_on_team: 'You are not on that team.',
+  igl_cannot_leave: 'You are the IGL — hand over leadership before leaving.',
+  substitute_limit_reached: 'This team already has its maximum substitutes.',
+  leader_role_fixed: 'The IGL cannot be a substitute — transfer leadership first.',
+  not_leader: 'You are not the IGL of a team in this tournament.',
+  below_current_teams: 'The limit cannot be lower than the teams already registered.',
+  unknown_user: 'No student found with that username.',
+  // match lifecycle (052)
+  invalid_transition: 'That match status change is not allowed.',
+  cancelled: 'This match was cancelled — results cannot be entered.',
+  reason_required: 'A reason of at least 5 characters is required.',
+  // generic
+  forbidden: 'You do not have permission to do that.',
+  invalid: 'That request was not valid.',
+  conflict: 'Someone else changed this — refresh and try again.',
+  locked: 'This is locked — unlock it first.',
+  code_generation_failed: 'Could not generate a unique team code — try again.',
 }
 
 // ── Organizer controls ───────────────────────────────────────────────────────
@@ -145,8 +180,12 @@ export async function setFfIdentity(
 export interface RoomCreds {
   ok: boolean
   released: boolean
+  /** True when the caller is neither an organizer nor a team in this match. */
+  restricted?: boolean
   room_id?: string | null
   room_password?: string | null
+  map?: string | null
+  match_group?: string | null
 }
 
 export async function fetchRoomCreds(sb: any, matchId: string): Promise<RoomCreds> {

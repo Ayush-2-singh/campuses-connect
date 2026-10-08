@@ -59,6 +59,7 @@ export default function EsportsSection({
   const [history, setHistory] = useState<EsportsHistoryEntry[]>([])
   const [loading, setLoading] = useState(true)
   const [stats, setStats] = useState({ live: 0, upcoming: 0, completed: 0, totalPlayers: 0 })
+  const [loadErr, setLoadErr] = useState<string | null>(null)
 
   const [code, setCode] = useState('')
   const [checking, setChecking] = useState(false)
@@ -74,6 +75,13 @@ export default function EsportsSection({
         signedIn ? supabase.rpc('get_my_tournament_history') : Promise.resolve({ data: [] as EsportsHistoryEntry[] }),
       ])
       if (cancelled) return
+      // Surface a real failure instead of silently rendering an empty board.
+      if (listRes.error) {
+        setLoadErr(listRes.error.message)
+        setLoading(false)
+        return
+      }
+      setLoadErr(null)
       setRows(((listRes.data as TournamentRow[]) || []).slice(0, 4))
       setHistory((historyRes.data as EsportsHistoryEntry[]) || [])
       const allRows = (listRes.data as TournamentRow[]) || []
@@ -429,6 +437,10 @@ export default function EsportsSection({
       {/* ── Live / upcoming ── */}
       {loading ? (
         <p style={{ fontSize: 13, color: 'var(--text-muted)', margin: 0 }}>Loading esports…</p>
+      ) : loadErr ? (
+        <p style={{ fontSize: 13, color: 'var(--danger-text)', margin: 0 }}>
+          Tournaments couldn&apos;t load right now — try again in a moment.
+        </p>
       ) : rows.length === 0 ? (
         <p style={{ fontSize: 13, color: 'var(--text-muted)', margin: 0 }}>
           No tournaments yet — the first Free Fire cup is coming.

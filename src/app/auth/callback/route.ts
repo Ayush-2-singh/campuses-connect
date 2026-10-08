@@ -19,7 +19,7 @@ import { getSafeRedirect } from '@/lib/auth'
 export async function GET(request: NextRequest) {
   const requestUrl = new URL(request.url)
   const code = requestUrl.searchParams.get('code')
-  const next = getSafeRedirect(requestUrl.searchParams.get('next'), '/feed')
+  const next = getSafeRedirect(requestUrl.searchParams.get('next'), '/global')
 
   // Supabase forwards the provider's failure reason on the callback URL
   // (e.g. ?error=redirect_url_mismatch&error_description=...). Surface it on
@@ -108,13 +108,14 @@ export async function GET(request: NextRequest) {
   // handle_new_user() has already created the profile row — nothing to
   // create here). Otherwise → the intended destination.
   let target = next
+  // Old /feed deep links land on the Global feed now.
   if (target === '/feed') {
     const { data: profile } = await supabase
       .from('profiles')
       .select('username, campus_id')
       .eq('id', user.id)
       .maybeSingle()
-    target = profile?.username && profile?.campus_id ? '/feed' : '/onboarding'
+    target = profile?.username && profile?.campus_id ? '/global' : '/onboarding'
   }
 
   const response = NextResponse.redirect(new URL(target, requestUrl.origin))

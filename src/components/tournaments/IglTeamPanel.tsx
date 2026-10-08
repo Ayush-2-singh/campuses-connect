@@ -139,8 +139,13 @@ export default function IglTeamPanel({ tournamentId }: { tournamentId: string })
         </span>
       </div>
       <p style={{ fontSize: 11.5, color: 'var(--text-muted)', margin: '0 0 12px' }}>
-        {team.team_tag ? `[${team.team_tag}] · ` : ''}Team management
+        {team.team_tag ? `[${team.team_tag}] · ` : ''}You are the IGL — manage your roster below.
       </p>
+      {!team.roster_locked && (
+        <p style={{ fontSize: 11.5, color: 'var(--text-secondary)', margin: '0 0 12px' }}>
+          Share this code with your teammates to let them join your team.
+        </p>
+      )}
 
       {/* Roster slots — filled vs empty (§7 wireframe) */}
       <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginBottom: 14 }}>

@@ -4,7 +4,8 @@
  * COMMUNITY — the community hub (final IA).
  *
  * One entry point that surfaces the EXISTING systems — communities, chat,
- * confessions, compete, live voice — without rebuilding any of them.
+ * confessions, compete — without rebuilding any of them. Live voice is NOT
+ * here: it lives under Global (see /global and the sidebar's Global group).
  * Confessions' UI entry lives here (spec): the anonymous backend, RPCs, RLS
  * and anonymity-by-design are untouched; the composer/feed is the relocated
  * ConfessionsTab.
@@ -15,7 +16,7 @@ import { useRouter } from 'next/navigation'
 import { createClient, getBootUser } from '@/lib/supabase/client'
 import Layout from '@/components/Layout'
 import { Icon } from '@/components/icons'
-import ConfessionsTab from '@/components/discovery/ConfessionsTab'
+import ConfessionsTab from '@/components/community/ConfessionsTab'
 
 const HUB_ITEMS: {
   key: string
@@ -62,15 +63,6 @@ const HUB_ITEMS: {
     accent: 'var(--orange-light)',
     accentText: 'var(--orange-text)',
     href: '/compete',
-  },
-  {
-    key: 'live',
-    title: 'Live Voice',
-    desc: 'Drop into live voice rooms across campuses',
-    icon: 'mic',
-    accent: 'var(--danger-light)',
-    accentText: 'var(--danger)',
-    href: '/live-voice-chat',
   },
 ]
 
@@ -193,7 +185,7 @@ export default function CommunityHubPage() {
                   Community
                 </h2>
                 <p style={{ fontSize: 12, color: 'var(--text-muted)', margin: '2px 0 0' }}>
-                  Everything social — communities, confessions, chat, compete and live voice.
+                  Everything social — communities, confessions, chat and compete.
                 </p>
               </div>
               <span style={{ flex: 1 }} />

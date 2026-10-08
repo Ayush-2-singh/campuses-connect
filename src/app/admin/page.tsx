@@ -183,7 +183,7 @@ export default function AdminPage() {
       const grantsArr = (grantData as any[]) || []
       const isAdmin = grantsArr.some((g: any) => g.admin_type === 'platform_admin' || g.admin_type === 'campus_admin')
       if (!isAdmin) {
-        router.push('/feed')
+        router.push('/global')
         return
       }
       setGrants(grantsArr)
@@ -1002,7 +1002,7 @@ export default function AdminPage() {
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
             <button
-              onClick={() => router.push('/feed')}
+              onClick={() => router.push('/global')}
               style={{
                 background: 'none',
                 border: '1px solid var(--border)',

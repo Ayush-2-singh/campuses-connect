@@ -73,7 +73,7 @@ export default function SavedPage() {
             title="Nothing saved yet"
             body="Tap Save on any post to find it here."
             cta="Browse the feed"
-            onCta={() => router.push('/feed')}
+            onCta={() => router.push('/global')}
           />
         ) : (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>

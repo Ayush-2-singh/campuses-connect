@@ -65,7 +65,7 @@ function JoinInner() {
       return
     }
     if (!/^\d{6,12}$/.test(uid.trim())) {
-      setJoinErr('Free Fire UID is 8-12 digits — check and re-enter.')
+      setJoinErr('Free Fire UID must be 6–12 digits — check and re-enter.')
       return
     }
     setJoining(true)

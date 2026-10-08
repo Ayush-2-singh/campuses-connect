@@ -102,16 +102,16 @@ export default function NotificationsPage() {
     if (n.ref_type === 'team_request') return '/teams'
     switch (n.type) {
       case 'answer':
-        return '/ask'
+        return '/more'
       case 'new_opportunity':
         return '/opportunities'
       case 'discovery_interest':
       case 'discovery_match':
-        return '/discover'
+        return '/communities'
       case 'new_event':
         return '/events'
       case 'new_note':
-        return '/notes'
+        return null
       case 'connection_request':
       case 'connection_accepted':
         return n.profiles?.username ? `/profile/${n.profiles.username}` : '/profile'
@@ -207,7 +207,7 @@ export default function NotificationsPage() {
             title="No notifications yet"
             body="Deadlines, replies, connections and campus updates will show up here as they happen."
             cta="Explore your campus"
-            onCta={() => router.push('/feed')}
+            onCta={() => router.push('/global')}
           />
         ) : (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>

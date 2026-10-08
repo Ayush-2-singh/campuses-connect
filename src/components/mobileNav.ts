@@ -5,10 +5,11 @@
 // FINAL IA: exactly three primary destinations in the bottom bar —
 //   Global | Community | Profile
 // (The Home feed, Discovery and Library sections were removed.) Everything
-// else (Chat, Compete, Leaderboard, Blogs, Events, Connections, Talent, Live
-// Voice) is secondary and lives inside these three sections:
-// Chat/Connections inside Profile, Compete/Leaderboard/Live Voice/Confessions
-// inside Community. Esports and Games are their own sections.
+// else (Chat, Compete, Leaderboard, Blogs, Events, Connections, Talent) is
+// secondary and lives inside these three sections: Chat/Connections inside
+// Profile, Compete/Leaderboard/Confessions inside Community, and Live Voice
+// under Global (it is NOT part of Community). Esports and Games are their own
+// sections.
 
 export const MOBILE_NAV = [
   { label: 'Global', href: '/global', icon: 'globe' },
@@ -30,8 +31,9 @@ export const MOBILE_MENU_NAV = [
   { label: 'Blogs', href: '/blog', icon: 'book' },
   { label: 'Connections', href: '/connections', icon: 'link' },
   { label: 'Communities', href: '/communities', icon: 'users' },
-  { label: 'Live Voice Chat', href: '/live-voice-chat', icon: 'mic' },
+  // Live Voice sits with Global — it is a platform-wide surface, not Community.
   { label: 'Global', href: '/global', icon: 'globe' },
+  { label: 'Live Voice Chat', href: '/live-voice-chat', icon: 'mic' },
   { label: 'Events', href: '/events', icon: 'calendar' },
 ]
 

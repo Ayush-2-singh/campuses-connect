@@ -2,11 +2,11 @@
    fallback, cache-first static assets, auth pages always network. */
 
 const CACHE_NAME = 'connecttocampus-v3'
-// Cache version bumped to v8: new brand icon set (dark tile + bright logo
-// art replaces the old dark-square favicon that read as a blob in tabs).
-// Bumping flushes the stale cached favicon/icons from every client.
-const STATIC_CACHE = 'campus-static-v8'
-const DYNAMIC_CACHE = 'campus-dynamic-v8'
+// Cache version bumped to v9: v8 clients were stuck on a pre-Games bundle, so
+// a nav/footer change shipped but never appeared on phones that already had
+// the PWA installed. Bumping flushes v8's cached bundles on activate.
+const STATIC_CACHE = 'campus-static-v9'
+const DYNAMIC_CACHE = 'campus-dynamic-v9'
 
 // Pages to pre-cache for offline access. NOTE: auth pages (/auth/*) are
 // NEVER cached (see fetch handler) and personal pages (e.g. /feed,
@@ -25,10 +25,18 @@ const PRECACHE_URLS = [
   '/whatsapp-doodles-dark.svg',
 ]
 
-// Install: pre-cache essential pages
+// Install: pre-cache essential pages.
+// NOTE: allSettled, NOT addAll. addAll rejects the WHOLE install if a single
+// URL 404s or errors — and a failed install means the PREVIOUS service worker
+// stays in control, still serving its old cached bundles, so a shipped nav
+// change never reaches the client. A missed precache entry is far better than
+// a permanently stale app shell.
 self.addEventListener('install', event => {
   event.waitUntil(
-    caches.open(STATIC_CACHE).then(cache => cache.addAll(PRECACHE_URLS)).then(() => self.skipWaiting())
+    caches
+      .open(STATIC_CACHE)
+      .then(cache => Promise.allSettled(PRECACHE_URLS.map(url => cache.add(url))))
+      .then(() => self.skipWaiting())
   )
 })
 

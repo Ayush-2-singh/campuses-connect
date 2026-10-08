@@ -366,18 +366,21 @@ export default function TypingBattle({ initialRoomCode }: { initialRoomCode?: st
 
   // Progress heartbeat — one UPDATE per completed word (spec §11).
   const handleWordCompleted = useCallback(
-    ({ completed, correct, total }: { completed: number; correct: number; total: number }) => {
+    ({ completed, total }: { completed: number; correct: number; total: number }) => {
       if (!room?.id) return
       setProgress((p) => ({
         ...p,
         [myPlayerId]: { player_id: myPlayerId, completed, total, finished: false },
       }))
+      // typing_progress stores character counts (correct vs. typed), not the
+      // accuracy percentage — send the tracker's honest running totals.
+      const stats = arenaTrackerRef.current?.stats
       void supabase.rpc('update_typing_progress', {
         p_room_id: room.id,
         p_player_id: guestId,
         p_completed: completed,
-        p_correct: correct,
-        p_total_typed: completed,
+        p_correct: stats?.correctChars ?? 0,
+        p_total_typed: stats?.totalTyped ?? 0,
       })
     },
     [room?.id, supabase, guestId, myPlayerId]
@@ -388,18 +391,30 @@ export default function TypingBattle({ initialRoomCode }: { initialRoomCode?: st
   // against the stored sequence, recomputes WPM/accuracy from the server
   // clock, and alone decides the winner.
   const handleFinished = useCallback(
-    async ({ durationMs }: { words: string[]; durationMs: number }) => {
+    async ({
+      words,
+      durationMs,
+      correctChars,
+      totalTyped,
+    }: {
+      words: string[]
+      durationMs: number
+      correctChars: number
+      totalTyped: number
+    }) => {
       if (!room?.id) return
       if (!isPossibleDuration(durationMs)) {
         setError('That finish looked impossible — match abandoned')
         setPhase('entry')
         return
       }
-      const typed = arenaTrackerRef.current?.submission ?? words
       const { data, error: e } = await supabase.rpc('complete_typing_match', {
         p_room_id: room.id,
         p_player_id: guestId,
-        p_words: typed,
+        p_words: words,
+        // Real character counts; the server clamps them to what it verified.
+        p_correct_chars: correctChars,
+        p_total_chars: totalTyped,
       })
       if (e) {
         setError(
@@ -417,9 +432,6 @@ export default function TypingBattle({ initialRoomCode }: { initialRoomCode?: st
       })
       setPhase('finished')
     },
-    // `words` (the typed sequence) arrives via the arena tracker ref, which is
-    // stable — the dep array intentionally carries the room identity only.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
     [room?.id, supabase, guestId]
   )
 
@@ -462,7 +474,17 @@ export default function TypingBattle({ initialRoomCode }: { initialRoomCode?: st
   }
 
   const handleDailyFinished = useCallback(
-    async ({ durationMs }: { words: string[]; durationMs: number }) => {
+    async ({
+      words,
+      durationMs,
+      correctChars,
+      totalTyped,
+    }: {
+      words: string[]
+      durationMs: number
+      correctChars: number
+      totalTyped: number
+    }) => {
       if (!isPossibleDuration(durationMs)) {
         setError('That finish looked impossible')
         setPhase('entry')
@@ -473,6 +495,8 @@ export default function TypingBattle({ initialRoomCode }: { initialRoomCode?: st
         p_nickname: nickname.trim() || 'student',
         p_words: words,
         p_duration_ms: durationMs,
+        p_correct_chars: correctChars,
+        p_total_chars: totalTyped,
       })
       if (e) {
         setError(e.message.includes('impossible_time') ? 'Finish rejected by the server' : 'Could not submit')
@@ -482,9 +506,6 @@ export default function TypingBattle({ initialRoomCode }: { initialRoomCode?: st
       setDailyResult({ wpm: Number(r.wpm), accuracy: Number(r.accuracy), rank: Number(r.rank) })
       setPhase('finished')
     },
-    // The daily word list is deterministic for the session; the tracker ref
-    // carries the typed sequence, so `words` need not re-create this callback.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
     [supabase, guestId, nickname]
   )
 
