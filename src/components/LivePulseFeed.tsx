@@ -6,7 +6,7 @@
  * One compact card pinned bottom-right (the same corner as the voice broadcast
  * pill) on EVERY page. Contract, in order of preference:
  *
- *   1. REAL fresh activity (chat ≤15min, live voice rooms, events ±2h, game
+ *   1. REAL fresh activity (chat ≤15min, live voice rooms, game
  *      winners ≤30min, mentions) — rotates one fact every minute.
  *   2. NOTHING fresh? The card still shows ONCE per visit with the platform's
  *      LAST known message or voice room, honestly labelled ("last message
@@ -41,7 +41,7 @@ import {
   type PulsePrefs,
 } from '@/lib/livePulsePrefs'
 
-type PulseKind = 'chat' | 'voice' | 'event' | 'aura' | 'mention' | 'last'
+type PulseKind = 'chat' | 'voice' | 'aura' | 'mention' | 'last'
 
 interface PulseItem {
   key: string
@@ -58,7 +58,6 @@ interface PulseItem {
 const KIND_STYLE: Record<PulseKind, { icon: string; tint: string }> = {
   chat: { icon: 'message', tint: 'var(--accent-text)' },
   voice: { icon: 'mic', tint: 'var(--danger-text)' },
-  event: { icon: 'calendar', tint: 'var(--success-text)' },
   aura: { icon: 'zap', tint: 'var(--accent-text)' },
   mention: { icon: 'star', tint: 'var(--blue-text)' },
   last: { icon: 'message', tint: 'var(--text-muted)' },
@@ -230,34 +229,7 @@ export default function LivePulseFeed({ userId }: { userId: string | null }) {
     }
     found.push(...liveVoiceItems)
 
-    // 3. Events starting within ±2h window — "just started" or "starting soon".
-    try {
-      const soon = new Date(Date.now() + 2 * 3600_000).toISOString()
-      const { data: events, error: eventsError } = await sb
-        .from('campus_events')
-        .select('id, title, starts_at')
-        .eq('status', 'published')
-        .gte('starts_at', new Date(Date.now() - 2 * 3600_000).toISOString())
-        .lte('starts_at', soon)
-        .order('starts_at', { ascending: true })
-        .limit(2)
-      warnSource('events', eventsError)
-      for (const e of (events as any[]) || []) {
-        const started = new Date(e.starts_at).getTime() <= Date.now()
-        found.push({
-          key: `event-${e.id}`,
-          kind: 'event',
-          text: started ? `${e.title} just started!` : `${e.title} starts soon`,
-          detail: started ? 'Happening now — jump in' : 'Get the details before it begins',
-          href: '/events',
-          at: new Date(e.starts_at).getTime(),
-        })
-      }
-    } catch (err) {
-      warnSource('events', err)
-    }
-
-    // 4. Aura in motion: recent game winners (last 30 minutes).
+    // 3. Aura in motion: recent game winners (last 30 minutes).
     try {
       const since = new Date(Date.now() - 30 * 60_000).toISOString()
       const { data: winners, error: winnersError } = await sb

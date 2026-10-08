@@ -34,7 +34,6 @@ export const MOBILE_MENU_NAV = [
   // Live Voice sits with Global — it is a platform-wide surface, not Community.
   { label: 'Global', href: '/global', icon: 'globe' },
   { label: 'Live Voice Chat', href: '/live-voice-chat', icon: 'mic' },
-  { label: 'Events', href: '/events', icon: 'calendar' },
 ]
 
 /** Guard: the bottom bar is exactly the five primary destinations. */

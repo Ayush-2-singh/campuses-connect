@@ -52,7 +52,7 @@ export type AccentName = 'gold' | 'blue' | 'cyan' | 'purple' | 'green'
  *
  * Semantic direction:
  *  - gold    → brand / feed / competition / neutral
- *  - blue    → education / classroom
+ *  - blue    → education
  *  - cyan    → discovery / opportunities / info
  *  - purple  → knowledge / AI / premium
  *  - green   → networking / talent / success
@@ -66,7 +66,6 @@ export const ACCENT_BY_ROUTE: Record<string, AccentName> = {
   '/profile': 'gold',
 
   '/meetings': 'blue',
-  '/events': 'blue',
 
   '/compete': 'green',
   '/opportunities': 'cyan',

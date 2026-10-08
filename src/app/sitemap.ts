@@ -18,7 +18,6 @@ export default function sitemap(): MetadataRoute.Sitemap {
     { path: '/community', priority: 0.8, changeFrequency: 'daily' },
     { path: '/compete', priority: 0.8, changeFrequency: 'daily' },
     { path: '/leaderboard', priority: 0.7, changeFrequency: 'daily' },
-    { path: '/events', priority: 0.8, changeFrequency: 'daily' },
     { path: '/communities', priority: 0.8, changeFrequency: 'weekly' },
     { path: '/companies', priority: 0.8, changeFrequency: 'weekly' },
     { path: '/jobs', priority: 0.8, changeFrequency: 'daily' },

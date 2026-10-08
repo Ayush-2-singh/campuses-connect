@@ -14,8 +14,6 @@ function classify(body: string): { label: string; icon: string; tone: string } {
   const t = (body || '').toLowerCase()
   if (/(accepted|connection|request|follow)/.test(t))
     return { label: 'Network', icon: 'users', tone: 'var(--accent-text)' }
-  if (/(due|assignment|class|lesson|deadline)/.test(t))
-    return { label: 'Classroom', icon: 'book', tone: 'var(--purple-text)' }
   if (/(replied|comment|answered|discussion|question)/.test(t))
     return { label: 'Discussion', icon: 'message', tone: 'var(--success-text)' }
   if (/(internship|hackathon|opportunity|scholarship|job|closes|opens)/.test(t))
@@ -108,8 +106,6 @@ export default function NotificationsPage() {
       case 'discovery_interest':
       case 'discovery_match':
         return '/communities'
-      case 'new_event':
-        return '/events'
       case 'new_note':
         return null
       case 'connection_request':

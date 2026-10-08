@@ -28,7 +28,6 @@ const SECTIONS = [
     desc: 'Tournaments, team roster & join a squad with a code',
     href: '/tournaments',
   },
-  { icon: 'calendar', label: 'Events', desc: 'Campus events, hackathons & memories', href: '/events' },
   { icon: 'users', label: 'Find Teammates', desc: 'Post or join hackathon teams', href: '/teams' },
   {
     icon: 'link',
