@@ -267,6 +267,10 @@ function CallShell({ connected, onLeave }: { connected: boolean; onLeave: () => 
           game={game}
           roomCode={gameCode}
           participantCount={participants.length}
+          participants={participants.map((p) => ({
+            id: p.identity,
+            name: p.name?.trim() || 'Student',
+          }))}
           onPick={startGame}
           onRoomReady={broadcastRoom}
           onClose={() => {

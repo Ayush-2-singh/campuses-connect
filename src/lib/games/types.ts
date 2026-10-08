@@ -33,6 +33,8 @@ export interface MathQuestion {
 export interface GamePlayer {
   player_id: string
   nickname: string
+  /** Set for signed-in players (048) — the voice-call panel matches on it. */
+  user_id?: string | null
   is_host: boolean
   is_ready: boolean
   is_connected: boolean

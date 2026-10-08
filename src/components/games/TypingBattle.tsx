@@ -37,6 +37,8 @@ interface SeatPlayer {
   is_host: boolean
   is_ready: boolean
   is_connected: boolean
+  /** Set for signed-in players (048) — the call panel matches on it. */
+  user_id?: string | null
 }
 
 interface RoomRow {
@@ -70,6 +72,7 @@ void BACK
 export default function TypingBattle({
   initialRoomCode,
   onRoomReady,
+  onRoster,
 }: {
   initialRoomCode?: string
   /**
@@ -79,6 +82,11 @@ export default function TypingBattle({
    * would invite itself in a loop.
    */
   onRoomReady?: (code: string) => void
+  /**
+   * Mirrors the room's seat list upward. The in-call game panel matches it
+   * against the people actually on the call, so everyone can see who joined.
+   */
+  onRoster?: (players: { playerId: string; nickname: string; userId: string | null }[]) => void
 }) {
   const supabaseRef = useRef(createClient())
   const supabase = supabaseRef.current
@@ -91,6 +99,27 @@ export default function TypingBattle({
 
   const [room, setRoom] = useState<RoomRow | null>(null)
   const [seats, setSeats] = useState<SeatPlayer[]>([])
+
+  // Signed-in identity. game_players.user_id is what lets the voice call
+  // recognise WHICH person on the call is sitting in a seat (LiveKit sets
+  // identity = auth user id), and it is also what awards Aura on a win — so
+  // every RPC below sends it instead of leaving the column NULL.
+  const [userId, setUserId] = useState<string | null>(null)
+  useEffect(() => {
+    let alive = true
+    void supabase.auth.getUser().then(({ data }) => {
+      if (alive) setUserId(data.user?.id ?? null)
+    })
+    return () => {
+      alive = false
+    }
+  }, [supabase])
+
+  // Seat list → the call panel. Re-runs only when the seats really change
+  // (onRoster is a stable useCallback in the panel).
+  useEffect(() => {
+    onRoster?.(seats.map((s) => ({ playerId: s.player_id, nickname: s.nickname, userId: s.user_id ?? null })))
+  }, [seats, onRoster])
   const [codeInput, setCodeInput] = useState(initialRoomCode || '')
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
@@ -253,7 +282,7 @@ export default function TypingBattle({
       p_nickname: nickname.trim(),
       p_difficulty: 'medium',
       p_total_rounds: 1,
-      p_user_id: null,
+      p_user_id: userId,
       p_game_type: 'typing_battle',
     })
     setBusy(false)
@@ -302,6 +331,7 @@ export default function TypingBattle({
     const { data, error: e } = await supabase.rpc('create_typing_room', {
       p_player_id: guestId,
       p_nickname: nickname.trim(),
+      p_user_id: userId,
     })
     setBusy(false)
     if (e || !data) {
@@ -333,6 +363,7 @@ export default function TypingBattle({
       p_room_code: code,
       p_player_id: guestId,
       p_nickname: nickname.trim(),
+      p_user_id: userId,
     })
     setBusy(false)
     if (e) {

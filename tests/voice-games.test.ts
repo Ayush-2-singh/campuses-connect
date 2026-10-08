@@ -76,6 +76,58 @@ describe('the panel runs the games the app already ships', () => {
   })
 })
 
+describe('the panel shows who on the call actually joined', () => {
+  const panel = read('src/components/games/CallGamePanel.tsx')
+  const call = read('src/app/live-voice-chat/[id]/call/page.tsx')
+
+  it('receives the people on the call', () => {
+    expect(call).toMatch(/participants=\{participants\.map\(/)
+    expect(panel).toMatch(/participants: CallParticipant\[\]/)
+  })
+
+  it('keys the match on game_players.user_id vs the LiveKit identity', () => {
+    // The call token mints identity = auth user id, so that column is the
+    // only reliable link between a seat and a person on the call.
+    expect(panel).toMatch(/seat\.userId === person\.id/)
+    expect(panel).toMatch(/isMatchingSeat/)
+  })
+
+  it('renders a chip per call participant plus joined-by-code players', () => {
+    expect(panel).toMatch(/joined the room/)
+    expect(panel).toMatch(/not in the room yet/)
+    expect(panel).toMatch(/joined by code/)
+    expect(panel).toMatch(/aria-label="Call participants in this game"/)
+  })
+
+  it('shows the room count in the header once a room exists', () => {
+    expect(panel).toMatch(/in the room/)
+  })
+})
+
+describe('both games publish their roster and signed-in identity', () => {
+  it('typing battle exposes the seat list', () => {
+    const src = read('src/components/games/TypingBattle.tsx')
+    expect(src).toMatch(/onRoster\?:/)
+    expect(src).toMatch(/onRoster\?\.\(/)
+    expect(src).toMatch(/seats\.map\(/)
+  })
+
+  it('quick math exposes the player list', () => {
+    const src = read('src/components/games/QuickMath.tsx')
+    expect(src).toMatch(/onRoster\?:/)
+    expect(src).toMatch(/onRoster\?\.\(/)
+    expect(src).toMatch(/players\.map\(/)
+  })
+
+  it('typing battle sends the auth user id so seats can be matched', () => {
+    const src = read('src/components/games/TypingBattle.tsx')
+    // Without this every typing seat is user_id NULL and the strip could
+    // never say that a person on the call is the one racing.
+    expect(src.match(/p_user_id: userId/g)).toHaveLength(3)
+    expect(src).not.toMatch(/p_user_id: null/)
+  })
+})
+
 describe('only the room creator announces the code', () => {
   it('typing broadcasts from create, never from join', () => {
     const src = read('src/components/games/TypingBattle.tsx')

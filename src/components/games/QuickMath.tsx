@@ -18,6 +18,7 @@ import GameResults from './GameResults'
 export default function QuickMath({
   initialRoomCode,
   onRoomReady,
+  onRoster,
 }: {
   initialRoomCode?: string
   /**
@@ -27,6 +28,11 @@ export default function QuickMath({
    * would make every player re-invite the room they just joined.
    */
   onRoomReady?: (code: string) => void
+  /**
+   * Mirrors the room's player list upward so the in-call panel can show
+   * which of the people on the call actually joined.
+   */
+  onRoster?: (players: { playerId: string; nickname: string; userId: string | null }[]) => void
 }) {
   // PROFESSIONAL PATTERN: Singleton client via useRef — prevents re-creation on every render.
   const supabaseRef = useRef(createClient())
@@ -38,6 +44,12 @@ export default function QuickMath({
   const [room, setRoom] = useState<GameRoom | null>(null)
   const [players, setPlayers] = useState<GamePlayer[]>([])
   const [answers, setAnswers] = useState<GameAnswer[]>([])
+
+  // Player list → the voice call panel. Stable callback in the parent, so
+  // this effect fires on real roster changes and never in a render loop.
+  useEffect(() => {
+    onRoster?.(players.map((p) => ({ playerId: p.player_id, nickname: p.nickname, userId: p.user_id ?? null })))
+  }, [players, onRoster])
   const [myPlayerId, setMyPlayerId] = useState('')
   const [nickname, setNickname] = useState(getSavedNickname())
   const [roomCodeInput, setRoomCodeInput] = useState(initialRoomCode || '')

@@ -16,6 +16,7 @@
  * off the server.
  */
 
+import { useCallback, useState } from 'react'
 import dynamic from 'next/dynamic'
 import { Icon } from '@/components/icons'
 
@@ -59,10 +60,35 @@ const GAME_PICKS: {
 
 const ROUND = 'var(--border)' // same border the rest of the call uses
 
+/** A person currently connected to the voice call (LiveKit identity + name). */
+export interface CallParticipant {
+  id: string
+  name: string
+}
+
+/** One row of game_players as the game reports it. */
+interface RosterPlayer {
+  playerId: string
+  nickname: string
+  userId: string | null
+}
+
+/**
+ * Primary key is game_players.user_id against the LiveKit identity (the call
+ * token sets identity = auth user id). Guests carry no user_id, so they fall
+ * back to an exact nickname === display-name match — deliberately strict:
+ * a wrong tick would claim somebody is playing when they are not.
+ */
+function isMatchingSeat(seat: RosterPlayer, person: CallParticipant): boolean {
+  if (seat.userId) return seat.userId === person.id
+  return !!seat.nickname && seat.nickname === person.name
+}
+
 export default function CallGamePanel({
   game,
   roomCode,
   participantCount,
+  participants,
   onPick,
   onRoomReady,
   onClose,
@@ -72,11 +98,35 @@ export default function CallGamePanel({
   /** Code handed to the game on mount so a recipient lands in the room. */
   roomCode?: string
   participantCount: number
+  /** Everyone on the call — used to say who among them actually joined. */
+  participants: CallParticipant[]
   onPick: (game: CallGame) => void
   /** The embedded game created a room — the call page must broadcast it. */
   onRoomReady: (game: CallGame, code: string) => void
   onClose: () => void
 }) {
+  // Live seat list of the room the mounted game is sitting in.
+  const [roster, setRoster] = useState<RosterPlayer[]>([])
+
+  // Identity compare keeps the child's effect from ever re-firing on renders
+  // where nothing about the room actually changed.
+  const handleRoster = useCallback((next: RosterPlayer[]) => {
+    setRoster((prev) => (JSON.stringify(prev) === JSON.stringify(next) ? prev : next))
+  }, [])
+
+  /**
+   * Is this person on the call actually sitting in the room?
+   *
+   * Primary key is game_players.user_id against the LiveKit identity (the
+   * token sets identity = auth user id). Guests have no user_id, so they fall
+   * back to an exact nickname === display-name match — deliberately strict:
+   * a wrong tick would claim somebody is playing when they are not.
+   */
+  const isPlaying = (person: CallParticipant) => roster.some((seat) => isMatchingSeat(seat, person))
+
+  const playingCount = participants.filter(isPlaying).length
+  const offCallCount = roster.filter((seat) => !participants.some((person) => isMatchingSeat(seat, person))).length
+
   return (
     <section
       data-accent="gold"
@@ -113,7 +163,12 @@ export default function CallGamePanel({
           </p>
           <p style={{ fontSize: 11.5, color: 'var(--text-muted)', margin: '1px 0 0' }}>
             Voice stays live · {participantCount} in call
-            {game ? ' · share the room code, everyone joins' : ''}
+            {game && roster.length > 0 ? ` · ${roster.length} in the room` : ''}
+            {game && roster.length > 0 && participants.length > 0
+              ? ` · ${playingCount} of them on this call playing`
+              : ''}
+            {game && roster.length === 0 ? ' · waiting for a room' : ''}
+            {!game ? ' · pick a game, everyone on the call can join' : ''}
           </p>
         </div>
         <button
@@ -136,6 +191,73 @@ export default function CallGamePanel({
           <Icon name="x" size={17} />
         </button>
       </div>
+
+      {/* ── Who on the call is actually in the room ── */}
+      {game && (
+        <div
+          aria-label="Call participants in this game"
+          style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 14, alignItems: 'center' }}
+        >
+          {participants.length === 0 && (
+            <span style={{ fontSize: 12, color: 'var(--text-muted)', margin: 0 }}>
+              Nobody else is on the call right now.
+            </span>
+          )}
+
+          {participants.map((person) => {
+            const playing = isPlaying(person)
+            return (
+              <span
+                key={person.id}
+                title={
+                  playing ? `${person.name} joined the room` : `${person.name} is on the call but not in the room yet`
+                }
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: 6,
+                  fontSize: 12,
+                  fontWeight: 700,
+                  padding: '6px 11px',
+                  borderRadius: 999,
+                  border: `1px solid ${playing ? 'var(--success, #22c55e)' : ROUND}`,
+                  background: playing ? 'var(--success-light, var(--bg-secondary))' : 'var(--bg)',
+                  color: playing ? 'var(--success-text, var(--text-primary))' : 'var(--text-muted)',
+                }}
+              >
+                <span
+                  aria-hidden="true"
+                  style={{
+                    width: 7,
+                    height: 7,
+                    borderRadius: '50%',
+                    background: playing ? 'var(--success, #22c55e)' : 'var(--border-strong, var(--border))',
+                    flexShrink: 0,
+                  }}
+                />
+                {person.name}
+              </span>
+            )
+          })}
+
+          {/* People in the room who are not on this call (joined by code). */}
+          {offCallCount > 0 && (
+            <span
+              title="Joined with the room code but are not on this call"
+              style={{
+                fontSize: 12,
+                fontWeight: 700,
+                padding: '6px 11px',
+                borderRadius: 999,
+                border: `1px dashed ${ROUND}`,
+                color: 'var(--text-muted)',
+              }}
+            >
+              +{offCallCount} joined by code
+            </span>
+          )}
+        </div>
+      )}
 
       {/* ── Picker ── */}
       {!game && (
@@ -202,12 +324,14 @@ export default function CallGamePanel({
               key={`typing-${roomCode ?? 'new'}`}
               initialRoomCode={roomCode}
               onRoomReady={(code) => onRoomReady('typing', code)}
+              onRoster={handleRoster}
             />
           ) : (
             <QuickMath
               key={`math-${roomCode ?? 'new'}`}
               initialRoomCode={roomCode}
               onRoomReady={(code) => onRoomReady('math', code)}
+              onRoster={handleRoster}
             />
           )}
         </div>
