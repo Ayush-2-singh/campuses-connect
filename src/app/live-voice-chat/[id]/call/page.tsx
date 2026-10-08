@@ -15,6 +15,7 @@ import type { TrackReferenceOrPlaceholder, TrackReference } from '@livekit/compo
 import { Track } from 'livekit-client'
 import { createClient } from '@/lib/supabase/client'
 import { Icon } from '@/components/icons'
+import CallGamePanel, { CALL_GAME_LABELS, type CallGame, type CallGameInvite } from '@/components/games/CallGamePanel'
 
 const supabase = createClient()
 
@@ -137,6 +138,75 @@ function CallShell({ connected, onLeave }: { connected: boolean; onLeave: () => 
   const { emojiEvents, sendReaction } = useReactions(localParticipant?.identity)
   const callId = useSearchParams().get('callId') || ''
 
+  // ── TALK + PLAY ───────────────────────────────────────────────────────────
+  // A second data channel (next to 'reaction') carries exactly one payload:
+  // { game, code }. When somebody creates a room inside the panel the code
+  // goes out to everyone on the call, so joining needs no typing, no copy
+  // paste and no one leaves the conversation — the panel mounts the game
+  // while LiveKit keeps the mic open underneath.
+  const [gamesOpen, setGamesOpen] = useState(false)
+  const [game, setGame] = useState<CallGame | null>(null)
+  const [gameCode, setGameCode] = useState<string | undefined>(undefined)
+  const [invite, setInvite] = useState<(CallGameInvite & { key: number }) | null>(null)
+
+  const { send: sendGame } = useDataChannel('game', (msg) => {
+    let parsed: Partial<CallGameInvite> | null = null
+    try {
+      parsed = JSON.parse(new TextDecoder().decode(msg.payload)) as CallGameInvite
+    } catch {
+      return // malformed payload, e.g. a peer still on an older bundle
+    }
+    if (parsed?.game !== 'typing' && parsed?.game !== 'math') return
+    if (typeof parsed.code !== 'string' || !/^\d{6}$/.test(parsed.code)) return
+    setInvite({
+      game: parsed.game,
+      code: parsed.code,
+      from: msg.from?.name || 'Someone in the call',
+      key: Date.now(),
+    })
+  })
+
+  // An invite that is never tapped should not sit on the screen all call.
+  useEffect(() => {
+    if (!invite) return
+    const timer = window.setTimeout(() => setInvite(null), 20_000)
+    return () => window.clearTimeout(timer)
+  }, [invite])
+
+  const startGame = useCallback((next: CallGame) => {
+    setGame(next)
+    setGameCode(undefined)
+    setInvite(null)
+    setGamesOpen(true)
+  }, [])
+
+  const joinInvite = useCallback(() => {
+    if (!invite) return
+    setGame(invite.game)
+    setGameCode(invite.code)
+    setInvite(null)
+    setGamesOpen(true)
+  }, [invite])
+
+  /** Pushes the creator's room code to everyone else on the call — LiveKit
+   *  never echoes a data message back to its sender, so the player who made
+   *  the room simply stays where they are; nothing to re-render for them.
+   *
+   *  Deliberately does NOT write back into `gameCode`: that state is only
+   *  ever set by `joinInvite`, and pushing the creator's own code into it
+   *  would change the game's `key` and remount a room that is already
+   *  running (QuickMath would then re-join itself and trip nickname_taken). */
+  const broadcastRoom = useCallback(
+    (next: CallGame, code: string) => {
+      try {
+        sendGame(new TextEncoder().encode(JSON.stringify({ game: next, code })), { reliable: true })
+      } catch {
+        /* channel not open yet — the code is still printed in the lobby */
+      }
+    },
+    [sendGame]
+  )
+
   // ── GMeet-style layout control ─────────────────────────────────────
   // 'auto'   → screen-share stage when someone presents, tiles otherwise
   // 'grid'   → everyone as equal tiles, no stage
@@ -188,30 +258,131 @@ function CallShell({ connected, onLeave }: { connected: boolean; onLeave: () => 
   return (
     <div style={{ minHeight: '72vh', display: 'flex', flexDirection: 'column' }}>
       <Header connected={connected} count={participants.length} onBack={onLeave} />
-      {/* Layout switcher — Auto / Grid / Spotlight, like Meet's tile buttons. */}
-      <LayoutSwitcher layout={layout} onChange={changeLayout} />
 
-      {(layout === 'auto' || layout === 'spotlight') && (
-        <Stage
-          mode={layout === 'spotlight' ? 'spotlight' : 'share'}
-          participants={participants}
-          shareRef={screenShareRef}
-          spotlightId={spotlightId}
-          pinnedId={pinnedId}
-          onUnpin={() => setPinnedId(null)}
+      {/* The game panel takes over the stage while it is open — the header
+          (live count) and the control bar (mic / leave) never move, so the
+          call is still one tap away at every point. */}
+      {gamesOpen ? (
+        <CallGamePanel
+          game={game}
+          roomCode={gameCode}
+          participantCount={participants.length}
+          onPick={startGame}
+          onRoomReady={broadcastRoom}
+          onClose={() => {
+            setGamesOpen(false)
+            setGame(null)
+            setGameCode(undefined)
+          }}
         />
+      ) : (
+        <>
+          {/* Layout switcher — Auto / Grid / Spotlight, like Meet's tile buttons. */}
+          <LayoutSwitcher layout={layout} onChange={changeLayout} />
+
+          {(layout === 'auto' || layout === 'spotlight') && (
+            <Stage
+              mode={layout === 'spotlight' ? 'spotlight' : 'share'}
+              participants={participants}
+              shareRef={screenShareRef}
+              spotlightId={spotlightId}
+              pinnedId={pinnedId}
+              onUnpin={() => setPinnedId(null)}
+            />
+          )}
+
+          <Participants
+            participants={participants}
+            emojiEvents={emojiEvents}
+            layout={layout}
+            pinnedId={pinnedId}
+            spotlightId={spotlightId}
+            onPin={(identity) => setPinnedId((cur) => (cur === identity ? null : identity))}
+          />
+        </>
       )}
 
-      <Participants
-        participants={participants}
-        emojiEvents={emojiEvents}
-        layout={layout}
-        pinnedId={pinnedId}
-        spotlightId={spotlightId}
-        onPin={(identity) => setPinnedId((cur) => (cur === identity ? null : identity))}
-      />
+      {/* Someone on the call started a game — one tap joins their room. */}
+      {invite && (
+        <div
+          role="status"
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 10,
+            flexWrap: 'wrap',
+            background: 'var(--bg)',
+            border: '1px solid var(--border)',
+            borderRadius: 14,
+            padding: '10px 12px',
+            marginBottom: 12,
+            animation: 'ccCardUp 0.15s ease',
+          }}
+        >
+          <span
+            style={{
+              width: 34,
+              height: 34,
+              borderRadius: 10,
+              background: 'var(--accent-light)',
+              color: 'var(--accent-text)',
+              display: 'inline-flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              flexShrink: 0,
+            }}
+          >
+            <Icon name="gamepad" size={17} />
+          </span>
+          <p style={{ flex: 1, minWidth: 160, fontSize: 13, color: 'var(--text-primary)', margin: 0 }}>
+            <strong>{invite.from}</strong> started {CALL_GAME_LABELS[invite.game]} — room {invite.code}
+          </p>
+          <button
+            onClick={joinInvite}
+            style={{
+              minHeight: 40,
+              padding: '0 18px',
+              borderRadius: 10,
+              border: 'none',
+              background: 'var(--accent)',
+              color: 'var(--on-accent)',
+              fontSize: 13,
+              fontWeight: 700,
+              fontFamily: 'inherit',
+              cursor: 'pointer',
+            }}
+          >
+            Join
+          </button>
+          <button
+            onClick={() => setInvite(null)}
+            aria-label="Dismiss the game invite"
+            style={{
+              width: 40,
+              height: 40,
+              borderRadius: '50%',
+              border: '1px solid var(--border)',
+              background: 'var(--bg)',
+              color: 'var(--text-secondary)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              cursor: 'pointer',
+            }}
+          >
+            <Icon name="x" size={16} />
+          </button>
+        </div>
+      )}
+
       <div style={{ flex: 1 }} />
-      <Controls callId={callId} onLeave={onLeave} sendReaction={sendReaction} />
+      <Controls
+        callId={callId}
+        onLeave={onLeave}
+        sendReaction={sendReaction}
+        gamesOpen={gamesOpen}
+        onOpenGames={() => setGamesOpen((open) => !open)}
+      />
     </div>
   )
 }
@@ -777,10 +948,14 @@ function Controls({
   callId,
   onLeave,
   sendReaction,
+  gamesOpen,
+  onOpenGames,
 }: {
   callId: string
   onLeave: () => void
   sendReaction: (emoji: string) => void
+  gamesOpen: boolean
+  onOpenGames: () => void
 }) {
   const { localParticipant, isMicrophoneEnabled, isCameraEnabled, isScreenShareEnabled } = useLocalParticipant()
   const [emojiOpen, setEmojiOpen] = useState(false)
@@ -932,6 +1107,17 @@ function Controls({
           <Icon name="screen-share" size={23} />
         </button>
       )}
+
+      {/* Games — opens the in-call panel: play together without hanging up. */}
+      <button
+        onClick={onOpenGames}
+        aria-label={gamesOpen ? 'Close the games panel' : 'Play a game with the call'}
+        aria-expanded={gamesOpen}
+        className="lvc-ctrl"
+        style={gamesOpen ? { background: 'var(--accent)', color: 'var(--on-accent)' } : ON}
+      >
+        <Icon name="gamepad" size={23} />
+      </button>
 
       <button onClick={onLeave} aria-label="Leave the call" className="lvc-leave">
         Leave

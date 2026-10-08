@@ -15,7 +15,19 @@ import GameLobby from './GameLobby'
 import GamePlay from './GamePlay'
 import GameResults from './GameResults'
 
-export default function QuickMath({ initialRoomCode }: { initialRoomCode?: string }) {
+export default function QuickMath({
+  initialRoomCode,
+  onRoomReady,
+}: {
+  initialRoomCode?: string
+  /**
+   * Fires with the 6-digit code once this client OWNS a room (create, not
+   * join) — the voice call forwards it to the rest of the call so everyone
+   * lands in the same game. Joining must stay silent: broadcasting there
+   * would make every player re-invite the room they just joined.
+   */
+  onRoomReady?: (code: string) => void
+}) {
   // PROFESSIONAL PATTERN: Singleton client via useRef — prevents re-creation on every render.
   const supabaseRef = useRef(createClient())
   const supabase = supabaseRef.current
@@ -187,6 +199,7 @@ export default function QuickMath({ initialRoomCode }: { initialRoomCode?: strin
     const result = data as unknown as { room_id: string; room_code: string; player_id: string }
     setMyPlayerId(result.player_id)
     setRoomCodeInput(result.room_code)
+    onRoomReady?.(result.room_code)
 
     // Load full state
     await loadRoomState(result.room_code)
@@ -568,7 +581,9 @@ export default function QuickMath({ initialRoomCode }: { initialRoomCode?: strin
       )}
 
       {/* ═══ RESULTS PHASE ═══ */}
-      {phase === 'finished' && <GameResults players={players} myPlayerId={myPlayerId} onExit={handleLeave} onRematch={handleRematch} />}
+      {phase === 'finished' && (
+        <GameResults players={players} myPlayerId={myPlayerId} onExit={handleLeave} onRematch={handleRematch} />
+      )}
     </div>
   )
 }

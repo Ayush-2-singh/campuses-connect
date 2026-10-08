@@ -67,7 +67,19 @@ type Mode = 'menu' | 'quick' | 'private' | 'daily'
 const BACK = <button onClick={() => window.location.reload()} style={{ display: 'none' }} aria-hidden="true" />
 void BACK
 
-export default function TypingBattle({ initialRoomCode }: { initialRoomCode?: string }) {
+export default function TypingBattle({
+  initialRoomCode,
+  onRoomReady,
+}: {
+  initialRoomCode?: string
+  /**
+   * Fires with the 6-digit code once this client OWNS a room (create, not
+   * join). The voice call uses it to hand the code to everyone on the call —
+   * a join must stay silent or every player would re-broadcast and the room
+   * would invite itself in a loop.
+   */
+  onRoomReady?: (code: string) => void
+}) {
   const supabaseRef = useRef(createClient())
   const supabase = supabaseRef.current
   const guestId = useRef(getGuestId()).current
@@ -297,6 +309,7 @@ export default function TypingBattle({ initialRoomCode }: { initialRoomCode?: st
       return
     }
     const r = data as { room_code: string }
+    onRoomReady?.(r.room_code)
     const existing = await loadRoom(r.room_code)
     if (existing) {
       setRoom(existing)
