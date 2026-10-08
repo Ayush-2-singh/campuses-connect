@@ -1,0 +1,8 @@
+feat(chat): keep Community and Games one tap away from inside a chat room
+
+A conversation should not be a dead end — the room header now carries round
+Community and Games buttons beside back and search, so leaving a chat no
+longer means unwinding the whole navigation stack.
+
+🤖 Generated with Codebuff
+Co-Authored-By: Codebuff <noreply@codebuff.com>

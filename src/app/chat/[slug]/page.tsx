@@ -790,6 +790,51 @@ export default function ChatRoomPage() {
                 <Icon name="shield" size={17} />
               </button>
             )}
+
+            {/* The other two pillars stay reachable from inside a chat, so a
+                conversation never dead-ends the app. Same round icon button
+                as the rest of the header. */}
+            <button
+              onClick={() => router.push('/community')}
+              aria-label="Open Community"
+              title="Community"
+              style={{
+                width: 44,
+                height: 44,
+                flexShrink: 0,
+                borderRadius: '50%',
+                border: '1px solid var(--border)',
+                background: 'var(--bg)',
+                color: 'var(--text-secondary)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                cursor: 'pointer',
+              }}
+            >
+              <Icon name="users" size={17} />
+            </button>
+
+            <button
+              onClick={() => router.push('/games')}
+              aria-label="Open Games"
+              title="Games"
+              style={{
+                width: 44,
+                height: 44,
+                flexShrink: 0,
+                borderRadius: '50%',
+                border: '1px solid var(--border)',
+                background: 'var(--bg)',
+                color: 'var(--text-secondary)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                cursor: 'pointer',
+              }}
+            >
+              <Icon name="gamepad" size={17} />
+            </button>
           </div>
 
           {searchOpen && (
