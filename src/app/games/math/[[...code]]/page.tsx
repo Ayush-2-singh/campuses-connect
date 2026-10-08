@@ -18,7 +18,7 @@ export default function MathGamePage() {
     <div data-accent="gold" style={{ minHeight: 'var(--app-vh)' }}>
       <div style={{ maxWidth: 640, margin: '0 auto', padding: '24px 20px 60px' }}>
         <a
-          href="/compete?tab=clash"
+          href="/games"
           style={{
             display: 'inline-block',
             background: 'none',
@@ -33,7 +33,7 @@ export default function MathGamePage() {
             textDecoration: 'none',
           }}
         >
-          ← Back to Compete
+          ← Back to Games
         </a>
 
         <h1 style={{ fontSize: 22, fontWeight: 800, color: 'var(--text-primary)', margin: '0 0 4px' }}>Quick Math</h1>

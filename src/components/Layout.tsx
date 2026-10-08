@@ -34,18 +34,21 @@ const NAV_ITEMS = [
   // Esports — its own top-level pillar. It used to sit inside Community, which
   // buried the Free Fire board; it now stands next to Global.
   { label: 'Esports', href: '/tournaments', icon: 'trophy' },
+  // Games — also its own top-level pillar. It used to hide under Community as
+  // "Compete, Games & Clash", where games (Typing Battle, Quick Math) and
+  // esports sat on the same tab. It now holds only games.
+  { label: 'Games', href: '/games', icon: 'gamepad' },
 ]
 
 // Community pillar children — existing systems, relinked (no rebuilds).
-// Games & Clash surfaced as its own child (was hidden inside Compete tabs).
+// Games moved out to its own pillar (/games); esports lives at /tournaments.
 const COMMUNITY_CHILDREN = [
   { label: 'Communities', href: '/communities', icon: 'users' },
   { label: 'Groups', href: '/groups', icon: 'users' },
   { label: 'Live Chat', href: '/chat', icon: 'message' },
   { label: 'Confessions', href: '/community?view=confessions', icon: 'eyeOff' },
-  // One Compete entry — /compete?tab=clash is the same page, so the second
-  // item previously duplicated the section (two entries, one destination).
-  { label: 'Compete, Games & Clash', href: '/compete?tab=clash', icon: 'zap' },
+  // Compete — rankings, daily challenge and the Campus Clash contest.
+  { label: 'Compete', href: '/compete', icon: 'zap' },
   { label: 'Live Voice', href: '/live-voice-chat', icon: 'mic' },
   { label: 'Connect', href: '/connections', icon: 'link' },
 ]
@@ -53,7 +56,7 @@ const COMMUNITY_CHILDREN = [
 const PROFILE_NAV = [{ label: 'Profile', href: '/profile', icon: 'user' }]
 
 // Warmed right after mount — first click on any pillar is instant.
-const PREFETCH_ROUTES = ['/global', '/community', '/profile', '/groups']
+const PREFETCH_ROUTES = ['/global', '/community', '/profile', '/groups', '/games']
 
 const FAB_ACTIONS = [
   { label: 'Ask ConnectToCampus', desc: 'Search, shortcuts & questions', icon: 'sparkles', action: 'cmd' as const },

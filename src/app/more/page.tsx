@@ -17,6 +17,12 @@ const SECTIONS = [
   { icon: 'globe', label: 'Global', desc: 'Post & connect with students everywhere', href: '/global' },
   { icon: 'zap', label: 'Compete', desc: 'Daily DSA challenges, Campus Clash & Aura rankings', href: '/compete' },
   {
+    icon: 'gamepad',
+    label: 'Games',
+    desc: 'Typing Battle & Quick Math — real-time 1v1 games',
+    href: '/games',
+  },
+  {
     icon: 'trophy',
     label: 'Esports — Free Fire',
     desc: 'Tournaments, team roster & join a squad with a code',

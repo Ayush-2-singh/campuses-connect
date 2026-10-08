@@ -8,7 +8,7 @@
 // else (Chat, Compete, Leaderboard, Blogs, Events, Connections, Talent, Live
 // Voice) is secondary and lives inside these three sections:
 // Chat/Connections inside Profile, Compete/Leaderboard/Live Voice/Confessions
-// inside Community.
+// inside Community. Esports and Games are their own sections.
 
 export const MOBILE_NAV = [
   { label: 'Global', href: '/global', icon: 'globe' },
@@ -17,11 +17,12 @@ export const MOBILE_NAV = [
 ]
 
 export const MOBILE_MENU_NAV = [
-  // One Compete entry — Games & Clash is the clash tab of /compete, the
-  // second item previously pointed at the same page (duplicate destination).
-  { label: 'Compete, Games & Clash', href: '/compete?tab=clash', icon: 'zap' },
+  // Compete — rankings, daily challenge and the Campus Clash contest.
+  { label: 'Compete', href: '/compete', icon: 'zap' },
   // Esports — the Free Fire tournament board (team join by code lives there).
   { label: 'Esports', href: '/tournaments', icon: 'trophy' },
+  // Games — Typing Battle & Quick Math only (pulled out of Community).
+  { label: 'Games', href: '/games', icon: 'gamepad' },
   // Secondary destinations — one ☰ tap away from any of the five tabs.
   { label: 'Leaderboard', href: '/leaderboard', icon: 'star' },
   { label: 'Chat', href: '/chat', icon: 'message' },

@@ -22,9 +22,9 @@ export default function GameRoomPage() {
           padding: '24px 20px 48px',
         }}
       >
-        {/* Back button — games live in the Compete section */}
+        {/* Back button — games live in their own section */}
         <a
-          href="/compete?tab=clash"
+          href="/games"
           style={{
             display: 'inline-block',
             background: 'none',
@@ -39,7 +39,7 @@ export default function GameRoomPage() {
             textDecoration: 'none',
           }}
         >
-          ← Back to Compete
+          ← Back to Games
         </a>
 
         <h1

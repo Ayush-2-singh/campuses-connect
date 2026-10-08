@@ -256,10 +256,10 @@ describe('typing battle — client wiring', () => {
     expect(battle).toMatch(/update_typing_progress/)
   })
 
-  it('the game card exists in the Compete clash hub', () => {
-    const clash = read('src/app/compete/ClashTab.tsx')
-    expect(clash).toMatch(/Typing Battle/)
-    expect(clash).toMatch(/\/games\/typing/)
+  it('the game card exists in the Games hub', () => {
+    const hub = read('src/app/games/page.tsx')
+    expect(hub).toMatch(/Typing Battle/)
+    expect(hub).toMatch(/\/games\/typing/)
   })
 
   it('room deep links route through /games/typing', () => {
