@@ -40,6 +40,21 @@ export default function LiveVoiceChatRoomPage() {
   const [pwValue, setPwValue] = useState('')
   const [pwError, setPwError] = useState('')
 
+  // ── Load bookkeeping ───────────────────────────────────────────────────────
+  // Realtime, the focus refetch and the 15s fallback all call load() and they
+  // overlap. `seq` makes the NEWEST load the only one allowed to write state,
+  // so a slow, older request can never repaint the screen — or post an error —
+  // from a snapshot nobody is looking at any more.
+  const loadSeq = useRef(0)
+  /** The room currently on screen: lets a null read mean "gone" only when
+   *  there is genuinely nothing to show, and "transient RLS flap" otherwise. */
+  const groupRef = useRef<any>(null)
+  /** The banner load() itself produced, so a successful pass can clear exactly
+   *  that and leave an RPC error from a button press untouched. */
+  const loadErrorRef = useRef('')
+
+  const NOT_FOUND = 'This room does not exist, or it is a campus room you cannot see.'
+
   /**
    * Member names are fetched in a second query rather than embedded.
    * `live_voice_chat_members.user_id` references auth.users(id), not
@@ -47,22 +62,43 @@ export default function LiveVoiceChatRoomPage() {
    * for `profiles(...)` here would fail the whole select.
    */
   const load = useCallback(async () => {
+    const seq = ++loadSeq.current
+    const isCurrent = () => seq === loadSeq.current
+
     const { data: groupRow, error: groupError } = await supabase
       .from('live_voice_chat_groups')
       .select('*')
       .eq('id', groupId)
       .maybeSingle()
 
+    if (!isCurrent()) return // a newer load owns the screen now
+
     if (groupError) {
+      loadErrorRef.current = groupError.message
       setError(groupError.message)
       setLoading(false)
       return
     }
     if (!groupRow) {
-      setError('This room does not exist, or it is a campus room you cannot see.')
+      // First look and nothing to show → the room really is gone or hidden.
+      // If the room is ALREADY on screen this is a transient visibility gap
+      // (a session refresh can make RLS hide a campus room for exactly one
+      // request) — announcing "does not exist" over a fully rendered room is
+      // a lie, so stay quiet and let the next pass confirm.
+      if (!groupRef.current) {
+        loadErrorRef.current = NOT_FOUND
+        setError(loadErrorRef.current)
+      }
       setLoading(false)
       return
     }
+
+    // The room is visible again — any banner from an earlier pass is stale.
+    if (loadErrorRef.current) {
+      loadErrorRef.current = ''
+      setError('')
+    }
+    groupRef.current = groupRow
     setGroup(groupRow)
 
     const { data: memberRows } = await supabase
@@ -89,6 +125,7 @@ export default function LiveVoiceChatRoomPage() {
     // participant rows and ends calls nobody is in), so this room's LIVE
     // badge can never count a student whose tab already crashed.
     await fetchLiveVoiceRooms(supabase)
+    if (!isCurrent()) return // the sweep is the slowest step — re-check after it
 
     const { data: callRow } = await supabase
       .from('live_voice_chat_calls')
@@ -110,6 +147,23 @@ export default function LiveVoiceChatRoomPage() {
 
     setLoading(false)
   }, [groupId, supabase])
+
+  useEffect(() => {
+    // App Router keeps this component mounted when only the dynamic param
+    // changes, so the PREVIOUS room's card and banner would otherwise survive
+    // the navigation — a deleted room's "does not exist" banner sitting on top
+    // of the next room's card. A new id means a new room: start clean.
+    loadSeq.current++ // anything still in flight for the old room is stale
+    groupRef.current = null
+    loadErrorRef.current = ''
+    setGroup(null)
+    setMembers([])
+    setCall(null)
+    setParticipants([])
+    setIsMember(false)
+    setError('')
+    setLoading(true)
+  }, [groupId])
 
   useEffect(() => {
     const init = async () => {
