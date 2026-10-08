@@ -3,9 +3,11 @@
 /**
  * GAMES — the standalone games section (Games pulled out of Community).
  *
- * Only games live here: the real-time 1v1 games students actually play
- * (Typing Battle, Quick Math) and the champions board they feed. Tournament /
- * battle-royale content belongs to its own pillar, not this page.
+ * Two big game cards, one per game: Typing Battle and Quick Math. Each card
+ * advertises the modes the game already offers (Quick Match, room code, the
+ * typing daily challenge / the math difficulty ladder) and drops you into the
+ * game's own lobby. Tournament / battle-royale content belongs to its own
+ * pillar, never here.
  */
 
 import { useEffect, useState } from 'react'
@@ -21,18 +23,18 @@ const GAME_CARDS = [
   {
     key: 'typing',
     title: 'Typing Battle',
-    desc: 'Quick match or share a room code — same words, fastest fingers win.',
+    desc: 'Same words, fastest fingers win. Race a random student or share a room code with your batch.',
     href: '/games/typing',
     icon: 'type',
-    tag: 'Live 1v1 · Real-time rooms',
+    chips: ['Quick Match', 'Room code', 'Daily challenge'],
   },
   {
     key: 'math',
     title: 'Quick Math',
-    desc: 'Real-time math duels — solve faster, beat the clock.',
+    desc: 'Solve faster, beat the clock. Pick a difficulty, then duel a classmate round by round.',
     href: '/games/math',
     icon: 'zap',
-    tag: 'Live 1v1 · Real-time rooms',
+    chips: ['Easy', 'Medium', 'Hard'],
   },
 ]
 
@@ -69,6 +71,14 @@ export default function GamesPage() {
       cancelled = true
     }
   }, [supabase])
+
+  const prefetch = (href: string) => {
+    try {
+      router.prefetch(href)
+    } catch {
+      /* ignore */
+    }
+  }
 
   return (
     <Layout user={user} profile={profile}>
@@ -128,74 +138,123 @@ export default function GamesPage() {
           </span>
         </div>
 
-        {/* ── The games ── */}
-        <div className="section-grid" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))' }}>
+        {/* ── Two big game cards — one per game ── */}
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: 14 }}>
           {GAME_CARDS.map((g) => (
-            <button
+            <div
               key={g.key}
-              onClick={() => router.push(g.href)}
-              onMouseEnter={() => {
-                try {
-                  router.prefetch(g.href)
-                } catch {
-                  /* ignore */
-                }
-              }}
               className="card-hover"
               style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: 14,
+                position: 'relative',
+                overflow: 'hidden',
                 background: 'var(--bg)',
                 border: '1px solid var(--border)',
-                borderRadius: 14,
-                padding: 16,
-                cursor: 'pointer',
-                width: '100%',
-                textAlign: 'left',
-                fontFamily: 'inherit',
+                borderRadius: 16,
                 boxShadow: 'var(--shadow-sm)',
+                padding: '22px 22px 20px',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: 14,
               }}
             >
+              {/* soft accent wash, top-left origin */}
               <span
+                aria-hidden="true"
                 style={{
-                  width: 46,
-                  height: 46,
-                  borderRadius: 13,
-                  background: 'var(--accent-light)',
-                  color: 'var(--accent-text)',
+                  position: 'absolute',
+                  inset: 0,
+                  background: 'radial-gradient(520px 150px at 8% 0%, var(--accent-light), transparent 70%)',
+                  pointerEvents: 'none',
+                }}
+              />
+
+              <div style={{ display: 'flex', alignItems: 'center', gap: 14, position: 'relative' }}>
+                <span
+                  aria-hidden="true"
+                  style={{
+                    width: 52,
+                    height: 52,
+                    borderRadius: 14,
+                    background: 'var(--accent-light)',
+                    color: 'var(--accent-text)',
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    flexShrink: 0,
+                  }}
+                >
+                  <Icon name={g.icon} size={26} />
+                </span>
+                <div style={{ minWidth: 0 }}>
+                  <p
+                    style={{
+                      fontSize: 10.5,
+                      fontWeight: 800,
+                      letterSpacing: '0.1em',
+                      color: 'var(--accent-text)',
+                      textTransform: 'uppercase',
+                      margin: '0 0 3px',
+                    }}
+                  >
+                    Live 1v1 · Real-time rooms
+                  </p>
+                  <h3
+                    style={{ fontSize: 20, fontWeight: 900, color: 'var(--text-primary)', margin: 0, lineHeight: 1.2 }}
+                  >
+                    {g.title}
+                  </h3>
+                </div>
+              </div>
+
+              <p style={{ fontSize: 13, color: 'var(--text-muted)', margin: 0, position: 'relative' }}>{g.desc}</p>
+
+              {/* Mode chips — what the game already offers */}
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, position: 'relative' }}>
+                {g.chips.map((chip) => (
+                  <span
+                    key={chip}
+                    style={{
+                      fontSize: 11,
+                      fontWeight: 700,
+                      color: 'var(--text-secondary)',
+                      background: 'var(--bg-secondary)',
+                      border: '1px solid var(--border)',
+                      borderRadius: 999,
+                      padding: '4px 10px',
+                    }}
+                  >
+                    {chip}
+                  </span>
+                ))}
+              </div>
+
+              <span style={{ flex: 1 }} />
+
+              <button
+                onClick={() => router.push(g.href)}
+                onMouseEnter={() => prefetch(g.href)}
+                style={{
+                  position: 'relative',
+                  width: '100%',
                   display: 'inline-flex',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  flexShrink: 0,
+                  gap: 8,
+                  background: 'var(--accent)',
+                  color: 'var(--on-accent)',
+                  border: 'none',
+                  borderRadius: 12,
+                  padding: '12px 20px',
+                  fontSize: 14,
+                  fontWeight: 800,
+                  cursor: 'pointer',
+                  fontFamily: 'inherit',
                 }}
-                aria-hidden="true"
               >
-                <Icon name={g.icon} size={22} />
-              </span>
-              <span style={{ flex: 1, minWidth: 0 }}>
-                <span
-                  style={{
-                    display: 'block',
-                    fontSize: 10.5,
-                    fontWeight: 800,
-                    letterSpacing: '0.1em',
-                    color: 'var(--accent-text)',
-                    textTransform: 'uppercase',
-                    marginBottom: 2,
-                  }}
-                >
-                  {g.tag}
-                </span>
-                <span style={{ display: 'block', fontSize: 16, fontWeight: 800, color: 'var(--text-primary)' }}>
-                  {g.title}
-                </span>
-                <span style={{ display: 'block', fontSize: 12.5, color: 'var(--text-muted)', marginTop: 3 }}>
-                  {g.desc}
-                </span>
-              </span>
-              <Icon name="chevron" size={16} />
-            </button>
+                <Icon name="gamepad" size={16} />
+                Play now
+              </button>
+            </div>
           ))}
         </div>
 
