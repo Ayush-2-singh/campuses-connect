@@ -1,7 +1,6 @@
 /* ConnectToCampus service worker — network-first pages with offline
    fallback, cache-first static assets, auth pages always network. */
 
-const CACHE_NAME = 'connecttocampus-v3'
 // Cache version bumped to v9: v8 clients were stuck on a pre-Games bundle, so
 // a nav/footer change shipped but never appeared on phones that already had
 // the PWA installed. Bumping flushes v8's cached bundles on activate.
@@ -71,13 +70,18 @@ self.addEventListener('fetch', event => {
     return
   }
 
-  // Static assets: cache-first
+  // Static assets: cache-first, but revalidated in the background.
+  //
+  // Plain cache-first never refreshes: a student who changed their avatar, or
+  // an icon we re-shipped under the same URL, kept the old bytes until they
+  // cleared site data. So the cached copy answers immediately and the network
+  // quietly replaces it for next time (stale-while-revalidate). No waitUntil:
+  // a fire-and-forget update cannot throw InvalidStateError on a settled event.
   if (req.destination === 'style' || req.destination === 'script' || req.destination === 'image' ||
       url.pathname.match(/\.(css|js|png|jpg|jpeg|gif|svg|woff2?)$/)) {
     event.respondWith(
       caches.match(req).then(cached => {
-        if (cached) return cached
-        return fetch(req).then(response => {
+        const refresh = fetch(req).then(response => {
           // Only cache successful responses — never errors (500/429 etc.).
           if (response.ok) {
             const clone = response.clone()
@@ -85,6 +89,12 @@ self.addEventListener('fetch', event => {
           }
           return response
         })
+
+        if (cached) {
+          refresh.catch(() => undefined) // background refresh, best effort
+          return cached
+        }
+        return refresh.catch(() => Response.error())
       })
     )
     return
@@ -102,11 +112,18 @@ self.addEventListener('fetch', event => {
       }
       return response
     }).catch(() =>
-      caches.match(req).then(cached => cached || (
-        req.mode === 'navigate'
-          ? (caches.match('/') || new Response(offlineHTML(), { headers: { 'Content-Type': 'text/html' } }))
-          : (cached || Response.error())
-      ))
+      caches.match(req).then(cached => {
+        if (cached) return cached
+        if (req.mode !== 'navigate') return Response.error()
+        // OFFLINE NAVIGATION. This used to be `caches.match('/') || new
+        // Response(offlineHTML())` — caches.match() returns a Promise, which is
+        // always truthy, so the || never took the offline page and a visitor
+        // without a cached '/' got `undefined` (a dead response) instead of the
+        // branded offline screen. Await it, then fall back for real.
+        return caches.match('/').then(root =>
+          root || new Response(offlineHTML(), { headers: { 'Content-Type': 'text/html' } })
+        )
+      })
     )
   )
 })
