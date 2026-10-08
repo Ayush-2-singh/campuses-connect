@@ -141,9 +141,11 @@ describe('the /global dashboard is fun-only', () => {
   })
 
   it('surfaces live voice and the student-made groups', () => {
-    expect(dashboard).toContain('fetchLiveVoiceRooms')
-    expect(dashboard).toContain("from '@/lib/liveVoice'")
-    expect(dashboard).toContain('/live-voice-chat')
+    // Live voice is the free4talk-style board now: the dashboard wires the
+    // board in, and the board owns the liveness read + the /live-voice-chat
+    // deep links (see tests/global-live-rooms.test.ts).
+    expect(dashboard).toContain("from '@/components/global/LiveRoomBrowser'")
+    expect(dashboard).toContain('<LiveRoomBrowser')
     expect(dashboard).toContain('/groups')
     expect(dashboard).toContain('community_members')
   })

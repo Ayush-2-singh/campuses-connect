@@ -163,7 +163,10 @@ describe('tournament roster UI surfaces', () => {
     const admin = read('src/app/tournaments/admin/page.tsx')
     expect(admin).toContain('assign_team_igl')
     expect(admin).toContain('set_team_roster_lock')
-    expect(admin).toContain('set_registration_closed')
+    // Registration open/close goes through the richer RPC (it also carries the
+    // deadline and max-team cap); set_registration_closed stays in the lib for
+    // callers that only toggle the flag.
+    expect(admin).toContain('set_tournament_registration')
     expect(admin).toContain('regenerate_team_join_code')
     expect(admin).toContain('set_player_ff_identity')
     expect(admin).toContain('set_room_credentials')

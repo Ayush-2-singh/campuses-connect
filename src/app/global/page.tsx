@@ -20,7 +20,7 @@ import { useAdminContext } from '@/lib/permissions'
 import { ListSkeleton } from '@/components/Skeleton'
 import EmptyState from '@/components/EmptyState'
 import { Icon } from '@/components/icons'
-import { fetchLiveVoiceRooms, voiceIcon, type LiveVoiceRoom } from '@/lib/liveVoice'
+import LiveRoomBrowser from '@/components/global/LiveRoomBrowser'
 import type { Post } from '@/types'
 
 interface MyGroup {
@@ -34,7 +34,6 @@ export default function GlobalPage() {
   const [user, setUser] = useState<any>(null)
   const [profile, setProfile] = useState<any>(null)
   const [posts, setPosts] = useState<Post[]>([])
-  const [voiceRooms, setVoiceRooms] = useState<LiveVoiceRoom[]>([])
   const [myGroups, setMyGroups] = useState<MyGroup[]>([])
   const [loading, setLoading] = useState(true)
   const [hasMore, setHasMore] = useState(true)
@@ -91,7 +90,6 @@ export default function GlobalPage() {
           .filter((c) => c && c.created_by)
           .slice(0, 4) as MyGroup[]
         setMyGroups(groups)
-        setVoiceRooms(await fetchLiveVoiceRooms(supabase))
       }
       fetchPosts()
     }
@@ -124,6 +122,9 @@ export default function GlobalPage() {
             Voice rooms, your circles and the esports board — all in one place.
           </p>
         </div>
+
+        {/* ── Live Rooms — the free4talk-style board (live rooms float up) ── */}
+        <LiveRoomBrowser userId={user?.id ?? null} />
 
         {user && (
           <PostComposer
@@ -160,145 +161,6 @@ export default function GlobalPage() {
             </p>
           </div>
         )}
-
-        {/* ── Live Voice Chat ── rooms that are genuinely live right now */}
-        <section style={{ marginBottom: 24 }} aria-label="Live voice chat">
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
-            <h3
-              style={{
-                fontSize: 16,
-                fontWeight: 800,
-                color: 'var(--text-primary)',
-                margin: 0,
-                display: 'flex',
-                alignItems: 'center',
-                gap: 7,
-              }}
-            >
-              <Icon name="mic" size={16} style={{ color: 'var(--accent-text)' }} />
-              Live Voice Chat
-            </h3>
-            <button
-              onClick={() => router.push('/live-voice-chat')}
-              style={{
-                fontSize: 12.5,
-                fontWeight: 600,
-                color: 'var(--accent)',
-                background: 'none',
-                border: 'none',
-                cursor: 'pointer',
-                fontFamily: 'inherit',
-              }}
-            >
-              {voiceRooms.length > 0 ? 'All rooms →' : 'Start a room →'}
-            </button>
-          </div>
-
-          {voiceRooms.length === 0 ? (
-            <div
-              style={{
-                background: 'var(--bg)',
-                border: '1px dashed var(--border-strong, var(--border))',
-                borderRadius: 14,
-                padding: '16px 18px',
-                display: 'flex',
-                alignItems: 'center',
-                gap: 12,
-              }}
-            >
-              <span style={{ display: 'inline-flex', color: 'var(--text-muted)', flexShrink: 0 }} aria-hidden="true">
-                <Icon name="mic" size={18} />
-              </span>
-              <div style={{ flex: 1, minWidth: 0 }}>
-                <p style={{ fontSize: 13.5, fontWeight: 700, color: 'var(--text-primary)', margin: '0 0 2px' }}>
-                  Nobody is talking right now
-                </p>
-                <p style={{ fontSize: 12, color: 'var(--text-muted)', margin: 0 }}>
-                  Jump in first — the room lights up for your campusmates.
-                </p>
-              </div>
-              <button
-                onClick={() => router.push('/live-voice-chat')}
-                style={{
-                  background: 'var(--accent)',
-                  color: 'var(--on-accent)',
-                  border: 'none',
-                  borderRadius: 10,
-                  padding: '9px 15px',
-                  fontSize: 12.5,
-                  fontWeight: 800,
-                  cursor: 'pointer',
-                  fontFamily: 'inherit',
-                  flexShrink: 0,
-                }}
-              >
-                Go live
-              </button>
-            </div>
-          ) : (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-              {voiceRooms.slice(0, 3).map((r) => (
-                <button
-                  key={r.callId}
-                  onClick={() => router.push(`/live-voice-chat/${r.groupId}`)}
-                  className="card-hover"
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: 11,
-                    textAlign: 'left',
-                    background: 'var(--bg)',
-                    border: '1px solid var(--border)',
-                    borderRadius: 12,
-                    padding: '11px 14px',
-                    cursor: 'pointer',
-                    fontFamily: 'inherit',
-                    boxShadow: 'var(--shadow-sm)',
-                  }}
-                >
-                  <span
-                    style={{ display: 'inline-flex', color: 'var(--accent-text)', flexShrink: 0 }}
-                    aria-hidden="true"
-                  >
-                    <Icon name={voiceIcon(r.icon)} size={17} />
-                  </span>
-                  <span style={{ flex: 1, minWidth: 0 }}>
-                    <span
-                      style={{
-                        display: 'block',
-                        fontSize: 13.5,
-                        fontWeight: 700,
-                        color: 'var(--text-primary)',
-                        overflow: 'hidden',
-                        textOverflow: 'ellipsis',
-                        whiteSpace: 'nowrap',
-                      }}
-                    >
-                      {r.name}
-                    </span>
-                    <span style={{ display: 'block', fontSize: 11.5, color: 'var(--text-muted)', marginTop: 1 }}>
-                      {r.participantCount} in the room
-                    </span>
-                  </span>
-                  <span
-                    style={{
-                      fontSize: 9.5,
-                      fontWeight: 800,
-                      letterSpacing: '0.06em',
-                      padding: '3px 9px',
-                      borderRadius: 999,
-                      background: 'var(--success-light)',
-                      color: 'var(--success-text)',
-                      flexShrink: 0,
-                    }}
-                  >
-                    LIVE
-                  </span>
-                </button>
-              ))}
-            </div>
-          )}
-        </section>
 
         {/* ── Your chat groups ── circles the students make themselves */}
         <section style={{ marginBottom: 24 }} aria-label="Your chat groups">
