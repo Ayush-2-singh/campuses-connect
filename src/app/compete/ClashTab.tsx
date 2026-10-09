@@ -3,9 +3,9 @@
 // ═══════════════════════════════════════════════════════════════════════════
 // ClashTab — CAMPUS CLASH (the Compete section's weekly contest).
 //
-// Games no longer live here: they have their own top-level section (/games),
-// and battle-royale tournaments have their own pillar. This tab is only the
-// contest panel — countdown, registration and the rules line.
+// Games no longer live here: they have their own top-level section (/games).
+// This tab is only the contest panel — countdown, registration and the rules
+// line.
 // ═══════════════════════════════════════════════════════════════════════════
 
 import { useMemo } from 'react'

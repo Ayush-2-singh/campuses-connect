@@ -3,10 +3,10 @@
 // ═══════════════════════════════════════════════════════════════════════════
 // /global — the landing dashboard. FUN ONLY.
 //
-// What a student sees here: who is live in voice right now, the chat groups
-// they run/joined, and the Free Fire esports board. The study-shaped blocks
-// (hackathons, internships) were removed from this surface — those live in
-// their own sections. The feed stays: it is the social half of "masti".
+// What a student sees here: who is live in voice right now and the chat groups
+// they run/joined. The study-shaped blocks (hackathons, internships) were
+// removed from this surface — those live in their own sections. The feed
+// stays: it is the social half of "masti".
 // ═══════════════════════════════════════════════════════════════════════════
 
 import { useCallback, useEffect, useState } from 'react'
@@ -15,7 +15,6 @@ import { useRouter } from 'next/navigation'
 import Layout from '@/components/Layout'
 import PostCard from '@/components/PostCard'
 import PostComposer from '@/components/PostComposer'
-import EsportsSection from '@/components/esports/EsportsSection'
 import { useAdminContext } from '@/lib/permissions'
 import { ListSkeleton } from '@/components/Skeleton'
 import EmptyState from '@/components/EmptyState'
@@ -119,7 +118,7 @@ export default function GlobalPage() {
             <h2 style={{ fontSize: 26, fontWeight: 800, color: 'var(--text-primary)', margin: 0 }}>Global</h2>
           </div>
           <p style={{ fontSize: 13.5, color: 'var(--text-muted)', margin: '6px 0 0', paddingLeft: 44 }}>
-            Voice rooms, your circles and the esports board — all in one place.
+            Voice rooms, your circles and the campus feed — all in one place.
           </p>
         </div>
 
@@ -302,9 +301,6 @@ export default function GlobalPage() {
             </div>
           )}
         </section>
-
-        {/* ── Esports — the Free Fire board + team join by code ── */}
-        <EsportsSection signedIn={!!user} isPlatformAdmin={admin.isPlatformAdmin} />
 
         {/* ── Feed — the social half of the dashboard ── */}
         {loading ? (

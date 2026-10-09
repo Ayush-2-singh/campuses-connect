@@ -19,14 +19,8 @@ const SECTIONS = [
   {
     icon: 'gamepad',
     label: 'Games',
-    desc: 'Typing Battle & Quick Math — real-time 1v1 games',
+    desc: 'Typing Battle & Quick Math — real-time multiplayer games',
     href: '/games',
-  },
-  {
-    icon: 'trophy',
-    label: 'Esports — Free Fire',
-    desc: 'Tournaments, team roster & join a squad with a code',
-    href: '/tournaments',
   },
   { icon: 'users', label: 'Find Teammates', desc: 'Post or join hackathon teams', href: '/teams' },
   {

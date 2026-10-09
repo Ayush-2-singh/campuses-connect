@@ -33,17 +33,13 @@ const LivePulseFeed = dynamic(() => import('@/components/LivePulseFeed'), { ssr:
 // (Global is NOT listed here: it is rendered as its own expandable group
 // below so its Live Voice child sits under Global, never under Community.)
 const NAV_ITEMS = [
-  // Esports — its own top-level pillar. It used to sit inside Community, which
-  // buried the Free Fire board; it now stands next to Global.
-  { label: 'Esports', href: '/tournaments', icon: 'trophy' },
-  // Games — also its own top-level pillar. It used to hide under Community as
-  // "Compete, Games & Clash", where games (Typing Battle, Quick Math) and
-  // esports sat on the same tab. It now holds only games.
+  // Games — its own top-level pillar. It used to hide under Community as
+  // "Compete, Games & Clash"; it now holds only games.
   { label: 'Games', href: '/games', icon: 'gamepad' },
 ]
 
 // Community pillar children — existing systems, relinked (no rebuilds).
-// Games moved out to its own pillar (/games); esports lives at /tournaments.
+// Games moved out to its own pillar (/games).
 const COMMUNITY_CHILDREN = [
   { label: 'Communities', href: '/communities', icon: 'users' },
   { label: 'Groups', href: '/groups', icon: 'users' },
