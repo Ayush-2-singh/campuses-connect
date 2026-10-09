@@ -20,6 +20,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import type { TypingTracker } from '@/lib/games/typing'
 import { createClient } from '@/lib/supabase/client'
+import { GAME_CONFIG } from '@/lib/games/config'
 import { getGuestId, getSavedNickname, saveNickname, isValidRoomCode, copyToClipboard } from '@/lib/games/utils'
 import {
   countdownLabel,
@@ -138,8 +139,21 @@ export default function TypingBattle({
   const [dailyStartedAt, setDailyStartedAt] = useState<number | null>(null)
 
   const myPlayerId = guestId
-  const opponent = seats.find((s) => s.player_id !== myPlayerId) || null
+  // Everyone else in the race — up to 7 others (8-player cap). Each one's live
+  // progress is merged in from the typing_progress realtime feed below.
+  const rivals = seats.filter((s) => s.player_id !== myPlayerId)
   const isHost = room?.host_id === myPlayerId
+
+  // Final finish order, shown once the room settles. progress is complete for
+  // every player by then (the room only finishes after all of them submit).
+  const standings = [...seats]
+    .map((s) => ({
+      playerId: s.player_id,
+      nickname: s.nickname,
+      completed: progress[s.player_id]?.completed ?? 0,
+      total: progress[s.player_id]?.total ?? words.length,
+    }))
+    .sort((a, b) => b.completed - a.completed)
 
   // ── Realtime: room row + seats + opponent progress ─────────────────────────
   useEffect(() => {
@@ -189,7 +203,7 @@ export default function TypingBattle({
 
   const loadSeats = useCallback(
     async (roomId: string) => {
-      const { data } = await supabase.from('game_players').select('*').eq('room_id', roomId)
+      const { data } = await supabase.from('game_players').select('*').eq('room_id', roomId).order('joined_at')
       if (data) setSeats(data as SeatPlayer[])
     },
     [supabase]
@@ -251,6 +265,25 @@ export default function TypingBattle({
       setWords(data as string[])
     })()
   }, [phase, room?.id, words.length, supabase, myPlayerId])
+
+  // Seed every rival's row the moment the race starts, so the side-by-side
+  // board lists all players immediately instead of waiting for their first
+  // heartbeat to arrive over Realtime.
+  useEffect(() => {
+    if (phase !== 'playing' || !room?.id || mode === 'daily') return
+    void (async () => {
+      const { data } = await supabase.from('typing_progress').select('*').eq('room_id', room.id)
+      if (!data) return
+      setProgress((p) => {
+        const next = { ...p }
+        for (const row of data as ProgressRow[]) {
+          if (row.player_id !== myPlayerId && !next[row.player_id]) next[row.player_id] = row
+        }
+        return next
+      })
+    })()
+     
+  }, [phase, room?.id, mode, supabase, myPlayerId])
 
   // Stuck-match guard: opponent seat empty/expired too long → release.
   useEffect(() => {
@@ -846,7 +879,7 @@ export default function TypingBattle({
             ))}
             {seats.length < 2 && (
               <p style={{ fontSize: 12, color: 'var(--text-muted)', margin: 0, textAlign: 'center' }}>
-                Waiting for the second player…
+                Waiting for more players… share the code (up to {GAME_CONFIG.TYPING_MAX_PLAYERS})
               </p>
             )}
           </div>
@@ -928,7 +961,7 @@ export default function TypingBattle({
             {countLabel}
           </p>
           <p style={{ fontSize: 13, color: 'var(--text-muted)', margin: '10px 0 0' }}>
-            {opponent ? `${opponent.nickname} is ready` : 'Get ready…'}
+            {seats.length > 1 ? `${seats.length} racers ready` : 'Get ready…'}
           </p>
         </div>
       )}
@@ -939,15 +972,13 @@ export default function TypingBattle({
           words={words}
           startedAtMs={mode === 'daily' ? (dailyStartedAt ?? Date.now()) : (startsAt ?? Date.now())}
           trackerRef={arenaTrackerRef}
-          opponent={
-            opponent
-              ? {
-                  nickname: opponent.nickname,
-                  completed: progress[opponent.player_id]?.completed ?? 0,
-                  total: progress[opponent.player_id]?.total ?? words.length,
-                }
-              : null
-          }
+          meLabel={nickname.trim() || 'YOU'}
+          rivals={rivals.map((s) => ({
+            playerId: s.player_id,
+            nickname: s.nickname,
+            completed: progress[s.player_id]?.completed ?? 0,
+            total: progress[s.player_id]?.total ?? words.length,
+          }))}
           onWordCompleted={mode === 'daily' ? () => {} : handleWordCompleted}
           onFinished={mode === 'daily' ? handleDailyFinished : handleFinished}
         />
@@ -997,6 +1028,55 @@ export default function TypingBattle({
             <>
               <p style={{ fontSize: 18, fontWeight: 800, margin: 0 }}>Opponent disconnected</p>
             </>
+          )}
+
+          {mode !== 'daily' && standings.length > 1 && (
+            <div
+              style={{
+                display: 'flex',
+                flexDirection: 'column',
+                gap: 4,
+                background: 'var(--bg)',
+                border: '1px solid var(--border)',
+                borderRadius: 12,
+                padding: '12px 14px',
+                marginTop: 6,
+                textAlign: 'left',
+              }}
+            >
+              <p
+                style={{
+                  fontSize: 10.5,
+                  fontWeight: 800,
+                  letterSpacing: '0.06em',
+                  color: 'var(--text-muted)',
+                  margin: '0 0 4px',
+                }}
+              >
+                FINAL STANDINGS
+              </p>
+              {standings.map((s, i) => (
+                <div
+                  key={s.playerId}
+                  style={{
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    gap: 10,
+                    fontSize: 12.5,
+                    fontWeight: s.playerId === myPlayerId ? 800 : 600,
+                    color: s.playerId === myPlayerId ? 'var(--accent-text)' : 'var(--text-primary)',
+                  }}
+                >
+                  <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                    {i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : `${i + 1}.`} {s.nickname}
+                    {s.playerId === myPlayerId ? ' (you)' : ''}
+                  </span>
+                  <span style={{ color: 'var(--text-muted)', fontVariantNumeric: 'tabular-nums', flexShrink: 0 }}>
+                    {s.completed}/{s.total}
+                  </span>
+                </div>
+              ))}
+            </div>
           )}
 
           <div style={{ display: 'flex', gap: 10, justifyContent: 'center', marginTop: 8 }}>

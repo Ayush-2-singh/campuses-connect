@@ -9,6 +9,9 @@ export const GAME_CONFIG = {
   /** Maximum players per room */
   MAX_PLAYERS: 100,
 
+  /** Maximum racers in a Typing Battle (private room or Quick Match pool) */
+  TYPING_MAX_PLAYERS: 8,
+
   /** Minimum players to start (host counts) */
   MIN_PLAYERS: 2,
 

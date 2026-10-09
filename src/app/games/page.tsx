@@ -6,8 +6,7 @@
  * Two big game cards, one per game: Typing Battle and Quick Math. Each card
  * advertises the modes the game already offers (Quick Match, room code, the
  * typing daily challenge / the math difficulty ladder) and drops you into the
- * game's own lobby. Tournament / battle-royale content belongs to its own
- * pillar, never here.
+ * game's own lobby.
  */
 
 import { useEffect, useState } from 'react'
@@ -23,7 +22,7 @@ const GAME_CARDS = [
   {
     key: 'typing',
     title: 'Typing Battle',
-    desc: 'Same words, fastest fingers win. Race a random student or share a room code with your batch.',
+    desc: 'Same words, fastest fingers win. Race up to 8 students at once, or share a room code with your batch.',
     href: '/games/typing',
     icon: 'type',
     chips: ['Quick Match', 'Room code', 'Daily challenge'],
@@ -118,7 +117,7 @@ export default function GamesPage() {
               Games
             </h2>
             <p style={{ fontSize: 12, color: 'var(--text-muted)', margin: '2px 0 0' }}>
-              Play with students in real time — quick 1v1 games.
+              Play with students in real time — quick multiplayer games.
             </p>
           </div>
           <span style={{ flex: 1 }} />
@@ -196,7 +195,7 @@ export default function GamesPage() {
                       margin: '0 0 3px',
                     }}
                   >
-                    Live 1v1 · Real-time rooms
+                    Live · Real-time rooms
                   </p>
                   <h3
                     style={{ fontSize: 20, fontWeight: 900, color: 'var(--text-primary)', margin: 0, lineHeight: 1.2 }}

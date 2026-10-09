@@ -6,7 +6,7 @@
 // today's deterministic challenge with the player's rank.
 // ═══════════════════════════════════════════════════════════════════════════
 
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 
 interface BoardRow {
@@ -28,20 +28,34 @@ export default function TypingBoards({ myPlayerId }: { myPlayerId: string | null
   } | null>(null)
   const [loading, setLoading] = useState(true)
 
-  useEffect(() => {
-    void (async () => {
-      const [boardRes, dailyRes] = await Promise.all([
-        supabase.rpc('get_typing_leaderboard', { p_limit: 10, p_sort: 'best_wpm' }),
-        supabase.rpc('get_typing_daily', { p_player_id: myPlayerId }),
-      ])
-      if (boardRes.data) setBoard(boardRes.data as BoardRow[])
-      if (dailyRes.data) {
-        const d = dailyRes.data as any
-        setDaily({ top: d.top ?? [], me: d.me ?? null, attempts: Number(d.attempts ?? 0) })
-      }
-      setLoading(false)
-    })()
+  const load = useCallback(async () => {
+    const [boardRes, dailyRes] = await Promise.all([
+      supabase.rpc('get_typing_leaderboard', { p_limit: 10, p_sort: 'best_wpm' }),
+      supabase.rpc('get_typing_daily', { p_player_id: myPlayerId }),
+    ])
+    if (boardRes.data) setBoard(boardRes.data as BoardRow[])
+    if (dailyRes.data) {
+      const d = dailyRes.data as any
+      setDaily({ top: d.top ?? [], me: d.me ?? null, attempts: Number(d.attempts ?? 0) })
+    }
+    setLoading(false)
   }, [supabase, myPlayerId])
+
+  useEffect(() => {
+    void load()
+  }, [load])
+
+  // The board moves the moment a match ends: typing_stats is published on
+  // Realtime (20261106), so a win by anyone refreshes the ranking live.
+  useEffect(() => {
+    const channel = supabase
+      .channel('typing-stats-board')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'typing_stats' }, () => void load())
+      .subscribe()
+    return () => {
+      supabase.removeChannel(channel)
+    }
+  }, [supabase, load])
 
   if (loading) return null
   if (board.length === 0 && (daily?.attempts ?? 0) === 0) return null
@@ -127,7 +141,7 @@ export default function TypingBoards({ myPlayerId }: { myPlayerId: string | null
                   {medal(i) ?? `${i + 1}.`} {b.nickname}
                 </span>
                 <span style={{ color: 'var(--text-muted)', fontVariantNumeric: 'tabular-nums', flexShrink: 0 }}>
-                  {Number(b.best_wpm)} WPM
+                  {Number(b.best_wpm)} WPM · {b.wins} {b.wins === 1 ? 'win' : 'wins'}
                 </span>
               </div>
             ))}

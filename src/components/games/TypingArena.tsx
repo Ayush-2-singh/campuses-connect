@@ -15,20 +15,32 @@
 //   • paste is blocked at the input and rejected by the tracker
 // ═══════════════════════════════════════════════════════════════════════════
 
-import { memo, useCallback, useEffect, useRef, useState } from 'react'
+import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { TypingTracker } from '@/lib/games/typing'
+
+/** One racing player's live progress, as pushed by the parent's realtime feed. */
+export interface RivalProgress {
+  playerId: string
+  nickname: string
+  completed: number
+  total: number
+}
 
 interface Props {
   words: string[]
   startedAtMs: number
-  opponent: { nickname: string; completed: number; total: number } | null
+  /** Display name for the local player's row. */
+  meLabel: string
+  /** Every other player in the race — up to seven of them. */
+  rivals: RivalProgress[]
   onWordCompleted: (progress: { completed: number; correct: number; total: number }) => void
   onFinished: (result: { words: string[]; durationMs: number; correctChars: number; totalTyped: number }) => void
   /** Render prop fallback so parents can reach the tracker if needed. */
   trackerRef?: React.MutableRefObject<TypingTracker | null>
 }
 
-function ProgressRow({
+/** One racer's live row: name, completed/total count and a progress bar. */
+function RacerRow({
   label,
   completed,
   total,
@@ -41,19 +53,28 @@ function ProgressRow({
 }) {
   const pct = total > 0 ? Math.round((completed / total) * 100) : 0
   return (
-    <div style={{ minWidth: 0, flex: 1 }}>
+    <div style={{ minWidth: 0 }}>
       <div
         style={{
           display: 'flex',
           justifyContent: 'space-between',
+          gap: 10,
           fontSize: 11.5,
           fontWeight: 700,
-          color: 'var(--text-muted)',
+          color: accent ? 'var(--accent-text)' : 'var(--text-muted)',
           marginBottom: 4,
         }}
       >
-        <span>{label}</span>
-        <span style={{ fontVariantNumeric: 'tabular-nums' }}>
+        <span
+          style={{
+            overflow: 'hidden',
+            textOverflow: 'ellipsis',
+            whiteSpace: 'nowrap',
+          }}
+        >
+          {label}
+        </span>
+        <span style={{ fontVariantNumeric: 'tabular-nums', flexShrink: 0 }}>
           {completed}/{total}
         </span>
       </div>
@@ -191,7 +212,8 @@ const WordRow = memo(function WordRow({
 export default function TypingArena({
   words,
   startedAtMs,
-  opponent,
+  meLabel,
+  rivals,
   onWordCompleted,
   onFinished,
   trackerRef: externalTrackerRef,
@@ -288,19 +310,58 @@ export default function TypingArena({
   const minutes = elapsed / 60000
   const displayWpm = minutes > 0 ? live.wpm : 0
 
+  // Live race board: me pinned on top, everyone else ordered by progress so
+  // the standings shift in realtime as each player finishes words.
+  const board = useMemo(() => {
+    const others = [...rivals].sort((a, b) => b.completed - a.completed || a.nickname.localeCompare(b.nickname))
+    return [
+      { playerId: '__me__', label: meLabel || 'YOU', completed, total: words.length, accent: true, me: true },
+      ...others.map((r) => ({
+        playerId: r.playerId,
+        label: r.nickname || 'player',
+        completed: r.completed,
+        total: r.total || words.length,
+        accent: false,
+        me: false,
+      })),
+    ]
+  }, [rivals, completed, words.length, meLabel])
+
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-      {/* Progress bars — me vs opponent, realtime */}
-      <div style={{ display: 'flex', gap: 18, alignItems: 'flex-end' }}>
-        <ProgressRow label="YOU" completed={completed} total={words.length} accent />
-        {opponent && (
-          <ProgressRow
-            label={opponent.nickname.toUpperCase()}
-            completed={opponent.completed}
-            total={opponent.total}
-            accent={false}
+      {/* Live side-by-side progress for every player in the race */}
+      <div
+        aria-label="Live race standings"
+        style={{
+          display: 'flex',
+          flexDirection: 'column',
+          gap: 8,
+          background: 'var(--bg-secondary, var(--bg))',
+          border: '1px solid var(--border)',
+          borderRadius: 12,
+          padding: '10px 12px',
+        }}
+      >
+        <p
+          style={{
+            fontSize: 10.5,
+            fontWeight: 800,
+            letterSpacing: '0.06em',
+            color: 'var(--text-muted)',
+            margin: 0,
+          }}
+        >
+          LIVE · {board.length} {board.length === 1 ? 'PLAYER' : 'PLAYERS'}
+        </p>
+        {board.map((row) => (
+          <RacerRow
+            key={row.playerId}
+            label={row.me ? `${row.label} (you)` : row.label}
+            completed={row.completed}
+            total={row.total}
+            accent={row.accent}
           />
-        )}
+        ))}
       </div>
 
       {/* Live stats */}
