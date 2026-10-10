@@ -16,6 +16,8 @@ import { Track } from 'livekit-client'
 import { createClient } from '@/lib/supabase/client'
 import { Icon } from '@/components/icons'
 import CallGamePanel, { CALL_GAME_LABELS, type CallGame, type CallGameInvite } from '@/components/games/CallGamePanel'
+import CallChatPanel from '@/components/voice/CallChatPanel'
+import { appendChatMessage, cleanChatText, unreadCount, type CallChatMessage } from '@/lib/callChat'
 
 const supabase = createClient()
 
@@ -91,6 +93,28 @@ function CallRoom() {
     }
   }, [callId])
 
+  /**
+   * CLOSING THE TAB IS THE ONLY AUTOMATIC LEAVE.
+   *
+   * Minimizing used to be the same thing as leaving, and backgrounding the tab
+   * must NOT drop you out of a voice call (you switch apps mid-sentence).
+   * `pagehide` is the last event the browser reliably fires on teardown —
+   * React's unmount cleanup above is not guaranteed to run there — and it does
+   * NOT fire when the tab is merely hidden. leftRef keeps the two paths from
+   * double-leaving. If even this never lands (crash, force-kill), the 150s
+   * freshness sweep in 20260927_voice_live_truth still clears the ghost.
+   */
+  useEffect(() => {
+    const onPageHide = () => {
+      if (callId && !leftRef.current) {
+        leftRef.current = true
+        void supabase.rpc('leave_live_voice_chat_call', { p_call_id: callId })
+      }
+    }
+    window.addEventListener('pagehide', onPageHide)
+    return () => window.removeEventListener('pagehide', onPageHide)
+  }, [callId])
+
   /** Turn the SDK's raw text into something a student can act on. */
   const describeError = (err: unknown) => {
     const message = err instanceof Error ? err.message : String(err ?? '')
@@ -138,6 +162,17 @@ function CallShell({ connected, onLeave }: { connected: boolean; onLeave: () => 
   const { emojiEvents, sendReaction } = useReactions(localParticipant?.identity)
   const callId = useSearchParams().get('callId') || ''
 
+  // ── IN-CALL MESSAGES ───────────────────────────────────────────────────
+  const { messages, sendChat } = useCallChat(localParticipant?.identity, localParticipant?.name)
+  const [chatOpen, setChatOpen] = useState(false)
+  // Read cursor = the key of the newest line the panel has shown. Anything
+  // newer, written by somebody ELSE, feeds the control's unread badge.
+  const [readKey, setReadKey] = useState(0)
+  const unread = unreadCount(messages, readKey)
+  useEffect(() => {
+    if (chatOpen && messages.length) setReadKey(messages[messages.length - 1].key)
+  }, [chatOpen, messages])
+
   // ── TALK + PLAY ───────────────────────────────────────────────────────────
   // A second data channel (next to 'reaction') carries exactly one payload:
   // { game, code }. When somebody creates a room inside the panel the code
@@ -148,6 +183,11 @@ function CallShell({ connected, onLeave }: { connected: boolean; onLeave: () => 
   const [game, setGame] = useState<CallGame | null>(null)
   const [gameCode, setGameCode] = useState<string | undefined>(undefined)
   const [invite, setInvite] = useState<(CallGameInvite & { key: number }) | null>(null)
+
+  // ── MINIMIZED ──────────────────────────────────────────────────────────
+  // Collapses the call SCREEN without touching the call: no route change, so
+  // this component (and the LiveKit room above it) never unmounts.
+  const [minimized, setMinimized] = useState(false)
 
   const { send: sendGame } = useDataChannel('game', (msg) => {
     let parsed: Partial<CallGameInvite> | null = null
@@ -186,6 +226,9 @@ function CallShell({ connected, onLeave }: { connected: boolean; onLeave: () => 
     setGameCode(invite.code)
     setInvite(null)
     setGamesOpen(true)
+    // Accepting an invite has to be visible — a game cannot be played behind a
+    // minimized bar, so restore the screen too.
+    setMinimized(false)
   }, [invite])
 
   /** Pushes the creator's room code to everyone else on the call — LiveKit
@@ -255,56 +298,81 @@ function CallShell({ connected, onLeave }: { connected: boolean; onLeave: () => 
   // else me — there is always someone on stage in spotlight mode.
   const spotlightId = pinnedId ?? participants.find((p) => !p.isLocal)?.identity ?? localParticipant?.identity ?? null
 
+  // Minimized: the whole call screen collapses into one compact bar. Every
+  // hook above has already run, and nothing below mounts or unmounts the
+  // LiveKit room — that lives in CallRoom, one level up.
+  if (minimized) {
+    return (
+      <MinimizedCallBar
+        callId={callId}
+        count={participants.length}
+        onRestore={() => setMinimized(false)}
+        onLeave={onLeave}
+      />
+    )
+  }
+
   return (
     <div style={{ minHeight: '72vh', display: 'flex', flexDirection: 'column' }}>
-      <Header connected={connected} count={participants.length} onBack={onLeave} />
+      <Header connected={connected} count={participants.length} onBack={() => setMinimized(true)} />
 
-      {/* The game panel takes over the stage while it is open — the header
-          (live count) and the control bar (mic / leave) never move, so the
-          call is still one tap away at every point. */}
-      {gamesOpen ? (
-        <CallGamePanel
-          game={game}
-          roomCode={gameCode}
-          participantCount={participants.length}
-          participants={participants.map((p) => ({
-            id: p.identity,
-            name: p.name?.trim() || 'Student',
-          }))}
-          onPick={startGame}
-          onRoomReady={broadcastRoom}
-          onClose={() => {
-            setGamesOpen(false)
-            setGame(null)
-            setGameCode(undefined)
-          }}
-        />
-      ) : (
-        <>
-          {/* Layout switcher — Auto / Grid / Spotlight, like Meet's tile buttons. */}
-          <LayoutSwitcher layout={layout} onChange={changeLayout} />
-
-          {(layout === 'auto' || layout === 'spotlight') && (
-            <Stage
-              mode={layout === 'spotlight' ? 'spotlight' : 'share'}
-              participants={participants}
-              shareRef={screenShareRef}
-              spotlightId={spotlightId}
-              pinnedId={pinnedId}
-              onUnpin={() => setPinnedId(null)}
+      {/* Stage and messages sit side by side (stacked on a phone). The game
+          panel takes over the stage while it is open, and the chat column is
+          a sibling — never an overlay — so the header (live count) and the
+          control bar (mic / leave) stay reachable at every point. */}
+      <div className="lvc-call-body">
+        <div className="lvc-call-stage">
+          {gamesOpen ? (
+            <CallGamePanel
+              game={game}
+              roomCode={gameCode}
+              participantCount={participants.length}
+              participants={participants.map((p) => ({
+                id: p.identity,
+                name: p.name?.trim() || 'Student',
+              }))}
+              onPick={startGame}
+              onRoomReady={broadcastRoom}
+              onClose={() => {
+                setGamesOpen(false)
+                setGame(null)
+                setGameCode(undefined)
+              }}
             />
-          )}
+          ) : (
+            <>
+              {/* Layout switcher — Auto / Grid / Spotlight, like Meet's tile buttons. */}
+              <LayoutSwitcher layout={layout} onChange={changeLayout} />
 
-          <Participants
-            participants={participants}
-            emojiEvents={emojiEvents}
-            layout={layout}
-            pinnedId={pinnedId}
-            spotlightId={spotlightId}
-            onPin={(identity) => setPinnedId((cur) => (cur === identity ? null : identity))}
-          />
-        </>
-      )}
+              {(layout === 'auto' || layout === 'spotlight') && (
+                <Stage
+                  mode={layout === 'spotlight' ? 'spotlight' : 'share'}
+                  participants={participants}
+                  shareRef={screenShareRef}
+                  spotlightId={spotlightId}
+                  pinnedId={pinnedId}
+                  onUnpin={() => setPinnedId(null)}
+                />
+              )}
+
+              <Participants
+                participants={participants}
+                emojiEvents={emojiEvents}
+                layout={layout}
+                pinnedId={pinnedId}
+                spotlightId={spotlightId}
+                onPin={(identity) => setPinnedId((cur) => (cur === identity ? null : identity))}
+              />
+            </>
+          )}
+        </div>
+
+        {chatOpen && (
+          <div className="lvc-chat-col">
+            <CallChatPanel messages={messages} onSend={sendChat} onClose={() => setChatOpen(false)} />
+          </div>
+        )}
+      </div>
 
       {/* Someone on the call started a game — one tap joins their room. */}
       {invite && (
@@ -386,6 +454,9 @@ function CallShell({ connected, onLeave }: { connected: boolean; onLeave: () => 
         sendReaction={sendReaction}
         gamesOpen={gamesOpen}
         onOpenGames={() => setGamesOpen((open) => !open)}
+        chatOpen={chatOpen}
+        unread={unread}
+        onOpenChat={() => setChatOpen((open) => !open)}
       />
     </div>
   )
@@ -614,7 +685,14 @@ function Stage({
   )
 }
 
-/** Room header: back-to-room, live badge + participant count. */
+/**
+ * Room header: live badge + participant count, and the minimize control.
+ *
+ * The top-left control used to LEAVE the call; it now only collapses the
+ * screen (see MinimizedCallBar), so it wears a minimize glyph instead of a
+ * back chevron — a back arrow that quietly drops you out of a live call is
+ * exactly the surprise this replaced.
+ */
 function Header({ connected, count, onBack }: { connected: boolean; count: number; onBack: () => void }) {
   return (
     <div
@@ -627,8 +705,13 @@ function Header({ connected, count, onBack }: { connected: boolean; count: numbe
         fontSize: 13,
       }}
     >
-      <button onClick={onBack} aria-label="Back to room" className="lvc-back">
-        <Icon name="chevron" size={18} strokeWidth={2.4} style={{ transform: 'rotate(180deg)' }} />
+      <button
+        onClick={onBack}
+        aria-label="Minimize the call"
+        title="Minimize — you stay in the call"
+        className="lvc-back"
+      >
+        <Icon name="minimize" size={18} strokeWidth={2.4} />
       </button>
       <span
         style={{
@@ -660,6 +743,76 @@ interface EmojiEvent {
   key: number
   emoji: string
   from: string
+}
+
+/**
+ * MINIMIZED CALL — the call keeps running behind one compact bar.
+ *
+ * Pressing the top-left control used to LEAVE the call: the page unmounted,
+ * the unmount cleanup ran leave_live_voice_chat_call() and everyone else's
+ * room lost a voice. It now only collapses the screen. Nothing here tears
+ * anything down — RoomAudioRenderer lives OUTSIDE this shell (on the page,
+ * inside LiveKitRoom) and the heartbeat effect keeps beating — so audio keeps
+ * flowing and the room stays live until you actually leave.
+ *
+ * Leaving is explicit: the Leave button here, or closing the tab.
+ */
+function MinimizedCallBar({
+  callId,
+  count,
+  onRestore,
+  onLeave,
+}: {
+  callId: string
+  count: number
+  onRestore: () => void
+  onLeave: () => void
+}) {
+  const { localParticipant, isMicrophoneEnabled } = useLocalParticipant()
+
+  const ON = { background: 'var(--bg-tertiary)', color: 'var(--text-primary)' } as const
+  const OFF = { background: 'var(--danger)', color: '#fff' } as const
+
+  /** Same mic path as the full control bar: LiveKit first, then the DB's
+   *  mute state, so the room's roster never disagrees with the mic. */
+  async function toggleMic() {
+    const nextEnabled = !isMicrophoneEnabled
+    try {
+      await localParticipant.setMicrophoneEnabled(nextEnabled)
+    } catch {
+      return // microphone permission denied — LiveKit keeps the current state
+    }
+    await supabase.rpc('set_live_voice_chat_mute', { p_call_id: callId, p_muted: !nextEnabled })
+  }
+
+  return (
+    <div className="lvc-mini" role="status" aria-label="Call minimized">
+      <span className="lvc-mini-dot" aria-hidden="true" />
+      <span className="lvc-mini-text">
+        <strong>Still in the call</strong>
+        <span>{count} in call · screen minimized</span>
+      </span>
+
+      <button
+        onClick={toggleMic}
+        aria-label={isMicrophoneEnabled ? 'Mute microphone' : 'Unmute microphone'}
+        aria-pressed={!isMicrophoneEnabled}
+        className="lvc-mini-btn"
+        style={isMicrophoneEnabled ? ON : OFF}
+      >
+        <Icon name={isMicrophoneEnabled ? 'mic' : 'mic-off'} size={19} />
+      </button>
+
+      <button onClick={onRestore} className="lvc-mini-restore" aria-label="Bring the call back">
+        <Icon name="maximize" size={16} strokeWidth={2.4} />
+        <span>Back to call</span>
+      </button>
+
+      <button onClick={onLeave} className="lvc-mini-leave" aria-label="Leave the call">
+        <span>Leave</span>
+      </button>
+    </div>
+  )
 }
 
 /**
@@ -941,6 +1094,65 @@ function useReactions(myIdentity: string | undefined) {
 }
 
 /**
+ * IN-CALL MESSAGES — Meet's chat, carried by the call's own data channel.
+ *
+ * Topic 'chat' next to 'reaction' and 'game': the payload is just { text }.
+ * No DB row and no realtime subscription, for the same reasons the reactions
+ * skip them — the thread belongs to the call, so it arrives in sync with the
+ * LiveKit room and disappears when the call ends (late joiners see nothing
+ * that was said before them, which is the honest behaviour for a live room).
+ */
+function useCallChat(myIdentity: string | undefined, myName: string | undefined) {
+  const [messages, setMessages] = useState<CallChatMessage[]>([])
+  const seq = useRef(0)
+
+  const push = useCallback((msg: Omit<CallChatMessage, 'key'>) => {
+    const key = ++seq.current
+    // appendChatMessage caps the thread: a data-channel line is small, but an
+    // all-night call must not hold thousands of them in state.
+    setMessages((prev) => appendChatMessage(prev, msg, key))
+  }, [])
+
+  const { send } = useDataChannel('chat', (msg) => {
+    let parsed: { text?: unknown } | null = null
+    try {
+      parsed = JSON.parse(new TextDecoder().decode(msg.payload)) as { text?: unknown }
+    } catch {
+      return // malformed payload, e.g. a peer still on an older bundle
+    }
+    const text = cleanChatText(parsed?.text)
+    if (!text) return
+    push({
+      id: msg.from?.identity ?? 'remote',
+      name: msg.from?.name?.trim() || msg.from?.identity || 'Someone in the call',
+      text,
+      at: Date.now(),
+      mine: false,
+    })
+  })
+
+  const sendChat = useCallback(
+    (text: string) => {
+      const body = cleanChatText(text)
+      if (!body) return
+      try {
+        // reliable: a dropped chat line reads as being ignored.
+        send(new TextEncoder().encode(JSON.stringify({ text: body })), { reliable: true })
+      } catch {
+        /* channel not ready yet — my own message still shows locally */
+      }
+      // LiveKit does not echo a data message back to its sender, so local echo
+      // is required — same reason the reaction burst is shown instantly, and
+      // it must carry MY identity so the line is grouped as mine.
+      push({ id: myIdentity ?? 'local', name: myName?.trim() || 'You', text: body, at: Date.now(), mine: true })
+    },
+    [send, push, myIdentity, myName]
+  )
+
+  return { messages, sendChat }
+}
+
+/**
  * GMeet-style bottom control bar: emoji picker (3s float for everyone), mic,
  * camera, screen share, leave — every control an SVG button like Meet. Mic
  * and camera turn Meet-red while OFF; an active screen share lights up in
@@ -954,12 +1166,18 @@ function Controls({
   sendReaction,
   gamesOpen,
   onOpenGames,
+  chatOpen,
+  unread,
+  onOpenChat,
 }: {
   callId: string
   onLeave: () => void
   sendReaction: (emoji: string) => void
   gamesOpen: boolean
   onOpenGames: () => void
+  chatOpen: boolean
+  unread: number
+  onOpenChat: () => void
 }) {
   const { localParticipant, isMicrophoneEnabled, isCameraEnabled, isScreenShareEnabled } = useLocalParticipant()
   const [emojiOpen, setEmojiOpen] = useState(false)
@@ -1111,6 +1329,23 @@ function Controls({
           <Icon name="screen-share" size={23} />
         </button>
       )}
+
+      {/* Messages — Meet's chat. The badge counts only lines written by other
+          people that the panel has not shown yet. */}
+      <button
+        onClick={onOpenChat}
+        aria-label={chatOpen ? 'Close in-call messages' : 'Open in-call messages'}
+        aria-expanded={chatOpen}
+        className="lvc-ctrl lvc-chat-toggle"
+        style={chatOpen ? { background: 'var(--accent)', color: 'var(--on-accent)' } : ON}
+      >
+        <Icon name="message" size={23} />
+        {unread > 0 && (
+          <span aria-label={`${unread} unread messages`} className="lvc-chat-badge">
+            {unread > 9 ? '9+' : unread}
+          </span>
+        )}
+      </button>
 
       {/* Games — opens the in-call panel: play together without hanging up. */}
       <button

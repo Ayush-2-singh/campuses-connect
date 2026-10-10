@@ -105,6 +105,22 @@ const ICON_PATHS: Record<string, React.ReactNode> = {
       <path d="M12 17v4" />
     </>
   ),
+  /* A single low horizontal line — the "minimize" glyph. A minimized call
+     keeps RUNNING behind a compact bar; it is not a back button that leaves. */
+  minimize: (
+    <>
+      <path d="M6 17h12" />
+    </>
+  ),
+  /* Diagonal arrows pushing out — restore a minimized call to full screen. */
+  maximize: (
+    <>
+      <path d="M15 3h6v6" />
+      <path d="M9 21H3v-6" />
+      <path d="M21 3l-7 7" />
+      <path d="M3 21l7-7" />
+    </>
+  ),
   user: (
     <>
       <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
