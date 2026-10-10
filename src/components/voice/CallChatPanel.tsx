@@ -15,9 +15,34 @@
  * in the layout rather than an overlay that could swallow the controls.
  */
 
-import { useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { Icon } from '@/components/icons'
 import { CALL_CHAT_MAX_TEXT, type CallChatMessage } from '@/lib/callChat'
+import {
+  defaultPanelPosition,
+  movePanelByKey,
+  movePanelPosition,
+  readPanelPosition,
+  savePanelPosition,
+  type PanelPoint,
+  type PanelSize,
+} from '@/lib/floatingPanel'
+
+/** Where this panel remembers being put, for this tab. */
+const POSITION_KEY = 'cc-call-chat-pos'
+
+/** The layout viewport in the SAME pixel space as pointer events.
+ *
+ * `documentElement.clientWidth/Height` rather than `innerWidth/Height`: the
+ * app scales the root with `zoom`, and client* stays in the zoomed layout
+ * space that `getBoundingClientRect()` and `clientX/Y` also use. */
+function viewportSize(): PanelSize {
+  const el = document.documentElement
+  return {
+    width: el?.clientWidth || window.innerWidth,
+    height: el?.clientHeight || window.innerHeight,
+  }
+}
 
 function clockTime(at: number): string {
   try {
@@ -45,6 +70,115 @@ export default function CallChatPanel({
   const listRef = useRef<HTMLDivElement>(null)
   const composerRef = useRef<HTMLTextAreaElement>(null)
 
+  // ── Position ─────────────────────────────────────────────────────────────
+  // null until measured: the panel is rendered hidden for one frame so it can
+  // never flash at the viewport corner before its remembered spot is applied.
+  const [pos, setPos] = useState<PanelPoint | null>(null)
+  const panelRef = useRef<HTMLElement>(null)
+  /** Mirror of `pos` for handlers that must not re-create on every move. */
+  const posRef = useRef<PanelPoint | null>(null)
+  const [dragging, setDragging] = useState(false)
+  const dragRef = useRef<{ pointerId: number; startX: number; startY: number; origin: PanelPoint } | null>(null)
+
+  const measure = useCallback((): PanelSize => {
+    const rect = panelRef.current?.getBoundingClientRect()
+    return { width: Math.round(rect?.width ?? 320), height: Math.round(rect?.height ?? 320) }
+  }, [])
+
+  const applyPos = useCallback((next: PanelPoint) => {
+    posRef.current = next
+    setPos(next)
+  }, [])
+
+  // First placement: the remembered spot, else the default dock. A remembered
+  // spot from a bigger window/another device is clamped, never trusted.
+  useLayoutEffect(() => {
+    const size = measure()
+    const viewport = viewportSize()
+    let storage: Storage | null = null
+    try {
+      storage = window.sessionStorage
+      applyPos(readPanelPosition(storage, POSITION_KEY, size, viewport))
+    } catch {
+      applyPos(defaultPanelPosition(size, viewport))
+    }
+  }, [applyPos, measure])
+
+  // A resize (or the phone keyboard shrinking the viewport) must not strand
+  // the panel outside the screen — and neither must the thread growing taller,
+  // which can push the panel's bottom over the reserved control-bar strip.
+  useEffect(() => {
+    const reclamp = () => {
+      const current = posRef.current
+      if (!current) return
+      const next = movePanelPosition(current, { x: 0, y: 0 }, measure(), viewportSize())
+      if (next.x !== current.x || next.y !== current.y) applyPos(next)
+    }
+    reclamp()
+    window.addEventListener('resize', reclamp)
+    return () => window.removeEventListener('resize', reclamp)
+  }, [applyPos, measure, messages.length])
+
+  const remember = useCallback((point: PanelPoint) => {
+    try {
+      savePanelPosition(window.sessionStorage, POSITION_KEY, point)
+    } catch {
+      /* private browsing — the position just won't be remembered */
+    }
+  }, [])
+
+  const onGripPointerDown = (e: React.PointerEvent<HTMLElement>) => {
+    // Never start a drag from the header's buttons — those are real controls.
+    if ((e.target as HTMLElement).closest('button')) return
+    const origin = posRef.current
+    if (!origin) return
+    dragRef.current = { pointerId: e.pointerId, startX: e.clientX, startY: e.clientY, origin }
+    e.currentTarget.setPointerCapture(e.pointerId)
+    setDragging(true)
+    // A drag must not select the header text while the pointer is down.
+    document.body.style.userSelect = 'none'
+  }
+
+  const onGripPointerMove = (e: React.PointerEvent<HTMLElement>) => {
+    const drag = dragRef.current
+    if (!drag || drag.pointerId !== e.pointerId) return
+    applyPos(
+      movePanelPosition(
+        drag.origin,
+        { x: e.clientX - drag.startX, y: e.clientY - drag.startY },
+        measure(),
+        viewportSize()
+      )
+    )
+  }
+
+  const endDrag = (e: React.PointerEvent<HTMLElement>) => {
+    const drag = dragRef.current
+    if (!drag || drag.pointerId !== e.pointerId) return
+    dragRef.current = null
+    setDragging(false)
+    document.body.style.userSelect = ''
+    if (e.currentTarget.hasPointerCapture?.(e.pointerId)) e.currentTarget.releasePointerCapture(e.pointerId)
+    if (posRef.current) remember(posRef.current)
+  }
+
+  /** Arrow keys move the panel, so it is placeable without a pointer. */
+  const onGripKeyDown = (e: React.KeyboardEvent<HTMLElement>) => {
+    const current = posRef.current
+    if (!current) return
+    const next = movePanelByKey(current, e.key, measure(), viewportSize())
+    if (!next) return
+    e.preventDefault()
+    applyPos(next)
+    remember(next)
+  }
+
+  const resetPosition = () => {
+    const next = defaultPanelPosition(measure(), viewportSize())
+    applyPos(next)
+    remember(next)
+  }
+
   // The thread always shows its newest message (Meet pins the list down).
   useEffect(() => {
     const el = listRef.current
@@ -68,9 +202,17 @@ export default function CallChatPanel({
 
   return (
     <section
+      ref={panelRef}
       aria-label="In-call messages"
       data-accent="gold"
+      data-dragging={dragging ? '1' : '0'}
+      className="lvc-chat-float"
       style={{
+        left: pos?.x ?? 0,
+        top: pos?.y ?? 0,
+        // One hidden frame while the remembered spot is measured, so the panel
+        // never flashes at the corner before it lands where the user left it.
+        visibility: pos ? 'visible' : 'hidden',
         background: 'var(--bg)',
         border: '1px solid var(--border)',
         borderRadius: 16,
@@ -81,22 +223,21 @@ export default function CallChatPanel({
         animation: 'ccCardUp 0.15s ease',
       }}
     >
-      {/* ── Panel header ── */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-        <span
-          style={{
-            width: 34,
-            height: 34,
-            borderRadius: 10,
-            background: 'var(--accent-light)',
-            color: 'var(--accent-text)',
-            display: 'inline-flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            flexShrink: 0,
-          }}
-        >
-          <Icon name="message" size={17} />
+      {/* ── Header — also the drag handle ── */}
+      <div
+        onPointerDown={onGripPointerDown}
+        onPointerMove={onGripPointerMove}
+        onPointerUp={endDrag}
+        onPointerCancel={endDrag}
+        onKeyDown={onGripKeyDown}
+        role="button"
+        tabIndex={0}
+        aria-label="Move the messages panel — drag or use the arrow keys"
+        title="Drag to move — arrow keys work too"
+        style={{ display: 'flex', alignItems: 'center', gap: 8, touchAction: 'none' }}
+      >
+        <span className="lvc-chat-grip" aria-hidden="true">
+          <Icon name="grip" size={16} />
         </span>
         <div style={{ flex: 1, minWidth: 0 }}>
           <p style={{ fontSize: 14, fontWeight: 800, color: 'var(--text-primary)', margin: 0 }}>In-call messages</p>
@@ -104,6 +245,26 @@ export default function CallChatPanel({
             Everyone on the call can see this · not saved
           </p>
         </div>
+        <button
+          onClick={resetPosition}
+          aria-label="Move the panel back to its default spot"
+          title="Reset position"
+          style={{
+            width: 34,
+            height: 34,
+            flexShrink: 0,
+            borderRadius: '50%',
+            border: '1px solid var(--border)',
+            background: 'var(--bg)',
+            color: 'var(--text-secondary)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            cursor: 'pointer',
+          }}
+        >
+          <Icon name="target" size={15} />
+        </button>
         <button
           onClick={onClose}
           aria-label="Close in-call messages"

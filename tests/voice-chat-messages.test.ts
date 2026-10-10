@@ -137,18 +137,23 @@ describe('chat never breaks the call itself', () => {
     expect(call).toMatch(/Open in-call messages/)
   })
 
-  it('lays the chat out as a sibling of the stage, never an overlay', () => {
-    // An overlay is what would swallow the control bar (the same trap the
-    // games panel had to avoid).
-    expect(call).toMatch(/<div className="lvc-call-body">/)
-    expect(call).toMatch(/<div className="lvc-call-stage">/)
-    expect(call).toMatch(/<div className="lvc-chat-col">/)
-    expect(css).toMatch(/\.lvc-call-body \{[\s\S]*?display: flex;/)
-    expect(css).toMatch(/\.lvc-chat-col \{[\s\S]*?flex: 0 0 320px;/)
+  it('floats the panel over the call instead of taking a column', () => {
+    // It used to be a side column; it is now movable, so it takes no layout
+    // space at all and the tiles keep the full width.
+    expect(call).toMatch(/\{chatOpen && <CallChatPanel /)
+    expect(call).not.toMatch(/lvc-chat-col/)
+    expect(css).toMatch(/\.lvc-chat-float \{[\s\S]*?position: fixed;/)
   })
 
-  it('stacks the columns instead of overflowing on a phone', () => {
-    expect(css).toMatch(/@media \(max-width: 900px\) \{\s*\.lvc-call-body \{\s*flex-direction: column;/)
+  it('is moved by the header, and never by the header\u2019s buttons', () => {
+    // Grabbing the close / reset buttons must not drag the panel.
+    expect(panel).toMatch(/if \(\(e\.target as HTMLElement\)\.closest\('button'\)\) return/)
+    expect(css).toMatch(/\.lvc-chat-grip \{[\s\S]*?touch-action: none;/)
+  })
+
+  it('can be put back to its default spot', () => {
+    expect(panel).toMatch(/aria-label="Move the panel back to its default spot"/)
+    expect(panel).toMatch(/defaultPanelPosition\(measure\(\), viewportSize\(\)\)/)
   })
 
   it('closes the panel without touching the room', () => {

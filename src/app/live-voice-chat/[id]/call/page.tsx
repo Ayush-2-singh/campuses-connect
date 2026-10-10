@@ -344,63 +344,57 @@ function CallShell({ connected, onLeave }: { connected: boolean; onLeave: () => 
     <div style={{ minHeight: '72vh', display: 'flex', flexDirection: 'column' }}>
       <Header connected={connected} count={participants.length} onBack={() => setMinimized(true)} />
 
-      {/* Stage and messages sit side by side (stacked on a phone). The game
-          panel takes over the stage while it is open, and the chat column is
-          a sibling — never an overlay — so the header (live count) and the
-          control bar (mic / leave) stay reachable at every point. */}
-      <div className="lvc-call-body">
-        <div className="lvc-call-stage">
-          {gamesOpen ? (
-            <CallGamePanel
-              game={game}
-              roomCode={gameCode}
-              participantCount={participants.length}
-              participants={participants.map((p) => ({
-                id: p.identity,
-                name: p.name?.trim() || 'Student',
-              }))}
-              onPick={startGame}
-              onRoomReady={broadcastRoom}
-              onClose={() => {
-                setGamesOpen(false)
-                setGame(null)
-                setGameCode(undefined)
-              }}
-            />
-          ) : (
-            <>
-              {/* Layout switcher — Auto / Grid / Spotlight, like Meet's tile buttons. */}
-              <LayoutSwitcher layout={layout} onChange={changeLayout} />
+      {/* The stage takes the full width; the messages panel FLOATS above the
+          call so the user can drag it wherever the video is not. It clamps
+          itself inside the viewport and above the control bar (see
+          lib/floatingPanel.ts), so mic / leave stay reachable. */}
+      <div>
+        {gamesOpen ? (
+          <CallGamePanel
+            game={game}
+            roomCode={gameCode}
+            participantCount={participants.length}
+            participants={participants.map((p) => ({
+              id: p.identity,
+              name: p.name?.trim() || 'Student',
+            }))}
+            onPick={startGame}
+            onRoomReady={broadcastRoom}
+            onClose={() => {
+              setGamesOpen(false)
+              setGame(null)
+              setGameCode(undefined)
+            }}
+          />
+        ) : (
+          <>
+            {/* Layout switcher — Auto / Grid / Spotlight, like Meet's tile buttons. */}
+            <LayoutSwitcher layout={layout} onChange={changeLayout} />
 
-              {(layout === 'auto' || layout === 'spotlight') && (
-                <Stage
-                  mode={layout === 'spotlight' ? 'spotlight' : 'share'}
-                  participants={participants}
-                  shareRef={screenShareRef}
-                  spotlightId={spotlightId}
-                  pinnedId={pinnedId}
-                  onUnpin={() => setPinnedId(null)}
-                />
-              )}
-
-              <Participants
+            {(layout === 'auto' || layout === 'spotlight') && (
+              <Stage
+                mode={layout === 'spotlight' ? 'spotlight' : 'share'}
                 participants={participants}
-                emojiEvents={emojiEvents}
-                layout={layout}
-                pinnedId={pinnedId}
+                shareRef={screenShareRef}
                 spotlightId={spotlightId}
-                onPin={(identity) => setPinnedId((cur) => (cur === identity ? null : identity))}
+                pinnedId={pinnedId}
+                onUnpin={() => setPinnedId(null)}
               />
-            </>
-          )}
-        </div>
+            )}
 
-        {chatOpen && (
-          <div className="lvc-chat-col">
-            <CallChatPanel messages={messages} onSend={sendChat} onClose={() => setChatOpen(false)} />
-          </div>
+            <Participants
+              participants={participants}
+              emojiEvents={emojiEvents}
+              layout={layout}
+              pinnedId={pinnedId}
+              spotlightId={spotlightId}
+              onPin={(identity) => setPinnedId((cur) => (cur === identity ? null : identity))}
+            />
+          </>
         )}
       </div>
+
+      {chatOpen && <CallChatPanel messages={messages} onSend={sendChat} onClose={() => setChatOpen(false)} />}
 
       {/* Someone on the call started a game — one tap joins their room. */}
       {invite && (

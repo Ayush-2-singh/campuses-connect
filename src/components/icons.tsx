@@ -105,6 +105,17 @@ const ICON_PATHS: Record<string, React.ReactNode> = {
       <path d="M12 17v4" />
     </>
   ),
+  /* Six dots — the drag handle grip on a panel the user can move. */
+  grip: (
+    <>
+      <circle cx="9" cy="6" r="1" />
+      <circle cx="15" cy="6" r="1" />
+      <circle cx="9" cy="12" r="1" />
+      <circle cx="15" cy="12" r="1" />
+      <circle cx="9" cy="18" r="1" />
+      <circle cx="15" cy="18" r="1" />
+    </>
+  ),
   /* A single low horizontal line — the "minimize" glyph. A minimized call
      keeps RUNNING behind a compact bar; it is not a back button that leaves. */
   minimize: (

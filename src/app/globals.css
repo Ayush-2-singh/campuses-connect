@@ -1691,45 +1691,48 @@ a:active,
 }
 
 /* ── Live voice call — in-call messages (Meet-style chat) ─────────────
-   The stage and the message column are siblings in a flex row: the chat is
-   NEVER an overlay, so the control bar (mic / leave) can not be swallowed by
-   it. Below 900px there is no room for two columns, so they stack — the chat
-   simply moves under the tiles and the whole page scrolls. */
-.lvc-call-body {
-  display: flex;
-  align-items: flex-start;
-  gap: 14px;
-  width: 100%;
-}
-.lvc-call-stage {
-  flex: 1 1 auto;
-  min-width: 0;
-}
-.lvc-chat-col {
-  flex: 0 0 320px;
+   The chat is a MOVABLE panel: the user drags it wherever it is out of the
+   way of the video. It floats over the call, so it must never eat the
+   controls — lib/floatingPanel.ts clamps it inside the viewport and above the
+   control bar (mic / leave) on every drag, resize and restore. */
+.lvc-chat-float {
+  position: fixed;
+  z-index: 55;
   width: 320px;
-  min-width: 0;
+  max-width: calc(var(--app-vw) - 24px);
+  box-shadow: var(--shadow-lg);
 }
-@media (max-width: 900px) {
-  .lvc-call-body {
-    flex-direction: column;
-  }
-  .lvc-chat-col {
-    flex: 1 1 auto;
-    width: 100%;
-  }
+
+/* The header is the drag handle: it must not scroll the page OR start a text
+   selection when grabbed on a touch screen. */
+.lvc-chat-grip {
+  cursor: grab;
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-tap-highlight-color: transparent;
+  background: none;
+  border: none;
+  padding: 0 2px;
+  display: inline-flex;
+  align-items: center;
+  color: var(--text-muted);
+}
+.lvc-chat-grip:active,
+.lvc-chat-float[data-dragging='1'] .lvc-chat-grip {
+  cursor: grabbing;
 }
 
 /* The thread scrolls inside the panel; the panel itself never grows past the
    call. min-height keeps the empty state from collapsing to a sliver. */
 .lvc-chat-list {
   min-height: 170px;
-  max-height: 46vh;
+  max-height: 42vh;
 }
-@media (max-width: 900px) {
+@media (max-width: 600px) {
   .lvc-chat-list {
-    min-height: 150px;
-    max-height: 38vh;
+    min-height: 140px;
+    max-height: 32vh;
   }
 }
 
