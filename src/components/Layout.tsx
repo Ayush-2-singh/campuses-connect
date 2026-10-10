@@ -12,6 +12,7 @@ import Avatar from '@/components/Avatar'
 import { Icon } from '@/components/icons'
 import { accentForPath } from '@/theme/colors'
 import BrandName from '@/components/BrandName'
+import { useCall } from '@/components/voice/callContext'
 
 // PROFESSIONAL PATTERN: Lazy-load heavy components (Vercel/Linear/Notion).
 // CommandPalette is only needed when user presses Cmd+K — no point loading
@@ -179,6 +180,10 @@ function SidebarGroup({
 export default function Layout({ children, user, profile }: { children: React.ReactNode; user?: any; profile?: any }) {
   const router = useRouter()
   const pathname = usePathname()
+  // The live call's compact bar parks in the same corner on a phone. While a
+  // call is running it owns that space — the create button would sit on top of
+  // the mic / leave controls at exactly the moment they matter most.
+  const { session: callSession } = useCall()
   const [unreadCount, setUnreadCount] = React.useState(0)
   const [cmdOpen, setCmdOpen] = React.useState(false)
   const [fabOpen, setFabOpen] = React.useState(false)
@@ -894,7 +899,7 @@ export default function Layout({ children, user, profile }: { children: React.Re
       />
 
       {/* ── Mobile floating action button ── */}
-      <div className="fab-wrap" role="menu" aria-label="Create">
+      <div className="fab-wrap" role="menu" aria-label="Create" data-hidden={callSession ? '1' : '0'}>
         {fabOpen && (
           <div
             style={{

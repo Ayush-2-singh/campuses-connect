@@ -7,6 +7,7 @@ import LoadingBar from '@/components/LoadingBar'
 import NativeShell from '@/components/NativeShell'
 import CookieConsent from '@/components/CookieConsent'
 import Analytics from '@/components/Analytics'
+import { CallProvider } from '@/components/voice/CallProvider'
 
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL || 'https://www.connecttocampus.com'
 
@@ -240,7 +241,10 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
               visitor decides; Analytics additionally needs env vars set). */}
           <CookieConsent />
           <Analytics />
-          {children}
+          {/* The live voice call lives ABOVE the routes: that is what lets it
+              survive navigation, so back/minimise can never hang anybody up.
+              Renders children untouched until a call actually starts. */}
+          <CallProvider>{children}</CallProvider>
         </ToastProvider>
       </body>
     </html>

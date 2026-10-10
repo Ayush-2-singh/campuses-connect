@@ -25,6 +25,7 @@ import { createClient } from '@/lib/supabase/client'
 import { Icon } from '@/components/icons'
 import { subscribeVoiceBroadcast, type LiveCallState } from '@/lib/voiceBroadcast'
 import { voiceIcon } from '@/lib/liveVoice'
+import { useCall } from '@/components/voice/callContext'
 
 const DISMISS_KEY = 'cc-voice-card-dismissed-call'
 
@@ -46,6 +47,10 @@ function readExpanded(): boolean {
 
 export default function VoiceChatCard() {
   const router = useRouter()
+  // The call bar (see CallSurface) parks in the same corner. Once you are the
+  // one inside a call, advertising that a room is live is just noise on top of
+  // your own controls — and the two would overlap on a phone.
+  const { session } = useCall()
   const [state, setState] = useState<LiveCallState>({
     active: false,
     groupId: null,
@@ -239,7 +244,8 @@ export default function VoiceChatCard() {
   // Hidden while nothing is live, while dismissed for this call, or on the
   // voice-chat pages themselves (the hub + room + call already show state).
   const hideOnPath = typeof window !== 'undefined' && window.location.pathname.startsWith('/live-voice-chat')
-  if (!state.active || hideOnPath || (dismissedFor && dismissedFor === (state.callId || 'current'))) return null
+  if (session || !state.active || hideOnPath || (dismissedFor && dismissedFor === (state.callId || 'current')))
+    return null
 
   const label = group?.name || 'Voice room'
   // Members read the participant rows directly (freshest); everyone else

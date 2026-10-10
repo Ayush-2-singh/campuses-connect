@@ -20,7 +20,8 @@ const root = process.cwd()
 const read = (rel: string) => fs.readFileSync(path.join(root, rel), 'utf8')
 
 describe('the voice call offers games', () => {
-  const call = read('src/app/live-voice-chat/[id]/call/page.tsx')
+  const call = read('src/components/voice/CallSurface.tsx')
+  const layer = read('src/components/voice/LiveKitCallLayer.tsx')
 
   it('has a games control beside mic, camera and leave', () => {
     expect(call).toMatch(/Play a game with the call/)
@@ -28,10 +29,12 @@ describe('the voice call offers games', () => {
     expect(call).toMatch(/onOpenGames/)
   })
 
-  it('keeps the audio renderer mounted on the page itself', () => {
-    // RoomAudioRenderer must NOT move inside the games panel — it is what
-    // keeps everyone audible while a game is on screen.
-    expect(call).toMatch(/<RoomAudioRenderer \/>/)
+  it('keeps the audio renderer mounted on the call layer itself', () => {
+    // RoomAudioRenderer must NOT move inside the games panel (or the call
+    // surface) — it is what keeps everyone audible while a game is on screen,
+    // and it is mounted above the routes with the connection.
+    expect(layer).toMatch(/<RoomAudioRenderer \/>/)
+    expect(read('src/components/games/CallGamePanel.tsx')).not.toMatch(/<RoomAudioRenderer \/>/)
   })
 
   it('sends the room code over the call data channel', () => {
@@ -78,7 +81,7 @@ describe('the panel runs the games the app already ships', () => {
 
 describe('the panel shows who on the call actually joined', () => {
   const panel = read('src/components/games/CallGamePanel.tsx')
-  const call = read('src/app/live-voice-chat/[id]/call/page.tsx')
+  const call = read('src/components/voice/CallSurface.tsx')
 
   it('receives the people on the call', () => {
     expect(call).toMatch(/participants=\{participants\.map\(/)

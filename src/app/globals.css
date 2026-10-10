@@ -744,6 +744,10 @@ body:has(.app-topbar) .theme-toggle--floating {
   .fab-wrap {
     display: flex;
   }
+  /* Inside a live call the call bar takes this corner. */
+  .fab-wrap[data-hidden='1'] {
+    display: none !important;
+  }
 }
 
 /* ───────────────────────── Mobile responsiveness ───────────────────────── */
@@ -1762,6 +1766,41 @@ a:active,
   resize: none;
 }
 
+/* ── Live voice call — the layer above every route ────────────────────
+   The call is mounted once, above the router, so navigation (back included)
+   can not unmount it. The layer itself must never intercept anything: only
+   the boxes inside it (the full screen, or the bar) take pointer events. */
+.lvc-layer {
+  position: fixed;
+  inset: 0;
+  z-index: 55;
+  pointer-events: none;
+}
+.lvc-layer-full {
+  position: absolute;
+  inset: 0;
+  pointer-events: auto;
+  background: var(--bg-page);
+  overflow-y: auto;
+}
+.lvc-screen {
+  display: flex;
+  flex-direction: column;
+  min-height: 100%;
+  max-width: 1024px;
+  margin: 0 auto;
+  padding: 22px 20px calc(24px + env(safe-area-inset-bottom, 0px));
+}
+
+/* The thin call route's handshake / failure state, painted under the layer. */
+.lcm-status {
+  max-width: 640px;
+  margin: 0 auto;
+  padding: 28px 20px;
+  color: var(--text-muted);
+  font-size: 14px;
+}
+
 /* ── Live voice call — minimized bar ──────────────────────────────────
    Pressing the top-left "back" no longer leaves: it collapses the screen
    into this bar while the LiveKit room (mic, heartbeat, audio) keeps
@@ -1771,6 +1810,10 @@ a:active,
   position: fixed;
   left: 50%;
   transform: translateX(-50%);
+  /* The layer above every route is pointer-events:none so it can never block
+     the page underneath — the bar has to opt back IN, or none of its buttons
+     would be clickable. */
+  pointer-events: auto;
   bottom: calc(16px + env(safe-area-inset-bottom, 0px));
   z-index: 60;
   display: flex;
@@ -1859,6 +1902,15 @@ a:active,
   font-size: 13px;
   font-weight: 700;
 }
+/* Phones: the bottom nav owns the bottom edge, so the call bar rides ABOVE
+   it — the same trick the live-room card uses. The FAB is hiding by then (see
+   Layout), so the centred bar has the whole row. */
+@media (max-width: 768px) {
+  .lvc-mini {
+    bottom: calc(84px + env(safe-area-inset-bottom, 0px));
+  }
+}
+
 /* Narrow phones: the pill drops its label text before anything wraps. */
 @media (max-width: 480px) {
   .lvc-mini {

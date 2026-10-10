@@ -32,7 +32,8 @@ import {
 const root = process.cwd()
 const read = (rel: string) => fs.readFileSync(path.join(root, rel), 'utf8')
 
-const call = read('src/app/live-voice-chat/[id]/call/page.tsx')
+const call = read('src/components/voice/CallSurface.tsx')
+const layer = read('src/components/voice/LiveKitCallLayer.tsx')
 const panel = read('src/components/voice/CallChatPanel.tsx')
 const css = read('src/app/globals.css')
 
@@ -125,10 +126,12 @@ describe('the call page runs chat on its own data channel', () => {
 })
 
 describe('chat never breaks the call itself', () => {
-  it('keeps the audio renderer on the page', () => {
+  it('keeps the audio renderer on the call layer', () => {
     // RoomAudioRenderer must not move inside the chat panel — it is what keeps
-    // everybody audible while the thread is on screen.
-    expect(call).toMatch(/<RoomAudioRenderer \/>/)
+    // everybody audible while the thread is on screen. It is mounted above the
+    // routes, with the connection, so it survives navigation too.
+    expect(layer).toMatch(/<RoomAudioRenderer \/>/)
+    expect(panel).not.toMatch(/<RoomAudioRenderer \/>/)
   })
 
   it('keeps mic / camera / leave in the control bar alongside the message button', () => {
@@ -158,7 +161,7 @@ describe('chat never breaks the call itself', () => {
 
   it('closes the panel without touching the room', () => {
     expect(call).toMatch(/onClose=\{\(\) => setChatOpen\(false\)\}/)
-    expect(call).not.toMatch(/onClose=\{[^}]*onLeave/)
+    expect(call).not.toMatch(/onClose=\{[^}]*leave/)
   })
 
   it('badges the message control and anchors it for the badge', () => {
