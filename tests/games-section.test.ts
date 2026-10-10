@@ -61,6 +61,23 @@ describe('Games is reachable from every navigation surface', () => {
   })
 })
 
+describe('shareable game links keep their room code', () => {
+  // Both game routes use a catch-all segment ([[...code]]), where Next hands
+  // the param over as an ARRAY — never a string. Reading it as a string made
+  // /games/typing/123456 and /games/math/123456 silently open a fresh lobby
+  // instead of joining the shared room.
+  it('typing reads the code out of the catch-all array', () => {
+    const page = read('src/app/games/typing/[[...code]]/page.tsx')
+    expect(page).toMatch(/Array\.isArray\(rawCode\)/)
+  })
+
+  it('math reads the code out of the catch-all array too', () => {
+    const page = read('src/app/games/math/[[...code]]/page.tsx')
+    expect(page).toMatch(/Array\.isArray\(rawCode\)/)
+    expect(page).not.toMatch(/typeof params\?\.code === 'string' \? params\.code : ''/)
+  })
+})
+
 describe('Games is no longer nested under Community', () => {
   it('the Community nav group no longer links the merged games/clash entry', () => {
     // The old "Compete, Games & Clash" child pointed at the Compete clash tab.

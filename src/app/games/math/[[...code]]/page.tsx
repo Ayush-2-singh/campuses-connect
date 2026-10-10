@@ -12,7 +12,11 @@ const QuickMath = dynamic(() => import('@/components/games/QuickMath'), { ssr: f
 
 export default function MathGamePage() {
   const params = useParams()
-  const code = typeof params?.code === 'string' ? params.code : ''
+  // A catch-all segment ([[...code]]) always arrives as an array, never a
+  // string — so /games/math/123456 used to silently lose its room code (the
+  // same trap /games/typing already fixed).
+  const rawCode = params?.code
+  const code = Array.isArray(rawCode) ? (rawCode[0] ?? '') : typeof rawCode === 'string' ? rawCode : ''
 
   return (
     <div data-accent="gold" style={{ minHeight: 'var(--app-vh)' }}>

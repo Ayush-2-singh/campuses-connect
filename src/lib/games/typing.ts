@@ -108,6 +108,30 @@ export function isPossibleDuration(ms: number): boolean {
 }
 
 /**
+ * diffInput — translate a soft-keyboard field change into tracker keys.
+ *
+ * Mobile IMEs (Android Gboard, iOS) never report real keystrokes for
+ * composition — keydown arrives as "Unidentified"/keyCode 229 — so the only
+ * place the typed characters exist is the input's value. Diffing the new value
+ * against what the tracker already holds recovers them: delete the tail that
+ * was replaced, then replay what is actually in the field now.
+ *
+ * Returns null for a paste-like jump (the field blocks paste anyway) so the
+ * caller can snap the field back instead of trusting it.
+ */
+export function diffInput(prev: string, next: string, maxInsert = 3): string[] | null {
+  if (next.length - prev.length > maxInsert) return null
+
+  let common = 0
+  while (common < prev.length && common < next.length && prev[common] === next[common]) common++
+
+  const keys: string[] = []
+  for (let i = common; i < prev.length; i++) keys.push('Backspace')
+  for (const ch of next.slice(common)) keys.push(ch)
+  return keys
+}
+
+/**
  * TypingTracker — per-keystroke state machine for one player.
  * Rules enforced (spec §7):
  *   • words must be typed in order; no skipping

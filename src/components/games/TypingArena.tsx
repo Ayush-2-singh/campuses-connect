@@ -3,8 +3,11 @@
 // ═══════════════════════════════════════════════════════════════════════════
 // TypingArena — the typing surface (spec §6/§7/§23)
 //
-// Desktop-first, keyboard-only interaction. The input is a single visually
-// hidden text field that stays focused; the word row renders state:
+// Works on desktop AND phones: hardware keyboards come in through keydown,
+// while mobile soft keyboards (which only expose characters as an input-value
+// change) come in through onChange and are replayed onto the tracker. The
+// input is a single visually hidden text field that stays focused; the word
+// row renders state:
 //   • completed words in green (correct) or red (wrong-attempt)
 //   • the active word highlighted with a caret
 //   • upcoming words muted
@@ -16,7 +19,7 @@
 // ═══════════════════════════════════════════════════════════════════════════
 
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { TypingTracker } from '@/lib/games/typing'
+import { TypingTracker, diffInput } from '@/lib/games/typing'
 
 /** One racing player's live progress, as pushed by the parent's realtime feed. */
 export interface RivalProgress {
@@ -230,10 +233,26 @@ export default function TypingArena({
     trackerRef.current = new TypingTracker(words, startedAtMs)
   }
 
-  // Auto-focus when the match starts (spec §7) and refocus on any click.
+  // Auto-focus when the match starts (spec §7) and refocus on any tap.
+  //
+  // MOBILE: `focus()` on an element that is ALREADY the activeElement is a
+  // no-op, so a phone whose soft keyboard was dismissed (system back gesture,
+  // rotating, tapping away) stayed focused-but-unusable — tapping the screen
+  // could never bring the keyboard back. Blur first, then focus, inside the
+  // same gesture so the keyboard is allowed to reopen.
   useEffect(() => {
-    inputRef.current?.focus()
-    const refocus = () => inputRef.current?.focus()
+    const el = inputRef.current
+    if (!el) return
+    el.focus({ preventScroll: true })
+    const refocus = () => {
+      const input = inputRef.current
+      if (!input) return
+      // Only cycle focus when the keyboard is actually gone — otherwise every
+      // tap mid-match would flicker the keyboard closed and open again.
+      const kbOpen = window.visualViewport ? window.visualViewport.height < window.innerHeight - 120 : false
+      if (document.activeElement === input && !kbOpen) input.blur()
+      input.focus({ preventScroll: true })
+    }
     window.addEventListener('pointerdown', refocus)
     return () => window.removeEventListener('pointerdown', refocus)
   }, [])
@@ -263,48 +282,105 @@ export default function TypingArena({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
+  /**
+   * applyKey — feed ONE key into the tracker and publish the side effects.
+   * Shared by both input paths (hardware keydown + soft-keyboard onChange) so
+   * word-completion broadcast and the final submit happen exactly once.
+   */
+  const applyKey = useCallback(
+    (key: string) => {
+      const tr = trackerRef.current
+      if (!tr || tr.isFinished) return
+      const completedOne = tr.handleKey(key)
+      if (completedOne) {
+        setCompleted(tr.completedWords)
+        onWordCompleted(tr.progressPayload())
+      }
+      if (tr.isFinished) {
+        // Submit what the player actually typed (the tracker's validated
+        // sequence) plus honest character counts, never the target list — the
+        // server re-checks each word and clamps the counts.
+        const s = tr.stats
+        onFinished({
+          words: tr.submission,
+          durationMs: tr.elapsedMs,
+          correctChars: s.correctChars,
+          totalTyped: s.totalTyped,
+        })
+      }
+    },
+    // trackerRef is stable across renders — see the ref assignment above.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [onWordCompleted, onFinished]
+  )
+
+  /**
+   * handleKeyDown — hardware / physical keyboards, which give us a real
+   * `e.key`. preventDefault() here means the character never reaches the DOM,
+   * so onChange does NOT fire and nothing is counted twice.
+   *
+   * MOBILE: Android (Gboard) and iOS soft keyboards report composition
+   * keystrokes as key === 'Unidentified' (keyCode 229). Those MUST fall through
+   * to onChange — that is the only event that carries the actual character.
+   */
   const handleKeyDown = useCallback(
     (e: React.KeyboardEvent<HTMLInputElement>) => {
       const tr = trackerRef.current
-      if (!tr) return
+      if (!tr || tr.isFinished) return
+      if (e.nativeEvent.isComposing || e.key === 'Unidentified') return
 
       if (e.key === 'Backspace') {
         e.preventDefault()
-        tr.handleKey('Backspace')
+        applyKey('Backspace')
         setCurrent(tr.currentInput)
         return
       }
       if (e.key === ' ') {
         e.preventDefault()
-        const completedOne = tr.handleKey(' ')
+        applyKey(' ')
         setCurrent(tr.currentInput)
-        if (completedOne) {
-          setCompleted(tr.completedWords)
-          onWordCompleted(tr.progressPayload())
-        }
-        if (tr.isFinished) {
-          // Submit what the player actually typed (the tracker's validated
-          // sequence) plus honest character counts, never the target list —
-          // the server re-checks each word and clamps the counts.
-          const s = tr.stats
-          onFinished({
-            words: tr.submission,
-            durationMs: tr.elapsedMs,
-            correctChars: s.correctChars,
-            totalTyped: s.totalTyped,
-          })
-        }
         return
       }
       if (e.key.length === 1 && !e.metaKey && !e.ctrlKey && !e.altKey) {
         e.preventDefault()
-        tr.handleKey(e.key)
+        applyKey(e.key)
         setCurrent(tr.currentInput)
       }
     },
     // trackerRef is stable across renders — see the ref assignment above.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [onWordCompleted, onFinished, words]
+    [applyKey]
+  )
+
+  /**
+   * handleChange — the MOBILE path (and any IME). Soft keyboards only expose
+   * their characters through the input's value, so we diff the new value
+   * against the tracker's buffer and replay the difference as tracker keys.
+   * The input stays controlled by `current`, so React snaps the DOM back to
+   * the tracker's buffer right after (which is also what clears the field when
+   * a word is committed with the space key).
+   */
+  const handleChange = useCallback(
+    (e: React.ChangeEvent<HTMLInputElement>) => {
+      const tr = trackerRef.current
+      if (!tr || tr.isFinished) return
+      const prev = tr.currentInput
+      const keys = diffInput(prev, e.target.value)
+      // null = paste-like jump (the field blocks paste too): restore the
+      // tracker's buffer instead of trusting the field.
+      if (!keys) {
+        setCurrent(prev)
+        return
+      }
+      for (const key of keys) {
+        applyKey(key)
+        if (tr.isFinished) break
+      }
+      setCurrent(tr.currentInput)
+    },
+    // trackerRef is stable across renders — see the ref assignment above.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [applyKey]
   )
 
   const minutes = elapsed / 60000
@@ -387,9 +463,7 @@ export default function TypingArena({
         onPaste={(e) => e.preventDefault()}
         onCopy={(e) => e.preventDefault()}
         onCut={(e) => e.preventDefault()}
-        onChange={() => {
-          /* controlled by keydown — mobile soft keyboards fall back here */
-        }}
+        onChange={handleChange}
         onKeyDown={handleKeyDown}
         style={{
           position: 'absolute',
