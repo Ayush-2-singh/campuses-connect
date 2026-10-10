@@ -18,6 +18,7 @@ import { Icon } from '@/components/icons'
 import CallGamePanel, { CALL_GAME_LABELS, type CallGame, type CallGameInvite } from '@/components/games/CallGamePanel'
 import CallChatPanel from '@/components/voice/CallChatPanel'
 import { appendChatMessage, cleanChatText, unreadCount, type CallChatMessage } from '@/lib/callChat'
+import { installCallBackGuard } from '@/lib/callBackGuard'
 
 const supabase = createClient()
 
@@ -75,7 +76,11 @@ function CallRoom() {
         await supabase.rpc('leave_live_voice_chat_call', { p_call_id: callId })
       }
     }
-    router.push(`/live-voice-chat/${groupId}`)
+    // REPLACE, not push: the entry we are on is the back-guard duplicate the
+    // call screen added, so swapping it for the room keeps history clean —
+    // leaving adds nothing to walk back through, and back can not land on the
+    // guard entry of a call that has already been left.
+    router.replace(`/live-voice-chat/${groupId}`)
   }, [callId, groupId, router])
 
   /**
@@ -188,6 +193,29 @@ function CallShell({ connected, onLeave }: { connected: boolean; onLeave: () => 
   // Collapses the call SCREEN without touching the call: no route change, so
   // this component (and the LiveKit room above it) never unmounts.
   const [minimized, setMinimized] = useState(false)
+
+  /**
+   * BROWSER BACK AND THE HARDWARE BACK BUTTON MINIMIZE TOO.
+   *
+   * The top-left control stops leaving, so the browser's own back had to stop
+   * leaving as well — otherwise the most-used gesture on a phone would still
+   * quietly drop your voice out of the room.
+   *
+   * We push ONE duplicate entry of this URL when the call screen mounts. Back
+   * then moves between two entries that have the SAME url, so nothing has
+   * navigated by the time popstate fires: the router sees no path change, the
+   * LiveKit room (which only exists inside this route) is untouched, and all
+   * that happens is the screen collapsing. Re-pushing on every pop keeps it
+   * that way, so back can never walk out of a live call.
+   *
+   * Leaving therefore stays explicit: the Leave button, or closing the tab.
+   * (Being able to walk away with back is one line away — drop the pushGuard()
+   * from onPopState and a second back press would navigate normally.)
+   */
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+    return installCallBackGuard(window, () => setMinimized(true))
+  }, [])
 
   const { send: sendGame } = useDataChannel('game', (msg) => {
     let parsed: Partial<CallGameInvite> | null = null
