@@ -124,8 +124,19 @@ export default function RoomDiscovery() {
     [groups, liveByGroup, filter, query]
   )
 
-  const rooms = useMemo(() => [...view.active, ...view.open], [view])
+  // The home board shows LIVE rooms only — a grid of rooms with nobody inside
+  // reads as a dead campus. The hub (/live-voice-chat) stays the place to
+  // create or pre-join a group before anyone starts talking.
+  const rooms = view.active
   const isEmpty = rooms.length === 0
+
+  // Chip counts must match the live-only grid — the discovery counts include
+  // open rooms, which the home no longer renders.
+  const liveCounts = useMemo(() => {
+    const counts: Record<string, number> = { all: rooms.length }
+    for (const r of rooms) counts[r.categoryId] = (counts[r.categoryId] || 0) + 1
+    return counts
+  }, [rooms])
 
   const openRoom = (room: DiscoverRoom) => {
     if (!user) {
@@ -209,7 +220,7 @@ export default function RoomDiscovery() {
           aria-pressed={filter === 'all'}
           onClick={() => setFilter('all')}
         >
-          All <span className="f4-chip-count">{view.counts.all}</span>
+          All <span className="f4-chip-count">{liveCounts.all}</span>
         </button>
         {ROOM_CATEGORIES.map((c) => {
           const active = filter === c.id
@@ -221,7 +232,7 @@ export default function RoomDiscovery() {
               title={c.blurb}
               onClick={() => setFilter(c.id)}
             >
-              {c.label} <span className="f4-chip-count">{view.counts[c.id]}</span>
+              {c.label} <span className="f4-chip-count">{liveCounts[c.id] ?? 0}</span>
             </button>
           )
         })}
@@ -244,11 +255,19 @@ export default function RoomDiscovery() {
           <div className="f4-empty-icon">
             <Icon name="mic" size={26} strokeWidth={1.8} />
           </div>
-          <p className="f4-empty-title">{query ? 'No groups match that search' : 'No groups here yet'}</p>
+          <p className="f4-empty-title">
+            {query
+              ? 'No groups match that search'
+              : view.open.length > 0
+                ? 'No live rooms right now'
+                : 'No groups here yet'}
+          </p>
           <p className="f4-empty-body">
             {query
               ? 'Try a different topic, or start the room yourself.'
-              : 'Be the first — create a group and your classmates can join.'}
+              : view.open.length > 0
+                ? 'Nothing is live at the moment — start a room and your classmates can drop in.'
+                : 'Be the first — create a group and your classmates can join.'}
           </p>
           <button className="f4-btn f4-btn-primary" onClick={() => router.push('/live-voice-chat')}>
             <Icon name="plus" size={15} strokeWidth={2.4} /> Create a new group
