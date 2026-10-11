@@ -9,10 +9,19 @@ import { createClient } from '@/lib/supabase/client'
 import { Icon } from '@/components/icons'
 import CallGamePanel, { CALL_GAME_LABELS, type CallGame, type CallGameInvite } from '@/components/games/CallGamePanel'
 import CallChatPanel from '@/components/voice/CallChatPanel'
+import CallMusicPanel from '@/components/voice/CallMusicPanel'
 import { callScreenPath, useCall } from '@/components/voice/callContext'
 import { appendChatMessage, cleanChatText, unreadCount, type CallChatMessage } from '@/lib/callChat'
+import { DEFAULT_MUSIC_KEY, isMusicKey, musicCollection } from '@/lib/music'
 
 const supabase = createClient()
+
+/** What travels over the 'music' data channel: the shared playlist flavour. */
+interface MusicInvite {
+  key: string
+  /** Human display name of the sharer (LiveKit participant name). */
+  from?: string
+}
 
 /**
  * CALL SURFACE — everything the person in a call sees.
@@ -28,9 +37,9 @@ const supabase = createClient()
  * hang anybody up — and because we are no longer stranding the user on an
  * emptied call screen, the previous page's real content is what they see.
  *
- * ONE useDataChannel instance per topic lives here — reactions, chat and game
- * invites — and the sender is passed down as props so every tile shares the
- * same event list.
+ * ONE useDataChannel instance per topic lives here — reactions, chat, game
+ * invites and shared music — and the sender is passed down as props so every
+ * tile shares the same event list.
  */
 export default function CallSurface() {
   const { connected, session, leave, callUrl } = useCall()
@@ -70,6 +79,68 @@ export default function CallSurface() {
   useEffect(() => {
     if (chatOpen && messages.length) setReadKey(messages[messages.length - 1].key)
   }, [chatOpen, messages])
+
+  // ── LISTEN TOGETHER ───────────────────────────────────────────────────────
+  // A third data channel (next to 'reaction' and 'game') carries one small
+  // payload: { key } — the flavour of the Top 50 playlist somebody put on.
+  // Every peer plays it from YouTube's official embed, the same one /global
+  // uses. No file is uploaded, no row is written, nothing is billed: a shared
+  // playlist is a live-room moment, so it stays on the wire like reactions,
+  // chat and game invites.
+  const [musicOpen, setMusicOpen] = useState(false)
+  const [musicKey, setMusicKey] = useState(DEFAULT_MUSIC_KEY)
+  const [musicAuto, setMusicAuto] = useState(false)
+  /** The flavour *I* have shared with the call, or null. */
+  const [sharedMusic, setSharedMusic] = useState<string | null>(null)
+  const [musicInvite, setMusicInvite] = useState<MusicInvite | null>(null)
+
+  const { send: sendMusic } = useDataChannel('music', (msg) => {
+    let parsed: { key?: unknown } | null = null
+    try {
+      parsed = JSON.parse(new TextDecoder().decode(msg.payload)) as { key?: unknown }
+    } catch {
+      return // malformed payload, e.g. a peer still on an older bundle
+    }
+    // null = the sharer stopped; anything unrecognised is ignored, never trusted.
+    if (parsed?.key === null) {
+      setMusicInvite(null)
+      return
+    }
+    if (!isMusicKey(parsed?.key)) return
+    setMusicInvite({ key: parsed.key, from: msg.from?.name?.trim() || 'Someone in the call' })
+  })
+
+  // A music invite is ambient — longer-lived than a game invite, but it still
+  // should not sit on the screen all call.
+  useEffect(() => {
+    if (!musicInvite) return
+    const timer = window.setTimeout(() => setMusicInvite(null), 60_000)
+    return () => window.clearTimeout(timer)
+  }, [musicInvite])
+
+  /** Pushes my pick to everyone else on the call. LiveKit never echoes a data
+   *  message back to its sender, so my own player is the "local echo". */
+  const shareMusic = useCallback(
+    (key: string | null) => {
+      setSharedMusic(key)
+      try {
+        sendMusic(new TextEncoder().encode(JSON.stringify({ key })), { reliable: true })
+      } catch {
+        /* channel not open yet — my own player still plays */
+      }
+    },
+    [sendMusic]
+  )
+
+  /** One tap on an invite: open the panel on that flavour and prime autoplay
+   *  so the tap the student just made is the only gesture needed. */
+  const joinMusic = useCallback(() => {
+    if (!musicInvite) return
+    setMusicKey(musicInvite.key)
+    setMusicAuto(true)
+    setMusicOpen(true)
+    setMusicInvite(null)
+  }, [musicInvite])
 
   // ── TALK + PLAY ───────────────────────────────────────────────────────────
   // A second data channel (next to 'reaction') carries exactly one payload:
@@ -190,7 +261,17 @@ export default function CallSurface() {
           itself inside the viewport and above the control bar (see
           lib/floatingPanel.ts), so mic / leave stay reachable. */}
         <div>
-          {gamesOpen ? (
+          {musicOpen ? (
+            <CallMusicPanel
+              key={musicKey}
+              initialKey={musicKey}
+              initialAutoPlay={musicAuto}
+              sharedKey={sharedMusic}
+              participantCount={participants.length}
+              onShare={shareMusic}
+              onClose={() => setMusicOpen(false)}
+            />
+          ) : gamesOpen ? (
             <CallGamePanel
               game={game}
               roomCode={gameCode}
@@ -310,13 +391,96 @@ export default function CallSurface() {
           </div>
         )}
 
+        {/* Someone put a playlist on — one tap joins them in listening. */}
+        {musicInvite && (
+          <div
+            role="status"
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 10,
+              flexWrap: 'wrap',
+              background: 'var(--bg)',
+              border: '1px solid var(--border)',
+              borderRadius: 14,
+              padding: '10px 12px',
+              marginBottom: 12,
+              animation: 'ccCardUp 0.15s ease',
+            }}
+          >
+            <span
+              style={{
+                width: 34,
+                height: 34,
+                borderRadius: 10,
+                background: 'var(--accent-light)',
+                color: 'var(--accent-text)',
+                display: 'inline-flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                flexShrink: 0,
+              }}
+            >
+              <Icon name="music" size={17} />
+            </span>
+            <p style={{ flex: 1, minWidth: 160, fontSize: 13, color: 'var(--text-primary)', margin: 0 }}>
+              <strong>{musicInvite.from}</strong> is playing {musicCollection(musicInvite.key)?.label ?? 'a playlist'} —
+              listen together?
+            </p>
+            <button
+              onClick={joinMusic}
+              style={{
+                minHeight: 40,
+                padding: '0 18px',
+                borderRadius: 10,
+                border: 'none',
+                background: 'var(--accent)',
+                color: 'var(--on-accent)',
+                fontSize: 13,
+                fontWeight: 700,
+                fontFamily: 'inherit',
+                cursor: 'pointer',
+              }}
+            >
+              Listen
+            </button>
+            <button
+              onClick={() => setMusicInvite(null)}
+              aria-label="Dismiss the music invite"
+              style={{
+                width: 40,
+                height: 40,
+                borderRadius: '50%',
+                border: '1px solid var(--border)',
+                background: 'var(--bg)',
+                color: 'var(--text-secondary)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                cursor: 'pointer',
+              }}
+            >
+              <Icon name="x" size={16} />
+            </button>
+          </div>
+        )}
+
         <div style={{ flex: 1 }} />
         <Controls
           callId={callId}
           onLeave={leave}
           sendReaction={sendReaction}
           gamesOpen={gamesOpen}
-          onOpenGames={() => setGamesOpen((open) => !open)}
+          onOpenGames={() => {
+            setMusicOpen(false)
+            setGamesOpen((open) => !open)
+          }}
+          musicOpen={musicOpen}
+          onOpenMusic={() => {
+            setGamesOpen(false)
+            setMusicAuto(false)
+            setMusicOpen((open) => !open)
+          }}
           chatOpen={chatOpen}
           unread={unread}
           onOpenChat={() => setChatOpen((open) => !open)}
@@ -1018,11 +1182,12 @@ function useCallChat(myIdentity: string | undefined, myName: string | undefined)
 
 /**
  * GMeet-style bottom control bar: emoji picker (3s float for everyone), mic,
- * camera, screen share, leave — every control an SVG button like Meet. Mic
- * and camera turn Meet-red while OFF; an active screen share lights up in
- * the accent. Mic state syncs to the DB via RPC; camera/screen share are
- * pure LiveKit toggles (the share button hides itself in browsers without
- * getDisplayMedia, e.g. older mobile Safari).
+ * camera, screen share, chat, games, music, leave — every control an SVG
+ * button like Meet. Mic and camera turn Meet-red while OFF; an active screen
+ * share lights up in the accent. Mic state syncs to the DB via RPC; camera,
+ * screen share, games and shared music are pure LiveKit / component state
+ * (the share button hides itself in browsers without getDisplayMedia, e.g.
+ * older mobile Safari).
  */
 function Controls({
   callId,
@@ -1030,6 +1195,8 @@ function Controls({
   sendReaction,
   gamesOpen,
   onOpenGames,
+  musicOpen,
+  onOpenMusic,
   chatOpen,
   unread,
   onOpenChat,
@@ -1039,6 +1206,8 @@ function Controls({
   sendReaction: (emoji: string) => void
   gamesOpen: boolean
   onOpenGames: () => void
+  musicOpen: boolean
+  onOpenMusic: () => void
   chatOpen: boolean
   unread: number
   onOpenChat: () => void
@@ -1220,6 +1389,18 @@ function Controls({
         style={gamesOpen ? { background: 'var(--accent)', color: 'var(--on-accent)' } : ON}
       >
         <Icon name="gamepad" size={23} />
+      </button>
+
+      {/* Music — the in-call "listen together" panel: a Top 50 list for the
+          whole room, played from each person's own YouTube player. */}
+      <button
+        onClick={onOpenMusic}
+        aria-label={musicOpen ? 'Close the music panel' : 'Listen to music with the call'}
+        aria-expanded={musicOpen}
+        className="lvc-ctrl"
+        style={musicOpen ? { background: 'var(--accent)', color: 'var(--on-accent)' } : ON}
+      >
+        <Icon name="music" size={23} />
       </button>
 
       <button onClick={onLeave} aria-label="Leave the call" className="lvc-leave">
