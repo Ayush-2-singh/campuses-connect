@@ -4,8 +4,8 @@
 // LiveRoomBrowser — the free4talk-style voice board at the top of /global.
 //
 // Browse every voice room by topic, see who is actually talking RIGHT NOW, and
-// drop into a room with one tap. Live rooms float to the top, exactly like a
-// language-exchange board.
+// drop into a room with one tap. Only LIVE rooms make the board — an empty
+// room is noise on a "talk right now" surface, so it is hidden entirely.
 //
 // The section keys mirror the CHECK constraint on live_voice_chat_groups.section
 // (supabase/migrations/20260920_live_voice_chat.sql) — the DB rejects anything
@@ -218,7 +218,7 @@ export default function LiveRoomBrowser({ userId }: { userId: string | null }) {
     [groups, section]
   )
 
-  // Live rooms first (busiest on top), then the quiet ones — free4talk ordering.
+  // Only LIVE rooms reach the board, busiest on top (free4talk ordering).
   const live = useMemo(
     () =>
       visible
@@ -226,8 +226,6 @@ export default function LiveRoomBrowser({ userId }: { userId: string | null }) {
         .sort((a, b) => (liveByGroup[b.id] || 0) - (liveByGroup[a.id] || 0)),
     [visible, liveByGroup]
   )
-  const rest = useMemo(() => visible.filter((g) => (liveByGroup[g.id] || 0) === 0), [visible, liveByGroup])
-
   const open = useCallback(
     (g: VoiceGroup) => {
       if (!userId) {
@@ -242,6 +240,20 @@ export default function LiveRoomBrowser({ userId }: { userId: string | null }) {
 
   const livePeople = live.reduce((n, g) => n + (liveByGroup[g.id] || 0), 0)
   const activeSection = SECTIONS.find((s) => s.key === section) || SECTIONS[0]
+
+  // Live rooms per topic — powers the count badge on each filter chip. Built
+  // from EVERY group (not the section-filtered `live`) so a chip keeps its
+  // count while another topic is selected.
+  const liveCountBySection = useMemo(() => {
+    const counts: Record<string, number> = {}
+    for (const g of groups) {
+      if ((liveByGroup[g.id] || 0) <= 0) continue
+      const key = g.section || 'random'
+      counts[key] = (counts[key] || 0) + 1
+      counts.all = (counts.all || 0) + 1
+    }
+    return counts
+  }, [groups, liveByGroup])
 
   return (
     <section style={{ marginBottom: 24 }} aria-label="Live voice rooms">
@@ -342,6 +354,11 @@ export default function LiveRoomBrowser({ userId }: { userId: string | null }) {
             <button
               key={s.key}
               onClick={() => setSection(s.key)}
+              aria-label={
+                (liveCountBySection[s.key] || 0) > 0
+                  ? `${s.label}, ${liveCountBySection[s.key]} live`
+                  : `${s.label}, no live rooms`
+              }
               style={{
                 flexShrink: 0,
                 whiteSpace: 'nowrap',
@@ -361,6 +378,28 @@ export default function LiveRoomBrowser({ userId }: { userId: string | null }) {
             >
               <Icon name={s.icon} size={13} strokeWidth={2.2} />
               {s.label}
+              {/* Live room count for this topic — hidden when the topic is quiet. */}
+              {(liveCountBySection[s.key] || 0) > 0 && (
+                <span
+                  aria-hidden="true"
+                  style={{
+                    minWidth: 16,
+                    height: 16,
+                    padding: '0 5px',
+                    borderRadius: 999,
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    fontSize: 10,
+                    fontWeight: 800,
+                    lineHeight: 1,
+                    background: active ? 'var(--on-accent)' : 'var(--danger)',
+                    color: active ? 'var(--accent)' : '#fff',
+                  }}
+                >
+                  {liveCountBySection[s.key]}
+                </span>
+              )}
             </button>
           )
         })}
@@ -388,7 +427,7 @@ export default function LiveRoomBrowser({ userId }: { userId: string | null }) {
             <div key={i} className="skeleton" style={{ height: 72, borderRadius: 14 }} />
           ))}
         </div>
-      ) : visible.length === 0 ? (
+      ) : live.length === 0 ? (
         <div
           style={{
             background: 'var(--bg)',
@@ -399,7 +438,7 @@ export default function LiveRoomBrowser({ userId }: { userId: string | null }) {
           }}
         >
           <p style={{ fontSize: 13.5, fontWeight: 700, color: 'var(--text-primary)', margin: '0 0 3px' }}>
-            No rooms in {activeSection.label} yet
+            {section === 'all' ? 'No live rooms right now' : `No live rooms in ${activeSection.label}`}
           </p>
           <p style={{ fontSize: 12, color: 'var(--text-muted)', margin: '0 0 12px' }}>
             Be the first — open a room and students will see it here.
@@ -423,69 +462,42 @@ export default function LiveRoomBrowser({ userId }: { userId: string | null }) {
         </div>
       ) : (
         <>
-          {live.length > 0 && (
-            <>
-              <p
-                style={{
-                  fontSize: 11,
-                  fontWeight: 800,
-                  letterSpacing: '0.08em',
-                  textTransform: 'uppercase',
-                  color: 'var(--success-text)',
-                  margin: '0 0 8px',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 6,
-                }}
-              >
-                <span
-                  aria-hidden="true"
-                  style={{
-                    width: 7,
-                    height: 7,
-                    borderRadius: '50%',
-                    background: 'var(--danger)',
-                    boxShadow: '0 0 6px var(--danger)',
-                  }}
-                />
-                Live now
-              </p>
-              <div
-                style={{
-                  display: 'grid',
-                  gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))',
-                  gap: 10,
-                  marginBottom: 16,
-                }}
-              >
-                {live.map((g) => (
-                  <RoomCard key={g.id} group={g} count={liveByGroup[g.id] || 0} onOpen={open} />
-                ))}
-              </div>
-            </>
-          )}
-
-          {rest.length > 0 && (
-            <>
-              <p
-                style={{
-                  fontSize: 11,
-                  fontWeight: 800,
-                  letterSpacing: '0.08em',
-                  textTransform: 'uppercase',
-                  color: 'var(--text-muted)',
-                  margin: '0 0 8px',
-                }}
-              >
-                {live.length > 0 ? 'Quiet rooms' : 'All rooms'}
-              </p>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: 10 }}>
-                {rest.map((g) => (
-                  <RoomCard key={g.id} group={g} count={0} onOpen={open} />
-                ))}
-              </div>
-            </>
-          )}
+          <p
+            style={{
+              fontSize: 11,
+              fontWeight: 800,
+              letterSpacing: '0.08em',
+              textTransform: 'uppercase',
+              color: 'var(--success-text)',
+              margin: '0 0 8px',
+              display: 'flex',
+              alignItems: 'center',
+              gap: 6,
+            }}
+          >
+            <span
+              aria-hidden="true"
+              style={{
+                width: 7,
+                height: 7,
+                borderRadius: '50%',
+                background: 'var(--danger)',
+                boxShadow: '0 0 6px var(--danger)',
+              }}
+            />
+            Live now
+          </p>
+          <div
+            style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))',
+              gap: 10,
+            }}
+          >
+            {live.map((g) => (
+              <RoomCard key={g.id} group={g} count={liveByGroup[g.id] || 0} onOpen={open} />
+            ))}
+          </div>
         </>
       )}
     </section>

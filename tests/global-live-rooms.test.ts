@@ -35,9 +35,25 @@ describe('the free4talk-style board on /global', () => {
     }
   })
 
-  it('floats live rooms above quiet ones', () => {
+  it('shows only live rooms — quiet ones are hidden', () => {
+    // Still filtered by heartbeat-fresh participants...
     expect(board).toMatch(/liveByGroup\[g\.id\] \|\| 0\) > 0/)
     expect(board).toContain('Live now')
+    // ...but non-live rooms are removed entirely: no "Quiet rooms" / "All
+    // rooms" band, and no card rendered with a zero count.
+    expect(board).not.toContain('Quiet rooms')
+    expect(board).not.toContain('All rooms')
+    expect(board).not.toMatch(/<RoomCard[^>]*count=\{0\}/)
+  })
+
+  it('summarises live rooms on each topic chip', () => {
+    // The count map exists and the chip badge reads it...
+    expect(board).toMatch(/const liveCountBySection = useMemo/)
+    expect(board).toMatch(/liveCountBySection\[s\.key\]/)
+    // ...built from EVERY group, not the section-filtered list, so a chip keeps
+    // its count while another topic is selected.
+    expect(board).toMatch(/for \(const g of groups\)/)
+    expect(board).not.toMatch(/for \(const g of live\)/)
   })
 
   it('sends guests through login first', () => {
