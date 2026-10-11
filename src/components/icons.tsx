@@ -429,6 +429,20 @@ const ICON_PATHS: Record<string, React.ReactNode> = {
       <line x1="12" y1="4" x2="12" y2="20" />
     </>
   ),
+  /* Music note — songs / playlists. */
+  music: (
+    <>
+      <path d="M9 18V5l12-2v13" />
+      <circle cx="6" cy="18" r="3" />
+      <circle cx="18" cy="16" r="3" />
+    </>
+  ),
+  /* Headphones — the music library / chill listening. */
+  headphones: (
+    <path d="M3 14h3a2 2 0 0 1 2 2v3a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-7a9 9 0 0 1 18 0v7a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3" />
+  ),
+  /* Play triangle — start playback. */
+  play: <polygon points="6 3 20 12 6 21 6 3" />,
   /* Crossing arrows — random / shuffle. */
   shuffle: (
     <>

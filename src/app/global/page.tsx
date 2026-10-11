@@ -20,6 +20,7 @@ import { ListSkeleton } from '@/components/Skeleton'
 import EmptyState from '@/components/EmptyState'
 import { Icon } from '@/components/icons'
 import LiveRoomBrowser from '@/components/global/LiveRoomBrowser'
+import SongLibrary from '@/components/global/SongLibrary'
 import type { Post } from '@/types'
 
 interface MyGroup {
@@ -124,6 +125,9 @@ export default function GlobalPage() {
 
         {/* ── Live Rooms — the free4talk-style board (live rooms float up) ── */}
         <LiveRoomBrowser userId={user?.id ?? null} />
+
+        {/* ── Music — curated YouTube playlists, free4talk style ── */}
+        <SongLibrary />
 
         {user && (
           <PostComposer
