@@ -17,7 +17,9 @@ export default function MobileBottomNav({
   // covers them (classic mobile-web trap). Restored shortly after blur.
   useEffect(() => {
     const isFormField = (el: Element | null) => !!el && ['INPUT', 'TEXTAREA', 'SELECT'].includes(el.tagName)
-    const onFocusIn = () => { if (isFormField(document.activeElement)) document.documentElement.classList.add('nav-hidden') }
+    const onFocusIn = () => {
+      if (isFormField(document.activeElement)) document.documentElement.classList.add('nav-hidden')
+    }
     const onFocusOut = () => {
       // Only restore once the on-screen keyboard has actually closed — on iOS,
       // blur can fire while the keyboard is still visible.
@@ -39,17 +41,36 @@ export default function MobileBottomNav({
   return (
     <div
       className="mobile-bottomnav"
-      style={{ position: 'fixed', bottom: 0, left: 0, right: 0, background: 'var(--bg)', borderTop: '1px solid var(--border)', zIndex: 50, display: 'none' }}
+      style={{
+        position: 'fixed',
+        bottom: 0,
+        left: 0,
+        right: 0,
+        background: 'var(--bg)',
+        borderTop: '1px solid var(--border)',
+        zIndex: 50,
+        display: 'none',
+      }}
     >
       <div style={{ display: 'flex' }}>
-        {MOBILE_NAV.map(item => {
+        {MOBILE_NAV.map((item) => {
           const active = isActive(item.href)
           return (
             <button
               key={item.href}
               onClick={() => onNavigate(item.href)}
               aria-current={active ? 'page' : undefined}
-              style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'inherit', padding: 0 }}
+              style={{
+                flex: 1,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                background: 'none',
+                border: 'none',
+                cursor: 'pointer',
+                fontFamily: 'inherit',
+                padding: 0,
+              }}
             >
               <span
                 style={{
@@ -57,14 +78,25 @@ export default function MobileBottomNav({
                   flexDirection: 'column',
                   alignItems: 'center',
                   gap: 3,
-                  padding: '7px 16px',
+                  // Four tabs now share the bar, so the pill is narrower — 16px
+                  // of padding each side made "Community" overflow 320px phones.
+                  padding: '7px 10px',
                   borderRadius: 16,
                   background: active ? 'var(--accent-light)' : 'transparent',
                   transition: 'background 0.18s ease, color 0.18s ease',
                 }}
               >
                 <Icon name={item.icon} size={20} strokeWidth={active ? 2.4 : 2} />
-                <span style={{ fontSize: 10, fontWeight: active ? 600 : 400, whiteSpace: 'nowrap', color: active ? 'var(--accent-text)' : 'var(--text-muted)' }}>{item.label}</span>
+                <span
+                  style={{
+                    fontSize: 10,
+                    fontWeight: active ? 600 : 400,
+                    whiteSpace: 'nowrap',
+                    color: active ? 'var(--accent-text)' : 'var(--text-muted)',
+                  }}
+                >
+                  {item.label}
+                </span>
               </span>
             </button>
           )

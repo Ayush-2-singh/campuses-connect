@@ -56,6 +56,14 @@ describe('Games is reachable from every navigation surface', () => {
     expect(read('src/components/mobileNav.ts')).toContain("href: '/games'")
   })
 
+  it('mobile bottom bar — Games is a primary tab, not just a menu entry', () => {
+    const mobileNav = read('src/components/mobileNav.ts')
+    // Scope to the primary tab list (everything before the ☰ menu list), so a
+    // Games entry that only lives in the menu cannot satisfy this.
+    const tabs = mobileNav.slice(mobileNav.indexOf('MOBILE_NAV'), mobileNav.indexOf('MOBILE_MENU_NAV'))
+    expect(tabs).toContain("href: '/games'")
+  })
+
   it('More page', () => {
     expect(read('src/app/more/page.tsx')).toContain("href: '/games'")
   })
