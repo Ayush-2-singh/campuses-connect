@@ -7,7 +7,7 @@
  * hardcoding hex values.
  */
 
-export const PALETTE = {
+const PALETTE = {
   // Surfaces
   bg: '#0D1116',
   panel: '#171A21',

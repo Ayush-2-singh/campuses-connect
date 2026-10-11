@@ -10,13 +10,13 @@
  * All calls use plain fetch — no SDK dependencies.
  */
 
-export const BRAIN_EMBED_MODEL = 'gemini-embedding-001'
-export const BRAIN_OCR_MODEL = 'gemini-2.5-flash'
-export const BRAIN_ANSWER_MODEL = 'gemini-2.5-flash'
-export const BRAIN_GROQ_MODEL = 'llama-3.3-70b-versatile' // optional fallback
-export const BRAIN_OPENROUTER_MODEL = 'x-ai/grok-3-mini:free' // Grok free via OpenRouter
+const BRAIN_EMBED_MODEL = 'gemini-embedding-001'
+const BRAIN_OCR_MODEL = 'gemini-2.5-flash'
+const BRAIN_ANSWER_MODEL = 'gemini-2.5-flash'
+const BRAIN_GROQ_MODEL = 'llama-3.3-70b-versatile' // optional fallback
+const BRAIN_OPENROUTER_MODEL = 'x-ai/grok-3-mini:free' // Grok free via OpenRouter
 
-export const EMBED_DIMS = 768
+const EMBED_DIMS = 768
 
 const DEFAULT_TIMEOUT_MS = 60_000
 const STREAM_TIMEOUT_MS = 120_000

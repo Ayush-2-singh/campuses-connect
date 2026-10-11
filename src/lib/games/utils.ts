@@ -91,7 +91,7 @@ export async function copyToClipboard(text: string): Promise<boolean> {
 /**
  * Build a shareable join URL for a room.
  */
-export function buildShareUrl(roomCode: string): string {
+function buildShareUrl(roomCode: string): string {
   const base = typeof window !== 'undefined' ? window.location.origin : 'https://www.connecttocampus.com'
   return `${base}/games/room/${roomCode}`
 }
@@ -129,16 +129,6 @@ export function timeRemaining(startedAt: string, durationMs: number): number {
   const now = Date.now()
   const elapsed = now - start
   return Math.max(0, durationMs - elapsed)
-}
-
-/**
- * Score color based on position.
- */
-export function rankColor(rank: number): string {
-  if (rank === 0) return '#fd8f01' // gold
-  if (rank === 1) return '#9ca3af' // silver
-  if (rank === 2) return '#ea580c' // bronze
-  return 'var(--text-muted)'
 }
 
 /**

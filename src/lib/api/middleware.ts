@@ -42,8 +42,7 @@ async function resolveUser(request?: NextRequest) {
   }
 }
 
-export const ADMIN_ROLES = ['platform_admin', 'campus_admin', 'community_admin'] as const
-export type AdminRole = (typeof ADMIN_ROLES)[number]
+export type AdminRole = 'platform_admin' | 'campus_admin' | 'community_admin'
 
 /** Every role that may moderate content (community admins only inside their community). */
 export const MODERATOR_ROLES = ['platform_admin', 'campus_admin', 'community_admin'] as const
@@ -120,18 +119,6 @@ export async function requireAuthLite(
     return { ok: false, response: NextResponse.json({ error: 'Profile not found.' }, { status: 401 }) }
   }
   return { ok: true, auth: { userId: user.id, profile } }
-}
-
-/**
- * Check if a user is a Pro/Enterprise subscriber.
- * Uses the `is_user_premium` RPC — a single indexed query.
- */
-export async function requirePremium(userId: string): Promise<{ ok: boolean; error?: string }> {
-  const admin = getSupabaseAdmin()
-  const { data, error } = await admin.rpc('is_user_premium', { p_user_id: userId })
-  if (error) return { ok: false, error: 'Could not verify premium status.' }
-  if (data === true) return { ok: true }
-  return { ok: false, error: 'This feature requires ConnectToCampus Pro.' }
 }
 
 /**

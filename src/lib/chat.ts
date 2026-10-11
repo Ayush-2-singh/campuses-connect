@@ -121,7 +121,7 @@ export function postingReasonCopy(reason: PostingVerdict['reason']): string {
 }
 
 // ─── Message grouping ─────────────────────────────────────────────────────────
-export const GROUP_WINDOW_MS = 5 * 60 * 1000
+const GROUP_WINDOW_MS = 5 * 60 * 1000
 
 export interface ChatMessageRow {
   id: string
@@ -155,7 +155,7 @@ export function groupMessages(rows: ChatMessageRow[]): (ChatMessageRow & { group
   })
 }
 
-export function timeGapMs(a: string, b: string): number {
+function timeGapMs(a: string, b: string): number {
   return Math.abs(new Date(b).getTime() - new Date(a).getTime())
 }
 

@@ -82,7 +82,7 @@ export default function Avatar({
 }
 
 /** Normalize an avatar value (storage path or absolute URL) into a displayable src. */
-export function resolveAvatarSrc(avatarUrl?: string | null): string | null {
+function resolveAvatarSrc(avatarUrl?: string | null): string | null {
   if (!avatarUrl) return null
   if (avatarUrl.startsWith('http://') || avatarUrl.startsWith('https://') || avatarUrl.startsWith('data:')) {
     return avatarUrl

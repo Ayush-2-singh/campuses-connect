@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
-import type { AdminGrant, AdminTypeKey, CreatableCategory, PostScope } from '@/types'
+import type { AdminGrant, AdminTypeKey, CreatableCategory } from '@/types'
 
 export interface AdminContext {
   loading: boolean
@@ -96,26 +96,6 @@ export function useAdminContext(userId?: string): AdminContext {
   }, [userId])
 
   return ctx
-}
-
-/** Server/edge-checkable wrapper around the can_create_post RPC. */
-export async function canCreatePost(
-  userId: string,
-  categoryKey: string,
-  scope: PostScope,
-  opts: { communityId?: string; campusId?: string; collegeId?: string } = {}
-): Promise<boolean> {
-  const supabase = createClient()
-  const { data, error } = await supabase.rpc('can_create_post', {
-    p_user_id: userId,
-    p_category_key: categoryKey,
-    p_scope: scope,
-    p_community_id: opts.communityId || null,
-    p_campus_id: opts.campusId || null,
-    p_college_id: opts.collegeId || null,
-  })
-  if (error) return false
-  return !!data
 }
 
 /** Which categories can this user create in a context — drives the composer. */

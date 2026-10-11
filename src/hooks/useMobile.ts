@@ -37,7 +37,9 @@ export function useHaptic() {
       if ('vibrate' in navigator) {
         navigator.vibrate(pattern)
       }
-    } catch { /* ignore */ }
+    } catch {
+      /* ignore */
+    }
   }, [])
 
   return {
@@ -86,50 +88,18 @@ export function useSwipeBack(onSwipeBack?: () => void) {
     }
   }, [])
 
-  const onTouchEnd = useCallback((e: React.TouchEvent) => {
-    if (!swiping.current) return
-    const diffX = e.changedTouches[0].clientX - startX.current
-    swiping.current = false
-    // Trigger if swiped right more than 80px
-    if (diffX > 80) {
-      goBack()
-    }
-  }, [goBack])
+  const onTouchEnd = useCallback(
+    (e: React.TouchEvent) => {
+      if (!swiping.current) return
+      const diffX = e.changedTouches[0].clientX - startX.current
+      swiping.current = false
+      // Trigger if swiped right more than 80px
+      if (diffX > 80) {
+        goBack()
+      }
+    },
+    [goBack]
+  )
 
   return { onTouchStart, onTouchMove, onTouchEnd }
-}
-
-// ─── Viewport Height Fix ──────────────────────────────────────────────────────
-/**
- * Fixes the 100vh issue on mobile browsers where the address bar
- * causes 100vh to be taller than the visible area.
- * Returns the actual viewport height as a CSS variable.
- */
-export function useViewportHeight() {
-  useEffect(() => {
-    const update = () => {
-      const vh = window.visualViewport?.height || window.innerHeight
-      document.documentElement.style.setProperty('--vh', `${vh}px`)
-    }
-    update()
-    window.visualViewport?.addEventListener('resize', update)
-    window.addEventListener('resize', update)
-    return () => {
-      window.visualViewport?.removeEventListener('resize', update)
-      window.removeEventListener('resize', update)
-    }
-  }, [])
-}
-
-// ─── Prevent Double-Tap Zoom ──────────────────────────────────────────────────
-/**
- * Prevents the 300ms double-tap zoom delay on mobile.
- * Applied globally via CSS, but this hook handles edge cases.
- */
-export function usePreventZoom() {
-  useEffect(() => {
-    // The CSS already handles this with touch-action: manipulation
-    // and -webkit-tap-highlight-color: transparent
-    // This hook is here for any additional JS-level prevention
-  }, [])
 }

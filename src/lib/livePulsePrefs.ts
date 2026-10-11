@@ -16,7 +16,7 @@
  * (Safari private mode throws on localStorage access).
  */
 
-export const PULSE_MUTED_KEY = 'cc-pulse-muted'
+const PULSE_MUTED_KEY = 'cc-pulse-muted'
 
 export interface PulsePrefs {
   /** The user switched the card off entirely. */
@@ -63,7 +63,7 @@ export function setPulseMuted(muted: boolean): PulsePrefs {
 }
 
 /** "Hide for now" — this browsing session (tab) only, back on a fresh visit. */
-export const PULSE_SESSION_HIDE_KEY = 'cc-pulse-hidden'
+const PULSE_SESSION_HIDE_KEY = 'cc-pulse-hidden'
 
 export function readSessionHidden(): boolean {
   const session = readStorage('sessionStorage')

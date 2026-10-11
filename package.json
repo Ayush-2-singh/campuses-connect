@@ -19,8 +19,6 @@
     "android:lint": "cap sync android && cd android && ./gradlew lint"
   },
   "dependencies": {
-    "@aws-sdk/client-s3": "^3.1131.0",
-    "@aws-sdk/s3-request-presigner": "^3.1131.0",
     "@capacitor/android": "^8.5.2",
     "@capacitor/app": "^8.1.1",
     "@capacitor/browser": "^8.0.4",
@@ -42,9 +40,7 @@
     "@uiw/react-codemirror": "^4.25.11",
     "livekit-client": "^2.22.3",
     "livekit-server-sdk": "^2.19.0",
-    "lucide-react": "^1.44.0",
     "next": "^15.5.22",
-    "next-themes": "^0.4.6",
     "react": "19.2.4",
     "react-dom": "19.2.4",
     "unpdf": "^1.8.0"

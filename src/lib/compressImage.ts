@@ -5,26 +5,18 @@
  */
 
 interface CompressOptions {
-  maxWidth?: number    // max width in pixels (default: 1200)
-  maxHeight?: number   // max height in pixels (default: 1200)
-  quality?: number     // JPEG quality 0-1 (default: 0.8)
-  outputType?: string  // output MIME type (default: 'image/jpeg')
+  maxWidth?: number // max width in pixels (default: 1200)
+  maxHeight?: number // max height in pixels (default: 1200)
+  quality?: number // JPEG quality 0-1 (default: 0.8)
+  outputType?: string // output MIME type (default: 'image/jpeg')
 }
 
 /**
  * Compress an image file before upload.
  * Returns a new File with reduced size.
  */
-export async function compressImage(
-  file: File,
-  options: CompressOptions = {}
-): Promise<File> {
-  const {
-    maxWidth = 1200,
-    maxHeight = 1200,
-    quality = 0.8,
-    outputType = 'image/jpeg',
-  } = options
+export async function compressImage(file: File, options: CompressOptions = {}): Promise<File> {
+  const { maxWidth = 1200, maxHeight = 1200, quality = 0.8, outputType = 'image/jpeg' } = options
 
   // Skip compression for non-image files
   if (!file.type.startsWith('image/')) return file
@@ -55,7 +47,10 @@ export async function compressImage(
 
       canvas.toBlob(
         (blob) => {
-          if (!blob) { resolve(file); return }
+          if (!blob) {
+            resolve(file)
+            return
+          }
           const compressed = new File([blob], file.name, {
             type: outputType,
             lastModified: Date.now(),
@@ -71,13 +66,4 @@ export async function compressImage(
     img.onerror = () => resolve(file) // fallback to original
     img.src = URL.createObjectURL(file)
   })
-}
-
-/**
- * Get human-readable file size.
- */
-export function formatFileSize(bytes: number): string {
-  if (bytes < 1024) return `${bytes} B`
-  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(0)} KB`
-  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`
 }

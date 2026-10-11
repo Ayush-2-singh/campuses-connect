@@ -213,19 +213,13 @@ export function sectionsForCategory(categoryId: RoomCategoryId): RoomSection[] {
   return ROOM_SECTIONS.filter((s) => s.categoryId === categoryId)
 }
 
-/** Metadata for a stored section value, or null when it is unknown. */
-export function sectionMeta(id: string | null | undefined): RoomSection | null {
-  if (!id) return null
-  return ROOM_SECTIONS.find((s) => s.id === id) || null
-}
-
 /**
  * Voice rooms have no hard cap in the database, so capacity is a documented
  * product default rather than invented real-time state. If the API grows a
  * real `max_participants`, `roomsFromGroups` should read it and this constant
  * becomes the fallback.
  */
-export const DEFAULT_ROOM_CAPACITY = 8
+const DEFAULT_ROOM_CAPACITY = 8
 
 /** The subset of a `live_voice_chat_groups` row the homepage depends on. */
 export interface VoiceGroupRow {
@@ -273,7 +267,7 @@ export interface DiscoveryView {
   counts: Record<RoomFilter, number>
 }
 
-export function categoryMeta(id: RoomCategoryId): RoomCategory {
+function categoryMeta(id: RoomCategoryId): RoomCategory {
   return ROOM_CATEGORIES.find((c) => c.id === id) || ROOM_CATEGORIES[0]
 }
 
@@ -282,15 +276,10 @@ export function categoryLabel(id: RoomCategoryId): string {
 }
 
 /** The category a room's DB section belongs to (catalog order wins). */
-export function categoryForSection(section?: string | null): RoomCategoryId {
+function categoryForSection(section?: string | null): RoomCategoryId {
   const s = (section || 'random').trim()
   const hit = ROOM_CATEGORIES.find((c) => CATEGORY_SECTIONS[c.id].includes(s))
   return hit ? hit.id : 'games'
-}
-
-/** All room types across the catalog — the flat "what can exist" list. */
-export function allRoomTypes(): (RoomType & { categoryId: RoomCategoryId })[] {
-  return ROOM_CATEGORIES.flatMap((c) => c.types.map((t) => ({ ...t, categoryId: c.id })))
 }
 
 /**
@@ -298,7 +287,7 @@ export function allRoomTypes(): (RoomType & { categoryId: RoomCategoryId })[] {
  * path reports at least one participant inside it right now — we never infer
  * liveness from the mere existence of a group.
  */
-export function roomsFromGroups(groups: VoiceGroupRow[], liveByGroup: Record<string, number>): DiscoverRoom[] {
+function roomsFromGroups(groups: VoiceGroupRow[], liveByGroup: Record<string, number>): DiscoverRoom[] {
   return groups.map((g) => {
     const participants = Math.max(0, Number(liveByGroup[g.id] || 0))
     const categoryId = categoryForSection(g.section)
@@ -321,7 +310,7 @@ export function roomsFromGroups(groups: VoiceGroupRow[], liveByGroup: Record<str
 }
 
 /** Catalog room types as startable suggestions — never marked live. */
-export function catalogSeedRooms(categories: RoomCategoryId[] = ROOM_CATEGORY_IDS): DiscoverRoom[] {
+function catalogSeedRooms(categories: RoomCategoryId[] = ROOM_CATEGORY_IDS): DiscoverRoom[] {
   return ROOM_CATEGORIES.filter((c) => categories.includes(c.id)).flatMap((c) =>
     c.types.map((t) => ({
       id: `seed:${t.id}`,
@@ -341,7 +330,7 @@ export function catalogSeedRooms(categories: RoomCategoryId[] = ROOM_CATEGORY_ID
   )
 }
 
-export function matchesSearch(room: DiscoverRoom, query: string): boolean {
+function matchesSearch(room: DiscoverRoom, query: string): boolean {
   const q = query.trim().toLowerCase()
   if (!q) return true
   return (
@@ -351,7 +340,7 @@ export function matchesSearch(room: DiscoverRoom, query: string): boolean {
   )
 }
 
-export function inCategory(room: DiscoverRoom, filter: RoomFilter): boolean {
+function inCategory(room: DiscoverRoom, filter: RoomFilter): boolean {
   return filter === 'all' || room.categoryId === filter
 }
 

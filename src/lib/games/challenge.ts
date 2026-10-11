@@ -188,7 +188,7 @@ export function buildChallengeUrl(payload: ChallengePayload, origin?: string): s
 }
 
 /** A fresh seed for a new challenge (both players run the identical round). */
-export function newChallengeSeed(): string {
+function newChallengeSeed(): string {
   if (typeof crypto !== 'undefined' && crypto.randomUUID) return crypto.randomUUID().slice(0, 8)
   return Math.random().toString(36).slice(2, 10)
 }

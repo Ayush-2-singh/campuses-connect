@@ -21,7 +21,7 @@ const AUTH_REDIRECT_ROUTES = ['/auth']
 // Routes that need auth check even though they're under /auth
 const AUTH_KEEP_ROUTES = ['/auth/reset-password', '/auth/forgot-password', '/auth/callback']
 
-export function loginRedirect(request: NextRequest) {
+function loginRedirect(request: NextRequest) {
   const url = new URL('/auth/login', request.url)
   url.searchParams.set('redirect', request.nextUrl.pathname + request.nextUrl.search)
   return NextResponse.redirect(url)

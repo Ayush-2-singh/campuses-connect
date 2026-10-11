@@ -15,7 +15,7 @@ import React from 'react'
  * hardcoded a slightly different orange. One component keeps the wordmark
  * identical everywhere, and matches the logo.
  */
-export const BRAND_ORANGE = '#FC9000'
+const BRAND_ORANGE = '#FC9000'
 
 export default function BrandName({ style, className }: { style?: React.CSSProperties; className?: string }) {
   return (

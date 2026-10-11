@@ -213,7 +213,3 @@ export function subscribeVoiceBroadcast(fn: Listener): () => void {
     }
   }
 }
-
-export function getVoiceBroadcastState(): LiveCallState {
-  return { ...state }
-}

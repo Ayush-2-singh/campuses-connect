@@ -3917,6 +3917,26 @@ export default function AdminPage() {
                               href={req.id_card_url}
                               target="_blank"
                               rel="noopener noreferrer"
+                              onClick={(e) => {
+                                // Legacy rows store a full URL (open as-is).
+                                // New rows store a private-bucket storage path —
+                                // resolve it to a short-lived signed URL first.
+                                if (/^https?:\/\//.test(req.id_card_url)) return
+                                e.preventDefault()
+                                void (async () => {
+                                  try {
+                                    const r = await fetch(
+                                      `/api/admin/id-card?path=${encodeURIComponent(req.id_card_url)}`,
+                                      { credentials: 'include' }
+                                    )
+                                    const d = await r.json()
+                                    if (r.ok && d.url) window.open(d.url, '_blank', 'noopener,noreferrer')
+                                    else window.alert(d.error || 'Could not open ID card')
+                                  } catch {
+                                    window.alert('Could not open ID card')
+                                  }
+                                })()
+                              }}
                               style={{
                                 padding: '6px 12px',
                                 borderRadius: 8,

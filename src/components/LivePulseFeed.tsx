@@ -65,6 +65,14 @@ const KIND_STYLE: Record<PulseKind, { icon: string; tint: string }> = {
 
 const ROTATE_MS = 60_000
 const REFRESH_MS = 60_000
+/**
+ * Realtime events are COALESCED, never obeyed one-by-one: the chat channel is
+ * platform-wide (every INSERT anywhere), so a busy room firing 30 messages
+ * used to re-run this component's 4-6 query sweep 30 times on EVERY online
+ * student's browser at once. One trailing collect per burst keeps the card
+ * just as fresh (≤10s behind) at a fraction of the database load.
+ */
+const REALTIME_DEBOUNCE_MS = 10_000
 /** "Live" means live: fresh sources never surface anything older. */
 const ACTIVITY_WINDOW_MS = 15 * 60_000
 /** Card dismisses itself this long after appearing — attention, not nagging. */
@@ -332,26 +340,42 @@ export default function LivePulseFeed({ userId }: { userId: string | null }) {
   }, [getSupabase, userId])
 
   // Initial + interval refresh. Realtime makes it instant when chat/voice move.
+  // The card NEVER renders on covered surfaces (voice-call pages, chat rooms,
+  // auth) — not even for a mention flash. Polling and realtime there burned
+  // queries for a card nobody could see; /chat is where students live, so this
+  // was the most expensive wasted sweep in the app.
+  const coveredSurface = HIDDEN_PREFIXES.some((p) => pathname.startsWith(p))
+
   useEffect(() => {
+    if (coveredSurface) return
+
     void collect()
     const timer = setInterval(() => void collect(), REFRESH_MS)
+
+    // Trailing debounce: the first event arms a timer, later events are no-ops
+    // until it fires — a message burst costs exactly one sweep.
+    let debounce: ReturnType<typeof setTimeout> | null = null
+    const scheduleCollect = () => {
+      if (debounce) return
+      debounce = setTimeout(() => {
+        debounce = null
+        void collect()
+      }, REALTIME_DEBOUNCE_MS)
+    }
 
     const sb = getSupabase()
     const channel = sb
       .channel('live-pulse')
-      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'chat_messages' }, () => {
-        void collect()
-      })
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'live_voice_chat_calls' }, () => {
-        void collect()
-      })
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'chat_messages' }, scheduleCollect)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'live_voice_chat_calls' }, scheduleCollect)
       .subscribe()
 
     return () => {
+      if (debounce) clearTimeout(debounce)
       void sb.removeChannel(channel)
       clearInterval(timer)
     }
-  }, [collect, getSupabase])
+  }, [collect, getSupabase, coveredSurface])
 
   // Rotate one card per minute — pause on hover/touch so people can read.
   useEffect(() => {
@@ -392,7 +416,6 @@ export default function LivePulseFeed({ userId }: { userId: string | null }) {
   // would cover, or the user dismissed it this session — UNLESS a brand-new
   // @tag is flashing (a notification overrides hide/mute for 5s, never for
   // keeps, and only on surfaces where the card is normally welcome).
-  const coveredSurface = HIDDEN_PREFIXES.some((p) => pathname.startsWith(p))
   const mentionActive = mentionUntil > Date.now()
   useEffect(() => {
     if (!mentionActive) return

@@ -34,15 +34,8 @@ export const MIN_RATING = 100
 export const DEFAULT_RATING = 1200
 
 /** Skills that carry their own independent ladder (Phase 8). */
-export const COMPETITIVE_SKILLS = ['dsa', 'web', 'ai_ml', 'problem_solving'] as const
+const COMPETITIVE_SKILLS = ['dsa', 'web', 'ai_ml', 'problem_solving'] as const
 export type CompetitiveSkill = (typeof COMPETITIVE_SKILLS)[number]
-
-export const SKILL_LABELS: Record<CompetitiveSkill, string> = {
-  dsa: 'DSA',
-  web: 'Web Dev',
-  ai_ml: 'AI / ML',
-  problem_solving: 'Problem Solving',
-}
 
 export type MatchOutcome = 'win' | 'loss' | 'draw'
 
@@ -165,7 +158,7 @@ export function settleMatch(input: MatchResultInput): MatchResultOutput {
  * an unplaced player is excluded from official ladder positions rather than
  * occupying a rank with a coin-flip number.
  */
-export const PLACEMENT_GAMES = 5
+const PLACEMENT_GAMES = 5
 
 export function isPlaced(games: number): boolean {
   return games >= PLACEMENT_GAMES

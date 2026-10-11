@@ -14,9 +14,9 @@
  * (preserving path + query) so the whole flow — start, Google, callback —
  * happens on one origin. No-op in dev (localhost) and on www itself.
  */
-export const CANONICAL_ORIGIN = 'https://www.connecttocampus.com'
+const CANONICAL_ORIGIN = 'https://www.connecttocampus.com'
 
-export function isCanonicalOrigin(origin: string = window.location.origin): boolean {
+function isCanonicalOrigin(origin: string = window.location.origin): boolean {
   if (origin === CANONICAL_ORIGIN) return true
   // Local development — never redirect.
   if (/^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(origin)) return true

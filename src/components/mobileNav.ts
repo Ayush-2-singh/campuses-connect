@@ -35,6 +35,3 @@ export const MOBILE_MENU_NAV = [
   { label: 'Global', href: '/global', icon: 'globe' },
   { label: 'Live Voice Chat', href: '/live-voice-chat', icon: 'mic' },
 ]
-
-/** Guard: the bottom bar is exactly the four primary destinations. */
-export const PRIMARY_TAB_HREFS = MOBILE_NAV.map((i) => i.href)

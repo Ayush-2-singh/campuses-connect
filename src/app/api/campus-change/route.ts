@@ -6,7 +6,9 @@ const ID_CARD_BUCKET = 'id-cards'
 /** GET /api/campus-change — get user's requests + cooldown status */
 export async function GET(req: NextRequest) {
   const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
   // Check cooldown
@@ -46,7 +48,9 @@ export async function GET(req: NextRequest) {
 /** POST /api/campus-change — submit a new campus change request */
 export async function POST(req: NextRequest) {
   const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
   // Check cooldown first
@@ -68,9 +72,9 @@ export async function POST(req: NextRequest) {
   if (contentType.includes('multipart/form-data')) {
     const formData = await req.formData()
     requested_campus_id = formData.get('requested_campus_id') as string
-    roll_number = formData.get('roll_number') as string || undefined
-    college_email = formData.get('college_email') as string || undefined
-    reason = formData.get('reason') as string || undefined
+    roll_number = (formData.get('roll_number') as string) || undefined
+    college_email = (formData.get('college_email') as string) || undefined
+    reason = (formData.get('reason') as string) || undefined
     idCardFile = formData.get('id_card') as File | null
   } else {
     const body = await req.json()
@@ -85,11 +89,7 @@ export async function POST(req: NextRequest) {
   }
 
   // Get user's current campus
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('campus_id')
-    .eq('id', user.id)
-    .single()
+  const { data: profile } = await supabase.from('profiles').select('campus_id').eq('id', user.id).single()
 
   if (!profile) {
     return NextResponse.json({ error: 'Profile not found' }, { status: 404 })
@@ -125,9 +125,26 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: `Failed to upload ID card: ${uploadErr.message}` }, { status: 500 })
     }
 
-    const { data: pub } = supabase.storage.from(ID_CARD_BUCKET).getPublicUrl(path)
-    id_card_url = pub?.publicUrl || ''
+    // The bucket is PRIVATE (student IDs are sensitive documents), so a
+    // getPublicUrl() link would either 404 or force the whole bucket public.
+    // Store the storage PATH instead; /api/admin/id-card resolves it to a
+    // short-lived signed URL when an admin actually opens it. (Legacy rows
+    // still hold full URLs — consumers branch on an `http` prefix.)
+    id_card_url = path
     id_card_filename = idCardFile.name
+
+    // Supersede old uploads: every re-request used to add another permanent
+    // object to the bucket — storage grew forever. Now, once the NEW file is
+    // safely uploaded, this user's earlier cards are removed (only the latest
+    // evidence matters; the cooldown RPC already prevents request spam).
+    const { data: oldFiles } = await supabase.storage.from(ID_CARD_BUCKET).list(user.id)
+    const stale = (oldFiles || [])
+      .filter((f) => f.name && `${user.id}/${f.name}` !== path)
+      .map((f) => `${user.id}/${f.name}`)
+    if (stale.length > 0) {
+      const { error: removeErr } = await supabase.storage.from(ID_CARD_BUCKET).remove(stale)
+      if (removeErr) console.error('Old ID card cleanup failed:', removeErr) // best-effort
+    }
   }
 
   if (!id_card_url) {
@@ -167,7 +184,7 @@ export async function POST(req: NextRequest) {
     // Check filename for college-related keywords
     const fname = idCardFile.name.toLowerCase()
     const collegeKeywords = ['college', 'university', 'institute', 'student', 'id', 'card', 'identity']
-    const hasKeyword = collegeKeywords.some(k => fname.includes(k))
+    const hasKeyword = collegeKeywords.some((k) => fname.includes(k))
     if (hasKeyword) {
       score += 10
       notes.push('Filename suggests college ID')
@@ -207,7 +224,9 @@ export async function POST(req: NextRequest) {
 /** PATCH /api/campus-change — cancel a pending request */
 export async function PATCH(req: NextRequest) {
   const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
   const body = await req.json()

@@ -33,7 +33,7 @@ export function isDeepLink(raw: string): boolean {
 }
 
 /** Parse a deep link, tolerating anything malformed. */
-export function parseDeepLink(raw: string): URL | null {
+function parseDeepLink(raw: string): URL | null {
   if (!isDeepLink(raw)) return null
   try {
     return new URL(raw)

@@ -61,7 +61,7 @@ export async function reviewContent(text: string, contentType: string): Promise<
 }
 
 /** Defensive parse — never throw on bad model output. */
-export function parseVerdict(raw: string): AiVerdict {
+function parseVerdict(raw: string): AiVerdict {
   try {
     const obj = JSON.parse(raw)
     if (obj && typeof obj === 'object') {
@@ -86,7 +86,10 @@ export async function summarizeQueue(items: { type: string; preview: string; rea
   if (!items.length) return 'The moderation queue is empty. Nothing to do — great community! 🎉'
   const list = items
     .slice(0, 40)
-    .map((i, n) => `${n + 1}. [${i.type}] ${i.preview.slice(0, 140)}${i.preview.length > 140 ? '…' : ''} — reason: ${i.reason || 'n/a'}`)
+    .map(
+      (i, n) =>
+        `${n + 1}. [${i.type}] ${i.preview.slice(0, 140)}${i.preview.length > 140 ? '…' : ''} — reason: ${i.reason || 'n/a'}`
+    )
     .join('\n')
 
   const prompt = `You are the AI Admin Copilot for a college community app. Here is the open moderation queue. Write a short, friendly digest for the admin: 2-4 bullet points covering what's most common, what needs urgent attention, and any suggestions (e.g. "3 spam posts look like the same account — consider a quick ban"). Keep it under 120 words.\n\nQUEUE:\n${list}`
