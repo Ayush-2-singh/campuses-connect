@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
+import { checkRateLimit } from '@/lib/rateLimit'
 
 const ID_CARD_BUCKET = 'id-cards'
 
@@ -52,6 +53,12 @@ export async function POST(req: NextRequest) {
     data: { user },
   } = await supabase.auth.getUser()
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+
+  // Rate limit: each request uploads a storage object and an ID card photo
+  // is expensive to review — 10/hour is far above any real retry pattern.
+  if (!(await checkRateLimit(user.id, 'campus-change:post', 10, 60))) {
+    return NextResponse.json({ error: 'Too many requests — try again later' }, { status: 429 })
+  }
 
   // Check cooldown first
   const { data: cooldown } = await supabase.rpc('can_request_campus_change', { p_user_id: user.id })

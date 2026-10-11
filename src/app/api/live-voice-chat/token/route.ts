@@ -35,6 +35,21 @@ export async function POST(req: NextRequest) {
     }
     const user = userData.user
 
+    // Rate limit per user: a LiveKit token is real server cost, and this
+    // route is the only place that mints them. 60/minute is generous for
+    // reconnect churn and impossible to keep up as a token mill.
+    // (Inline RPC on the JWT-scoped client — this route is Bearer-auth, so
+    // the cookie-based rateLimit helper cannot see the caller.)
+    const { data: rlAllowed } = await supabase.rpc('check_rate_limit', {
+      p_user_id: user.id,
+      p_endpoint: 'voice:token',
+      p_limit: 60,
+      p_window_minutes: 1,
+    })
+    if (rlAllowed === false) {
+      return NextResponse.json({ error: 'Too many requests — slow down' }, { status: 429 })
+    }
+
     // Fail loudly with an actionable message when the voice server is not
     // configured — an opaque client-side connect error is much harder to
     // diagnose than this.

@@ -41,6 +41,12 @@ const mock = vi.hoisted(() => {
           return user ? { data: { user }, error: null } : { data: { user: null }, error: { message: 'invalid JWT' } }
         },
       },
+      // The route now rate-limits token minting via the check_rate_limit RPC.
+      // Model it as always-allow; the limits themselves are guarded in
+      // tests/security-hardening.test.ts.
+      async rpc(_fn: string, _args?: Row) {
+        return { data: true, error: null }
+      },
       from(table: string) {
         state.tablesQueried.push(table)
         let eq: { col: string; val: any } | null = null

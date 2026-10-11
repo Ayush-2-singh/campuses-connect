@@ -1,17 +1,32 @@
 import { createClient } from '@/lib/supabase/server'
+import { getSupabaseAdmin } from '@/lib/auth'
+import { checkRateLimit } from '@/lib/rateLimit'
 import { NextResponse } from 'next/server'
 
 /**
  * POST /api/verify-college-email
  * Body: { token }
  * Verifies the college email linked to the token and marks the profile verified.
+ *
+ * The token lookup runs on the CALLER's client, so RLS scopes it to their
+ * own pending tokens — a stranger guessing tokens reads nothing. The final
+ * writes run on the service role: the profiles privilege guard (migration
+ * 20261012) only lets moderators or trusted server code move is_verified.
  */
 export async function POST(request: Request) {
   const supabase = await createClient()
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
   const { token } = await request.json().catch(() => ({ token: '' }))
 
   if (!token) {
     return NextResponse.json({ error: 'Missing token' }, { status: 400 })
+  }
+
+  // Rate limit token guesses — 10/hour, generous for a single link click.
+  if (user && !(await checkRateLimit(user.id, 'verify:college-email', 10, 60))) {
+    return NextResponse.json({ error: 'Too many attempts — try again later' }, { status: 429 })
   }
 
   const { data: ver, error } = await supabase
@@ -30,11 +45,14 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'Link expired' }, { status: 400 })
   }
 
-  // Mark token used
-  await supabase.from('college_email_verifications').update({ used_at: new Date().toISOString() }).eq('id', ver.id)
+  // Mark token used (service role: single-use links must not depend on an
+  // UPDATE policy existing for the caller).
+  const admin = getSupabaseAdmin()
+  await admin.from('college_email_verifications').update({ used_at: new Date().toISOString() }).eq('id', ver.id)
 
-  // Verify profile (is_verified requires verification; status change guarded by RLS)
-  const { error: updateError } = await supabase
+  // Verify profile — service role, because the profiles privilege guard
+  // (20261012) only allows moderators or server code to move is_verified.
+  const { error: updateError } = await admin
     .from('profiles')
     .update({ college_email: ver.email, college_email_verified: true, is_verified: true })
     .eq('id', ver.user_id)
