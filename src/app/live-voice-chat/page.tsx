@@ -8,26 +8,46 @@ import Layout from '@/components/Layout'
 import SectionShell from '@/components/SectionShell'
 import { Icon } from '@/components/icons'
 import { voiceIcon } from '@/lib/liveVoice'
+import {
+  CATEGORY_SECTIONS,
+  ROOM_CATEGORIES,
+  ROOM_SECTIONS,
+  SECTION_LABEL,
+  sectionsForCategory,
+  type RoomCategoryId,
+} from '@/lib/rooms'
 
 /**
  * Live Voice Chat — student-created voice groups, filed under a section.
  *
- * Sections are the organising unit on this page. Their `key`s must stay in
- * sync with the CHECK constraint on `live_voice_chat_groups.section` (see
- * supabase/migrations/20260920_live_voice_chat.sql) — the database rejects
- * anything else, and the RPC silently falls back to 'random'.
- */
-const SECTIONS = [
-  { key: 'all', label: 'All', icon: 'sparkles' },
-  { key: 'dsa', label: 'DSA', icon: 'layers' },
-  { key: 'discussion', label: 'Discussion', icon: 'message' },
-  { key: 'web-dev', label: 'Web Dev', icon: 'globe' },
-  { key: 'english', label: 'English', icon: 'type' },
-  { key: 'random', label: 'Random', icon: 'shuffle' },
-] as const
+ * The section taxonomy lives in src/lib/rooms.ts (ROOM_SECTIONS) and must stay
+ * in sync with the CHECK constraint on live_voice_chat_groups.section — the
+ * database rejects anything else, and the RPC silently falls back to 'random'.
+ *
+ * Rooms are browsed and created through the CATEGORY the product already uses
+ * (Games / Learn / Language / Discuss / Build) and then the exact TOPIC inside
+ * it (DSA, Web Dev, Java, …), so the picker never shows one flat wall of '#'. */
 
 /** Icon names — stored on the group row, rendered through the shared set. */
 const ICONS = ['mic', 'layers', 'message', 'globe', 'type', 'shuffle', 'book', 'rocket']
+
+/** A compact secondary chip — the topic row under the category row. */
+const topicChip = (active: boolean) => ({
+  flexShrink: 0,
+  whiteSpace: 'nowrap' as const,
+  padding: '6px 12px',
+  borderRadius: 999,
+  border: active ? 'none' : '1px solid var(--border)',
+  background: active ? 'var(--accent-light)' : 'var(--bg)',
+  color: active ? 'var(--accent-text)' : 'var(--text-muted)',
+  fontSize: 12.5,
+  fontWeight: 600,
+  cursor: 'pointer' as const,
+  fontFamily: 'inherit',
+  display: 'inline-flex' as const,
+  alignItems: 'center' as const,
+  gap: 6,
+})
 
 const inputStyle = {
   width: '100%',
@@ -48,13 +68,15 @@ export default function LiveVoiceChatPage() {
   const [groups, setGroups] = useState<any[]>([])
   const [memberships, setMemberships] = useState<string[]>([])
   const [liveByGroup, setLiveByGroup] = useState<Record<string, number>>({})
-  const [section, setSection] = useState<string>('all')
   const [showCreate, setShowCreate] = useState(false)
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
   // Invite-only rooms are not listed here, so an invited student pastes the
   // link they were sent to open the room (and then the password prompt).
   const [inviteInput, setInviteInput] = useState('')
+  // Two-level browsing: a top-level category, then the exact topic inside it.
+  const [category, setCategory] = useState<RoomCategoryId | 'all'>('all')
+  const [sectionFilter, setSectionFilter] = useState<string>('all')
   const [form, setForm] = useState({
     name: '',
     description: '',
@@ -232,12 +254,21 @@ export default function LiveVoiceChatPage() {
     router.push(`/live-voice-chat/${id}`)
   }
 
-  const visible = useMemo(
-    () => (section === 'all' ? groups : groups.filter((g) => g.section === section)),
-    [groups, section]
-  )
+  // Filter: an exact topic wins; otherwise the whole category; otherwise all.
+  const visible = useMemo(() => {
+    if (sectionFilter !== 'all') return groups.filter((g) => g.section === sectionFilter)
+    if (category !== 'all') return groups.filter((g) => CATEGORY_SECTIONS[category].includes(g.section))
+    return groups
+  }, [groups, sectionFilter, category])
 
-  const activeSection = SECTIONS.find((s) => s.key === section) || SECTIONS[0]
+  // The topics offered for the current category (every topic under 'All').
+  const browsableSections = category === 'all' ? ROOM_SECTIONS : sectionsForCategory(category)
+  const activeFilterLabel =
+    sectionFilter !== 'all'
+      ? SECTION_LABEL[sectionFilter] || 'Rooms'
+      : category !== 'all'
+        ? ROOM_CATEGORIES.find((c) => c.id === category)?.label || 'Rooms'
+        : 'All'
 
   return (
     <Layout user={user} profile={profile}>
@@ -314,17 +345,20 @@ export default function LiveVoiceChatPage() {
           </button>
         </div>
 
-        {/* Section filter — the sections the product asked for, in order. */}
+        {/* Browse — the category the product already uses… */}
         <div
           className="scrollbar-hide chip-scroll"
-          style={{ display: 'flex', gap: 6, overflowX: 'auto', marginBottom: 16, paddingBottom: 4 }}
+          style={{ display: 'flex', gap: 6, overflowX: 'auto', marginBottom: 8, paddingBottom: 4 }}
         >
-          {SECTIONS.map((s) => {
-            const active = s.key === section
+          {[{ id: 'all' as const, label: 'All', icon: 'sparkles' }, ...ROOM_CATEGORIES].map((c) => {
+            const active = category === c.id
             return (
               <button
-                key={s.key}
-                onClick={() => setSection(s.key)}
+                key={c.id}
+                onClick={() => {
+                  setCategory(c.id)
+                  setSectionFilter('all')
+                }}
                 style={{
                   flexShrink: 0,
                   whiteSpace: 'nowrap',
@@ -342,11 +376,28 @@ export default function LiveVoiceChatPage() {
                   gap: 6,
                 }}
               >
-                <Icon name={s.icon} size={14} strokeWidth={2.2} />
-                {s.label}
+                <Icon name={c.icon} size={14} strokeWidth={2.2} />
+                {c.label}
               </button>
             )
           })}
+        </div>
+
+        {/* …then the exact topic inside it: DSA, Web Dev, Java, Python, … */}
+        <div
+          className="scrollbar-hide chip-scroll"
+          style={{ display: 'flex', gap: 6, overflowX: 'auto', marginBottom: 16, paddingBottom: 4 }}
+        >
+          <button onClick={() => setSectionFilter('all')} style={topicChip(sectionFilter === 'all')}>
+            <Icon name="sparkles" size={13} strokeWidth={2.2} />
+            All topics
+          </button>
+          {browsableSections.map((s) => (
+            <button key={s.id} onClick={() => setSectionFilter(s.id)} style={topicChip(sectionFilter === s.id)}>
+              <Icon name={s.icon} size={13} strokeWidth={2.2} />
+              {s.label}
+            </button>
+          ))}
         </div>
 
         {showCreate && (
@@ -373,15 +424,23 @@ export default function LiveVoiceChatPage() {
                 maxLength={60}
               />
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+                {/* Topic picker — grouped by category so every real section
+                    (DSA, Web Dev, Java, Python, SQL, AI/ML, English, …) is one
+                    scroll away instead of a flat wall. */}
                 <select
                   value={form.section}
                   onChange={(e) => setForm((f) => ({ ...f, section: e.target.value }))}
                   style={{ ...inputStyle, padding: '10px 12px' }}
+                  aria-label="Room topic"
                 >
-                  {SECTIONS.filter((s) => s.key !== 'all').map((s) => (
-                    <option key={s.key} value={s.key}>
-                      {s.label}
-                    </option>
+                  {ROOM_CATEGORIES.map((c) => (
+                    <optgroup key={c.id} label={c.label}>
+                      {sectionsForCategory(c.id).map((s) => (
+                        <option key={s.id} value={s.id}>
+                          {s.label}
+                        </option>
+                      ))}
+                    </optgroup>
                   ))}
                 </select>
                 <select
@@ -503,7 +562,7 @@ export default function LiveVoiceChatPage() {
         <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
           {visible.length === 0 ? (
             <p style={{ textAlign: 'center', color: 'var(--text-muted)', padding: '40px 0' }}>
-              No rooms in {activeSection.label} yet
+              No rooms in {activeFilterLabel} yet
             </p>
           ) : (
             visible.map((g) => {
@@ -589,8 +648,7 @@ export default function LiveVoiceChatPage() {
                       )}
                     </p>
                     <p className="lvc-desc" style={{ fontSize: 12, color: 'var(--text-muted)', margin: 0 }}>
-                      {(SECTIONS.find((s) => s.key === g.section)?.label || 'Random') +
-                        (g.scope === 'global' ? ' · Global' : ' · Campus')}
+                      {(SECTION_LABEL[g.section] || 'Random') + (g.scope === 'global' ? ' · Global' : ' · Campus')}
                       {g.description ? ` · ${g.description}` : ''}
                     </p>
                   </div>

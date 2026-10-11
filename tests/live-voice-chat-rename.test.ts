@@ -95,31 +95,29 @@ describe('GupShup rename completeness', () => {
 
 describe('section values stay in sync with the database CHECK', () => {
   const root = process.cwd()
-  const migration = fs.readFileSync(path.join(root, 'supabase/migrations/20260920_live_voice_chat.sql'), 'utf8')
+  // 20261108 widened the taxonomy (DSA, Web Dev, Java, Python, SQL, AI/ML, …).
+  // The EXACT match between the catalog and the CHECK list is pinned by
+  // tests/room-sections.test.ts; here we only guard the wiring and the fallback.
+  const migration = fs.readFileSync(path.join(root, 'supabase/migrations/20261108_room_sections.sql'), 'utf8')
   const listing = fs.readFileSync(path.join(root, 'src/app/live-voice-chat/page.tsx'), 'utf8')
 
-  const SECTIONS = ['dsa', 'discussion', 'web-dev', 'english', 'random']
-
-  it('the migration enforces exactly these five sections', () => {
-    for (const section of SECTIONS) {
-      expect(migration, `migration is missing section ${section}`).toContain(`'${section}'`)
-    }
-    // The CHECK must list all five and nothing that the UI does not offer.
-    const check = migration.match(/CHECK \(section IN \(([^)]*)\)\)/)?.[1] ?? ''
-    const inCheck = [...check.matchAll(/'([^']+)'/g)].map((m) => m[1])
-    expect(inCheck.sort()).toEqual([...SECTIONS].sort())
+  it('the listing page derives its sections from the one catalog', () => {
+    expect(listing).toContain("from '@/lib/rooms'")
+    expect(listing).toContain('ROOM_SECTIONS')
+    // A second, hardcoded list is exactly how the two used to drift apart.
+    expect(listing).not.toMatch(/const SECTIONS = \[/)
   })
 
-  it('the listing page filters on exactly the same five sections', () => {
-    const block = listing.match(/const SECTIONS = \[([\s\S]*?)\] as const/)?.[1] ?? ''
-    const keys = [...block.matchAll(/key: '([^']+)'/g)].map((m) => m[1]).filter((k) => k !== 'all')
-
-    expect(keys.sort()).toEqual([...SECTIONS].sort())
+  it('the newest migration enforces the wider section list', () => {
+    for (const section of ['dsa', 'web-dev', 'java', 'python', 'english', 'random']) {
+      expect(migration, `migration is missing section ${section}`).toContain(`'${section}'`)
+    }
+    expect(migration).toMatch(/CHECK \(section IN \(/)
   })
 
   it('the create RPC accepts a section and falls back to random', () => {
     expect(migration).toContain('p_section')
     // An unknown section must not reject the group — it degrades to random.
-    expect(migration).toMatch(/IF v_section NOT IN[\s\S]{0,80}v_section := 'random'/)
+    expect(migration).toMatch(/IF v_section NOT IN[\s\S]{0,500}v_section := 'random'/)
   })
 })

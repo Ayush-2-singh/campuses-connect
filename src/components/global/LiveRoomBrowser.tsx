@@ -19,6 +19,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { fetchLiveVoiceRooms, voiceIcon } from '@/lib/liveVoice'
+import { SECTION_LABEL } from '@/lib/rooms'
 import { Icon } from '@/components/icons'
 
 const SECTIONS = [
@@ -41,7 +42,9 @@ interface VoiceGroup {
 }
 
 function RoomCard({ group, count, onOpen }: { group: VoiceGroup; count: number; onOpen: (g: VoiceGroup) => void }) {
-  const sectionLabel = SECTIONS.find((s) => s.key === group.section)?.label || 'Random'
+  // One shared label map (src/lib/rooms.ts) so a Java / Python / SQL room reads
+  // as its real topic here and not as "Random".
+  const sectionLabel = SECTION_LABEL[group.section || ''] || 'Random'
   const isLive = count > 0
 
   return (

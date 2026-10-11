@@ -123,26 +123,100 @@ export const ROOM_CATEGORIES: RoomCategory[] = [
 export const ROOM_CATEGORY_IDS: RoomCategoryId[] = ROOM_CATEGORIES.map((c) => c.id)
 
 /**
- * Which `live_voice_chat_groups.section` values feed each category. Kept in
- * sync with the CHECK constraint in 20260920_live_voice_chat.sql; a section
- * may feed more than one category (web-dev is both Learn and Build), so the
- * FIRST category in catalog order wins when labelling a single card.
+ * A real room topic — the values a student picks when CREATING a room, which
+ * are exactly the `live_voice_chat_groups.section` values the database
+ * accepts. Keep this list and the CHECK constraint in
+ * 20261108_room_sections.sql in sync: the RPC silently rewrites anything else
+ * to 'random', so a missing id here would file a Java room as Random.
+ *
+ * `ROOM_CATEGORIES` above is the DISCOVERY catalog (marketing-shaped room
+ * types); this is the narrower list that can actually be persisted.
  */
-export const CATEGORY_SECTIONS: Record<RoomCategoryId, string[]> = {
-  games: ['random'],
-  learn: ['dsa', 'web-dev'],
-  language: ['english'],
-  discuss: ['discussion'],
-  build: ['web-dev'],
+export interface RoomSection {
+  id: string
+  label: string
+  icon: string
+  categoryId: RoomCategoryId
+  description: string
 }
 
-/** Human labels for the DB sections (used when a group has no description). */
-export const SECTION_LABEL: Record<string, string> = {
-  dsa: 'DSA',
-  discussion: 'Discussion',
-  'web-dev': 'Web Dev',
-  english: 'English',
-  random: 'Random',
+export const ROOM_SECTIONS: RoomSection[] = [
+  // ── Games ──────────────────────────────────────────────────────────────────
+  { id: 'random', label: 'Random', icon: 'shuffle', categoryId: 'games', description: 'Anything goes' },
+  { id: 'quiz', label: 'Quiz Night', icon: 'target', categoryId: 'games', description: 'Rapid-fire trivia' },
+  { id: 'truth-dare', label: 'Truth & Dare', icon: 'mask', categoryId: 'games', description: 'Casual voice game' },
+  {
+    id: 'social',
+    label: 'Social Games',
+    icon: 'users',
+    categoryId: 'games',
+    description: 'Icebreakers and party games',
+  },
+  // ── Learn ──────────────────────────────────────────────────────────────────
+  { id: 'dsa', label: 'DSA', icon: 'layers', categoryId: 'learn', description: 'Solve and discuss DSA problems' },
+  { id: 'web-dev', label: 'Web Dev', icon: 'code', categoryId: 'learn', description: 'Frontend and backend talk' },
+  { id: 'java', label: 'Java', icon: 'code', categoryId: 'learn', description: 'Java, OOP, Spring' },
+  { id: 'python', label: 'Python', icon: 'code', categoryId: 'learn', description: 'Python, scripting, automation' },
+  { id: 'cpp', label: 'C / C++', icon: 'code', categoryId: 'learn', description: 'C, C++ and DSA in C++' },
+  { id: 'sql', label: 'SQL & DB', icon: 'layers', categoryId: 'learn', description: 'SQL, databases, DBMS' },
+  { id: 'ai-ml', label: 'AI / ML', icon: 'sparkles', categoryId: 'learn', description: 'ML, deep learning, LLMs' },
+  {
+    id: 'mobile',
+    label: 'Mobile Dev',
+    icon: 'notebook',
+    categoryId: 'learn',
+    description: 'Android, iOS, React Native',
+  },
+  {
+    id: 'interview',
+    label: 'Interview Prep',
+    icon: 'target',
+    categoryId: 'learn',
+    description: 'Mock interviews and placement prep',
+  },
+  // ── Language ───────────────────────────────────────────────────────────────
+  { id: 'english', label: 'English', icon: 'type', categoryId: 'language', description: 'Speak English with peers' },
+  { id: 'hindi', label: 'Hindi', icon: 'message', categoryId: 'language', description: 'Hindi conversation practice' },
+  { id: 'spanish', label: 'Spanish', icon: 'globe', categoryId: 'language', description: 'Beginner Spanish speaking' },
+  // ── Discuss ────────────────────────────────────────────────────────────────
+  {
+    id: 'discussion',
+    label: 'Discussion',
+    icon: 'message',
+    categoryId: 'discuss',
+    description: 'Anything on your mind',
+  },
+  { id: 'startup', label: 'Startups', icon: 'rocket', categoryId: 'discuss', description: 'Ideas, founders, funding' },
+  // ── Build ──────────────────────────────────────────────────────────────────
+  { id: 'project', label: 'Projects', icon: 'wrench', categoryId: 'build', description: 'Find collaborators' },
+  { id: 'hackathon', label: 'Hackathon', icon: 'zap', categoryId: 'build', description: 'Assemble a hackathon squad' },
+]
+
+/**
+ * Which sections feed each category. Derived from ROOM_SECTIONS, plus one
+ * deliberate overlap: `web-dev` is BOTH Learn and Build, and catalog order
+ * still decides the single label a card shows.
+ */
+export const CATEGORY_SECTIONS: Record<RoomCategoryId, string[]> = {
+  games: ROOM_SECTIONS.filter((s) => s.categoryId === 'games').map((s) => s.id),
+  learn: ROOM_SECTIONS.filter((s) => s.categoryId === 'learn').map((s) => s.id),
+  language: ROOM_SECTIONS.filter((s) => s.categoryId === 'language').map((s) => s.id),
+  discuss: ROOM_SECTIONS.filter((s) => s.categoryId === 'discuss').map((s) => s.id),
+  build: [...ROOM_SECTIONS.filter((s) => s.categoryId === 'build').map((s) => s.id), 'web-dev'],
+}
+
+/** Human labels for every DB section (used when a group has no description). */
+export const SECTION_LABEL: Record<string, string> = Object.fromEntries(ROOM_SECTIONS.map((s) => [s.id, s.label]))
+
+/** The sections a student can file a room under, for one category. */
+export function sectionsForCategory(categoryId: RoomCategoryId): RoomSection[] {
+  return ROOM_SECTIONS.filter((s) => s.categoryId === categoryId)
+}
+
+/** Metadata for a stored section value, or null when it is unknown. */
+export function sectionMeta(id: string | null | undefined): RoomSection | null {
+  if (!id) return null
+  return ROOM_SECTIONS.find((s) => s.id === id) || null
 }
 
 /**
