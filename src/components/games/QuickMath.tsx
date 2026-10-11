@@ -11,6 +11,7 @@ import { createClient } from '@/lib/supabase/client'
 import type { ClientGamePhase, GameRoom, GamePlayer, GameAnswer, RoomState, Difficulty } from '@/lib/games/types'
 import { GAME_CONFIG, DIFFICULTY_CONFIG } from '@/lib/games/config'
 import { getGuestId, getSavedNickname, saveNickname, isValidRoomCode } from '@/lib/games/utils'
+import { mathChallengePayload, shareChallenge } from '@/lib/games/challenge'
 import GameLobby from './GameLobby'
 import GamePlay from './GamePlay'
 import GameResults from './GameResults'
@@ -319,6 +320,17 @@ export default function QuickMath({
     setPhase('entry')
   }
 
+  /**
+   * "Beat my score" — a shareable, solo, no-account Quick Math challenge. The
+   * link freezes my points/correct count and the difficulty, and hands the
+   * opener a shared seed so two people using it solve identical questions.
+   */
+  const handleChallenge = async () => {
+    const me = players.find((p) => p.player_id === myPlayerId)
+    if (!me || me.score <= 0) return
+    await shareChallenge(mathChallengePayload(nickname.trim() || 'A student', me.score, me.correct_count, difficulty))
+  }
+
   // ── Rematch ────────────────────────────────────────────────────────────
   const handleRematch = async () => {
     // Same host, same settings, new room
@@ -594,7 +606,13 @@ export default function QuickMath({
 
       {/* ═══ RESULTS PHASE ═══ */}
       {phase === 'finished' && (
-        <GameResults players={players} myPlayerId={myPlayerId} onExit={handleLeave} onRematch={handleRematch} />
+        <GameResults
+          players={players}
+          myPlayerId={myPlayerId}
+          onExit={handleLeave}
+          onRematch={handleRematch}
+          onChallenge={handleChallenge}
+        />
       )}
     </div>
   )

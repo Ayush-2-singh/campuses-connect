@@ -12,11 +12,14 @@ export default function GameResults({
   myPlayerId,
   onExit,
   onRematch,
+  onChallenge,
 }: {
   players: GamePlayer[]
   myPlayerId: string
   onExit: () => void
   onRematch?: () => void
+  /** Share a "Beat my score" link for this result — a solo, no-account run. */
+  onChallenge?: () => void
 }) {
   const sorted = [...players].sort((a, b) => b.score - a.score || b.correct_count - a.correct_count)
   const winner = sorted[0]
@@ -265,6 +268,27 @@ export default function GameResults({
           })}
         </div>
       </div>
+
+      {/* Beat my score — share the result as a solo challenge link */}
+      {onChallenge && me && me.score > 0 && (
+        <button
+          onClick={onChallenge}
+          style={{
+            width: '100%',
+            background: 'var(--accent-light)',
+            color: 'var(--accent-text)',
+            border: '1px solid var(--accent-border, var(--accent))',
+            borderRadius: 14,
+            padding: 13,
+            fontSize: 14,
+            fontWeight: 800,
+            cursor: 'pointer',
+            fontFamily: 'inherit',
+          }}
+        >
+          🎯 Challenge a friend — beat my score
+        </button>
+      )}
 
       {/* Actions — Rematch + Exit */}
       <div style={{ display: 'flex', gap: 10 }}>

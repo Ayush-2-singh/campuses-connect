@@ -29,6 +29,7 @@ import {
   type TypingPhase,
   type TypingVerdict,
 } from '@/lib/games/typing'
+import { shareChallenge, typingChallengePayload } from '@/lib/games/challenge'
 import TypingArena from './TypingArena'
 import TypingBoards from './TypingBoards'
 
@@ -131,6 +132,7 @@ export default function TypingBattle({
   const [progress, setProgress] = useState<Record<string, ProgressRow>>({})
   const [verdict, setVerdict] = useState<VerdictState | null>(null)
   const [copied, setCopied] = useState(false)
+  const [challengeShared, setChallengeShared] = useState(false)
   const arenaTrackerRef = useRef<TypingTracker | null>(null)
 
   // Daily challenge
@@ -282,7 +284,6 @@ export default function TypingBattle({
         return next
       })
     })()
-     
   }, [phase, room?.id, mode, supabase, myPlayerId])
 
   // Stuck-match guard: opponent seat empty/expired too long → release.
@@ -539,6 +540,20 @@ export default function TypingBattle({
       setMode('quick')
       void enterQueue()
     }
+  }
+
+  /**
+   * "Beat my score" — a shareable, solo, no-account challenge. The link freezes
+   * this run's WPM/accuracy and hands the openers a shared seed, so two people
+   * who use the link race identical words.
+   */
+  const shareMyScore = async () => {
+    const myWpm = mode === 'daily' ? (dailyResult?.wpm ?? 0) : Math.round(verdict?.wpm ?? 0)
+    const myAccuracy = mode === 'daily' ? (dailyResult?.accuracy ?? 0) : Math.round(verdict?.accuracy ?? 0)
+    if (!myWpm) return
+    const ok = await shareChallenge(typingChallengePayload(nickname.trim() || 'A student', myWpm, myAccuracy))
+    setChallengeShared(ok)
+    if (ok) setTimeout(() => setChallengeShared(false), 2200)
   }
 
   // ── Daily challenge (single player, deterministic words) ───────────────────
@@ -1078,6 +1093,25 @@ export default function TypingBattle({
               ))}
             </div>
           )}
+
+          <button
+            onClick={shareMyScore}
+            style={{
+              width: '100%',
+              background: 'var(--accent-light)',
+              color: 'var(--accent-text)',
+              border: '1px solid var(--accent-border, var(--accent))',
+              borderRadius: 12,
+              padding: 12,
+              fontSize: 13.5,
+              fontWeight: 800,
+              cursor: 'pointer',
+              fontFamily: 'inherit',
+              marginTop: 8,
+            }}
+          >
+            {challengeShared ? '✓ Challenge link copied!' : '🎯 Challenge a friend — beat my score'}
+          </button>
 
           <div style={{ display: 'flex', gap: 10, justifyContent: 'center', marginTop: 8 }}>
             {mode !== 'daily' && (
