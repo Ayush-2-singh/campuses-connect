@@ -52,6 +52,9 @@ export default function LiveVoiceChatPage() {
   const [showCreate, setShowCreate] = useState(false)
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
+  // Invite-only rooms are not listed here, so an invited student pastes the
+  // link they were sent to open the room (and then the password prompt).
+  const [inviteInput, setInviteInput] = useState('')
   const [form, setForm] = useState({
     name: '',
     description: '',
@@ -217,6 +220,18 @@ export default function LiveVoiceChatPage() {
     router.push(`/live-voice-chat/${groupId}`)
   }
 
+  /** Open a room from a pasted invite link (or a bare room id). */
+  const openInvite = () => {
+    const raw = inviteInput.trim()
+    if (!raw) return
+    const id = raw.match(/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/i)?.[0]
+    if (!id) {
+      setError('That does not look like a room invite. Paste the full link you were sent.')
+      return
+    }
+    router.push(`/live-voice-chat/${id}`)
+  }
+
   const visible = useMemo(
     () => (section === 'all' ? groups : groups.filter((g) => g.section === section)),
     [groups, section]
@@ -244,6 +259,61 @@ export default function LiveVoiceChatPage() {
             : undefined
         }
       >
+        {/* Invite entry — locked rooms are hidden from the list below, so the
+            only way in is the link (or id) the room admin shared. */}
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 8,
+            background: 'var(--bg)',
+            border: '1px dashed var(--border-strong, var(--border))',
+            borderRadius: 12,
+            padding: '8px 10px',
+            marginBottom: 12,
+          }}
+        >
+          <span style={{ display: 'inline-flex', color: 'var(--accent-text)', flexShrink: 0 }} aria-hidden="true">
+            <Icon name="link" size={16} strokeWidth={2.2} />
+          </span>
+          <input
+            type="text"
+            value={inviteInput}
+            onChange={(e) => setInviteInput(e.target.value)}
+            onKeyDown={(e) => e.key === 'Enter' && openInvite()}
+            placeholder="Got an invite link? Paste it here to open the locked room"
+            aria-label="Paste a room invite link"
+            style={{
+              flex: 1,
+              minWidth: 0,
+              border: 'none',
+              outline: 'none',
+              background: 'transparent',
+              fontSize: 13,
+              color: 'var(--text-primary)',
+              fontFamily: 'inherit',
+            }}
+          />
+          <button
+            onClick={openInvite}
+            disabled={!inviteInput.trim()}
+            style={{
+              flexShrink: 0,
+              background: inviteInput.trim() ? 'var(--accent)' : 'var(--disabled)',
+              color: 'var(--on-accent)',
+              border: 'none',
+              borderRadius: 8,
+              padding: '8px 14px',
+              fontSize: 12.5,
+              fontWeight: 700,
+              cursor: inviteInput.trim() ? 'pointer' : 'default',
+              fontFamily: 'inherit',
+            }}
+          >
+            Open
+          </button>
+        </div>
+
         {/* Section filter — the sections the product asked for, in order. */}
         <div
           className="scrollbar-hide chip-scroll"
@@ -354,7 +424,7 @@ export default function LiveVoiceChatPage() {
                 />
                 <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
                   <Icon name="lock" size={14} strokeWidth={2.2} />
-                  Private room — only people with the password can join
+                  Locked room — invite only. Only people you send the link + password to can join
                 </span>
               </label>
               {form.isPrivate && (

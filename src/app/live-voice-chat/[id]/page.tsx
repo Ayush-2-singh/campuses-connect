@@ -39,6 +39,8 @@ export default function LiveVoiceChatRoomPage() {
   const [pwPrompt, setPwPrompt] = useState(false)
   const [pwValue, setPwValue] = useState('')
   const [pwError, setPwError] = useState('')
+  // Invite link copy feedback (locked rooms are invite-only).
+  const [inviteCopied, setInviteCopied] = useState(false)
 
   // ── Load bookkeeping ───────────────────────────────────────────────────────
   // Realtime, the focus refetch and the 15s fallback all call load() and they
@@ -65,11 +67,13 @@ export default function LiveVoiceChatRoomPage() {
     const seq = ++loadSeq.current
     const isCurrent = () => seq === loadSeq.current
 
-    const { data: groupRow, error: groupError } = await supabase
+    const { data: groupData, error: groupError } = await supabase
       .from('live_voice_chat_groups')
       .select('*')
       .eq('id', groupId)
       .maybeSingle()
+    // Mutable: the invite-link fallback below may replace it.
+    let groupRow = groupData
 
     if (!isCurrent()) return // a newer load owns the screen now
 
@@ -79,12 +83,26 @@ export default function LiveVoiceChatRoomPage() {
       setLoading(false)
       return
     }
+
     if (!groupRow) {
-      // First look and nothing to show → the room really is gone or hidden.
-      // If the room is ALREADY on screen this is a transient visibility gap
-      // (a session refresh can make RLS hide a campus room for exactly one
-      // request) — announcing "does not exist" over a fully rendered room is
-      // a lie, so stay quiet and let the next pass confirm.
+      // Locked rooms are invite-only: RLS keeps them out of every listing, so
+      // a non-member legitimately reads nothing from the table above. A student
+      // holding the INVITE LINK must still land on the room and reach the
+      // password prompt, so fall back to the invite read — it returns the room
+      // to anyone who has the id. Knowing the id IS the invite; the password is
+      // the second lock (and never leaves the server).
+      const { data: invited } = await supabase.rpc('get_live_voice_chat_group', { p_group_id: groupId })
+      if (!isCurrent()) return
+      const invitedRow = Array.isArray(invited) ? invited[0] : invited
+      groupRow = invitedRow ?? null
+    }
+
+    if (!groupRow) {
+      // First look and nothing to show → the room really is gone, unshared, or
+      // outside your campus. If a room is ALREADY on screen this is a transient
+      // visibility gap (a session refresh can make RLS hide a campus room for
+      // exactly one request) — announcing "does not exist" over a fully
+      // rendered room is a lie, so stay quiet and let the next pass confirm.
       if (!groupRef.current) {
         loadErrorRef.current = NOT_FOUND
         setError(loadErrorRef.current)
@@ -272,6 +290,21 @@ export default function LiveVoiceChatRoomPage() {
     await load()
   }
 
+  /** Copy the invite link for a locked room — the only way a non-member gets in. */
+  const copyInvite = async () => {
+    const link =
+      typeof window !== 'undefined'
+        ? `${window.location.origin}/live-voice-chat/${groupId}`
+        : `/live-voice-chat/${groupId}`
+    try {
+      await navigator.clipboard.writeText(link)
+      setInviteCopied(true)
+      setTimeout(() => setInviteCopied(false), 2000)
+    } catch {
+      setError('Could not copy the link. Copy it from the address bar instead.')
+    }
+  }
+
   const leaveGroup = async () => {
     if (!window.confirm(`Leave "${group?.name}"?`)) return
     setBusy(true)
@@ -409,7 +442,7 @@ export default function LiveVoiceChatRoomPage() {
                         }}
                       >
                         <Icon name="lock" size={12} strokeWidth={2.4} />
-                        Private
+                        Invite only
                       </span>
                     )}
                   </p>
@@ -472,6 +505,32 @@ export default function LiveVoiceChatRoomPage() {
                       </>
                     )}
                   </button>
+                  {/* Locked rooms are invite-only: members hand out the link. */}
+                  {group.is_private && (
+                    <button
+                      onClick={copyInvite}
+                      title="Copy the invite link to share with the people you want in"
+                      aria-label="Copy invite link"
+                      style={{
+                        background: 'var(--bg)',
+                        color: inviteCopied ? 'var(--success-text)' : 'var(--accent-text)',
+                        border: '1px solid var(--border)',
+                        borderRadius: 10,
+                        padding: '12px 16px',
+                        fontSize: 14,
+                        fontWeight: 600,
+                        cursor: 'pointer',
+                        fontFamily: 'inherit',
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: 6,
+                        flexShrink: 0,
+                      }}
+                    >
+                      <Icon name="link" size={15} strokeWidth={2.2} />
+                      {inviteCopied ? 'Copied' : 'Invite'}
+                    </button>
+                  )}
                   <button
                     onClick={leaveGroup}
                     disabled={busy}
@@ -510,7 +569,7 @@ export default function LiveVoiceChatRoomPage() {
                     }}
                   >
                     <Icon name="lock" size={15} strokeWidth={2.2} />
-                    This room is private. Enter the password the admin gave you.
+                    This room is invite-only. Enter the password the admin shared with you.
                   </p>
                   <input
                     type="password"
