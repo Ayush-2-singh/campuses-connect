@@ -28,6 +28,9 @@ export default function CampusChangePage() {
   const [reason, setReason] = useState('')
   const [idCardFile, setIdCardFile] = useState<File | null>(null)
   const [idCardPreview, setIdCardPreview] = useState<string>('')
+  // "3145 KB → 480 KB (compressed)" — shown once the picked photo is shrunk,
+  // so compression is visible instead of a silent step at submit.
+  const [idCardSizeNote, setIdCardSizeNote] = useState<string>('')
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState('')
   const [success, setSuccess] = useState('')
@@ -68,7 +71,7 @@ export default function CampusChangePage() {
     load()
   }, [])
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (!file) return
 
@@ -83,14 +86,40 @@ export default function CampusChangePage() {
       return
     }
 
-    setIdCardFile(file)
     setError('')
+    setIdCardPreview('')
+    setIdCardSizeNote('')
 
-    // Preview for images
+    // Compress AT SELECTION so the student SEES the saving before submitting
+    // and the upload itself is small. Best-effort: compressImage is fail-safe
+    // (always resolves a usable File), and any thrown error keeps the original.
+    let ready = file
     if (file.type.startsWith('image/')) {
-      const reader = new FileReader()
-      reader.onload = (ev) => setIdCardPreview(ev.target?.result as string)
-      reader.readAsDataURL(file)
+      setIdCardSizeNote('Compressing photo…')
+      try {
+        const { compressImage } = await import('@/lib/compressImage')
+        ready = await compressImage(file, { maxWidth: 1600, maxHeight: 1600, quality: 0.85 })
+      } catch {
+        // keep the original — it is still a valid upload
+      }
+      setIdCardSizeNote(
+        ready.size < file.size
+          ? `${(file.size / 1024).toFixed(0)} KB → ${(ready.size / 1024).toFixed(0)} KB (compressed)`
+          : ''
+      )
+    }
+
+    setIdCardFile(ready)
+
+    // Preview the bytes that will actually be uploaded.
+    if (file.type.startsWith('image/')) {
+      try {
+        const reader = new FileReader()
+        reader.onload = (ev) => setIdCardPreview(ev.target?.result as string)
+        reader.readAsDataURL(ready)
+      } catch {
+        setIdCardPreview('')
+      }
     } else {
       setIdCardPreview('')
     }
@@ -111,23 +140,11 @@ export default function CampusChangePage() {
     setSuccess('')
 
     try {
-      // Compress images before they leave the device — an ID card photo off a
-      // modern phone is 3-5MB, and every byte is paid for twice (upload egress
-      // + Supabase Storage). 1600px keeps roll number/text legible for admins;
-      // PDFs pass through untouched.
-      let fileToUpload = idCardFile
-      if (idCardFile.type.startsWith('image/')) {
-        try {
-          const { compressImage } = await import('@/lib/compressImage')
-          fileToUpload = await compressImage(idCardFile, { maxWidth: 1600, maxHeight: 1600, quality: 0.85 })
-        } catch {
-          // Compression is best-effort — the original file is still valid.
-        }
-      }
-
+      // The file was already compressed when picked (handleFileChange) — the
+      // upload sends exactly the bytes the student saw previewed and sized.
       const formData = new FormData()
       formData.append('requested_campus_id', selectedCampus)
-      formData.append('id_card', fileToUpload)
+      formData.append('id_card', idCardFile)
       if (rollNumber) formData.append('roll_number', rollNumber)
       if (collegeEmail) formData.append('college_email', collegeEmail)
       if (reason) formData.append('reason', reason)
@@ -148,6 +165,7 @@ export default function CampusChangePage() {
       setReason('')
       setIdCardFile(null)
       setIdCardPreview('')
+      setIdCardSizeNote('')
 
       // Reload requests
       const r2 = await fetch('/api/campus-change', { credentials: 'include' })
@@ -403,6 +421,9 @@ export default function CampusChangePage() {
                     <p style={{ fontSize: 11, color: 'var(--text-muted)', margin: 0 }}>
                       {(idCardFile.size / 1024).toFixed(0)} KB — Click to change
                     </p>
+                    {idCardSizeNote && (
+                      <p style={{ fontSize: 11, color: 'var(--success-text)', margin: '2px 0 0' }}>{idCardSizeNote}</p>
+                    )}
                   </div>
                 ) : (
                   <div>
