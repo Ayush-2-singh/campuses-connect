@@ -24,6 +24,8 @@ export const MOBILE_MENU_NAV = [
   // Games also lives in the bottom bar; it stays here so the ☰ menu is a
   // complete feature index for anyone who reaches it from a secondary page.
   { label: 'Games', href: '/games', icon: 'gamepad' },
+  // Watch — the Netflix-style video wall (official YouTube embeds, free to stream).
+  { label: 'Videos', href: '/watch', icon: 'video' },
   // Secondary destinations — one ☰ tap away from any of the primary tabs.
   { label: 'Leaderboard', href: '/leaderboard', icon: 'star' },
   { label: 'Chat', href: '/chat', icon: 'message' },
