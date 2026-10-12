@@ -101,8 +101,9 @@ export default function BatchPage() {
               {batch?.title || 'Your pre-screened shortlist'}
             </h1>
             <p style={{ color: 'var(--text-secondary)', margin: '0 0 26px' }}>
-              {candidates.length} candidate{candidates.length === 1 ? '' : 's'} · verified by a coding assessment plus
-              GitHub / LeetCode signals. Reply to the email that sent this link to arrange interviews.
+              {candidates.length} candidate{candidates.length === 1 ? '' : 's'} · screened on their connected GitHub /
+              LeetCode signals. Assessment scores appear here once a candidate has taken an assessment. Reply to the
+              email that sent this link to arrange interviews.
             </p>
 
             <div style={{ display: 'grid', gap: 14 }}>

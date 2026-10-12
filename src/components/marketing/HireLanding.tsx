@@ -6,79 +6,119 @@ import BrandName from '@/components/BrandName'
 import { Icon } from '@/components/icons'
 
 /**
- * HireLanding — the recruiter-first public storefront (Phase 1).
+ * HireLanding — the public landing (V5).
  *
- * Top of the funnel: a startup founder lands here, understands the offer in one
- * screen ("first batch of 10 pre-screened engineers free"), and submits the demo
- * request. Everything else in the product is downstream of this form.
+ * Information architecture follows the assessment-verified hiring model:
+ *   1. Nav
+ *   2. Hero + recruiter-dashboard preview
+ *   3. Workflow: Assessment → Verification → Ranking → Shortlisting
+ *   4. Candidate discovery preview (filters + ranked table)
+ *   5. Assessment methodology
+ *   6. Candidate profile & project evidence
+ *   7. Trust metrics — GENUINE counts only, passed in from the server
+ *   8. Final CTA (the lead form) + footer
  *
- * Premium pass (research-backed, 2026 SaaS patterns):
- *  - shows the REAL product (a sample batch/shortlist) instead of an abstract
- *    illustration — the pattern every high-converting SaaS page shares;
- *  - puts concrete proof in the first screen (the facts strip);
- *  - kills friction: one primary action, repeated in the sticky mobile bar;
- *  - styles come from hire-landing.css on the shared design tokens.
- *
- * Copy stays deliberately honest — no invented metrics, no fake logos. The only
- * numbers are the offer itself (10 students, free, once) and the process.
+ * ── Honesty rules (enforced, not aspirational) ──────────────────────────────
+ * Everything that looks like real product data is a UI preview and is labelled
+ * "Demo data" on the panel itself. The trust strip shows only counts read from
+ * the live database, and hides itself if they cannot be read. There are no
+ * invented candidates, employer logos, testimonials or outcome statistics.
  */
 
-const VALUE_PROPS = [
+type Stats = { students: number; campuses: number; companies: number } | null
+
+/** Demo candidate rows — labelled "Demo data" wherever they are rendered. */
+const DEMO_CANDIDATES = [
   {
-    icon: 'shield',
-    title: 'Pre-vetted, not just résumés',
-    body: 'Every student has passed a verified coding assessment plus a GitHub / LeetCode skill check. You skip the screening round entirely.',
+    initials: 'AS',
+    name: 'Aarav S.',
+    role: 'Backend Engineer',
+    campus: 'BBD University · 2027',
+    skills: ['Node', 'PostgreSQL', 'DSA'],
+    score: 86,
+    rank: '#3 of 214',
+    status: 'Assessed',
+    when: 'Sep 2026',
   },
   {
-    icon: 'users',
-    title: 'Tier-2/3 talent, un-tapped',
-    body: 'We source from colleges the big platforms ignore — hungry engineers who are strong in fundamentals and affordable to hire.',
+    initials: 'DM',
+    name: 'Diya M.',
+    role: 'Full-stack Developer',
+    campus: 'HBTU Kanpur · 2026',
+    skills: ['React', 'TypeScript'],
+    score: 79,
+    rank: '#12 of 214',
+    status: 'Assessed',
+    when: 'Sep 2026',
   },
   {
-    icon: 'target',
-    title: 'A shortlist, not a job board',
-    body: 'You tell us the role. We send a matched batch of candidates ready to interview — not 500 applications to wade through.',
+    initials: 'RK',
+    name: 'Rohan K.',
+    role: 'Backend Engineer',
+    campus: 'NIT Patna · 2027',
+    skills: ['Java', 'Spring'],
+    score: 0,
+    rank: '—',
+    status: 'Awaiting assessment',
+    when: 'Registered',
   },
 ]
 
-const STEPS = [
-  { n: '1', title: 'Tell us the role', body: 'Company, role, how many you are hiring. Thirty seconds.' },
+/** Demo skill breakdown for the candidate-evidence panel. */
+const DEMO_SKILLS = [
+  { label: 'Correctness (tests passed)', value: '88%' },
+  { label: 'Topic coverage', value: '76%' },
+  { label: 'Code efficiency', value: '71%' },
+  { label: 'Assessment consistency', value: '83%' },
+]
+
+const WORKFLOW = [
+  {
+    n: '1',
+    title: 'Assessment',
+    body: 'Candidates take a standardised, timed coding and technical assessment on the platform.',
+  },
   {
     n: '2',
-    title: 'Get a batch of 10',
-    body: 'Pre-screened candidates matched to your stack, with their verified signals attached.',
+    title: 'Verification',
+    body: 'Results are graded automatically, then corroborated with connected GitHub and LeetCode signals.',
   },
-  { n: '3', title: 'Interview & hire', body: 'You interview. Pay only when you hire one — no retainer, no lock-in.' },
+  {
+    n: '3',
+    title: 'Ranking',
+    body: 'Each candidate is scored per problem and ranked against the cohort that took the same assessment.',
+  },
+  {
+    n: '4',
+    title: 'Shortlisting',
+    body: 'You filter by role, skills, minimum score and assessment status — and shortlist in one click.',
+  },
 ]
 
-const FACTS = [
-  { num: '10', label: 'engineers in your first batch' },
-  { num: '48h', label: 'from request to shortlist' },
-  { num: '₹0', label: 'for that first batch' },
-  { num: '2', label: 'signal checks per candidate' },
+const METHODOLOGY = [
+  {
+    icon: 'target',
+    title: 'Correctness first',
+    body: 'Every problem is graded on the test cases it passes, so a score reflects code that runs — not how confident someone sounded in an interview.',
+  },
+  {
+    icon: 'zap',
+    title: 'Efficiency matters',
+    body: 'Passing solutions are timed. Candidates who solve the same problem with a better approach score higher than a brute-force pass.',
+  },
+  {
+    icon: 'layers',
+    title: 'Topic breadth',
+    body: 'Assessments span data structures and algorithms plus core CS fundamentals, so a single lucky question cannot carry a candidate.',
+  },
+  {
+    icon: 'shield',
+    title: 'Corroborated, not self-reported',
+    body: 'Connected GitHub and LeetCode profiles add public evidence — commits, repositories and problems solved — beside the assessment result.',
+  },
 ]
 
-/** A realistic sample batch — the "show the product" hero visual. Labelled
- *  SAMPLE so it is never mistaken for a claim about real candidates. */
-const SAMPLE_BATCH = [
-  { name: 'Aarav S.', org: 'BBD University · Lucknow', score: '9.1', bar: 91 },
-  { name: 'Diya M.', org: 'HBTU Kanpur · CSE', score: '8.6', bar: 86 },
-  { name: 'Rohan K.', org: 'NIT Patna · IT', score: '8.2', bar: 82 },
-]
-
-const BATCH_CHIPS = ['Coding assessment', 'GitHub verified', 'LeetCode verified']
-
-function initials(name: string) {
-  return name
-    .replace(/[^A-Za-z ]/g, '')
-    .split(' ')
-    .filter(Boolean)
-    .slice(0, 2)
-    .map((p) => p[0]?.toUpperCase())
-    .join('')
-}
-
-export default function HireLanding() {
+export default function HireLanding({ stats }: { stats?: Stats }) {
   const [form, setForm] = useState({
     company: '',
     contact_name: '',
@@ -121,151 +161,150 @@ export default function HireLanding() {
     <div className="hl-page">
       <div className="hl-bg" aria-hidden="true" />
 
-      {/* ── Nav ── */}
+      {/* ── 1. Nav ── */}
       <nav className="hl-nav">
         <div className="hl-wrap hl-nav-inner">
           <div className="hl-nav-brand">
             <BrandName />
           </div>
           <div className="hl-nav-links">
-            <a className="hl-nav-link" href="#why">
-              Why us
+            <a className="hl-nav-link" href="#recruiters">
+              For Recruiters
             </a>
-            <a className="hl-nav-link" href="#how">
-              How it works
-            </a>
-            <Link className="hl-nav-link" href="/about">
-              About
+            <Link className="hl-nav-link" href="/auth/signup">
+              For Students
             </Link>
+            <a className="hl-nav-link" href="#how">
+              How It Works
+            </a>
           </div>
           <div className="hl-nav-right">
-            <Link className="hl-nav-student" href="/auth/signup">
-              I&apos;m a student
+            <Link className="hl-nav-signin" href="/auth/login">
+              Sign in
             </Link>
             <a className="hl-btn hl-btn--primary hl-btn--sm" href="#demo">
-              Get free batch
+              Request candidates
             </a>
           </div>
         </div>
       </nav>
 
-      {/* ── Hero ── */}
+      {/* ── 2. Hero ── */}
       <header className="hl-hero hl-wrap">
         <div className="hl-hero-grid">
-          <div className="hl-hero-copy">
+          <div>
             <span className="hl-badge hl-rise">
               <span className="hl-badge-dot" />
-              For startups hiring engineers
+              Assessment-verified hiring
             </span>
             <h1 className="hl-h1 hl-rise hl-rise-2">
-              Hire pre-vetted engineers <em className="grad-brand">without the screening mess.</em>
+              Hire freshers who have <em className="grad-brand">already proved their code.</em>
             </h1>
             <p className="hl-sub hl-rise hl-rise-3">
-              We send you a shortlist of <strong>10 tier-2/3 students</strong> who have already passed a verified coding
-              and skills assessment. <strong>Your first batch is free</strong> — pay only when you hire.
+              We run standardised coding and technical assessments, then send you a shortlist of candidates whose{' '}
+              <strong>skills, scores and projects are verified</strong> — not just self-reported on a résumé.
             </p>
             <div className="hl-cta-row hl-rise hl-rise-4">
               <a className="hl-btn hl-btn--primary hl-btn--lg" href="#demo">
-                Get my free batch of 10
+                Request a shortlist
                 <Icon name="chevron" size={17} className="hl-arrow" />
               </a>
               <a className="hl-btn hl-btn--ghost hl-btn--lg" href="#how">
-                How it works
+                See how it works
               </a>
             </div>
             <p className="hl-micro hl-rise hl-rise-4">
-              <Icon name="check" size={14} />
-              No retainer · No lock-in · Reply within 48 hours
+              <Icon name="check" size={13} />
+              First batch free · No retainer · Reply within 48 hours
             </p>
           </div>
 
-          {/* Real product, not an illustration — a sample batch preview. */}
-          <div className="hl-visual hl-rise hl-rise-3">
-            <div className="hl-mock">
-              <div className="hl-mock-head">
-                <div className="hl-mock-title">
-                  <Icon name="briefcase" size={15} />
-                  <span>Backend Engineer (Node)</span>
+          {/* Recruiter dashboard preview */}
+          <div className="hl-preview hl-rise hl-rise-3">
+            <div className="hl-panel">
+              <div className="hl-panel-head">
+                <div className="hl-panel-title">
+                  <Icon name="layers" size={15} />
+                  <span>Shortlist — Backend Engineer</span>
                 </div>
-                <span className="hl-mock-tag">Sample</span>
+                <span className="hl-demo">Demo data</span>
               </div>
-              <div className="hl-mock-rows">
-                {SAMPLE_BATCH.map((c) => (
-                  <div className="hl-cand" key={c.name}>
-                    <span className="hl-cand-av">{initials(c.name)}</span>
-                    <div className="hl-cand-main">
-                      <p className="hl-cand-name">{c.name}</p>
-                      <div className="hl-cand-meta">
-                        <span>{c.org}</span>
-                        <span className="hl-sig">
-                          <Icon name="check" size={11} /> GitHub
-                        </span>
-                        <span className="hl-sig">
-                          <Icon name="check" size={11} /> LeetCode
-                        </span>
+              <div className="hl-panel-filters">
+                <span className="hl-chip hl-chip--on">Backend Engineer</span>
+                <span className="hl-chip">Score ≥ 70</span>
+                <span className="hl-chip">Assessed</span>
+                <span className="hl-chip">
+                  <Icon name="check" size={10} /> GitHub linked
+                </span>
+              </div>
+              <div className="hl-rows">
+                {DEMO_CANDIDATES.map((c) => (
+                  <div className="hl-row" key={c.name}>
+                    <span className="hl-av">{c.initials}</span>
+                    <div className="hl-row-main">
+                      <p className="hl-row-name">{c.name}</p>
+                      <div className="hl-row-meta">
+                        <span>{c.role}</span>
+                        <span aria-hidden="true">·</span>
+                        <span>{c.campus}</span>
                       </div>
                     </div>
-                    <div className="hl-cand-score">
-                      <span className="hl-score-val">{c.score}</span>
-                      <div className="hl-bar">
-                        <div className="hl-bar-fill" style={{ width: `${c.bar}%` }} />
-                      </div>
+                    <div className="hl-score">
+                      {c.score > 0 ? (
+                        <>
+                          <span className="hl-score-val">{c.score}</span>
+                          <span className="hl-score-den"> /100</span>
+                          <div className="hl-bar">
+                            <div className="hl-bar-fill" style={{ width: `${c.score}%` }} />
+                          </div>
+                        </>
+                      ) : (
+                        <span className="hl-badge-status hl-badge-status--wait">{c.status}</span>
+                      )}
                     </div>
+                    {c.score > 0 && <span className="hl-badge-status">{c.rank}</span>}
                   </div>
                 ))}
               </div>
-              <div className="hl-mock-foot">
-                {BATCH_CHIPS.map((chip) => (
-                  <span className="hl-chip" key={chip}>
-                    <Icon name="check" size={11} />
-                    {chip}
-                  </span>
-                ))}
-              </div>
+              <p className="hl-demo-note">
+                Illustrative interface preview — these are not real candidates. Your shortlist shows real profiles from
+                the platform.
+              </p>
             </div>
           </div>
         </div>
 
-        {/* Proof strip — honest, concrete, above the fold. */}
-        <div className="hl-facts">
-          {FACTS.map((f) => (
-            <div className="hl-fact" key={f.label}>
-              <p className="hl-fact-num">{f.num}</p>
-              <p className="hl-fact-label">{f.label}</p>
+        {/* ── Genuine platform metrics (hidden if unavailable) ── */}
+        {stats && (
+          <div className="hl-metrics">
+            <div>
+              <p className="hl-metric-v">{stats.students.toLocaleString('en-IN')}</p>
+              <p className="hl-metric-l">students on the platform</p>
             </div>
-          ))}
-        </div>
+            <div>
+              <p className="hl-metric-v">{stats.campuses.toLocaleString('en-IN')}</p>
+              <p className="hl-metric-l">campuses represented</p>
+            </div>
+            <div>
+              <p className="hl-metric-v">{stats.companies.toLocaleString('en-IN')}</p>
+              <p className="hl-metric-l">companies hiring here</p>
+            </div>
+          </div>
+        )}
       </header>
 
-      {/* ── Value props ── */}
-      <section id="why" className="hl-section hl-wrap">
-        <p className="hl-eyebrow">Why founders use us</p>
-        <h2 className="hl-h2">A hiring pipeline that does the screening for you.</h2>
-        <p className="hl-lead">
-          Hiring your first engineers is slow and noisy. We compress it: one message, one shortlist, one decision.
-        </p>
-        <div className="hl-props">
-          {VALUE_PROPS.map((v) => (
-            <div className="hl-prop" key={v.title}>
-              <span className="hl-prop-icon">
-                <Icon name={v.icon} size={21} />
-              </span>
-              <h3>{v.title}</h3>
-              <p>{v.body}</p>
-            </div>
-          ))}
-        </div>
-      </section>
-
-      {/* ── How it works ── */}
+      {/* ── 3. Workflow ── */}
       <section id="how" className="hl-section hl-wrap">
         <p className="hl-eyebrow">How it works</p>
-        <h2 className="hl-h2">From brief to shortlist in three steps.</h2>
-        <p className="hl-lead">No kickoff calls, no sourcing sprints. Tell us the role and we do the rest.</p>
-        <div className="hl-steps">
-          {STEPS.map((s) => (
+        <h2 className="hl-h2">From assessment to shortlist, in four steps.</h2>
+        <p className="hl-lead">
+          You never screen a stack of unqualified résumés. By the time a candidate reaches you, their ability has
+          already been measured.
+        </p>
+        <div className="hl-flow">
+          {WORKFLOW.map((s) => (
             <div className="hl-step" key={s.n}>
-              <span className="hl-step-num">{s.n}</span>
+              <span className="hl-step-n">{s.n}</span>
               <h3>{s.title}</h3>
               <p>{s.body}</p>
             </div>
@@ -273,117 +312,356 @@ export default function HireLanding() {
         </div>
       </section>
 
-      {/* ── Demo form ── */}
-      <section id="demo" className="hl-form-section hl-wrap">
-        <div className="hl-card">
-          {status === 'success' ? (
-            <div className="hl-success">
-              <h2>You&apos;re on the list ✅</h2>
-              <p>
-                We&apos;ll email <strong>{form.email}</strong> a batch of 10 pre-screened candidates within 48 hours.
-              </p>
-              <p>First batch is free — pay only when you hire.</p>
+      {/* ── 4. Candidate discovery preview ── */}
+      <section id="recruiters" className="hl-section hl-wrap">
+        <p className="hl-eyebrow">Candidate discovery</p>
+        <h2 className="hl-h2">Filter the pool. Shortlist on evidence.</h2>
+        <p className="hl-lead hl-measure">
+          Narrow candidates by role, verified skills, minimum assessment score and assessment status — then shortlist
+          and move straight to interviews.
+        </p>
+
+        <div className="hl-panel">
+          <div className="hl-panel-head">
+            <div className="hl-panel-title">
+              <Icon name="search" size={15} />
+              <span>Candidate pool</span>
             </div>
-          ) : (
-            <form onSubmit={submit}>
-              <h2 className="hl-form-title">Request your free batch of 10</h2>
-              <p className="hl-form-sub">Takes 30 seconds. We reply within 48 hours.</p>
-
-              <div className="hl-form-grid">
-                <div>
-                  <label className="hl-label" htmlFor="company">
-                    Company *
-                  </label>
-                  <input id="company" className="hl-input" value={form.company} onChange={set('company')} required />
-                </div>
-                <div className="hl-row-2">
-                  <div>
-                    <label className="hl-label" htmlFor="contact_name">
-                      Your name *
-                    </label>
-                    <input
-                      id="contact_name"
-                      className="hl-input"
-                      value={form.contact_name}
-                      onChange={set('contact_name')}
-                      required
-                    />
-                  </div>
-                  <div>
-                    <label className="hl-label" htmlFor="email">
-                      Work email *
-                    </label>
-                    <input
-                      id="email"
-                      type="email"
-                      className="hl-input"
-                      value={form.email}
-                      onChange={set('email')}
-                      required
-                    />
+            <span className="hl-demo">Demo data</span>
+          </div>
+          <div className="hl-panel-filters">
+            <span className="hl-chip">Role: Backend Engineer</span>
+            <span className="hl-chip">Skills: Node, PostgreSQL</span>
+            <span className="hl-chip">Min score: 70</span>
+            <span className="hl-chip hl-chip--on">Status: Assessed</span>
+            <span className="hl-chip hl-chip--on">Verified only</span>
+          </div>
+          <div className="hl-rows">
+            {DEMO_CANDIDATES.map((c) => (
+              <div className="hl-row" key={c.name}>
+                <span className="hl-av">{c.initials}</span>
+                <div className="hl-row-main">
+                  <p className="hl-row-name">{c.name}</p>
+                  <div className="hl-row-meta">
+                    {c.skills.map((s) => (
+                      <span className="hl-chip" key={s}>
+                        {s}
+                      </span>
+                    ))}
                   </div>
                 </div>
-                <div className="hl-row-3">
-                  <div>
-                    <label className="hl-label" htmlFor="role_title">
-                      Role *
-                    </label>
-                    <input
-                      id="role_title"
-                      className="hl-input"
-                      placeholder="e.g. Backend Engineer (Node)"
-                      value={form.role_title}
-                      onChange={set('role_title')}
-                      required
-                    />
-                  </div>
-                  <div>
-                    <label className="hl-label" htmlFor="positions">
-                      Openings
-                    </label>
-                    <input
-                      id="positions"
-                      type="number"
-                      min={1}
-                      className="hl-input"
-                      value={form.positions}
-                      onChange={set('positions')}
-                    />
-                  </div>
+                <div className="hl-score">
+                  {c.score > 0 ? (
+                    <>
+                      <span className="hl-score-val">{c.score}</span>
+                      <span className="hl-score-den"> /100</span>
+                      <div className="hl-bar">
+                        <div className="hl-bar-fill" style={{ width: `${c.score}%` }} />
+                      </div>
+                    </>
+                  ) : (
+                    <span className="hl-badge-status hl-badge-status--wait">{c.status}</span>
+                  )}
                 </div>
-                <div>
-                  <label className="hl-label" htmlFor="notes">
-                    Anything else?
-                  </label>
-                  <textarea
-                    id="notes"
-                    rows={3}
-                    className="hl-input"
-                    placeholder="Tech stack, location, budget range…"
-                    value={form.notes}
-                    onChange={set('notes')}
-                  />
-                </div>
-
-                {/* Honeypot — hidden from humans, catches bots */}
-                <input
-                  tabIndex={-1}
-                  autoComplete="off"
-                  aria-hidden="true"
-                  value={form.website}
-                  onChange={set('website')}
-                  style={{ position: 'absolute', left: -9999, width: 1, height: 1, opacity: 0 }}
-                />
-
-                {status === 'error' && <p className="hl-err">{error}</p>}
-
-                <button type="submit" disabled={status === 'submitting'} className="hl-btn hl-btn--primary hl-submit">
-                  {status === 'submitting' ? 'Sending…' : 'Get my free batch of 10'}
-                </button>
-                <p className="hl-note">No retainer. No lock-in. Pay only when you hire.</p>
+                <span className="hl-btn hl-btn--ghost hl-btn--sm">Shortlist</span>
               </div>
-            </form>
-          )}
+            ))}
+          </div>
+          <p className="hl-demo-note">
+            Illustrative interface preview — these are not real candidates and no shortlist is created from this page.
+          </p>
+        </div>
+      </section>
+
+      {/* ── 5. Assessment methodology ── */}
+      <section className="hl-section hl-wrap">
+        <div className="hl-split">
+          <div className="hl-split-copy">
+            <p className="hl-eyebrow">Assessment methodology</p>
+            <h2 className="hl-h2">What we actually measure.</h2>
+            <p className="hl-lead hl-measure">
+              No personality quizzes and no proxy signals. The assessment measures whether a candidate can write code
+              that passes tests, and how well.
+            </p>
+            <ul className="hl-list">
+              {METHODOLOGY.map((m) => (
+                <li className="hl-li" key={m.title}>
+                  <span className="hl-li-ic">
+                    <Icon name={m.icon} size={16} />
+                  </span>
+                  <span>
+                    <strong>{m.title}</strong>
+                    <span>{m.body}</span>
+                  </span>
+                </li>
+              ))}
+            </ul>
+          </div>
+
+          {/* Skill-wise breakdown — sits inside the demo-labelled evidence panel */}
+          <div className="hl-panel">
+            <div className="hl-panel-head">
+              <div className="hl-panel-title">
+                <Icon name="target" size={15} />
+                <span>Skill-wise breakdown</span>
+              </div>
+              <span className="hl-demo">Demo data</span>
+            </div>
+            <div style={{ padding: '18px' }}>
+              <div className="hl-skills">
+                {DEMO_SKILLS.map((s) => (
+                  <div key={s.label}>
+                    <div className="hl-skill-top">
+                      <span>{s.label}</span>
+                      <span>{s.value}</span>
+                    </div>
+                    <div className="hl-skill-bar">
+                      <div className="hl-skill-fill" style={{ width: s.value }} />
+                    </div>
+                  </div>
+                ))}
+              </div>
+              <p className="hl-demo-note" style={{ border: 'none', background: 'none', padding: '14px 0 0' }}>
+                Illustrative breakdown of how a result is presented. Not a real candidate&rsquo;s scores.
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ── 6. Candidate profile & project evidence ── */}
+      <section className="hl-section hl-wrap">
+        <div className="hl-split hl-split--reverse">
+          <div className="hl-split-copy">
+            <p className="hl-eyebrow">Candidate evidence</p>
+            <h2 className="hl-h2">A profile backed by projects, not adjectives.</h2>
+            <p className="hl-lead hl-measure">
+              Every candidate profile carries the work behind the claims: linked repositories, connected developer
+              profiles, preferred role, skills and — where the candidate supplies one — a résumé.
+            </p>
+            <ul className="hl-list">
+              <li className="hl-li">
+                <span className="hl-li-ic">
+                  <Icon name="github" size={16} />
+                </span>
+                <span>
+                  <strong>Connected GitHub &amp; LeetCode</strong>
+                  <span>Public contributions, repositories and problems solved sit beside the assessment result.</span>
+                </span>
+              </li>
+              <li className="hl-li">
+                <span className="hl-li-ic">
+                  <Icon name="code" size={16} />
+                </span>
+                <span>
+                  <strong>Projects and repositories</strong>
+                  <span>See what a candidate has actually built before you spend an interview slot on them.</span>
+                </span>
+              </li>
+              <li className="hl-li">
+                <span className="hl-li-ic">
+                  <Icon name="briefcase" size={16} />
+                </span>
+                <span>
+                  <strong>Preferred role</strong>
+                  <span>Candidates state the role they are targeting, so you are not guessing at fit.</span>
+                </span>
+              </li>
+            </ul>
+          </div>
+
+          <div className="hl-panel">
+            <div className="hl-panel-head">
+              <div className="hl-panel-title">
+                <Icon name="user" size={15} />
+                <span>Candidate profile</span>
+              </div>
+              <span className="hl-demo">Demo data</span>
+            </div>
+            <div style={{ padding: '18px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 16 }}>
+                <span className="hl-av" style={{ width: 44, height: 44, fontSize: 14 }}>
+                  AS
+                </span>
+                <div style={{ minWidth: 0 }}>
+                  <p style={{ margin: '0 0 2px', fontSize: 15, fontWeight: 700 }}>Aarav S.</p>
+                  <p style={{ margin: 0, fontSize: 12.5, color: 'var(--text-muted)' }}>
+                    Backend Engineer · BBD University · 2027
+                  </p>
+                </div>
+                <span className="hl-badge-status" style={{ marginLeft: 'auto' }}>
+                  Verified
+                </span>
+              </div>
+              <div className="hl-panel-filters" style={{ border: 'none', padding: 0, marginBottom: 14 }}>
+                {['Node', 'PostgreSQL', 'DSA', 'Docker'].map((s) => (
+                  <span className="hl-chip" key={s}>
+                    {s}
+                  </span>
+                ))}
+              </div>
+              <div className="hl-skills">
+                {DEMO_SKILLS.slice(0, 3).map((s) => (
+                  <div key={s.label}>
+                    <div className="hl-skill-top">
+                      <span>{s.label}</span>
+                      <span>{s.value}</span>
+                    </div>
+                    <div className="hl-skill-bar">
+                      <div className="hl-skill-fill" style={{ width: s.value }} />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+            <p className="hl-demo-note">
+              Illustrative profile preview — not a real candidate. Real profiles show the candidate&rsquo;s own links.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      {/* ── 8. Final CTA + the lead form ── */}
+      <section id="demo" className="hl-wrap">
+        <div className="hl-cta">
+          <div className="hl-split">
+            <div className="hl-split-copy">
+              <p className="hl-eyebrow">Request candidates</p>
+              <h2 className="hl-h2" style={{ marginBottom: 12 }}>
+                Tell us the role. We&rsquo;ll send the shortlist.
+              </h2>
+              <p className="hl-lead" style={{ marginBottom: 0 }}>
+                Describe what you are hiring for and we prepare a matched batch of assessed candidates. Your first batch
+                is free — pay only when you hire.
+              </p>
+              <p className="hl-micro" style={{ marginTop: 20 }}>
+                <Icon name="check" size={13} />
+                No retainer · No lock-in · Reply within 48 hours
+              </p>
+            </div>
+
+            <div className="hl-card hl-rise">
+              {status === 'success' ? (
+                <div style={{ textAlign: 'center', padding: '18px 0' }}>
+                  <span className="hl-li-ic" style={{ margin: '0 auto 14px', width: 44, height: 44 }}>
+                    <Icon name="check" size={22} />
+                  </span>
+                  <h2 className="hl-form-title">You&rsquo;re on the list</h2>
+                  <p style={{ fontSize: 14, color: 'var(--text-secondary)', margin: '0 0 6px', lineHeight: 1.6 }}>
+                    We&rsquo;ll email <strong>{form.email}</strong> a shortlist within 48 hours.
+                  </p>
+                  <p style={{ fontSize: 13, color: 'var(--text-muted)', margin: 0 }}>
+                    First batch is free — pay only when you hire.
+                  </p>
+                </div>
+              ) : (
+                <form onSubmit={submit}>
+                  <h2 className="hl-form-title">Request your shortlist</h2>
+                  <p className="hl-form-sub">Takes 30 seconds. We reply within 48 hours.</p>
+
+                  <div className="hl-form-grid">
+                    <div>
+                      <label className="hl-label" htmlFor="company">
+                        Company *
+                      </label>
+                      <input
+                        id="company"
+                        className="hl-input"
+                        value={form.company}
+                        onChange={set('company')}
+                        required
+                      />
+                    </div>
+                    <div className="hl-row-2">
+                      <div>
+                        <label className="hl-label" htmlFor="contact_name">
+                          Your name *
+                        </label>
+                        <input
+                          id="contact_name"
+                          className="hl-input"
+                          value={form.contact_name}
+                          onChange={set('contact_name')}
+                          required
+                        />
+                      </div>
+                      <div>
+                        <label className="hl-label" htmlFor="email">
+                          Work email *
+                        </label>
+                        <input
+                          id="email"
+                          type="email"
+                          className="hl-input"
+                          value={form.email}
+                          onChange={set('email')}
+                          required
+                        />
+                      </div>
+                    </div>
+                    <div className="hl-row-3">
+                      <div>
+                        <label className="hl-label" htmlFor="role_title">
+                          Role *
+                        </label>
+                        <input
+                          id="role_title"
+                          className="hl-input"
+                          placeholder="e.g. Backend Engineer (Node)"
+                          value={form.role_title}
+                          onChange={set('role_title')}
+                          required
+                        />
+                      </div>
+                      <div>
+                        <label className="hl-label" htmlFor="positions">
+                          Openings
+                        </label>
+                        <input
+                          id="positions"
+                          type="number"
+                          min={1}
+                          className="hl-input"
+                          value={form.positions}
+                          onChange={set('positions')}
+                        />
+                      </div>
+                    </div>
+                    <div>
+                      <label className="hl-label" htmlFor="notes">
+                        Anything else?
+                      </label>
+                      <textarea
+                        id="notes"
+                        rows={3}
+                        className="hl-input"
+                        placeholder="Tech stack, minimum score, location…"
+                        value={form.notes}
+                        onChange={set('notes')}
+                      />
+                    </div>
+
+                    {/* Honeypot — hidden from humans, catches bots */}
+                    <input
+                      tabIndex={-1}
+                      autoComplete="off"
+                      aria-hidden="true"
+                      value={form.website}
+                      onChange={set('website')}
+                      style={{ position: 'absolute', left: -9999, width: 1, height: 1, opacity: 0 }}
+                    />
+
+                    {status === 'error' && <p className="hl-err">{error}</p>}
+
+                    <button type="submit" disabled={status === 'submitting'} className="hl-btn hl-btn--primary">
+                      {status === 'submitting' ? 'Sending…' : 'Request my shortlist'}
+                    </button>
+                    <p className="hl-note">No retainer. No lock-in. Pay only when you hire.</p>
+                  </div>
+                </form>
+              )}
+            </div>
+          </div>
         </div>
       </section>
 
@@ -391,7 +669,7 @@ export default function HireLanding() {
       <footer className="hl-footer hl-wrap">
         <div className="hl-footer-inner">
           <span>
-            <BrandName /> · Hiring for campus engineers
+            <BrandName /> · Assessment-verified campus hiring
           </span>
           <span className="hl-footer-links">
             <Link href="/about">About</Link>
@@ -403,14 +681,14 @@ export default function HireLanding() {
         </div>
       </footer>
 
-      {/* ── Sticky mobile CTA — the primary action never scrolls away ── */}
+      {/* Sticky mobile CTA */}
       <div className="hl-mobilecta">
         <div className="hl-mobilecta-text">
-          <strong>Free for your first batch</strong>
-          10 pre-screened engineers
+          <strong>First batch free</strong>
+          Assessed, verified candidates
         </div>
         <a className="hl-btn hl-btn--primary" href="#demo">
-          Get my batch
+          Request
         </a>
       </div>
     </div>

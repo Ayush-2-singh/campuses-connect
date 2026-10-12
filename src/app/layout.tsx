@@ -1,4 +1,5 @@
 import type { Metadata, Viewport } from 'next'
+import { Inter } from 'next/font/google'
 import './globals.css'
 import './landing.css'
 import './hire-landing.css'
@@ -15,6 +16,17 @@ import { CallProvider } from '@/components/voice/CallProvider'
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL || 'https://www.connecttocampus.com'
 
 /**
+ * Inter, self-hosted by next/font (no extra dependency, no render-blocking
+ * request to Google). The previous stack named Inter first but never loaded it,
+ * so every page silently fell back to Segoe UI / system-ui — which is the
+ * single biggest reason the UI did not read as a designed product. */
+const inter = Inter({
+  subsets: ['latin'],
+  display: 'swap',
+  variable: '--font-inter',
+})
+
+/**
  * `viewportFit: 'cover'` is what makes the `env(safe-area-inset-*)` rules in
  * globals.css resolve on Android and notched iOS. Without it those insets are
  * 0, so the fixed bottom navigation sits under the gesture bar in the Android
@@ -24,6 +36,14 @@ export const viewport: Viewport = {
   width: 'device-width',
   initialScale: 1,
   viewportFit: 'cover',
+  // Browser chrome follows the product's default (light) surface, and declares
+  // both schemes so the OS can pick correctly where we do not paint.
+  // These live on `viewport` (not `metadata`) — Next 15 warns otherwise.
+  themeColor: [
+    { media: '(prefers-color-scheme: light)', color: '#faf9f7' },
+    { media: '(prefers-color-scheme: dark)', color: '#0a0c12' },
+  ],
+  colorScheme: 'light dark',
 }
 
 export const metadata: Metadata = {
@@ -97,8 +117,6 @@ export const metadata: Metadata = {
     apple: [{ url: '/apple-touch-icon.png', sizes: '180x180', type: 'image/png' }],
   },
   manifest: '/manifest.webmanifest',
-  themeColor: '#0D1116',
-  colorScheme: 'dark',
   appleWebApp: {
     capable: true,
     statusBarStyle: 'black-translucent',
@@ -179,7 +197,9 @@ const organizationJsonLd = {
 }
 
 // Apply the saved theme before first paint to avoid a flash.
-const themeScript = `(function(){try{var t=localStorage.getItem('cc-theme');document.documentElement.setAttribute('data-theme',t==='light'?'light':'dark');}catch(e){}})();`
+// DEFAULT IS LIGHT: the product now leads with a light, warm-neutral surface
+// (dark remains a first-class option via the toggle, stored under 'cc-theme').
+const themeScript = `(function(){try{var t=localStorage.getItem('cc-theme');document.documentElement.setAttribute('data-theme',t==='dark'?'dark':'light');}catch(e){}})();`
 
 // Register the service worker (installable PWA).
 // Also: when a NEW service worker takes control (a deploy just activated), we
@@ -202,7 +222,7 @@ const swScript = `(function(){
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" dir="ltr" suppressHydrationWarning>
+    <html lang="en" dir="ltr" suppressHydrationWarning className={inter.variable}>
       <head>
         {/* Preconnect to Supabase — only external API actually called from client.
             The project ref is never hardcoded here: it belongs in NEXT_PUBLIC_SUPABASE_URL. */}
@@ -217,8 +237,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <link rel="icon" href="/icon-192.png" type="image/png" sizes="192x192" />
         <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
         <link rel="manifest" href="/manifest.webmanifest" />
-        <meta name="theme-color" content="#0D1116" />
-        <meta name="msapplication-TileColor" content="#0D1116" />
+        <meta name="theme-color" content="#faf9f7" />
+        <meta name="msapplication-TileColor" content="#faf9f7" />
         <meta name="msapplication-tap-highlight" content="no" />
 
         {/* Mobile Web App */}

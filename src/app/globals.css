@@ -121,8 +121,14 @@
 
   /* Brand gradient — the CTA / wordmark fill. Warm, on-brand, high-contrast. */
   --grad-brand: linear-gradient(135deg, #ffc061 0%, #fd8f01 46%, #f0740a 100%);
+  /* Warm ambient wash behind light heroes/sections — barely-there, so it reads
+     as paper warmth rather than a coloured block. */
+  --grad-warm: radial-gradient(120% 80% at 12% 0%, rgba(253, 143, 1, 0.1), transparent 62%);
 
-  --font-sans: Inter, -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Segoe UI', Roboto, sans-serif;
+  /* --font-inter is injected by next/font in app/layout.tsx. The literal name
+     stays as a fallback for any context where the variable is not mounted. */
+  --font-sans:
+    var(--font-inter), Inter, -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Segoe UI', Roboto, sans-serif;
 }
 
 /* ───────────────────────── 3. SEMANTIC ALIASES ───────────────────────── */
@@ -156,19 +162,22 @@
   color-scheme: light;
   -webkit-color-scheme: light;
 
-  /* Light surfaces — the same ladder, lightness inverted: page < card < inset. */
-  --bg-page: #f4f5f9;
+  /* Light surfaces — the same ladder, lightness inverted: page < card < inset.
+     Warm neutral (paper) rather than the previous cool blue-grey: the product
+     leads with this surface now, and a warm base is what lets the orange accent
+     sit on it without the whole page looking tinted. */
+  --bg-page: #faf9f7;
   --bg: #ffffff;
-  --bg-secondary: #f1f3f8;
-  --bg-tertiary: #e7eaf1;
+  --bg-secondary: #f5f4f1;
+  --bg-tertiary: #ecebe6;
   --bg-elevated: #ffffff;
 
-  --border: #e3e5ea;
-  --border-strong: #cfd3db;
+  --border: #e8e6e0;
+  --border-strong: #d4d1c9;
 
-  --text-primary: #171a21;
-  --text-secondary: #5c6470;
-  --text-muted: #8a919e;
+  --text-primary: #1a1815;
+  --text-secondary: #5f5a52;
+  --text-muted: #8b857b;
 
   --accent: var(--accent-gold);
   --accent-light: color-mix(in srgb, var(--accent) 14%, white);
@@ -214,11 +223,14 @@
   --gray-soft: #eaebef;
   --disabled: color-mix(in srgb, var(--accent) 38%, white);
 
-  --shadow-sm: 0 1px 2px rgba(16, 24, 40, 0.05), 0 2px 6px -1px rgba(16, 24, 40, 0.07);
-  --shadow-md: 0 6px 14px -4px rgba(16, 24, 40, 0.08), 0 16px 28px -10px rgba(16, 24, 40, 0.1);
-  --shadow: 0 10px 22px -8px rgba(16, 24, 40, 0.09), 0 24px 40px -16px rgba(16, 24, 40, 0.12);
-  --shadow-lg: 0 24px 48px -12px rgba(16, 24, 40, 0.2), 0 48px 80px -32px rgba(16, 24, 40, 0.16);
+  /* Warm-tinted, layered shadows — a neutral-black shadow on a warm surface
+     reads grey and muddy. */
+  --shadow-sm: 0 1px 2px rgba(60, 48, 30, 0.05), 0 2px 6px -1px rgba(60, 48, 30, 0.06);
+  --shadow-md: 0 6px 14px -4px rgba(60, 48, 30, 0.08), 0 16px 28px -10px rgba(60, 48, 30, 0.09);
+  --shadow: 0 10px 22px -8px rgba(60, 48, 30, 0.09), 0 24px 40px -16px rgba(60, 48, 30, 0.11);
+  --shadow-lg: 0 24px 48px -12px rgba(60, 48, 30, 0.16), 0 48px 80px -32px rgba(60, 48, 30, 0.14);
   --highlight: inset 0 1px 0 rgba(255, 255, 255, 0.9);
+  --grad-warm: radial-gradient(120% 80% at 12% 0%, rgba(253, 143, 1, 0.09), transparent 60%);
 }
 
 /* ───────────────────────── 5. CONTEXTUAL SECTION ACCENTS ───────────────────────── */
@@ -1116,6 +1128,252 @@ a,
   .ss-btn--primary:hover {
     transform: none;
   }
+}
+
+/* ───────────────── Candidate discovery (recruiter shortlisting view) ─────────────────
+   Cards + filter bar for /talent. Real fields only: role, skills, campus, year,
+   connected GitHub, and a computed assessment score when submissions exist. */
+.cd-filters {
+  display: grid;
+  grid-template-columns: minmax(0, 1.6fr) repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  margin-bottom: 16px;
+}
+@media (max-width: 760px) {
+  .cd-filters {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+.cd-field {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+.cd-input {
+  width: 100%;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius);
+  padding: 11px 13px;
+  font-size: 14px;
+  font-family: inherit;
+  color: var(--text-primary);
+  background: var(--bg);
+  outline: none;
+  box-sizing: border-box;
+  transition:
+    border-color 0.16s ease,
+    box-shadow 0.16s ease;
+}
+.cd-input::placeholder {
+  color: var(--text-muted);
+}
+.cd-input:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 18%, transparent);
+}
+.cd-input--search {
+  padding-left: 40px;
+}
+.cd-search-ic {
+  position: absolute;
+  left: 13px;
+  display: grid;
+  place-items: center;
+  color: var(--text-muted);
+  pointer-events: none;
+}
+.cd-toggles {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 20px;
+}
+.cd-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12.5px;
+  font-weight: 600;
+  font-family: inherit;
+  color: var(--text-secondary);
+  background: var(--bg);
+  border: 1px solid var(--border-strong);
+  border-radius: 999px;
+  padding: 7px 13px;
+  cursor: pointer;
+  transition:
+    border-color 0.16s ease,
+    background 0.16s ease,
+    color 0.16s ease;
+}
+.cd-toggle:hover {
+  border-color: var(--accent-border);
+}
+.cd-toggle[aria-pressed='true'] {
+  color: var(--accent-text);
+  background: var(--accent-light);
+  border-color: var(--accent-border);
+}
+
+.cd-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 14px;
+}
+@media (max-width: 700px) {
+  .cd-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+.cd-card {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 16px;
+  box-shadow: var(--shadow-sm);
+  transition:
+    transform 0.18s ease,
+    border-color 0.18s ease,
+    box-shadow 0.18s ease;
+}
+.cd-card:hover {
+  transform: translateY(-2px);
+  border-color: var(--accent-border);
+  box-shadow: var(--shadow-md);
+}
+.cd-head {
+  display: flex;
+  align-items: flex-start;
+  gap: 11px;
+}
+.cd-id {
+  flex: 1;
+  min-width: 0;
+}
+.cd-name {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: -0.015em;
+  margin: 0 0 2px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.cd-role {
+  font-size: 12.5px;
+  color: var(--text-secondary);
+  margin: 0;
+}
+.cd-meta {
+  font-size: 11.5px;
+  color: var(--text-muted);
+  margin: 3px 0 0;
+}
+.cd-skills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+}
+.cd-skill {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  padding: 3px 9px;
+}
+.cd-score-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding-top: 12px;
+  border-top: 1px solid var(--border);
+  margin-top: auto;
+}
+.cd-score {
+  min-width: 0;
+}
+.cd-score-v {
+  font-size: 16px;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+}
+.cd-score-v small {
+  font-size: 10.5px;
+  font-weight: 600;
+  color: var(--text-muted);
+}
+.cd-score-l {
+  font-size: 10.5px;
+  color: var(--text-muted);
+  margin: 2px 0 0;
+}
+.cd-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 10.5px;
+  font-weight: 700;
+  border-radius: 999px;
+  padding: 3px 9px;
+  white-space: nowrap;
+  color: var(--success-text);
+  background: var(--success-light);
+  border: 1px solid var(--success-border);
+}
+.cd-status--wait {
+  color: var(--text-muted);
+  background: var(--bg-secondary);
+  border-color: var(--border);
+}
+.cd-actions {
+  display: flex;
+  gap: 8px;
+}
+.cd-btn {
+  flex: 1;
+  min-height: 40px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  font-size: 13px;
+  font-weight: 650;
+  font-family: inherit;
+  border-radius: var(--radius);
+  border: 1px solid var(--border-strong);
+  background: var(--bg);
+  color: var(--text-primary);
+  cursor: pointer;
+  text-decoration: none;
+  transition:
+    border-color 0.16s ease,
+    background 0.16s ease;
+}
+.cd-btn:hover {
+  border-color: var(--accent-border);
+  background: var(--accent-light);
+}
+.cd-btn--primary {
+  border-color: transparent;
+  background: var(--grad-brand);
+  color: #24160a;
+  flex: 0 0 auto;
+  padding: 0 16px;
+}
+.cd-note {
+  font-size: 12.5px;
+  color: var(--text-muted);
+  margin: 0 0 16px;
+  line-height: 1.55;
 }
 
 /* Scrolling chip/tab rows — a single row that the user swipes horizontally.
