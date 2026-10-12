@@ -33,7 +33,7 @@ const QUICK_LINKS = [
   { label: 'Privacy Policy', href: '/privacy' },
   { label: 'Terms', href: '/terms' },
   { label: 'About Us', href: '/about' },
-  { label: 'Communities', href: '/communities' },
+  { label: 'Jobs', href: '/jobs' },
 ]
 
 export default function RoomDiscovery() {
@@ -156,7 +156,7 @@ export default function RoomDiscovery() {
           <img src={logoSrc} alt="ConnectToCampus" width={38} height={38} className="f4-logo" />
           <BrandName className="f4-word" />
         </div>
-        <button className="f4-signin" onClick={() => router.push(user ? '/global' : '/auth/login')}>
+        <button className="f4-signin" onClick={() => router.push(user ? '/jobs' : '/auth/login')}>
           {user ? 'Open app' : 'Sign in'}
         </button>
       </header>

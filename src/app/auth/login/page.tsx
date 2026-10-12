@@ -88,7 +88,7 @@ export default function LoginPage() {
       return
     }
     router.refresh()
-    const target = getSafeRedirect(new URLSearchParams(window.location.search).get('redirect'), '/global')
+    const target = getSafeRedirect(new URLSearchParams(window.location.search).get('redirect'), '/jobs')
     router.replace(target)
   }
 

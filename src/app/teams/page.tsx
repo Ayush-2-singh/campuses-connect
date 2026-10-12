@@ -176,7 +176,7 @@ export default function TeamsPage() {
           <div>
             <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 4 }}>
               <button
-                onClick={() => router.push('/global')}
+                onClick={() => router.push('/jobs')}
                 aria-label="Back"
                 style={{
                   background: 'none',

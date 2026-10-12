@@ -65,7 +65,7 @@ describe('the free4talk-style board on /global', () => {
   })
 })
 
-describe('Live Voice lives under Global, never Community', () => {
+describe('Live Voice is retired (V4 pivot to campus hiring)', () => {
   const community = read('src/app/community/page.tsx')
   const layout = read('src/components/Layout.tsx')
   const mobileNav = read('src/components/mobileNav.ts')
@@ -75,29 +75,16 @@ describe('Live Voice lives under Global, never Community', () => {
     expect(community).not.toMatch(/title: 'Live Voice'/)
   })
 
-  it('the desktop sidebar keeps it out of Community and inside Global', () => {
-    const communityChildren = layout.slice(
-      layout.indexOf('const COMMUNITY_CHILDREN'),
-      layout.indexOf('const GLOBAL_CHILDREN')
-    )
-    expect(communityChildren).not.toContain('/live-voice-chat')
-
-    const globalChildren = layout.slice(layout.indexOf('const GLOBAL_CHILDREN'), layout.indexOf('const PROFILE_NAV'))
-    expect(globalChildren).toContain('/live-voice-chat')
-    // Global must actually render its group, or the child is unreachable.
-    expect(layout).toMatch(/items=\{GLOBAL_CHILDREN\}/)
+  it('is absent from the desktop sidebar and mobile menu', () => {
+    expect(layout).not.toContain('/live-voice-chat')
+    expect(mobileNav).not.toContain('/live-voice-chat')
   })
 
-  it('the mobile menu files it with Global', () => {
-    // Scope to the ☰ menu: the primary tab list also carries /global.
-    const menu = mobileNav.slice(mobileNav.indexOf('MOBILE_MENU_NAV'))
-    const globalIdx = menu.indexOf("href: '/global'")
-    const voiceIdx = menu.indexOf("href: '/live-voice-chat'")
-    expect(globalIdx).toBeGreaterThan(-1)
-    expect(voiceIdx).toBeGreaterThan(globalIdx)
+  it('is gated in the shared feature-gate config', () => {
+    expect(read('src/lib/featureGates.ts')).toContain("'/live-voice-chat'")
   })
 
-  it('/global still hosts the room board', () => {
+  it('/global page still ships on disk (gated, not deleted)', () => {
     expect(read('src/app/global/page.tsx')).toContain('<LiveRoomBrowser')
   })
 })

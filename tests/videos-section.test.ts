@@ -69,7 +69,10 @@ describe('the page is wired in', () => {
     expect(page).toContain('videosForCategory')
   })
 
-  it('is reachable from the app menu', () => {
-    expect(nav).toContain("href: '/watch'")
+  it('is retired from the app menu and gated (V4 pivot to campus hiring)', () => {
+    // The /watch wall still ships on disk, but it is retired from navigation
+    // and redirected by the shared feature-gate config.
+    expect(nav).not.toContain("href: '/watch'")
+    expect(read('src/lib/featureGates.ts')).toContain("'/watch'")
   })
 })

@@ -49,7 +49,7 @@ export default function NotFound() {
         </p>
         <div style={{ display: 'flex', gap: 10, justifyContent: 'center', flexWrap: 'wrap' }}>
           <Link
-            href="/global"
+            href="/jobs"
             style={{
               background: 'var(--accent)',
               color: 'var(--on-accent)',

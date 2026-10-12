@@ -47,25 +47,32 @@ describe('Compete no longer carries games or esports', () => {
   })
 })
 
-describe('Games is reachable from every navigation surface', () => {
-  it('desktop sidebar pillar', () => {
-    expect(read('src/components/Layout.tsx')).toContain("href: '/games'")
+describe('Games is retired (V4 pivot to campus hiring)', () => {
+  // The games hub still ships on disk, but it is no longer part of the
+  // product's navigation: the social plane is retired. It must be unreachable
+  // from every nav surface and gated by the shared feature-gate config so deep
+  // links redirect instead of 404-ing.
+  it('desktop sidebar has no games entry', () => {
+    expect(read('src/components/Layout.tsx')).not.toContain("href: '/games'")
   })
 
-  it('mobile ☰ menu', () => {
-    expect(read('src/components/mobileNav.ts')).toContain("href: '/games'")
+  it('mobile ☰ menu has no games entry', () => {
+    expect(read('src/components/mobileNav.ts')).not.toContain("href: '/games'")
   })
 
-  it('mobile bottom bar — Games is a primary tab, not just a menu entry', () => {
+  it('mobile bottom bar has no games tab', () => {
     const mobileNav = read('src/components/mobileNav.ts')
-    // Scope to the primary tab list (everything before the ☰ menu list), so a
-    // Games entry that only lives in the menu cannot satisfy this.
+    // Scope to the primary tab list (everything before the ☰ menu list).
     const tabs = mobileNav.slice(mobileNav.indexOf('MOBILE_NAV'), mobileNav.indexOf('MOBILE_MENU_NAV'))
-    expect(tabs).toContain("href: '/games'")
+    expect(tabs).not.toContain("href: '/games'")
   })
 
-  it('More page', () => {
-    expect(read('src/app/more/page.tsx')).toContain("href: '/games'")
+  it('More page has no games entry', () => {
+    expect(read('src/app/more/page.tsx')).not.toContain("href: '/games'")
+  })
+
+  it('is gated in the shared feature-gate config', () => {
+    expect(read('src/lib/featureGates.ts')).toContain("'/games'")
   })
 })
 

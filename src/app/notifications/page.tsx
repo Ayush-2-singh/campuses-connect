@@ -203,7 +203,7 @@ export default function NotificationsPage() {
             title="No notifications yet"
             body="Deadlines, replies, connections and campus updates will show up here as they happen."
             cta="Explore your campus"
-            onCta={() => router.push('/global')}
+            onCta={() => router.push('/jobs')}
           />
         ) : (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>

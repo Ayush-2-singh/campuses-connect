@@ -132,7 +132,7 @@ export default function PremiumPage() {
         {/* CTA */}
         <div style={{ textAlign: 'center', marginBottom: 20 }}>
           <button
-            onClick={() => router.push('/global')}
+            onClick={() => router.push('/jobs')}
             style={{
               padding: '12px 32px',
               borderRadius: 12,

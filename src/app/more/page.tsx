@@ -7,64 +7,50 @@ import Layout from '@/components/Layout'
 import { isPulseVisible, readPulsePrefs, setPulseMuted, type PulsePrefs } from '@/lib/livePulsePrefs'
 import { Icon } from '@/components/icons'
 
+// V4 IA — kept (hiring-plane) features only. The social plane is retired and
+// its routes redirect via src/lib/featureGates.ts, so nothing here may link to
+// it (that would dead-end through the gate).
 const SECTIONS = [
+  { icon: 'building', label: 'Jobs', desc: 'Internships, full-time & remote openings', href: '/jobs' },
   {
-    icon: 'users',
-    label: 'Groups',
-    desc: 'Create your circle — class batch, project team, hostel wing',
-    href: '/groups',
-  },
-  { icon: 'globe', label: 'Global', desc: 'Post & connect with students everywhere', href: '/global' },
-  { icon: 'zap', label: 'Compete', desc: 'Daily DSA challenges, Campus Clash & Aura rankings', href: '/compete' },
-  {
-    icon: 'gamepad',
-    label: 'Games',
-    desc: 'Typing Battle & Quick Math — real-time multiplayer games',
-    href: '/games',
-  },
-  { icon: 'users', label: 'Find Teammates', desc: 'Post or join hackathon teams', href: '/teams' },
-  {
-    icon: 'link',
-    label: 'My Network',
-    desc: 'Chats, connections, requests & DMs — like LinkedIn',
-    href: '/connections',
+    icon: 'building',
+    label: 'Companies',
+    desc: 'Explore companies, roles & interview experiences',
+    href: '/companies',
   },
   {
-    icon: 'mic',
-    label: 'Live Voice Chat',
-    desc: 'Join live voice rooms with your campusmates',
-    href: '/live-voice-chat',
+    icon: 'bookmark',
+    label: 'Applications',
+    desc: 'Track every application from applied to offer',
+    href: '/applications',
+  },
+  {
+    icon: 'pencil',
+    label: 'Interview Experiences',
+    desc: 'Verified student reviews, tips & difficulty',
+    href: '/experiences',
   },
   { icon: 'star', label: 'Talent', desc: 'Discover students by skill', href: '/talent' },
+  { icon: 'zap', label: 'Compete', desc: 'Daily DSA challenges & Aura rankings', href: '/compete' },
+  { icon: 'trophy', label: 'Leaderboard', desc: 'Top contributors on your campus', href: '/leaderboard' },
+  { icon: 'sparkles', label: 'AI Coach', desc: 'Interview & placement prep with AI', href: '/brain' },
   {
-    icon: 'sparkles',
-    label: 'AI Brain',
-    desc: 'Your personal academic memory — ask your notes anything',
-    href: '/brain',
+    icon: 'link',
+    label: 'Integrations',
+    desc: 'Connect GitHub & LeetCode to verify your skills',
+    href: '/integrations',
   },
+  { icon: 'pencil', label: 'Blog', desc: 'Interview experiences, guides & campus stories', href: '/blog' },
   { icon: 'user', label: 'My Profile', desc: 'Your identity, links and activity', href: '/profile' },
-  { icon: 'pencil', label: 'Blog', desc: 'Read & write campus stories, guides & experiences', href: '/blog' },
-  { icon: 'layout', label: 'Campus Polls', desc: 'Vote on what matters — live results', href: '/polls' },
-  { icon: 'users', label: 'Global Communities', desc: 'DSA, Web Development & Startups', href: '/communities' },
-  { icon: 'bookmark', label: 'Saved', desc: 'Posts you bookmarked', href: '/saved' },
   {
     icon: 'school',
     label: 'Change Campus',
     desc: 'Switch to a different campus (ID verification required)',
     href: '/campus-change',
   },
-  {
-    icon: 'building',
-    label: 'Companies & Jobs',
-    desc: 'Explore companies, openings & interview exp',
-    href: '/companies',
-  },
-  { icon: 'link', label: 'Integrations', desc: 'Connect GitHub & LeetCode for the leaderboard', href: '/integrations' },
-  { icon: 'trophy', label: 'Leaderboard', desc: 'Top contributors on your campus', href: '/leaderboard' },
-  { icon: 'trending-up', label: 'Weekly Wrap', desc: 'This week on your campus', href: '/weekly' },
+  { icon: 'sparkles', label: 'Premium', desc: 'Unlock AI Coach and advanced prep', href: '/premium' },
   { icon: 'bell', label: 'Notifications', desc: 'Your latest activity', href: '/notifications' },
-  { icon: 'clock', label: 'Smart Reminders', desc: 'Never miss a deadline or event', href: '/reminders' },
-  { icon: 'medal', label: 'Badges & Streaks', desc: 'Earn badges, maintain streaks, unlock features', href: '/badges' },
+  { icon: 'clock', label: 'Smart Reminders', desc: 'Never miss a deadline or application', href: '/reminders' },
 ]
 
 export default function MorePage() {

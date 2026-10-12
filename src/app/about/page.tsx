@@ -124,7 +124,7 @@ export default function AboutPage() {
           </div>
           <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
             <button
-              onClick={() => router.push('/global')}
+              onClick={() => router.push('/jobs')}
               style={{
                 background: 'none',
                 color: 'var(--text-secondary)',
@@ -140,7 +140,7 @@ export default function AboutPage() {
             </button>
             {user ? (
               <button
-                onClick={() => router.push('/global')}
+                onClick={() => router.push('/jobs')}
                 style={{
                   background: 'var(--accent)',
                   color: 'var(--on-accent)',
@@ -270,7 +270,7 @@ export default function AboutPage() {
                 Join free — from any college →
               </button>
               <button
-                onClick={() => router.push('/global')}
+                onClick={() => router.push('/jobs')}
                 style={{
                   background: 'var(--bg)',
                   color: 'var(--text-primary)',
@@ -524,7 +524,7 @@ export default function AboutPage() {
           </p>
           <div style={{ display: 'flex', gap: 10, justifyContent: 'center', flexWrap: 'wrap' }}>
             <button
-              onClick={() => router.push('/global')}
+              onClick={() => router.push('/jobs')}
               style={{
                 background: 'var(--cyan)',
                 color: 'var(--on-accent)',

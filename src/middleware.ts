@@ -1,5 +1,6 @@
 import { createServerClient } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
+import { FALLBACK_ROUTE, isRetiredPath } from '@/lib/featureGates'
 
 /**
  * Session refresh + route protection.
@@ -33,6 +34,14 @@ export async function middleware(request: NextRequest) {
 
   // Skip static assets and internal Next.js routes
   if (path.startsWith('/_next') || path.includes('.')) return supabaseResponse
+
+  // ── Phase-1 feature gate (V4 pivot → campus hiring) ──────────────────────
+  // Retired social routes redirect to a kept hub instead of dead-ending. This
+  // is fully reversible — see src/lib/featureGates.ts (SOCIAL_LAYER_RETIRED).
+  // API routes are never gated here, so backend contracts stay intact.
+  if (!path.startsWith('/api/') && isRetiredPath(path)) {
+    return NextResponse.redirect(new URL(FALLBACK_ROUTE, request.url))
+  }
 
   // Determine if we need auth at all for this route
   const needsAuth = PROTECTED_ROUTES.some((r) => path.startsWith(r))
@@ -100,12 +109,12 @@ export async function middleware(request: NextRequest) {
     const isAdmin = (grants as any[])?.some(
       (grant: any) => grant.admin_type === 'platform_admin' || grant.admin_type === 'campus_admin'
     )
-    if (!isAdmin) return NextResponse.redirect(new URL('/global', request.url))
+    if (!isAdmin) return NextResponse.redirect(new URL('/jobs', request.url))
   }
 
   // Auth pages redirect to feed if already signed in
   if (user && isAuthPage) {
-    return NextResponse.redirect(new URL('/global', request.url))
+    return NextResponse.redirect(new URL('/jobs', request.url))
   }
 
   // /onboarding: authenticated users only

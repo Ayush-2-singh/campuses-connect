@@ -1,7 +1,7 @@
 'use client'
 
 // ═══════════════════════════════════════════════════════════════════════════
-// SongLibrary — the "/global" Music section: free4talk-style curated Hindi
+// SongLibrary — the "/jobs" Music section: free4talk-style curated Hindi
 // playlists that play through YouTube's official embedded player.
 //
 // One "Top 50"-shaped chart per flavour — no single songs, no jumping between

@@ -1,13 +1,12 @@
-import RoomDiscovery from '@/components/home/RoomDiscovery'
+import HireLanding from '@/components/marketing/HireLanding'
 
 /**
- * `/` — the default landing experience.
+ * `/` — the recruiter-first landing (V4 pivot to campus hiring).
  *
- * No marketing homepage, no hero: the first thing a visitor sees is the rooms
- * that are live right now, a search box and the category chips. Everything is
- * driven by the existing live-voice API (see src/lib/rooms.ts and
- * src/components/home/RoomDiscovery.tsx).
+ * The public home now sells the business: hire pre-vetted tier-2/3 engineers,
+ * first batch of 10 free. The old social/voice "room discovery" home is retired
+ * (the component still ships on disk; see src/lib/featureGates.ts).
  */
 export default function Home() {
-  return <RoomDiscovery />
+  return <HireLanding />
 }

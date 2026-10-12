@@ -19,51 +19,44 @@ import { useCall } from '@/components/voice/callContext'
 // its code on every page navigation.
 const CommandPalette = dynamic(() => import('@/components/CommandPalette'), { ssr: false })
 
-// Voice broadcast card — lazy too: it only matters when a call is live, and
-// its realtime subscription starts only after the chunk loads.
-const VoiceChatCard = dynamic(() => import('@/components/VoiceChatCard'), { ssr: false })
+// NOTE: the social-plane shell widgets (LivePulseFeed, VoiceChatCard) were
+// retired with the V4 pivot to campus hiring. Their components still exist on
+// disk — re-mount them alongside SOCIAL_LAYER_RETIRED = false in
+// src/lib/featureGates.ts.
 
-// Live pulse flash card — rotating live updates (chat, voice, events, wins)
-// at the top of every page. Client-only: it runs realtime subscriptions.
-const LivePulseFeed = dynamic(() => import('@/components/LivePulseFeed'), { ssr: false })
-
-// Final desktop IA: Global/Community pillars, with Community expandable
-// so secondary features live under their pillar instead of crowding the
-// sidebar. Mirrors the mobile bar in mobileNav.ts. (Home feed, Discovery
-// and Library were removed.)
-// (Global is NOT listed here: it is rendered as its own expandable group
-// below so its Live Voice child sits under Global, never under Community.)
+// V4 desktop IA (campus-hiring pivot). Top-level destinations plus two
+// expandable pillars, mirroring the mobile bar in mobileNav.ts. The social
+// plane (feed, communities, chat, voice, games) is retired and its routes
+// redirect via src/lib/featureGates.ts — nothing here may link to it.
 const NAV_ITEMS = [
-  // Games — its own top-level pillar. It used to hide under Community as
-  // "Compete, Games & Clash"; it now holds only games.
-  { label: 'Games', href: '/games', icon: 'gamepad' },
-]
-
-// Community pillar children — existing systems, relinked (no rebuilds).
-// Games moved out to its own pillar (/games).
-const COMMUNITY_CHILDREN = [
-  { label: 'Communities', href: '/communities', icon: 'users' },
-  { label: 'Groups', href: '/groups', icon: 'users' },
-  { label: 'Live Chat', href: '/chat', icon: 'message' },
-  { label: 'Confessions', href: '/community?view=confessions', icon: 'eyeOff' },
-  // Compete — rankings, daily challenge and the Campus Clash contest.
+  { label: 'Jobs', href: '/jobs', icon: 'building' },
+  { label: 'Talent', href: '/talent', icon: 'star' },
   { label: 'Compete', href: '/compete', icon: 'zap' },
-  { label: 'Connect', href: '/connections', icon: 'link' },
 ]
 
-// Global pillar children — Live Voice lives here (moved OUT of Community):
-// voice rooms are a platform-wide surface, and /global already hosts the
-// free4talk-style board that opens them.
-const GLOBAL_CHILDREN = [{ label: 'Live Voice', href: '/live-voice-chat', icon: 'mic' }]
+// Hiring pillar children — companies, applications & interview experiences.
+const HIRING_CHILDREN = [
+  { label: 'Companies', href: '/companies', icon: 'building' },
+  { label: 'Applications', href: '/applications', icon: 'bookmark' },
+  { label: 'Experiences', href: '/experiences', icon: 'pencil' },
+]
+
+// Skills pillar children — leaderboard, AI Coach, integrations & blog.
+const SKILLS_CHILDREN = [
+  { label: 'Leaderboard', href: '/leaderboard', icon: 'trophy' },
+  { label: 'AI Coach', href: '/brain', icon: 'sparkles' },
+  { label: 'Integrations', href: '/integrations', icon: 'link' },
+  { label: 'Blog', href: '/blog', icon: 'pencil' },
+]
 
 const PROFILE_NAV = [{ label: 'Profile', href: '/profile', icon: 'user' }]
 
-// Warmed right after mount — first click on any pillar is instant.
-const PREFETCH_ROUTES = ['/global', '/community', '/profile', '/groups', '/games']
+// Warmed right after mount — first click on any destination is instant.
+const PREFETCH_ROUTES = ['/jobs', '/talent', '/compete', '/leaderboard', '/profile']
 
 const FAB_ACTIONS = [
   { label: 'Ask ConnectToCampus', desc: 'Search, shortcuts & questions', icon: 'sparkles', action: 'cmd' as const },
-  { label: 'Post an Idea', desc: 'Startups, projects & collabs', icon: 'flame', href: '/communities' },
+  { label: 'Find a Job', desc: 'Openings & internships', icon: 'building', href: '/jobs' },
   { label: 'Explore More', desc: 'All features in one place', icon: 'more', href: '/more' },
 ]
 
@@ -252,16 +245,14 @@ export default function Layout({ children, user, profile }: { children: React.Re
   }, [cmdOpen])
 
   const isActive = (href: string) => pathname === href || pathname.startsWith(href + '/')
-  const communityActive =
-    COMMUNITY_CHILDREN.some((c) => isActive(c.href)) || pathname === '/community' || pathname.startsWith('/community/')
-  // Landing on a Community page auto-expands its group.
+  // Skills pillar (SKILLS_CHILDREN) active state — auto-expands its group.
+  const communityActive = SKILLS_CHILDREN.some((c) => isActive(c.href))
   React.useEffect(() => {
     if (communityActive) setCommunityOpen(true)
   }, [communityActive])
 
-  const globalActive =
-    GLOBAL_CHILDREN.some((c) => isActive(c.href)) || pathname === '/global' || pathname.startsWith('/global/')
-  // Landing on a Global page auto-expands its group.
+  // Hiring pillar (HIRING_CHILDREN) active state — auto-expands its group.
+  const globalActive = HIRING_CHILDREN.some((c) => isActive(c.href))
   React.useEffect(() => {
     if (globalActive) setGlobalOpen(true)
   }, [globalActive])
@@ -349,17 +340,17 @@ export default function Layout({ children, user, profile }: { children: React.Re
         </div>
 
         <nav style={{ flex: 1, overflowY: 'auto', padding: '2px 0' }} aria-label="Main navigation">
-          {/* Global pillar — expandable so its Live Voice child sits here. */}
+          {/* Hiring pillar — companies, applications & interview experiences. */}
           <SidebarGroup
-            label="Global"
-            icon="globe"
-            items={GLOBAL_CHILDREN}
+            label="Hiring"
+            icon="building"
+            items={HIRING_CHILDREN}
             open={globalOpen}
             active={globalActive}
             pathname={pathname}
             onToggle={() => {
               setGlobalOpen((v) => !v)
-              navigate('/global')
+              navigate('/jobs')
             }}
             onNavigate={navigate}
             onPrefetch={prefetch}
@@ -398,18 +389,17 @@ export default function Layout({ children, user, profile }: { children: React.Re
             )
           })}
 
-          {/* Community pillar — expandable on desktop (spec: secondary nav
-              exposed through the sidebar; Live Chat etc. are NOT top-level). */}
+          {/* Skills pillar — leaderboard, AI Coach, integrations & blog. */}
           <SidebarGroup
-            label="Community"
-            icon="users"
-            items={COMMUNITY_CHILDREN}
+            label="Skills"
+            icon="sparkles"
+            items={SKILLS_CHILDREN}
             open={communityOpen}
             active={communityActive}
             pathname={pathname}
             onToggle={() => {
               setCommunityOpen((v) => !v)
-              navigate('/community')
+              navigate('/leaderboard')
             }}
             onNavigate={navigate}
             onPrefetch={prefetch}
@@ -877,14 +867,8 @@ export default function Layout({ children, user, profile }: { children: React.Re
         </div>
       </main>
 
-      {/* Live pulse — one flash card of genuine platform activity. Lives
-          OUTSIDE .page-enter (which animates transform on every navigation):
-          a transformed ancestor makes position:fixed position against IT, so
-          the bottom-right card would jump/misplace on every page change. */}
-      <LivePulseFeed userId={user?.id ?? null} />
-
-      {/* ── Global voice broadcast card — bottom-right on every page ── */}
-      <VoiceChatCard />
+      {/* Social-plane widgets (live pulse, voice broadcast card) are retired
+          with the V4 pivot. See src/lib/featureGates.ts. */}
 
       {/* ── Mobile bottom nav (shared 4-tab bar) ── */}
       <MobileBottomNav pathname={pathname} onNavigate={(href) => router.push(href)} />

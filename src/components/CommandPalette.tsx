@@ -13,28 +13,35 @@ interface CmdItem {
 }
 
 const COMMANDS: CmdItem[] = [
-  // AI-style quick actions — every one lands on a real page with a real feature.
+  // Quick actions — every one lands on a real, kept (hiring-plane) page.
+  { icon: 'star', label: 'Find students by skill', hint: 'Talent', href: '/talent', group: 'Ask Connect My Campus' },
   {
-    icon: 'users',
-    label: 'Find ideas to build with',
-    hint: 'Communities',
-    href: '/communities',
+    icon: 'sparkles',
+    label: 'Practice with the AI Coach',
+    hint: 'AI Coach',
+    href: '/brain',
     group: 'Ask Connect My Campus',
   },
   {
     icon: 'zap',
-    label: 'Find hackathon teams',
-    hint: 'Teams',
-    href: '/teams',
+    label: 'Solve a daily DSA challenge',
+    hint: 'Compete',
+    href: '/compete',
     group: 'Ask Connect My Campus',
   },
-  { icon: 'users', label: 'Find DSA students', hint: 'Talent', href: '/talent', group: 'Ask Connect My Campus' },
-  { icon: 'grad', label: 'Talk to your AI Brain', hint: 'AI Brain', href: '/brain', group: 'Ask Connect My Campus' },
+  {
+    icon: 'pencil',
+    label: 'Read interview experiences',
+    hint: 'Experiences',
+    href: '/experiences',
+    group: 'Ask Connect My Campus',
+  },
   // Navigation
-  { icon: 'globe', label: 'Global — connect everywhere', href: '/global', group: 'Navigate' },
-  { icon: 'link', label: 'Connections — chats, requests & network', href: '/connections', group: 'Navigate' },
-  { icon: 'users', label: 'Communities', href: '/communities', group: 'Navigate' },
-  { icon: 'star', label: 'Talent', href: '/talent', group: 'Navigate' },
+  { icon: 'building', label: 'Jobs & openings', href: '/jobs', group: 'Navigate' },
+  { icon: 'building', label: 'Companies', href: '/companies', group: 'Navigate' },
+  { icon: 'bookmark', label: 'My applications', href: '/applications', group: 'Navigate' },
+  { icon: 'trophy', label: 'Leaderboard', href: '/leaderboard', group: 'Navigate' },
+  { icon: 'link', label: 'Integrations — GitHub & LeetCode', href: '/integrations', group: 'Navigate' },
   { icon: 'bell', label: 'Notifications', href: '/notifications', group: 'Navigate' },
   { icon: 'user', label: 'Profile', href: '/profile', group: 'Navigate' },
   { icon: 'more', label: 'More', href: '/more', group: 'Navigate' },

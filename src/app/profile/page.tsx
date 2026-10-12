@@ -347,7 +347,7 @@ export default function ProfilePage() {
         >
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
             <button
-              onClick={() => router.push('/global')}
+              onClick={() => router.push('/jobs')}
               aria-label="Back"
               style={{
                 background: 'none',

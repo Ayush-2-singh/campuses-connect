@@ -156,7 +156,7 @@ export default function OnboardingPage() {
       setLoading(false)
     }
     // No campus → land on Global so the user is never stuck with nothing to see.
-    else router.push('/global')
+    else router.push('/jobs')
   }
 
   const cardStyle = (active: boolean) => ({

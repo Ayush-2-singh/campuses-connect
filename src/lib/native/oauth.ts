@@ -40,7 +40,7 @@ export const NATIVE_AUTH_CALLBACK = buildDeepLink('auth/callback')
 let inFlight = false
 
 /** Where to land after a successful sign-in. Always an app-relative path. */
-let destination = '/global'
+let destination = '/jobs'
 
 const LOGIN_PATH = '/auth/login'
 
@@ -67,7 +67,7 @@ function isAuthCallback(url: URL): boolean {
  * Rejects only when the flow could not be started at all (no URL returned);
  * once the browser opens, the outcome arrives via the deep link.
  */
-export async function signInWithGoogleNative(next: string = '/global'): Promise<void> {
+export async function signInWithGoogleNative(next: string = '/jobs'): Promise<void> {
   if (!isNativePlatform()) {
     throw new Error('signInWithGoogleNative() can only be used on a native platform.')
   }
@@ -95,7 +95,7 @@ export async function signInWithGoogleNative(next: string = '/global'): Promise<
   if (!data?.url) throw new Error('Google sign-in could not be started.')
 
   inFlight = true
-  destination = next.startsWith('/') ? next : '/global'
+  destination = next.startsWith('/') ? next : '/jobs'
   await Browser.open({ url: data.url })
 }
 
