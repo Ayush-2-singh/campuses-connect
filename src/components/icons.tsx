@@ -495,6 +495,7 @@ export function Icon({
   strokeWidth = 2,
   filled = false,
   style,
+  className,
 }: {
   name: string
   size?: number
@@ -503,6 +504,8 @@ export function Icon({
   filled?: boolean
   /** Extra positioning (e.g. rotate) without wrapping in a span. */
   style?: React.CSSProperties
+  /** Hook for CSS-driven effects (e.g. the arrow nudge on a hovered CTA). */
+  className?: string
 }) {
   return (
     <svg
@@ -515,6 +518,7 @@ export function Icon({
       strokeLinecap="round"
       strokeLinejoin="round"
       aria-hidden="true"
+      className={className}
       style={{ flexShrink: 0, ...style }}
     >
       {ICON_PATHS[name] || ICON_PATHS.more}

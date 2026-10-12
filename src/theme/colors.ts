@@ -8,16 +8,17 @@
  */
 
 const PALETTE = {
-  // Surfaces
-  bg: '#0D1116',
-  panel: '#171A21',
-  panelSecondary: '#1E222B',
-  border: '#2A2F3A',
+  // Surfaces — mirrors the dark foundation in app/globals.css (§2). It had
+  // drifted from the stylesheet; kept in sync here so JS-side surfaces match.
+  bg: '#0a0c12',
+  panel: '#12161e',
+  panelSecondary: '#191e28',
+  border: '#262d3a',
 
   // Text
-  text: '#E8E9ED',
-  textSecondary: '#8B93A3',
-  textMuted: '#697383',
+  text: '#e9ebf0',
+  textSecondary: '#99a2b1',
+  textMuted: '#6f7887',
 
   // Accents (contextual)
   gold: '#FD8F01',

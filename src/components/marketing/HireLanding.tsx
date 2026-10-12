@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import Link from 'next/link'
 import BrandName from '@/components/BrandName'
+import { Icon } from '@/components/icons'
 
 /**
  * HireLanding — the recruiter-first public storefront (Phase 1).
@@ -11,53 +12,70 @@ import BrandName from '@/components/BrandName'
  * screen ("first batch of 10 pre-screened engineers free"), and submits the demo
  * request. Everything else in the product is downstream of this form.
  *
- * Copy is deliberately honest — no invented metrics, no fake logos. The only
- * numbers are the offer itself (10 students, free, once).
+ * Premium pass (research-backed, 2026 SaaS patterns):
+ *  - shows the REAL product (a sample batch/shortlist) instead of an abstract
+ *    illustration — the pattern every high-converting SaaS page shares;
+ *  - puts concrete proof in the first screen (the facts strip);
+ *  - kills friction: one primary action, repeated in the sticky mobile bar;
+ *  - styles come from hire-landing.css on the shared design tokens.
+ *
+ * Copy stays deliberately honest — no invented metrics, no fake logos. The only
+ * numbers are the offer itself (10 students, free, once) and the process.
  */
 
 const VALUE_PROPS = [
   {
+    icon: 'shield',
     title: 'Pre-vetted, not just résumés',
     body: 'Every student has passed a verified coding assessment plus a GitHub / LeetCode skill check. You skip the screening round entirely.',
   },
   {
+    icon: 'users',
     title: 'Tier-2/3 talent, un-tapped',
     body: 'We source from colleges the big platforms ignore — hungry engineers who are strong in fundamentals and affordable to hire.',
   },
   {
+    icon: 'target',
     title: 'A shortlist, not a job board',
     body: 'You tell us the role. We send a matched batch of candidates ready to interview — not 500 applications to wade through.',
   },
 ]
 
 const STEPS = [
-  { n: '1', title: 'Tell us the role', body: 'Company, role, how many you are hiring.' },
+  { n: '1', title: 'Tell us the role', body: 'Company, role, how many you are hiring. Thirty seconds.' },
   {
     n: '2',
     title: 'Get a batch of 10',
-    body: 'Pre-screened candidates matched to your stack. Free for your first batch.',
+    body: 'Pre-screened candidates matched to your stack, with their verified signals attached.',
   },
   { n: '3', title: 'Interview & hire', body: 'You interview. Pay only when you hire one — no retainer, no lock-in.' },
 ]
 
-const inputStyle: React.CSSProperties = {
-  width: '100%',
-  padding: '11px 13px',
-  borderRadius: 'var(--radius-sm)',
-  border: '1px solid var(--border)',
-  background: 'var(--bg)',
-  color: 'var(--text-primary)',
-  fontSize: 14,
-  fontFamily: 'inherit',
-  outline: 'none',
-}
+const FACTS = [
+  { num: '10', label: 'engineers in your first batch' },
+  { num: '48h', label: 'from request to shortlist' },
+  { num: '₹0', label: 'for that first batch' },
+  { num: '2', label: 'signal checks per candidate' },
+]
 
-const labelStyle: React.CSSProperties = {
-  display: 'block',
-  fontSize: 12,
-  fontWeight: 600,
-  color: 'var(--text-secondary)',
-  marginBottom: 6,
+/** A realistic sample batch — the "show the product" hero visual. Labelled
+ *  SAMPLE so it is never mistaken for a claim about real candidates. */
+const SAMPLE_BATCH = [
+  { name: 'Aarav S.', org: 'BBD University · Lucknow', score: '9.1', bar: 91 },
+  { name: 'Diya M.', org: 'HBTU Kanpur · CSE', score: '8.6', bar: 86 },
+  { name: 'Rohan K.', org: 'NIT Patna · IT', score: '8.2', bar: 82 },
+]
+
+const BATCH_CHIPS = ['Coding assessment', 'GitHub verified', 'LeetCode verified']
+
+function initials(name: string) {
+  return name
+    .replace(/[^A-Za-z ]/g, '')
+    .split(' ')
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((p) => p[0]?.toUpperCase())
+    .join('')
 }
 
 export default function HireLanding() {
@@ -100,233 +118,219 @@ export default function HireLanding() {
   }
 
   return (
-    <div style={{ minHeight: 'var(--app-vh)', background: 'var(--bg)', color: 'var(--text-primary)' }}>
-      {/* ── Header ── */}
-      <header
-        style={{
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          maxWidth: 1040,
-          margin: '0 auto',
-          padding: '18px 20px',
-        }}
-      >
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10, fontWeight: 800 }}>
-          <BrandName />
+    <div className="hl-page">
+      <div className="hl-bg" aria-hidden="true" />
+
+      {/* ── Nav ── */}
+      <nav className="hl-nav">
+        <div className="hl-wrap hl-nav-inner">
+          <div className="hl-nav-brand">
+            <BrandName />
+          </div>
+          <div className="hl-nav-links">
+            <a className="hl-nav-link" href="#why">
+              Why us
+            </a>
+            <a className="hl-nav-link" href="#how">
+              How it works
+            </a>
+            <Link className="hl-nav-link" href="/about">
+              About
+            </Link>
+          </div>
+          <div className="hl-nav-right">
+            <Link className="hl-nav-student" href="/auth/signup">
+              I&apos;m a student
+            </Link>
+            <a className="hl-btn hl-btn--primary hl-btn--sm" href="#demo">
+              Get free batch
+            </a>
+          </div>
         </div>
-        <Link
-          href="/auth/signup"
-          style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-secondary)', textDecoration: 'none' }}
-        >
-          I&apos;m a student →
-        </Link>
-      </header>
+      </nav>
 
       {/* ── Hero ── */}
-      <section style={{ maxWidth: 1040, margin: '0 auto', padding: '40px 20px 24px' }}>
-        <span
-          style={{
-            display: 'inline-block',
-            fontSize: 12,
-            fontWeight: 700,
-            letterSpacing: '0.04em',
-            textTransform: 'uppercase',
-            color: 'var(--accent-text)',
-            background: 'var(--accent-light)',
-            padding: '5px 11px',
-            borderRadius: 999,
-            marginBottom: 18,
-          }}
-        >
-          For startups hiring engineers
-        </span>
-        <h1
-          style={{
-            fontSize: 'clamp(30px, 5vw, 52px)',
-            lineHeight: 1.08,
-            fontWeight: 800,
-            letterSpacing: '-0.03em',
-            margin: '0 0 18px',
-            maxWidth: 760,
-          }}
-        >
-          Hire pre-vetted final-year engineers — without the screening mess.
-        </h1>
-        <p
-          style={{
-            fontSize: 'clamp(15px, 2vw, 18px)',
-            color: 'var(--text-secondary)',
-            maxWidth: 620,
-            margin: '0 0 28px',
-          }}
-        >
-          We send you a shortlist of <strong>10 tier-2/3 students</strong> who have already passed a verified coding +
-          skills assessment. <strong>Your first batch is free.</strong> Pay only when you hire.
-        </p>
-        <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
-          <a
-            href="#demo"
-            style={{
-              display: 'inline-block',
-              background: 'var(--accent)',
-              color: '#fff',
-              fontWeight: 700,
-              fontSize: 15,
-              padding: '13px 22px',
-              borderRadius: 'var(--radius-sm)',
-              textDecoration: 'none',
-            }}
-          >
-            Get my free batch of 10
-          </a>
-          <a
-            href="#how"
-            style={{
-              display: 'inline-block',
-              border: '1px solid var(--border)',
-              color: 'var(--text-primary)',
-              fontWeight: 600,
-              fontSize: 15,
-              padding: '13px 22px',
-              borderRadius: 'var(--radius-sm)',
-              textDecoration: 'none',
-            }}
-          >
-            How it works
-          </a>
+      <header className="hl-hero hl-wrap">
+        <div className="hl-hero-grid">
+          <div className="hl-hero-copy">
+            <span className="hl-badge hl-rise">
+              <span className="hl-badge-dot" />
+              For startups hiring engineers
+            </span>
+            <h1 className="hl-h1 hl-rise hl-rise-2">
+              Hire pre-vetted engineers <em className="grad-brand">without the screening mess.</em>
+            </h1>
+            <p className="hl-sub hl-rise hl-rise-3">
+              We send you a shortlist of <strong>10 tier-2/3 students</strong> who have already passed a verified coding
+              and skills assessment. <strong>Your first batch is free</strong> — pay only when you hire.
+            </p>
+            <div className="hl-cta-row hl-rise hl-rise-4">
+              <a className="hl-btn hl-btn--primary hl-btn--lg" href="#demo">
+                Get my free batch of 10
+                <Icon name="chevron" size={17} className="hl-arrow" />
+              </a>
+              <a className="hl-btn hl-btn--ghost hl-btn--lg" href="#how">
+                How it works
+              </a>
+            </div>
+            <p className="hl-micro hl-rise hl-rise-4">
+              <Icon name="check" size={14} />
+              No retainer · No lock-in · Reply within 48 hours
+            </p>
+          </div>
+
+          {/* Real product, not an illustration — a sample batch preview. */}
+          <div className="hl-visual hl-rise hl-rise-3">
+            <div className="hl-mock">
+              <div className="hl-mock-head">
+                <div className="hl-mock-title">
+                  <Icon name="briefcase" size={15} />
+                  <span>Backend Engineer (Node)</span>
+                </div>
+                <span className="hl-mock-tag">Sample</span>
+              </div>
+              <div className="hl-mock-rows">
+                {SAMPLE_BATCH.map((c) => (
+                  <div className="hl-cand" key={c.name}>
+                    <span className="hl-cand-av">{initials(c.name)}</span>
+                    <div className="hl-cand-main">
+                      <p className="hl-cand-name">{c.name}</p>
+                      <div className="hl-cand-meta">
+                        <span>{c.org}</span>
+                        <span className="hl-sig">
+                          <Icon name="check" size={11} /> GitHub
+                        </span>
+                        <span className="hl-sig">
+                          <Icon name="check" size={11} /> LeetCode
+                        </span>
+                      </div>
+                    </div>
+                    <div className="hl-cand-score">
+                      <span className="hl-score-val">{c.score}</span>
+                      <div className="hl-bar">
+                        <div className="hl-bar-fill" style={{ width: `${c.bar}%` }} />
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+              <div className="hl-mock-foot">
+                {BATCH_CHIPS.map((chip) => (
+                  <span className="hl-chip" key={chip}>
+                    <Icon name="check" size={11} />
+                    {chip}
+                  </span>
+                ))}
+              </div>
+            </div>
+          </div>
         </div>
-      </section>
+
+        {/* Proof strip — honest, concrete, above the fold. */}
+        <div className="hl-facts">
+          {FACTS.map((f) => (
+            <div className="hl-fact" key={f.label}>
+              <p className="hl-fact-num">{f.num}</p>
+              <p className="hl-fact-label">{f.label}</p>
+            </div>
+          ))}
+        </div>
+      </header>
 
       {/* ── Value props ── */}
-      <section
-        style={{
-          maxWidth: 1040,
-          margin: '0 auto',
-          padding: '20px 20px',
-          display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))',
-          gap: 16,
-        }}
-      >
-        {VALUE_PROPS.map((v) => (
-          <div
-            key={v.title}
-            style={{
-              background: 'var(--bg-secondary)',
-              border: '1px solid var(--border)',
-              borderRadius: 14,
-              padding: 20,
-            }}
-          >
-            <h3 style={{ fontSize: 15, fontWeight: 700, margin: '0 0 8px' }}>{v.title}</h3>
-            <p style={{ fontSize: 13.5, color: 'var(--text-secondary)', margin: 0, lineHeight: 1.55 }}>{v.body}</p>
-          </div>
-        ))}
+      <section id="why" className="hl-section hl-wrap">
+        <p className="hl-eyebrow">Why founders use us</p>
+        <h2 className="hl-h2">A hiring pipeline that does the screening for you.</h2>
+        <p className="hl-lead">
+          Hiring your first engineers is slow and noisy. We compress it: one message, one shortlist, one decision.
+        </p>
+        <div className="hl-props">
+          {VALUE_PROPS.map((v) => (
+            <div className="hl-prop" key={v.title}>
+              <span className="hl-prop-icon">
+                <Icon name={v.icon} size={21} />
+              </span>
+              <h3>{v.title}</h3>
+              <p>{v.body}</p>
+            </div>
+          ))}
+        </div>
       </section>
 
       {/* ── How it works ── */}
-      <section id="how" style={{ maxWidth: 1040, margin: '0 auto', padding: '36px 20px 8px' }}>
-        <h2 style={{ fontSize: 22, fontWeight: 800, letterSpacing: '-0.02em', margin: '0 0 22px' }}>How it works</h2>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 16 }}>
+      <section id="how" className="hl-section hl-wrap">
+        <p className="hl-eyebrow">How it works</p>
+        <h2 className="hl-h2">From brief to shortlist in three steps.</h2>
+        <p className="hl-lead">No kickoff calls, no sourcing sprints. Tell us the role and we do the rest.</p>
+        <div className="hl-steps">
           {STEPS.map((s) => (
-            <div key={s.n} style={{ display: 'flex', gap: 12 }}>
-              <span
-                style={{
-                  flexShrink: 0,
-                  width: 30,
-                  height: 30,
-                  borderRadius: '50%',
-                  background: 'var(--accent-light)',
-                  color: 'var(--accent-text)',
-                  fontWeight: 800,
-                  fontSize: 14,
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                }}
-              >
-                {s.n}
-              </span>
-              <div>
-                <h4 style={{ fontSize: 14.5, fontWeight: 700, margin: '3px 0 4px' }}>{s.title}</h4>
-                <p style={{ fontSize: 13, color: 'var(--text-secondary)', margin: 0, lineHeight: 1.5 }}>{s.body}</p>
-              </div>
+            <div className="hl-step" key={s.n}>
+              <span className="hl-step-num">{s.n}</span>
+              <h3>{s.title}</h3>
+              <p>{s.body}</p>
             </div>
           ))}
         </div>
       </section>
 
       {/* ── Demo form ── */}
-      <section id="demo" style={{ maxWidth: 640, margin: '0 auto', padding: '40px 20px 64px' }}>
-        <div
-          style={{
-            background: 'var(--bg-secondary)',
-            border: '1px solid var(--border)',
-            borderRadius: 18,
-            padding: 'clamp(20px, 4vw, 32px)',
-            boxShadow: 'var(--shadow-sm)',
-          }}
-        >
+      <section id="demo" className="hl-form-section hl-wrap">
+        <div className="hl-card">
           {status === 'success' ? (
-            <div style={{ textAlign: 'center', padding: '20px 0' }}>
-              <h2 style={{ fontSize: 20, fontWeight: 800, margin: '0 0 10px' }}>You&apos;re on the list ✅</h2>
-              <p style={{ fontSize: 14, color: 'var(--text-secondary)', margin: '0 0 4px' }}>
+            <div className="hl-success">
+              <h2>You&apos;re on the list ✅</h2>
+              <p>
                 We&apos;ll email <strong>{form.email}</strong> a batch of 10 pre-screened candidates within 48 hours.
               </p>
-              <p style={{ fontSize: 13, color: 'var(--text-muted)', margin: 0 }}>
-                First batch is free — pay only when you hire.
-              </p>
+              <p>First batch is free — pay only when you hire.</p>
             </div>
           ) : (
             <form onSubmit={submit}>
-              <h2 style={{ fontSize: 20, fontWeight: 800, margin: '0 0 4px' }}>Request your free batch of 10</h2>
-              <p style={{ fontSize: 13, color: 'var(--text-muted)', margin: '0 0 20px' }}>
-                Takes 30 seconds. We reply within 48 hours.
-              </p>
+              <h2 className="hl-form-title">Request your free batch of 10</h2>
+              <p className="hl-form-sub">Takes 30 seconds. We reply within 48 hours.</p>
 
-              <div style={{ display: 'grid', gap: 14 }}>
+              <div className="hl-form-grid">
                 <div>
-                  <label style={labelStyle} htmlFor="company">
+                  <label className="hl-label" htmlFor="company">
                     Company *
                   </label>
-                  <input id="company" style={inputStyle} value={form.company} onChange={set('company')} required />
+                  <input id="company" className="hl-input" value={form.company} onChange={set('company')} required />
                 </div>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
+                <div className="hl-row-2">
                   <div>
-                    <label style={labelStyle} htmlFor="contact_name">
+                    <label className="hl-label" htmlFor="contact_name">
                       Your name *
                     </label>
                     <input
                       id="contact_name"
-                      style={inputStyle}
+                      className="hl-input"
                       value={form.contact_name}
                       onChange={set('contact_name')}
                       required
                     />
                   </div>
                   <div>
-                    <label style={labelStyle} htmlFor="email">
+                    <label className="hl-label" htmlFor="email">
                       Work email *
                     </label>
                     <input
                       id="email"
                       type="email"
-                      style={inputStyle}
+                      className="hl-input"
                       value={form.email}
                       onChange={set('email')}
                       required
                     />
                   </div>
                 </div>
-                <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: 14 }}>
+                <div className="hl-row-3">
                   <div>
-                    <label style={labelStyle} htmlFor="role_title">
+                    <label className="hl-label" htmlFor="role_title">
                       Role *
                     </label>
                     <input
                       id="role_title"
-                      style={inputStyle}
+                      className="hl-input"
                       placeholder="e.g. Backend Engineer (Node)"
                       value={form.role_title}
                       onChange={set('role_title')}
@@ -334,27 +338,27 @@ export default function HireLanding() {
                     />
                   </div>
                   <div>
-                    <label style={labelStyle} htmlFor="positions">
+                    <label className="hl-label" htmlFor="positions">
                       Openings
                     </label>
                     <input
                       id="positions"
                       type="number"
                       min={1}
-                      style={inputStyle}
+                      className="hl-input"
                       value={form.positions}
                       onChange={set('positions')}
                     />
                   </div>
                 </div>
                 <div>
-                  <label style={labelStyle} htmlFor="notes">
+                  <label className="hl-label" htmlFor="notes">
                     Anything else?
                   </label>
                   <textarea
                     id="notes"
                     rows={3}
-                    style={{ ...inputStyle, resize: 'vertical' }}
+                    className="hl-input"
                     placeholder="Tech stack, location, budget range…"
                     value={form.notes}
                     onChange={set('notes')}
@@ -371,32 +375,12 @@ export default function HireLanding() {
                   style={{ position: 'absolute', left: -9999, width: 1, height: 1, opacity: 0 }}
                 />
 
-                {status === 'error' && (
-                  <p style={{ fontSize: 13, color: 'var(--danger, #e5484d)', margin: 0 }}>{error}</p>
-                )}
+                {status === 'error' && <p className="hl-err">{error}</p>}
 
-                <button
-                  type="submit"
-                  disabled={status === 'submitting'}
-                  style={{
-                    width: '100%',
-                    background: 'var(--accent)',
-                    color: '#fff',
-                    fontWeight: 700,
-                    fontSize: 15,
-                    padding: '13px 20px',
-                    border: 'none',
-                    borderRadius: 'var(--radius-sm)',
-                    cursor: status === 'submitting' ? 'default' : 'pointer',
-                    opacity: status === 'submitting' ? 0.7 : 1,
-                    fontFamily: 'inherit',
-                  }}
-                >
+                <button type="submit" disabled={status === 'submitting'} className="hl-btn hl-btn--primary hl-submit">
                   {status === 'submitting' ? 'Sending…' : 'Get my free batch of 10'}
                 </button>
-                <p style={{ fontSize: 11.5, color: 'var(--text-muted)', margin: 0, textAlign: 'center' }}>
-                  No retainer. No lock-in. Pay only when you hire.
-                </p>
+                <p className="hl-note">No retainer. No lock-in. Pay only when you hire.</p>
               </div>
             </form>
           )}
@@ -404,22 +388,29 @@ export default function HireLanding() {
       </section>
 
       {/* ── Footer ── */}
-      <footer style={{ borderTop: '1px solid var(--border)', padding: '22px 20px', textAlign: 'center' }}>
-        <p style={{ fontSize: 12.5, color: 'var(--text-muted)', margin: 0 }}>
-          <BrandName /> ·{' '}
-          <Link href="/about" style={{ color: 'var(--text-muted)' }}>
-            About
-          </Link>{' '}
-          ·{' '}
-          <Link href="/privacy" style={{ color: 'var(--text-muted)' }}>
-            Privacy
-          </Link>{' '}
-          ·{' '}
-          <Link href="/terms" style={{ color: 'var(--text-muted)' }}>
-            Terms
-          </Link>
-        </p>
+      <footer className="hl-footer hl-wrap">
+        <div className="hl-footer-inner">
+          <span>
+            <BrandName /> · Hiring for campus engineers
+          </span>
+          <span className="hl-footer-links">
+            <Link href="/about">About</Link>
+            <Link href="/privacy">Privacy</Link>
+            <Link href="/terms">Terms</Link>
+          </span>
+        </div>
       </footer>
+
+      {/* ── Sticky mobile CTA — the primary action never scrolls away ── */}
+      <div className="hl-mobilecta">
+        <div className="hl-mobilecta-text">
+          <strong>Free for your first batch</strong>
+          10 pre-screened engineers
+        </div>
+        <a className="hl-btn hl-btn--primary" href="#demo">
+          Get my batch
+        </a>
+      </div>
     </div>
   )
 }

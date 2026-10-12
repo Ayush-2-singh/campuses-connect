@@ -38,14 +38,16 @@
      Cards MUST sit ABOVE the page: previously --bg (cards) was darker than
      --bg-secondary (page), so every panel read as a hole and the whole dark
      theme looked off. */
-  --bg-page: #090b10;
-  --bg: #14181f;
-  --bg-secondary: #1b202a;
-  --bg-tertiary: #232936;
+  --bg-page: #0a0c12;
+  --bg: #12161e;
+  --bg-secondary: #191e28;
+  --bg-tertiary: #212734;
+  /* One step above --bg-tertiary, for popovers/tiles that must clear a card. */
+  --bg-elevated: #262d3c;
 
   /* Borders — cool gray-blue, retuned to the surfaces above */
-  --border: #252b37;
-  --border-strong: #38404f;
+  --border: #262d3a;
+  --border-strong: #3b4453;
 
   /* Text */
   --text-primary: #e9ebf0;
@@ -99,16 +101,26 @@
   --gray-soft: #1e222b;
   --disabled: color-mix(in srgb, var(--accent) 32%, var(--bg-tertiary));
 
-  /* Radii */
+  /* Radii — one scale, soft-to-pill on a premium curve */
   --radius-sm: 10px;
   --radius: 12px;
   --radius-lg: 16px;
   --radius-xl: 20px;
+  --radius-2xl: 28px;
 
-  /* Elevation */
-  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.32), 0 1px 3px rgba(0, 0, 0, 0.28);
-  --shadow: 0 4px 10px -2px rgba(0, 0, 0, 0.4), 0 14px 24px -6px rgba(0, 0, 0, 0.36);
-  --shadow-lg: 0 24px 48px -12px rgba(0, 0, 0, 0.6);
+  /* Elevation — layered, color-neutral shadows (never one flat blur).
+     --shadow-md is the missing middle step that components already reference
+     as var(--shadow-md, …); defining it here makes those callers real instead
+     of silently falling back to their hardcoded value. */
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.35), 0 2px 6px -1px rgba(0, 0, 0, 0.3);
+  --shadow-md: 0 6px 14px -4px rgba(0, 0, 0, 0.45), 0 16px 28px -10px rgba(0, 0, 0, 0.4);
+  --shadow: 0 10px 22px -8px rgba(0, 0, 0, 0.5), 0 24px 48px -16px rgba(0, 0, 0, 0.45);
+  --shadow-lg: 0 24px 48px -12px rgba(0, 0, 0, 0.6), 0 48px 80px -32px rgba(0, 0, 0, 0.5);
+  /* Top inner hairline — the “lit edge” that makes a dark panel read raised. */
+  --highlight: inset 0 1px 0 rgba(255, 255, 255, 0.045);
+
+  /* Brand gradient — the CTA / wordmark fill. Warm, on-brand, high-contrast. */
+  --grad-brand: linear-gradient(135deg, #ffc061 0%, #fd8f01 46%, #f0740a 100%);
 
   --font-sans: Inter, -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Segoe UI', Roboto, sans-serif;
 }
@@ -149,6 +161,7 @@
   --bg: #ffffff;
   --bg-secondary: #f1f3f8;
   --bg-tertiary: #e7eaf1;
+  --bg-elevated: #ffffff;
 
   --border: #e3e5ea;
   --border-strong: #cfd3db;
@@ -201,9 +214,11 @@
   --gray-soft: #eaebef;
   --disabled: color-mix(in srgb, var(--accent) 38%, white);
 
-  --shadow-sm: 0 1px 2px rgba(16, 24, 40, 0.05), 0 1px 3px rgba(16, 24, 40, 0.07);
-  --shadow: 0 4px 6px -2px rgba(16, 24, 40, 0.06), 0 12px 16px -4px rgba(16, 24, 40, 0.08);
-  --shadow-lg: 0 24px 48px -12px rgba(16, 24, 40, 0.2);
+  --shadow-sm: 0 1px 2px rgba(16, 24, 40, 0.05), 0 2px 6px -1px rgba(16, 24, 40, 0.07);
+  --shadow-md: 0 6px 14px -4px rgba(16, 24, 40, 0.08), 0 16px 28px -10px rgba(16, 24, 40, 0.1);
+  --shadow: 0 10px 22px -8px rgba(16, 24, 40, 0.09), 0 24px 40px -16px rgba(16, 24, 40, 0.12);
+  --shadow-lg: 0 24px 48px -12px rgba(16, 24, 40, 0.2), 0 48px 80px -32px rgba(16, 24, 40, 0.16);
+  --highlight: inset 0 1px 0 rgba(255, 255, 255, 0.9);
 }
 
 /* ───────────────────────── 5. CONTEXTUAL SECTION ACCENTS ───────────────────────── */
@@ -449,8 +464,21 @@ button:disabled {
   border-color: var(--accent-border);
 }
 
-/* ── Premium polish: gradient text, glow accents{
+/* ── Premium polish: gradient text ──
+   NOTE: these declarations had lost their selector. A bad find/replace turned
+   the comment's closing marker into an opening brace, so the whole rule was
+   swallowed as comment text and NO gradient-text class existed in the build.
+   Restored and named: .grad-text (accent → white sweep) and .grad-brand (the
+   brand CTA gradient, same fill the primary buttons use). */
+.grad-text {
   background: linear-gradient(120deg, var(--accent) 0%, color-mix(in srgb, var(--accent) 45%, #ffffff) 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  color: transparent;
+}
+.grad-brand {
+  background: var(--grad-brand);
   -webkit-background-clip: text;
   background-clip: text;
   -webkit-text-fill-color: transparent;
@@ -621,10 +649,11 @@ body:has(.app-topbar) .theme-toggle--floating {
   display: none;
 }
 
-/* Standalone pages (profile etc.) render their own header controls — the
-   floating toggle would cover their Edit / action buttons{
-  display: none;
-}
+/* Standalone pages (profile etc.) render their own header controls, so the
+   floating toggle would cover their Edit / action buttons. The old rule here
+   had lost its selector (the same comment-marker corruption) and — checked
+   against src/ — no matching page class exists any more, so it is retired
+   rather than restored under a guessed name. */
 
 @media (max-width: 768px) {
   body:has(.mobile-topbar) .theme-toggle--floating {
@@ -921,30 +950,14 @@ a,
   min-width: 0;
 }
 
-/* Small stat cards (e.g. the home feed Pulse cards) — grid layout only{
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-  gap: 10px;
-}
-
-/* ───────────────────────── HOME REDESIGN grid ───────────────────────── */
-/* Main content (≈72%) + right sidebar (≈28%) on desktop; single column
-   below 1024px. Rows inside main: 3 equal cells (stats/features) that
-   collapse to 2 columns ≤900px and 1 column ≤640px. Announcements: 4
-   equal cards on desktop, 2 on tablet{
-  display: grid;
-  grid-template-columns: minmax(0, 72fr) minmax(0, 28fr);
-  gap: 14px;
-}
-@media (max-width: 640px) {
-  /* Horizontal snap-scroll strip — equal-width cards{
-    display: flex;
-    overflow-x: auto;
-    -webkit-overflow-scrolling: touch;
-    scroll-snap-type: x mandatory;
-    padding-bottom: 4px;
-  }
-}
+/* ───────────────────────── Retired: old social-home layout ───────────────────────── */
+/* The former .stat-cards / .home-grid rules and their mobile snap-scroll strip
+   lived here. Two things happened to them: the V4 pivot replaced the social
+   home (RoomDiscovery) at `/` with the hiring landing, so those selectors no
+   longer appear anywhere in src/; AND the comment-marker corruption had
+   already swallowed the rules into comments. Since the classes are unused,
+   they are removed rather than resurrected under guessed names. The gated
+   social home still styles itself with the .f4-* classes in landing.css. */
 
 /* Scrolling chip/tab rows — a single row that the user swipes horizontally.
    `min-width: 0` matters: a flex item defaults to min-width:auto, so a row of

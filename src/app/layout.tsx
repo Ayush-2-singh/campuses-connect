@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from 'next'
 import './globals.css'
 import './landing.css'
+import './hire-landing.css'
 import { ToastProvider } from '@/components/Toast'
 import OfflineIndicator from '@/components/OfflineIndicator'
 import LoadingBar from '@/components/LoadingBar'
