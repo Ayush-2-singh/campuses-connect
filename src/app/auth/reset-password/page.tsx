@@ -7,6 +7,8 @@ import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import PasswordField from '@/components/PasswordField'
 import { useToast } from '@/components/Toast'
+import AuthShell from '@/components/auth/AuthShell'
+import { Icon } from '@/components/icons'
 
 export default function ResetPasswordPage() {
   const [state, setState] = useState<'loading' | 'ready' | 'invalid'>('loading')
@@ -71,101 +73,60 @@ export default function ResetPasswordPage() {
     router.refresh()
   }
 
-  const shell = (children: React.ReactNode) => (
-    <div
-      data-accent="gold"
-      style={{
-        minHeight: 'var(--app-vh)',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        padding: 16,
-      }}
-    >
-      <div
-        style={{
-          width: '100%',
-          maxWidth: 400,
-          background: 'var(--bg)',
-          borderRadius: 16,
-          border: '1px solid var(--border)',
-          padding: 32,
-          boxShadow: 'var(--shadow)',
-        }}
-      >
-        {children}
-      </div>
-    </div>
-  )
   if (state === 'loading')
-    return shell(
-      <div style={{ textAlign: 'center' }}>
-        <div style={{ fontSize: 52, marginBottom: 12 }}>⏳</div>
-        <p style={{ fontSize: 14, color: 'var(--text-muted)', margin: 0 }}>Checking your secure link...</p>
-      </div>
+    return (
+      <AuthShell title="Checking your link" subtitle="Hold on a moment while we verify your secure link.">
+        <div className="au-state">
+          <span className="au-state-ic">
+            <Icon name="clock" size={24} />
+          </span>
+          <p>Verifying your reset link…</p>
+        </div>
+      </AuthShell>
     )
+
   if (state === 'invalid')
-    return shell(
-      <div style={{ textAlign: 'center' }}>
-        <div style={{ fontSize: 52, marginBottom: 12 }}>🔗</div>
-        <h2 style={{ fontSize: 20, fontWeight: 700, color: 'var(--text-primary)', margin: '0 0 8px' }}>
-          Link invalid or expired
-        </h2>
-        <p style={{ fontSize: 14, color: 'var(--text-muted)', lineHeight: 1.6, margin: '0 0 20px' }}>
-          Request a fresh password-reset link and try again.
-        </p>
-        <Link
-          href="/auth/forgot-password"
-          style={{
-            display: 'inline-block',
-            background: 'var(--accent)',
-            color: 'var(--on-accent)',
-            borderRadius: 10,
-            padding: '11px 22px',
-            fontSize: 14,
-            fontWeight: 600,
-            textDecoration: 'none',
-          }}
-        >
-          Get a new link
-        </Link>
-      </div>
+    return (
+      <AuthShell
+        title="Link invalid or expired"
+        subtitle="This reset link can only be used once, and it expires quickly."
+      >
+        <div className="au-state">
+          <span className="au-state-ic">
+            <Icon name="alert" size={24} />
+          </span>
+          <p>Request a fresh password-reset link and try again.</p>
+          <Link
+            href="/auth/forgot-password"
+            className="au-submit"
+            style={{ display: 'block', textAlign: 'center', textDecoration: 'none', boxSizing: 'border-box' }}
+          >
+            Get a new link
+          </Link>
+        </div>
+      </AuthShell>
     )
-  return shell(
-    <div>
-      <div style={{ textAlign: 'center', marginBottom: 20 }}>
-        <div style={{ fontSize: 42, marginBottom: 10 }}>🔐</div>
-        <h2 style={{ fontSize: 20, fontWeight: 700, color: 'var(--text-primary)', margin: '0 0 4px' }}>
-          Set a new password
-        </h2>
-        <p style={{ fontSize: 13, color: 'var(--text-muted)', margin: 0 }}>
-          Use 8+ characters with uppercase, lowercase, and a number.
-        </p>
-      </div>
+
+  return (
+    <AuthShell
+      eyebrow="Almost done"
+      title="Set a new password"
+      subtitle="Use 8+ characters with uppercase, lowercase, and a number."
+    >
       {error && (
-        <div
-          role="alert"
-          style={{
-            background: 'var(--danger-light)',
-            border: '1px solid var(--danger-border)',
-            borderRadius: 8,
-            padding: '10px 14px',
-            marginBottom: 16,
-            fontSize: 13,
-            color: 'var(--danger)',
-          }}
-        >
+        <div role="alert" className="au-error">
           {error}
         </div>
       )}
       <form onSubmit={handleSave}>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+        <div className="au-field">
           <PasswordField
             label="New password"
             value={password}
             onChange={setPassword}
             placeholder="8+ characters"
             autoComplete="new-password"
+            inputClassName="au-input"
           />
           <PasswordField
             label="Confirm new password"
@@ -173,28 +134,13 @@ export default function ResetPasswordPage() {
             onChange={setConfirm}
             placeholder="Re-enter your password"
             autoComplete="new-password"
+            inputClassName="au-input"
           />
         </div>
-        <button
-          type="submit"
-          disabled={saving}
-          style={{
-            width: '100%',
-            background: saving ? 'var(--disabled)' : 'var(--accent)',
-            color: 'var(--on-accent)',
-            border: 'none',
-            borderRadius: 10,
-            padding: '12px',
-            fontSize: 15,
-            fontWeight: 700,
-            cursor: saving ? 'not-allowed' : 'pointer',
-            marginTop: 20,
-            fontFamily: 'inherit',
-          }}
-        >
+        <button type="submit" disabled={saving} className="au-submit">
           {saving ? 'Updating...' : 'Update password'}
         </button>
       </form>
-    </div>
+    </AuthShell>
   )
 }
