@@ -302,8 +302,8 @@ export default function Layout({ children, user, profile }: { children: React.Re
           top: 0,
           left: 0,
           bottom: 0,
-          background: 'var(--bg)',
-          borderRight: '1px solid var(--border)',
+          background: 'linear-gradient(180deg, var(--bg-secondary), var(--bg) 320px)',
+          borderRight: '1px solid var(--border-strong)',
           padding: '20px 12px',
           display: 'flex',
           flexDirection: 'column',
@@ -561,7 +561,10 @@ export default function Layout({ children, user, profile }: { children: React.Re
             position: 'sticky',
             top: 0,
             zIndex: 30,
-            background: 'var(--bg)',
+            /* Glassy sticky bar — the page shows through as it scrolls. */
+            background: 'color-mix(in srgb, var(--bg-page) 82%, transparent)',
+            backdropFilter: 'blur(14px) saturate(160%)',
+            WebkitBackdropFilter: 'blur(14px) saturate(160%)',
             borderBottom: '1px solid var(--border)',
           }}
         >
@@ -671,7 +674,9 @@ export default function Layout({ children, user, profile }: { children: React.Re
           style={{
             position: 'sticky',
             top: 0,
-            background: 'var(--bg)',
+            background: 'color-mix(in srgb, var(--bg-page) 86%, transparent)',
+            backdropFilter: 'blur(14px) saturate(160%)',
+            WebkitBackdropFilter: 'blur(14px) saturate(160%)',
             borderBottom: '1px solid var(--border)',
             padding: '12px 16px',
             zIndex: 30,
