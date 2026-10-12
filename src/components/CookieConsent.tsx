@@ -74,6 +74,10 @@ export default function CookieConsent() {
         style={{ flex: 1, minWidth: 200, margin: 0, fontSize: 12.5, color: 'var(--text-secondary)', lineHeight: 1.45 }}
       >
         We use essential cookies to keep you signed in, and optional analytics to improve the platform. See our{' '}
+        <Link href="/cookies" style={{ color: 'var(--accent)', textDecoration: 'underline' }}>
+          Cookie Policy
+        </Link>{' '}
+        and{' '}
         <Link href="/privacy" style={{ color: 'var(--accent)', textDecoration: 'underline' }}>
           Privacy Policy
         </Link>

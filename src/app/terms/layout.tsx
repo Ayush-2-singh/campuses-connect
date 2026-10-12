@@ -2,7 +2,8 @@ import type { Metadata } from 'next'
 
 export const metadata: Metadata = {
   title: 'Terms & Conditions',
-  description: 'The rules for using ConnectToCampus — accounts, content ownership, acceptable use and disclaimers.',
+  description:
+    'The rules for using ConnectToCampus — student accounts, assessments, company and recruiter obligations, fees, acceptable use and disclaimers.',
   alternates: { canonical: '/terms' },
 }
 

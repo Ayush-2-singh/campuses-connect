@@ -12,20 +12,23 @@ export default function sitemap(): MetadataRoute.Sitemap {
   const now = new Date()
 
   const core: { path: string; priority: number; changeFrequency: 'daily' | 'weekly' | 'monthly' | 'yearly' }[] = [
+    // NOTE: the retired social routes (/community, /communities, /global …)
+    // are deliberately absent — they 307-redirect to /jobs (see
+    // lib/featureGates.ts), and listing a redirecting URL in a sitemap is an
+    // SEO error. /jobs is listed once.
     { path: '/', priority: 1, changeFrequency: 'daily' },
     { path: '/jobs', priority: 0.9, changeFrequency: 'daily' },
     { path: '/blog', priority: 0.9, changeFrequency: 'daily' },
-    { path: '/community', priority: 0.8, changeFrequency: 'daily' },
     { path: '/compete', priority: 0.8, changeFrequency: 'daily' },
     { path: '/leaderboard', priority: 0.7, changeFrequency: 'daily' },
-    { path: '/communities', priority: 0.8, changeFrequency: 'weekly' },
     { path: '/companies', priority: 0.8, changeFrequency: 'weekly' },
-    { path: '/jobs', priority: 0.8, changeFrequency: 'daily' },
     { path: '/experiences', priority: 0.7, changeFrequency: 'weekly' },
     { path: '/about', priority: 0.6, changeFrequency: 'monthly' },
     { path: '/more', priority: 0.5, changeFrequency: 'monthly' },
     { path: '/privacy', priority: 0.3, changeFrequency: 'yearly' },
     { path: '/terms', priority: 0.3, changeFrequency: 'yearly' },
+    { path: '/cookies', priority: 0.3, changeFrequency: 'yearly' },
+    { path: '/refund', priority: 0.3, changeFrequency: 'yearly' },
   ]
 
   const auth: { path: string; priority: number }[] = [

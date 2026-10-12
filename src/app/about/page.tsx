@@ -839,20 +839,50 @@ export default function AboutPage() {
           >
             Terms of Service
           </a>
+          <a
+            href="/cookies"
+            style={{
+              fontSize: 14,
+              fontWeight: 600,
+              color: 'var(--accent)',
+              textDecoration: 'none',
+            }}
+          >
+            Cookie Policy
+          </a>
+          <a
+            href="/refund"
+            style={{
+              fontSize: 14,
+              fontWeight: 600,
+              color: 'var(--accent)',
+              textDecoration: 'none',
+            }}
+          >
+            Refund &amp; Cancellation
+          </a>
         </div>
       </div>
 
       {/* Footer */}
       <div style={{ borderTop: '1px solid var(--border)', padding: '20px', textAlign: 'center' }}>
         <p style={{ fontSize: 12, color: 'var(--text-muted)', margin: 0 }}>
-          ConnectToCampus is an independent student networking platform. Not affiliated with or endorsed by any
-          educational institution.{' '}
+          ConnectToCampus is an independent platform connecting campuses and companies. Not affiliated with or endorsed
+          by any educational institution.{' '}
           <a href="/privacy" style={{ color: 'var(--text-muted)', textDecoration: 'underline' }}>
             Privacy
           </a>
           {' · '}
           <a href="/terms" style={{ color: 'var(--text-muted)', textDecoration: 'underline' }}>
             Terms
+          </a>
+          {' · '}
+          <a href="/cookies" style={{ color: 'var(--text-muted)', textDecoration: 'underline' }}>
+            Cookies
+          </a>
+          {' · '}
+          <a href="/refund" style={{ color: 'var(--text-muted)', textDecoration: 'underline' }}>
+            Refunds
           </a>
         </p>
       </div>
