@@ -1,8 +1,9 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import BrandName from '@/components/BrandName'
+import { getLogoSrc } from '@/components/LogoToggle'
 import { Icon } from '@/components/icons'
 
 /**
@@ -130,6 +131,16 @@ export default function HireLanding({ stats }: { stats?: Stats }) {
   })
   const [status, setStatus] = useState<'idle' | 'submitting' | 'success' | 'error'>('idle')
   const [error, setError] = useState('')
+  // Theme-synced logo (dark variant on dark backgrounds, light on light) —
+  // same behaviour as the app shell (see components/LogoToggle.tsx).
+  const [logoSrc, setLogoSrc] = useState('/connect-to-campus-logo-dark.png')
+
+  useEffect(() => {
+    const sync = () => setLogoSrc(getLogoSrc())
+    sync()
+    window.addEventListener('cc-theme-change', sync)
+    return () => window.removeEventListener('cc-theme-change', sync)
+  }, [])
 
   const set = (k: keyof typeof form) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) =>
     setForm((f) => ({ ...f, [k]: e.target.value }))
@@ -165,6 +176,13 @@ export default function HireLanding({ stats }: { stats?: Stats }) {
       <nav className="hl-nav">
         <div className="hl-wrap hl-nav-inner">
           <div className="hl-nav-brand">
+            <img
+              src={logoSrc}
+              alt="ConnectToCampus"
+              width={30}
+              height={30}
+              style={{ borderRadius: 9, flexShrink: 0 }}
+            />
             <BrandName />
           </div>
           <div className="hl-nav-links">
