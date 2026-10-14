@@ -216,7 +216,7 @@ export default function HireLanding({ stats }: { stats?: Stats }) {
               Assessment-verified hiring
             </span>
             <h1 className="hl-h1 hl-rise hl-rise-2">
-              Hire freshers who have <em className="grad-brand">already proved their code.</em>
+              Hire freshers who have <em className="hl-em">already proved their code.</em>
             </h1>
             <p className="hl-sub hl-rise hl-rise-3">
               We run standardised coding and technical assessments, then send you a shortlist of candidates whose{' '}

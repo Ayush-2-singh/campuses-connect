@@ -190,8 +190,8 @@
   color: var(--text-primary);
 }
 .hl-btn--ghost:hover {
-  border-color: var(--accent-border);
-  background: var(--accent-light);
+  border-color: var(--border-strong);
+  background: var(--bg-secondary);
 }
 .hl-btn--lg {
   font-size: 15.5px;
@@ -213,13 +213,15 @@
 .hl-section {
   padding-top: clamp(56px, 8vw, 96px);
 }
+/* Eyebrows stay NEUTRAL — orange is reserved for the CTA and the hero phrase
+   (leetquery discipline: the accent marks action, not structure). */
 .hl-eyebrow {
   display: inline-block;
   font-size: 12px;
   font-weight: 700;
   letter-spacing: 0.07em;
   text-transform: uppercase;
-  color: var(--accent-text);
+  color: var(--text-muted);
   margin: 0 0 10px;
 }
 .hl-h2 {
@@ -256,15 +258,16 @@
   }
 }
 
+/* Neutral pill, hairline border — only the dot carries the brand colour. */
 .hl-badge {
   display: inline-flex;
   align-items: center;
   gap: 8px;
   font-size: 12px;
   font-weight: 650;
-  color: var(--accent-text);
-  background: var(--accent-light);
-  border: 1px solid var(--accent-border);
+  color: var(--text-secondary);
+  background: var(--bg);
+  border: 1px solid var(--border-strong);
   padding: 6px 12px 6px 10px;
   border-radius: 999px;
   margin-bottom: 20px;
@@ -286,6 +289,15 @@
 }
 .hl-h1 em {
   font-style: normal;
+}
+/* The ONE hero accent phrase — serif italic in solid brand orange, the way
+   leetquery highlights "Top 1% Analyst." Nothing else on the page gets this. */
+.hl-em {
+  font-family: Georgia, 'Iowan Old Style', 'Times New Roman', serif;
+  font-style: italic;
+  font-weight: 500;
+  color: var(--hl-brand);
+  letter-spacing: -0.012em;
 }
 
 .hl-sub {
@@ -381,9 +393,10 @@
   white-space: nowrap;
 }
 .hl-chip--on {
-  color: var(--accent-text);
-  background: var(--accent-light);
-  border-color: var(--accent-border);
+  color: var(--text-primary);
+  background: var(--bg);
+  border-color: var(--border-strong);
+  font-weight: 700;
 }
 .hl-chip svg {
   color: var(--success-text);
@@ -415,8 +428,9 @@
   place-items: center;
   font-size: 12px;
   font-weight: 800;
-  color: #24160a;
-  background: var(--grad-brand);
+  color: var(--text-secondary);
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
 }
 .hl-row-main {
   flex: 1;
@@ -463,7 +477,7 @@
 .hl-bar-fill {
   height: 100%;
   border-radius: 999px;
-  background: var(--grad-brand);
+  background: var(--hl-brand);
 }
 .hl-badge-status {
   flex-shrink: 0;
@@ -549,7 +563,7 @@
 }
 .hl-step:hover {
   transform: translateY(-2px);
-  border-color: var(--accent-border);
+  border-color: var(--border-strong);
   box-shadow: var(--shadow-sm);
 }
 .hl-step-n {
@@ -561,8 +575,9 @@
   border-radius: 9px;
   font-size: 13px;
   font-weight: 800;
-  color: #24160a;
-  background: var(--grad-brand);
+  color: var(--text-secondary);
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
   margin-bottom: 14px;
 }
 .hl-step h3 {
@@ -620,9 +635,9 @@
   height: 32px;
   flex-shrink: 0;
   border-radius: 9px;
-  color: var(--accent-text);
-  background: var(--accent-light);
-  border: 1px solid var(--accent-border);
+  color: var(--text-secondary);
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
 }
 .hl-li strong {
   display: block;
@@ -667,7 +682,7 @@
 .hl-skill-fill {
   height: 100%;
   border-radius: 999px;
-  background: var(--grad-brand);
+  background: var(--hl-brand);
 }
 
 /* ── Final CTA ──────────────────────────────────────────────────────────── */
@@ -676,9 +691,7 @@
   overflow: hidden;
   border-radius: var(--radius-2xl);
   border: 1px solid var(--border);
-  background:
-    radial-gradient(120% 120% at 85% 0%, color-mix(in srgb, var(--hl-brand) 16%, transparent), transparent 58%),
-    var(--bg);
+  background: var(--bg);
   box-shadow: var(--shadow-md);
   padding: clamp(28px, 5vw, 48px);
   margin-top: clamp(56px, 8vw, 88px);
