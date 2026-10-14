@@ -529,7 +529,7 @@ export default function UserProfilePage() {
 
             {/* Contribution + identity numbers — count-up tiles */}
             <div
-              className="profile-reveal-2"
+              className="profile-reveal-2 mg-2"
               style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 8, marginTop: 14 }}
               aria-label="Profile statistics"
             >

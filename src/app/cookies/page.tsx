@@ -41,7 +41,7 @@ export default function CookiePolicyPage() {
         These are required for the Service to work. Without them you cannot sign in or stay signed in. They are set when
         you use the Service and are not used for advertising.
       </p>
-      <table>
+      <table className="legal-table">
         <thead>
           <tr>
             <th>Name</th>
@@ -65,7 +65,7 @@ export default function CookiePolicyPage() {
         These remember choices you make, so the Service does not reset them. They are stored in your browser&rsquo;s
         local storage on your device.
       </p>
-      <table>
+      <table className="legal-table">
         <thead>
           <tr>
             <th>Name</th>
@@ -90,7 +90,7 @@ export default function CookiePolicyPage() {
         which pages are visited and how features perform. Nothing is loaded and nothing is measured before you accept,
         and nothing is measured if you decline.
       </p>
-      <table>
+      <table className="legal-table">
         <thead>
           <tr>
             <th>Name</th>

@@ -4,14 +4,15 @@ import { useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
 import Layout from '@/components/Layout'
+import { Icon } from '@/components/icons'
 
-const STATUS_CONFIG: Record<string, { color: string; bg: string; emoji: string }> = {
-  applied: { color: 'var(--accent)', bg: 'var(--accent-light)', emoji: '📤' },
-  shortlisted: { color: 'var(--yellow-text)', bg: 'var(--yellow-light, #fef3c7)', emoji: '⭐' },
-  interview: { color: 'var(--purple-text)', bg: 'var(--purple-light)', emoji: '🎤' },
-  offer: { color: 'var(--success-text)', bg: 'var(--success-light)', emoji: '🎉' },
-  rejected: { color: 'var(--danger)', bg: 'var(--danger-light)', emoji: '❌' },
-  withdrawn: { color: 'var(--text-muted)', bg: 'var(--bg-secondary)', emoji: '↩️' },
+const STATUS_CONFIG: Record<string, { color: string; tone: string; icon: string; label: string }> = {
+  applied: { color: 'var(--accent-text)', tone: 'hc-tag--accent', icon: 'send', label: 'Applied' },
+  shortlisted: { color: 'var(--warning-text)', tone: 'hc-tag--warn', icon: 'star', label: 'Shortlisted' },
+  interview: { color: 'var(--purple-text)', tone: 'hc-tag--purple', icon: 'mic', label: 'Interview' },
+  offer: { color: 'var(--success-text)', tone: 'hc-tag--success', icon: 'trophy', label: 'Offer' },
+  rejected: { color: 'var(--danger-text)', tone: 'hc-tag--danger', icon: 'x', label: 'Rejected' },
+  withdrawn: { color: 'var(--text-muted)', tone: 'hc-tag--ghost', icon: 'reply', label: 'Withdrawn' },
 }
 
 const STATUSES = ['all', 'applied', 'shortlisted', 'interview', 'offer', 'rejected', 'withdrawn']
@@ -60,205 +61,127 @@ export default function ApplicationsPage() {
 
   return (
     <Layout user={user} profile={profile}>
-      <div style={{ maxWidth: 720, margin: '0 auto', padding: '24px 20px' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 4 }}>
-          <button
-            onClick={() => router.push('/companies')}
-            aria-label="Back"
-            style={{
-              background: 'none',
-              border: 'none',
-              cursor: 'pointer',
-              fontSize: 20,
-              color: 'var(--text-muted)',
-              width: 44,
-              height: 44,
-              display: 'inline-flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              borderRadius: 10,
-              margin: '-10px 0 -10px -12px',
-              flexShrink: 0,
-            }}
-          >
+      <div className="hc-page" style={{ maxWidth: 720 }}>
+        <div className="hc-page-head hc-reveal">
+          <button className="hc-back" onClick={() => router.push('/companies')} aria-label="Back">
             ←
           </button>
-          <h2 style={{ fontSize: 22, fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>My Applications</h2>
+          <div style={{ minWidth: 0 }}>
+            <span className="hc-eyebrow">Hiring</span>
+            <h1 className="hc-h1">My Applications</h1>
+            <p className="hc-lede">Track your job applications and their status</p>
+          </div>
         </div>
-        <p style={{ fontSize: 13, color: 'var(--text-muted)', margin: '0 0 20px', marginLeft: 34 }}>
-          Track your job applications and their status
-        </p>
 
-        {/* Stats bar */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 6, marginBottom: 16 }}>
+        {/* Status counts */}
+        <div className="hc-stats hc-reveal" style={{ '--hc-i': 1 } as React.CSSProperties}>
           {STATUSES.slice(1).map((s) => {
             const cfg = STATUS_CONFIG[s]
             return (
-              <div
-                key={s}
-                style={{
-                  background: 'var(--bg)',
-                  border: '1px solid var(--border)',
-                  borderRadius: 10,
-                  padding: '10px 8px',
-                  textAlign: 'center',
-                }}
-              >
-                <p style={{ fontSize: 18, fontWeight: 800, color: cfg.color, margin: 0 }}>{counts[s]}</p>
-                <p style={{ fontSize: 10, color: 'var(--text-muted)', margin: '2px 0 0' }}>
-                  {cfg.emoji} {s.charAt(0).toUpperCase() + s.slice(1)}
+              <div className="hc-card" key={s}>
+                <p className="hc-stat-v" style={{ color: cfg.color }}>
+                  {counts[s]}
+                </p>
+                <p className="hc-stat-l">
+                  <Icon name={cfg.icon} size={11} />
+                  {cfg.label}
                 </p>
               </div>
             )
           })}
         </div>
 
-        {/* Filter */}
-        <div style={{ display: 'flex', gap: 6, marginBottom: 16, overflowX: 'auto', paddingBottom: 4 }}>
+        {/* Status filter */}
+        <div className="hc-chips hc-reveal" style={{ '--hc-i': 2 } as React.CSSProperties}>
           {STATUSES.map((s) => (
-            <button
-              key={s}
-              onClick={() => setFilter(s)}
-              style={{
-                padding: '5px 12px',
-                borderRadius: 20,
-                border: 'none',
-                fontSize: 11,
-                fontWeight: 600,
-                cursor: 'pointer',
-                fontFamily: 'inherit',
-                whiteSpace: 'nowrap',
-                background: filter === s ? 'var(--accent)' : 'var(--bg)',
-                color: filter === s ? 'var(--on-accent)' : 'var(--text-secondary)',
-              }}
-            >
-              {s === 'all' ? 'All' : `${STATUS_CONFIG[s].emoji} ${s.charAt(0).toUpperCase() + s.slice(1)}`}
-              {s !== 'all' && ` (${counts[s]})`}
+            <button key={s} onClick={() => setFilter(s)} className="hc-chip" aria-pressed={filter === s}>
+              {s === 'all' ? (
+                <>
+                  <Icon name="layers" size={12} /> All
+                </>
+              ) : (
+                <>
+                  <Icon name={STATUS_CONFIG[s].icon} size={12} />
+                  {STATUS_CONFIG[s].label} ({counts[s]})
+                </>
+              )}
             </button>
           ))}
         </div>
 
-        {/* Applications list */}
         {loading ? (
-          <p style={{ textAlign: 'center', color: 'var(--text-muted)', padding: '40px 0' }}>Loading...</p>
+          <div className="hc-grid hc-grid--list">
+            {[0, 1, 2].map((i) => (
+              <div key={i} className="hc-card hc-reveal" style={{ '--hc-i': i } as React.CSSProperties}>
+                <div className="hc-card-head">
+                  <div className="skeleton" style={{ width: 40, height: 40, borderRadius: 11 }} />
+                  <div style={{ flex: 1 }}>
+                    <div className="skeleton" style={{ height: 13, width: '55%', marginBottom: 6 }} />
+                    <div className="skeleton" style={{ height: 11, width: '70%' }} />
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
         ) : filtered.length === 0 ? (
-          <div
-            style={{
-              background: 'var(--bg)',
-              border: '1px solid var(--border)',
-              borderRadius: 16,
-              padding: '40px 20px',
-              textAlign: 'center',
-              boxShadow: 'var(--shadow-sm)',
-            }}
-          >
-            <p style={{ fontSize: 32, margin: '0 0 8px' }}>📋</p>
-            <p style={{ fontSize: 15, fontWeight: 600, color: 'var(--text-primary)', margin: '0 0 4px' }}>
-              {filter === 'all' ? 'No applications yet' : `No ${filter} applications`}
-            </p>
-            <p style={{ fontSize: 13, color: 'var(--text-muted)', margin: '0 0 16px' }}>
-              {filter === 'all' ? 'Start applying to jobs from the Companies page' : 'Try a different filter'}
+          <div className="hc-empty hc-reveal" style={{ '--hc-i': 0 } as React.CSSProperties}>
+            <span className="hc-empty-ic">
+              <Icon name="layers" size={28} strokeWidth={1.6} />
+            </span>
+            <p className="hc-empty-t">{filter === 'all' ? 'No applications yet' : `No ${filter} applications`}</p>
+            <p className="hc-empty-s">
+              {filter === 'all' ? 'Start applying to jobs from the Companies page.' : 'Try a different filter.'}
             </p>
             {filter === 'all' && (
-              <button
-                onClick={() => router.push('/companies')}
-                style={{
-                  padding: '10px 20px',
-                  borderRadius: 10,
-                  border: 'none',
-                  background: 'var(--accent)',
-                  color: 'var(--on-accent)',
-                  fontSize: 13,
-                  fontWeight: 600,
-                  cursor: 'pointer',
-                  fontFamily: 'inherit',
-                }}
-              >
-                🏢 Browse Companies
+              <button className="hc-btn hc-btn--primary" onClick={() => router.push('/companies')}>
+                <Icon name="building" size={14} /> Browse companies
               </button>
             )}
           </div>
         ) : (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-            {filtered.map((app) => {
+          <div className="hc-grid hc-grid--list">
+            {filtered.map((app, i) => {
               const cfg = STATUS_CONFIG[app.status] || STATUS_CONFIG.applied
               const job = app.job_postings
               const company = job?.companies
               return (
                 <div
                   key={app.id}
+                  className="hc-card hc-card--link hc-card--rail hc-reveal"
+                  style={{ '--hc-i': i } as React.CSSProperties}
                   onClick={() => router.push(`/jobs/${app.job_posting_id}`)}
-                  style={{
-                    background: 'var(--bg)',
-                    border: '1px solid var(--border)',
-                    borderRadius: 12,
-                    padding: '14px 16px',
-                    cursor: 'pointer',
-                    boxShadow: 'var(--shadow-sm)',
-                  }}
                 >
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                    <div
-                      style={{
-                        width: 40,
-                        height: 40,
-                        borderRadius: 10,
-                        background: 'var(--bg-secondary)',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        fontSize: 18,
-                        flexShrink: 0,
-                      }}
-                    >
+                  <div className="hc-card-head">
+                    <div className="hc-avatar">
                       {company?.logo_url ? (
-                        <img
-                          src={company.logo_url}
-                          alt=""
-                          loading="lazy"
-                          decoding="async"
-                          style={{ width: 40, height: 40, borderRadius: 10 }}
-                        />
+                        <img src={company.logo_url} alt="" loading="lazy" decoding="async" />
                       ) : (
-                        '🏢'
+                        <Icon name="building" size={18} />
                       )}
                     </div>
                     <div style={{ flex: 1, minWidth: 0 }}>
-                      <p style={{ fontSize: 14, fontWeight: 600, color: 'var(--text-primary)', margin: '0 0 2px' }}>
-                        {job?.title || 'Unknown Job'}
-                      </p>
-                      <p style={{ fontSize: 12, color: 'var(--text-muted)', margin: 0 }}>
+                      <h3 className="hc-title">{job?.title || 'Unknown Job'}</h3>
+                      <p className="hc-sub">
                         {company?.name || '—'} · Applied {new Date(app.applied_at).toLocaleDateString()}
                       </p>
                     </div>
-                    <span
-                      style={{
-                        padding: '4px 8px',
-                        borderRadius: 10,
-                        fontSize: 10,
-                        fontWeight: 600,
-                        background: cfg.bg,
-                        color: cfg.color,
-                        flexShrink: 0,
-                        whiteSpace: 'nowrap',
-                      }}
-                    >
-                      {cfg.emoji} {app.status.charAt(0).toUpperCase() + app.status.slice(1)}
+                    <span className={`hc-tag ${cfg.tone}`}>
+                      <Icon name={cfg.icon} size={11} /> {cfg.label}
                     </span>
                   </div>
+
                   {app.cover_note && (
                     <p
+                      className="hc-body"
                       style={{
-                        fontSize: 12,
-                        color: 'var(--text-muted)',
-                        margin: '8px 0 0',
-                        lineHeight: 1.5,
                         borderTop: '1px solid var(--border)',
-                        paddingTop: 8,
+                        paddingTop: 9,
+                        marginTop: 2,
+                        color: 'var(--text-muted)',
                       }}
                     >
-                      📝 {app.cover_note.slice(0, 120)}
-                      {app.cover_note.length > 120 ? '...' : ''}
+                      {app.cover_note.slice(0, 120)}
+                      {app.cover_note.length > 120 ? '…' : ''}
                     </p>
                   )}
                 </div>

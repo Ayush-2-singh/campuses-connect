@@ -242,12 +242,12 @@ export default function TalentPage() {
           />
         ) : (
           <div className="cd-grid">
-            {filtered.map((s) => {
+            {filtered.map((s, i) => {
               const sc = scores[s.id]
               const skills: string[] = (s.skills || []).slice(0, MAX_SKILLS_SHOWN)
               const extra = (s.skills || []).length - skills.length
               return (
-                <article className="cd-card" key={s.id}>
+                <article className="cd-card hc-reveal" key={s.id} style={{ '--hc-i': i } as React.CSSProperties}>
                   <div className="cd-head">
                     <Avatar name={s.full_name} avatarUrl={s.avatar_url} size={44} />
                     <div className="cd-id">

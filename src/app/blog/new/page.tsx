@@ -249,7 +249,7 @@ export default function NewBlogPage() {
           />
 
           {/* Category & Company */}
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+          <div className="mg-stack" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
             <select
               value={form.category}
               onChange={(e) => setForm((f) => ({ ...f, category: e.target.value }))}

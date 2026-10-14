@@ -252,17 +252,8 @@ export default function RankingsTab({
           ? 'No ranked students from your campus yet — be the first!'
           : 'Be the first to win a Compete game and earn Aura!'
     return (
-      <div
-        style={{
-          background: 'var(--bg)',
-          border: '1px solid var(--border)',
-          borderRadius: 16,
-          padding: '50px 20px',
-          textAlign: 'center',
-          boxShadow: 'var(--shadow-sm)',
-        }}
-      >
-        <div style={{ margin: '0 0 10px', color: 'var(--accent-text)', display: 'flex', justifyContent: 'center' }}>
+      <div className="hc-empty hc-reveal">
+        <div className="hc-empty-ic">
           <svg
             width={40}
             height={40}
@@ -277,10 +268,8 @@ export default function RankingsTab({
             <path d="M4 19h16M4 19 2.5 8l5.5 4L12 4l4 8 5.5-4L20 19" />
           </svg>
         </div>
-        <p style={{ fontSize: 16, fontWeight: 700, color: 'var(--text-primary)', margin: '0 0 6px' }}>
-          Rankings are getting ready
-        </p>
-        <p style={{ fontSize: 13, color: 'var(--text-muted)', margin: 0, lineHeight: 1.6 }}>{scopeMsg}</p>
+        <p className="hc-empty-t">Rankings are getting ready</p>
+        <p className="hc-empty-s">{scopeMsg}</p>
       </div>
     )
   }
@@ -619,7 +608,7 @@ export default function RankingsTab({
       )}
 
       {/* Leaderboard Rows */}
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }} role="list" aria-label="Leaderboard">
+      <div className="hc-grid hc-grid--list" style={{ gap: 6 }} role="list" aria-label="Leaderboard">
         {rest.map((entry, idx) => {
           const rank = idx + 4
           const isMe = user && entry.user_id === user.id
@@ -628,7 +617,9 @@ export default function RankingsTab({
               key={entry.user_id}
               role="listitem"
               onClick={() => router.push(`/profile/${entry.username}`)}
+              className="hc-card hc-card--link"
               style={{
+                flexDirection: 'row',
                 background: isMe ? 'var(--accent-light)' : 'var(--bg)',
                 border: isMe ? '2px solid var(--accent)' : '1px solid var(--border)',
                 borderRadius: 12,
@@ -690,36 +681,13 @@ export default function RankingsTab({
 
       {!user && (
         <div
-          style={{
-            textAlign: 'center',
-            marginTop: 20,
-            padding: 16,
-            background: 'var(--bg)',
-            border: '1px solid var(--border)',
-            borderRadius: 14,
-          }}
+          className="hc-card hc-reveal"
+          style={{ textAlign: 'center', alignItems: 'center', marginTop: 20, padding: 16 }}
         >
-          <p style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-primary)', margin: '0 0 4px' }}>
-            Join the competition!
-          </p>
-          <p style={{ fontSize: 12, color: 'var(--text-muted)', margin: '0 0 10px' }}>
-            Sign up to earn Aura and climb the rankings.
-          </p>
-          <button
-            onClick={() => router.push('/auth/login')}
-            style={{
-              padding: '8px 20px',
-              borderRadius: 10,
-              border: 'none',
-              background: 'var(--accent)',
-              color: 'var(--on-accent)',
-              fontSize: 13,
-              fontWeight: 600,
-              cursor: 'pointer',
-              fontFamily: 'inherit',
-            }}
-          >
-            Get Started →
+          <p className="hc-title">Join the competition!</p>
+          <p className="hc-sub">Sign up to earn Aura and climb the rankings.</p>
+          <button className="hc-btn hc-btn--primary" onClick={() => router.push('/auth/login')}>
+            Get started
           </button>
         </div>
       )}

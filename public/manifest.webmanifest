@@ -1,11 +1,12 @@
 {
-  "name": "ConnectToCampus — Your campus, connected",
+  "name": "ConnectToCampus — Campus Hiring Platform",
   "short_name": "ConnectToCampus",
-  "description": "The community platform for Computer Science students in Indian colleges.",
-  "start_url": "/feed",
+  "description": "Verified student profiles, assessments and jobs for Indian colleges — connect companies to campuses.",
+  "start_url": "/",
+  "scope": "/",
   "display": "standalone",
-  "background_color": "#0D1116",
-  "theme_color": "#0D1116",
+  "background_color": "#faf9f7",
+  "theme_color": "#faf9f7",
   "orientation": "portrait-primary",
   "icons": [
     {

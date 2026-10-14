@@ -13,8 +13,8 @@ const DYNAMIC_CACHE = 'campus-dynamic-v9'
 // user-specific and must not be served from a shared cache to other sessions.
 const PRECACHE_URLS = [
   '/',
+  '/jobs',
   '/more',
-  '/badges',
   '/companies',
   '/integrations',
   '/leaderboard',

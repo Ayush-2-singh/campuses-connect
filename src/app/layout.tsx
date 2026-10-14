@@ -237,7 +237,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <link rel="icon" href="/icon-192.png" type="image/png" sizes="192x192" />
         <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
         <link rel="manifest" href="/manifest.webmanifest" />
-        <meta name="theme-color" content="#faf9f7" />
+        {/* theme-color is emitted by the `viewport` export above (light/dark
+            aware). A hardcoded duplicate here raced it and could win on
+            Android, painting the status bar the wrong shade. */}
         <meta name="msapplication-TileColor" content="#faf9f7" />
         <meta name="msapplication-tap-highlight" content="no" />
 

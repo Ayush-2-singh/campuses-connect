@@ -1387,6 +1387,620 @@ a,
   flex-shrink: 0;
 }
 
+/* ═══════════════ Craft card system (leetquery discipline) ═══════════════
+   The shared card language for section pages — the same discipline the
+   marketing landing (hire-landing.css) already uses, brought to app surfaces:
+   ONE neutral card surface, hairline borders, an accent that marks action
+   rather than decoration, and a restrained rise-in on mount.
+
+   Why this exists: every section page used to re-declare the same
+   border/radius/shadow inline, each with a slightly different value, so the
+   app read as generated rather than designed. Pages compose these classes
+   instead of hand-rolling a card.
+
+   Motion: `.hc-reveal` reuses the landing's `hlRise` keyframes (leetquery),
+   staggered through `--hc-i` so cards arrive like a dealt hand, not a dump.
+   All of it collapses under prefers-reduced-motion. */
+
+/* ── Page frame + header ───────────────────────────────────────────── */
+.hc-page {
+  max-width: 780px;
+  margin: 0 auto;
+  padding: 22px 20px 48px;
+}
+.hc-page-head {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  margin-bottom: 18px;
+}
+.hc-back {
+  width: 34px;
+  height: 34px;
+  flex-shrink: 0;
+  display: grid;
+  place-items: center;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: var(--bg);
+  color: var(--text-secondary);
+  font-size: 16px;
+  font-family: inherit;
+  cursor: pointer;
+  transition:
+    border-color 0.16s ease,
+    background 0.16s ease,
+    color 0.16s ease;
+}
+.hc-back:hover {
+  border-color: var(--accent-border);
+  background: var(--accent-light);
+  color: var(--accent-text);
+}
+.hc-eyebrow {
+  display: block;
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  margin: 0 0 3px;
+}
+.hc-h1 {
+  font-size: 21px;
+  font-weight: 800;
+  letter-spacing: -0.028em;
+  line-height: 1.15;
+  color: var(--text-primary);
+  margin: 0;
+}
+.hc-lede {
+  font-size: 12.5px;
+  line-height: 1.5;
+  color: var(--text-muted);
+  margin: 3px 0 0;
+}
+/* The ONE accent phrase allowed in a header — serif italic, like the landing. */
+.hc-em {
+  font-family: Georgia, 'Iowan Old Style', 'Times New Roman', serif;
+  font-style: italic;
+  font-weight: 500;
+  color: var(--accent-text);
+  letter-spacing: -0.01em;
+}
+
+/* ── Search + filter toolbar ───────────────────────────────────────── */
+.hc-search {
+  position: relative;
+  display: flex;
+  align-items: center;
+  flex: 1 1 240px;
+  min-width: 0;
+  margin-bottom: 14px;
+}
+.hc-search-ic {
+  position: absolute;
+  left: 13px;
+  display: grid;
+  place-items: center;
+  color: var(--text-muted);
+  pointer-events: none;
+}
+.hc-search input {
+  width: 100%;
+  box-sizing: border-box;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 11px 14px 11px 39px;
+  font-size: 14px;
+  font-family: inherit;
+  color: var(--text-primary);
+  background: var(--bg);
+  outline: none;
+  transition:
+    border-color 0.16s ease,
+    box-shadow 0.16s ease;
+}
+.hc-search input::placeholder {
+  color: var(--text-muted);
+}
+.hc-search input:focus {
+  border-color: var(--accent-border);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 16%, transparent);
+}
+
+.hc-chips {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 18px;
+}
+.hc-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  font-family: inherit;
+  color: var(--text-secondary);
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  padding: 6px 13px;
+  cursor: pointer;
+  white-space: nowrap;
+  transition:
+    border-color 0.16s ease,
+    background 0.16s ease,
+    color 0.16s ease;
+}
+.hc-chip:hover {
+  border-color: var(--accent-border);
+  color: var(--text-primary);
+}
+.hc-chip[aria-pressed='true'] {
+  color: var(--accent-text);
+  background: var(--accent-light);
+  border-color: var(--accent-border);
+}
+
+/* ── Buttons ───────────────────────────────────────────────────────── */
+.hc-btn {
+  min-height: 38px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  padding: 0 16px;
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  background: var(--bg);
+  color: var(--text-secondary);
+  font-size: 12.5px;
+  font-weight: 700;
+  font-family: inherit;
+  cursor: pointer;
+  transition:
+    transform 0.15s ease,
+    border-color 0.18s ease,
+    background 0.18s ease,
+    color 0.18s ease,
+    box-shadow 0.18s ease;
+}
+.hc-btn:hover {
+  border-color: var(--accent-border);
+  background: var(--accent-light);
+  color: var(--accent-text);
+}
+.hc-btn--primary {
+  border: none;
+  color: var(--on-accent);
+  background: var(--grad-brand);
+  box-shadow:
+    0 8px 20px -10px color-mix(in srgb, var(--accent) 80%, transparent),
+    inset 0 1px 0 rgba(255, 255, 255, 0.4);
+}
+.hc-btn--primary:hover {
+  transform: translateY(-1px);
+  background: var(--grad-brand);
+  color: var(--on-accent);
+  box-shadow: 0 14px 28px -12px color-mix(in srgb, var(--accent) 90%, transparent);
+}
+.hc-btn--block {
+  width: 100%;
+}
+.hc-btn:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+@media (prefers-reduced-motion: reduce) {
+  .hc-btn--primary:hover {
+    transform: none;
+  }
+}
+
+/* ── Grid ──────────────────────────────────────────────────────────── */
+.hc-grid {
+  display: grid;
+  gap: 12px;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+}
+.hc-grid--list {
+  grid-template-columns: minmax(0, 1fr);
+}
+@media (max-width: 640px) {
+  .hc-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+/* ── Card ──────────────────────────────────────────────────────────── */
+.hc-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 16px 18px;
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--border);
+  background: var(--bg);
+  box-shadow: var(--shadow-sm);
+  transition:
+    transform 0.18s ease,
+    box-shadow 0.18s ease,
+    border-color 0.18s ease;
+}
+.hc-card--link {
+  cursor: pointer;
+  text-align: left;
+  font-family: inherit;
+  color: inherit;
+  width: 100%;
+}
+.hc-card--link:hover {
+  transform: translateY(-2px);
+  border-color: var(--accent-border);
+  box-shadow: var(--shadow-md);
+}
+.hc-card--link:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+.hc-card--link:active {
+  transform: translateY(0);
+}
+/* Left accent rail — fades in on hover, the landing's "accent marks action". */
+.hc-card--rail::before {
+  content: '';
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 3px;
+  border-radius: var(--radius-lg) 0 0 var(--radius-lg);
+  background: var(--grad-brand);
+  opacity: 0;
+  transition: opacity 0.18s ease;
+}
+.hc-card--rail:hover::before {
+  opacity: 1;
+}
+
+/* ── Form card ─────────────────────────────────────────────────────── */
+.hc-form {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 18px;
+  margin-bottom: 20px;
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--border);
+  background: var(--bg);
+  box-shadow: var(--shadow-sm);
+}
+.hc-form-title {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin: 0 0 2px;
+}
+.hc-form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+@media (max-width: 640px) {
+  .hc-form-row {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+.hc-form :is(input, select, textarea) {
+  width: 100%;
+  box-sizing: border-box;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 10px 12px;
+  font-size: 13px;
+  font-family: inherit;
+  color: var(--text-primary);
+  background: var(--bg-secondary);
+  outline: none;
+  resize: vertical;
+  transition:
+    border-color 0.16s ease,
+    box-shadow 0.16s ease;
+}
+.hc-form :is(input, select, textarea):focus {
+  border-color: var(--accent-border);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 16%, transparent);
+}
+.hc-form :is(input, select, textarea)::placeholder {
+  color: var(--text-muted);
+}
+.hc-alert {
+  font-size: 13px;
+  color: var(--danger-text);
+  background: var(--danger-light);
+  border: 1px solid var(--danger-border);
+  border-radius: var(--radius);
+  padding: 10px 14px;
+  margin-bottom: 16px;
+}
+
+/* Compact stat strip — small centred figures on the card surface. */
+.hc-stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(104px, 1fr));
+  gap: 8px;
+  margin-bottom: 18px;
+}
+.hc-stats .hc-card {
+  align-items: center;
+  text-align: center;
+  gap: 3px;
+  padding: 11px 8px;
+}
+.hc-stat-v {
+  font-size: 19px;
+  font-weight: 800;
+  line-height: 1.1;
+  font-variant-numeric: tabular-nums;
+  margin: 0;
+}
+.hc-stat-l {
+  font-size: 10.5px;
+  color: var(--text-muted);
+  margin: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+/* Compact icon+label shortcuts (e.g. the Companies quick links). */
+.hc-quick {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(112px, 1fr));
+  gap: 8px;
+  margin-bottom: 20px;
+}
+.hc-quick .hc-card {
+  align-items: center;
+  text-align: center;
+  gap: 7px;
+  padding: 13px 8px;
+}
+.hc-quick .hc-q-ic {
+  color: var(--accent-text);
+  display: inline-flex;
+}
+.hc-quick .hc-q-label {
+  font-size: 11px;
+  font-weight: 650;
+  color: var(--text-primary);
+  margin: 0;
+}
+
+.hc-card-head {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+}
+.hc-avatar {
+  width: 40px;
+  height: 40px;
+  flex-shrink: 0;
+  display: grid;
+  place-items: center;
+  border-radius: 11px;
+  overflow: hidden;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  color: var(--text-muted);
+}
+.hc-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+.hc-title {
+  font-size: 15px;
+  font-weight: 650;
+  letter-spacing: -0.012em;
+  line-height: 1.35;
+  color: var(--text-primary);
+  margin: 0;
+}
+.hc-sub {
+  font-size: 12px;
+  color: var(--text-muted);
+  margin: 2px 0 0;
+}
+.hc-body {
+  font-size: 13px;
+  line-height: 1.65;
+  color: var(--text-secondary);
+  margin: 0;
+  white-space: pre-wrap;
+}
+
+/* ── Tags ──────────────────────────────────────────────────────────── */
+.hc-tags {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+.hc-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 10.5px;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  padding: 3px 9px;
+  border-radius: 999px;
+  background: var(--bg-secondary);
+  color: var(--text-secondary);
+  border: 1px solid transparent;
+}
+.hc-tag--accent {
+  background: var(--accent-light);
+  color: var(--accent-text);
+}
+.hc-tag--success {
+  background: var(--success-light);
+  color: var(--success-text);
+}
+.hc-tag--warn {
+  background: var(--warning-light);
+  color: var(--warning-text);
+}
+.hc-tag--danger {
+  background: var(--danger-light);
+  color: var(--danger-text);
+}
+.hc-tag--purple {
+  background: var(--purple-light);
+  color: var(--purple-text);
+}
+.hc-tag--cyan {
+  background: var(--cyan-light);
+  color: var(--cyan-text);
+}
+.hc-tag--ghost {
+  background: transparent;
+  border-color: var(--border);
+  color: var(--text-muted);
+}
+
+/* ── Footer + meta ─────────────────────────────────────────────────── */
+.hc-foot {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-top: auto;
+  padding-top: 10px;
+  border-top: 1px solid var(--border);
+}
+.hc-meta {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 11.5px;
+  color: var(--text-muted);
+}
+.hc-spacer {
+  flex: 1 1 auto;
+}
+.hc-note {
+  font-size: 12.5px;
+  line-height: 1.6;
+  color: var(--accent-text);
+  background: var(--accent-light);
+  border-radius: var(--radius);
+  padding: 10px 14px;
+  margin: 0;
+}
+
+/* ── Empty state ───────────────────────────────────────────────────── */
+.hc-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 6px;
+  padding: 46px 20px;
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--border);
+  background: var(--bg);
+  box-shadow: var(--shadow-sm);
+}
+.hc-empty-ic {
+  color: var(--accent-text);
+  opacity: 0.9;
+  margin-bottom: 4px;
+}
+.hc-empty-t {
+  font-size: 15px;
+  font-weight: 650;
+  color: var(--text-primary);
+  margin: 0;
+}
+.hc-empty-s {
+  font-size: 12.5px;
+  color: var(--text-muted);
+  margin: 0;
+  max-width: 46ch;
+}
+.hc-empty .hc-btn {
+  margin-top: 10px;
+}
+
+/* ── Reveal (leetquery hlRise, staggered) ──────────────────────────── */
+.hc-reveal {
+  animation: hlRise 0.5s cubic-bezier(0.22, 0.8, 0.3, 1) both;
+  animation-delay: calc(var(--hc-i, 0) * 42ms);
+}
+@media (prefers-reduced-motion: reduce) {
+  .hc-reveal {
+    animation: none;
+  }
+  .hc-card--link:hover {
+    transform: none;
+  }
+}
+
+/* Auto-stagger for card grids — children arrive in order so a page never has
+   to index each card. Sits AFTER .hc-reveal: its higher specificity means the
+   nth-child delay wins on grid children, and --hc-i is then only needed for
+   non-grid elements. */
+.hc-grid > *,
+.cd-grid > * {
+  animation: hlRise 0.5s cubic-bezier(0.22, 0.8, 0.3, 1) both;
+}
+.hc-grid > :nth-child(1),
+.cd-grid > :nth-child(1) {
+  animation-delay: 0ms;
+}
+.hc-grid > :nth-child(2),
+.cd-grid > :nth-child(2) {
+  animation-delay: 0.042s;
+}
+.hc-grid > :nth-child(3),
+.cd-grid > :nth-child(3) {
+  animation-delay: 0.084s;
+}
+.hc-grid > :nth-child(4),
+.cd-grid > :nth-child(4) {
+  animation-delay: 0.126s;
+}
+.hc-grid > :nth-child(5),
+.cd-grid > :nth-child(5) {
+  animation-delay: 0.168s;
+}
+.hc-grid > :nth-child(6),
+.cd-grid > :nth-child(6) {
+  animation-delay: 0.21s;
+}
+.hc-grid > :nth-child(7),
+.cd-grid > :nth-child(7) {
+  animation-delay: 0.252s;
+}
+.hc-grid > :nth-child(8),
+.cd-grid > :nth-child(8) {
+  animation-delay: 0.294s;
+}
+.hc-grid > :nth-child(n + 9),
+.cd-grid > :nth-child(n + 9) {
+  animation-delay: 0.336s;
+}
+@media (prefers-reduced-motion: reduce) {
+  .hc-grid > *,
+  .cd-grid > * {
+    animation: none;
+  }
+}
+
 /* ───────────────── Section page cards (homepage pattern) ─────────────── */
 /* SectionShell pages render their lists as wide homepage-style cards:
    equal 3-up grid on desktop, 2-up on tablet, 1-up on mobile. Pages wrap
@@ -3035,6 +3649,61 @@ html.nav-hidden .fab-wrap {
   color: var(--text-secondary);
   margin: 0 0 14px;
   line-height: 1.6;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════
+   MOBILE GRID + TOUCH PASS (added for the phone audit)
+
+   Many kept pages set `gridTemplateColumns` as an INLINE style (e.g.
+   `repeat(4, 1fr)` stat tiles). An inline style beats any stylesheet rule, so
+   the existing media queries could not reach them and the tiles stayed
+   cramped at 4–5 across on a 360px phone. These two classes are applied
+   ALONGSIDE the inline style and win at phone widths with `!important` — the
+   same pattern the shell already uses for `.main-content` padding.
+
+   `.mg-stack`  → one column (form rows that were `1fr 1fr`)
+   `.mg-2`      → two columns (4/5-up stat tiles become a 2-up grid)
+   ═══════════════════════════════════════════════════════════════════════ */
+@media (max-width: 640px) {
+  .mg-stack {
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
+  .mg-2 {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  }
+}
+
+/* Touch targets — WCAG 2.5.5 asks for ~44px. The pill filter chips on
+   Jobs/Applications/Experiences used 5–7px vertical padding (~30px), which is
+   hard to hit with a thumb. `.tap-target` bumps them (and the shared section
+   controls) on touch devices only, so desktop density is untouched. */
+@media (max-width: 768px) and (pointer: coarse) {
+  .tap-target,
+  .cd-toggle,
+  .cd-btn,
+  .ss-btn,
+  .hc-chip,
+  .hc-back,
+  .hc-btn {
+    min-height: 44px;
+  }
+  .chip-scroll > .tap-target {
+    display: inline-flex;
+    align-items: center;
+  }
+}
+
+/* Legal / consent tables have fixed columns (cookies policy). Let them scroll
+   sideways on a phone instead of forcing the whole page wider. */
+.legal-table {
+  width: 100%;
+}
+@media (max-width: 768px) {
+  .legal-table {
+    display: block;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
 }
 
 @media (max-width: 560px) {

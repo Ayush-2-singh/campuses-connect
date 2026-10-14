@@ -227,97 +227,40 @@ function CompetePageInner() {
     <Layout user={user} profile={profile}>
       <ErrorBoundary pageName="compete">
         <div className="ambient" style={{ maxWidth: 1100, margin: '0 auto', padding: '22px 24px 48px' }}>
-          {/* Header strip — the section's green accent flows through every tile */}
-          <div
-            style={{
-              background: 'var(--bg)',
-              border: '1px solid var(--border)',
-              borderRadius: 14,
-              boxShadow: 'var(--shadow-sm)',
-              padding: '14px 18px',
-              display: 'flex',
-              alignItems: 'center',
-              gap: 14,
-              flexWrap: 'wrap',
-              marginBottom: 16,
-            }}
-          >
-            <span
-              style={{
-                width: 42,
-                height: 42,
-                borderRadius: 12,
-                background: 'var(--accent-light)',
-                color: 'var(--accent-text)',
-                display: 'inline-flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                flexShrink: 0,
-              }}
-            >
+          {/* Header strip — the shared section-shell chrome (same frame the
+              Jobs / Talent / Leaderboard pages use). */}
+          <div className="ss-head hc-reveal">
+            <span className="ss-icon">
               <Icon name="zap" size={20} />
             </span>
             <div style={{ minWidth: 0 }}>
-              <h2 style={{ fontSize: 19, fontWeight: 800, color: 'var(--text-primary)', margin: 0, lineHeight: 1.2 }}>
-                Compete
-              </h2>
-              <p style={{ fontSize: 12, color: 'var(--text-muted)', margin: '2px 0 0' }}>Rank. Play. Win. Earn Aura.</p>
+              <h2 className="ss-title">Compete</h2>
+              <p className="ss-sub">Rank. Play. Win. Earn Aura.</p>
             </div>
-            <span style={{ flex: 1 }} />
-            {contest && (
-              <span style={{ textAlign: 'center' }}>
-                <span
-                  style={{
-                    display: 'block',
-                    fontSize: 16,
-                    fontWeight: 800,
-                    color: 'var(--accent-text)',
-                    lineHeight: 1.15,
-                  }}
-                >
-                  {registered ? 'In' : 'Open'}
-                </span>
-                <span style={{ fontSize: 10, color: 'var(--text-muted)' }}>Clash</span>
-              </span>
-            )}
-            {problems.length > 0 && (
-              <span style={{ textAlign: 'center' }}>
-                <span
-                  style={{
-                    display: 'block',
-                    fontSize: 16,
-                    fontWeight: 800,
-                    color: 'var(--text-primary)',
-                    lineHeight: 1.15,
-                  }}
-                >
-                  {problems.length}
-                </span>
-                <span style={{ fontSize: 10, color: 'var(--text-muted)' }}>Problems</span>
-              </span>
+            <span className="ss-spacer" />
+            {(contest || problems.length > 0) && (
+              <div className="ss-stats">
+                {contest && (
+                  <span className="ss-stat">
+                    <span className="ss-stat-v">{registered ? 'In' : 'Open'}</span>
+                    <span className="ss-stat-l">Clash</span>
+                  </span>
+                )}
+                {problems.length > 0 && (
+                  <span className="ss-stat">
+                    <span className="ss-stat-v">{problems.length}</span>
+                    <span className="ss-stat-l">Problems</span>
+                  </span>
+                )}
+              </div>
             )}
             {user && (
-              <button
-                onClick={() => router.push('/games')}
-                style={{
-                  minHeight: 38,
-                  padding: '0 16px',
-                  borderRadius: 10,
-                  border: 'none',
-                  background: 'var(--accent)',
-                  color: 'var(--on-accent)',
-                  fontSize: 12.5,
-                  fontWeight: 700,
-                  cursor: 'pointer',
-                  fontFamily: 'inherit',
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  gap: 7,
-                }}
-              >
-                <Icon name="gamepad" size={15} strokeWidth={2} />
-                Play Games
-              </button>
+              <div className="ss-actions">
+                <button className="ss-btn ss-btn--primary" onClick={() => router.push('/games')}>
+                  <Icon name="gamepad" size={15} />
+                  Play Games
+                </button>
+              </div>
             )}
           </div>
 

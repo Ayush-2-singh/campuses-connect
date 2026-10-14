@@ -8,7 +8,23 @@ import { Icon } from '@/components/icons'
 
 const INDUSTRIES = ['all', 'tech', 'finance', 'consulting', 'startup', 'ecommerce', 'fintech', 'edtech', 'other']
 
-// Industry chips are text-only — the company logo tile carries the visual.
+const INDUSTRY_LABEL: Record<string, string> = {
+  all: 'All',
+  tech: 'Tech',
+  finance: 'Finance',
+  consulting: 'Consulting',
+  startup: 'Startup',
+  ecommerce: 'E-commerce',
+  fintech: 'Fintech',
+  edtech: 'Ed-tech',
+  other: 'Other',
+}
+
+const QUICK_LINKS = [
+  { label: 'All Jobs', icon: 'briefcase', href: '/jobs' },
+  { label: 'Applications', icon: 'copy', href: '/applications' },
+  { label: 'Experiences', icon: 'pencil', href: '/experiences' },
+]
 
 export default function CompaniesPage() {
   const [user, setUser] = useState<any>(null)
@@ -58,274 +74,124 @@ export default function CompaniesPage() {
 
   return (
     <Layout user={user} profile={profile}>
-      <div style={{ maxWidth: 720, margin: '0 auto', padding: '24px 20px' }}>
-        {/* Header */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 4 }}>
-          <button
-            onClick={() => router.push('/jobs')}
-            aria-label="Back"
-            style={{
-              background: 'none',
-              border: 'none',
-              cursor: 'pointer',
-              fontSize: 20,
-              color: 'var(--text-muted)',
-              width: 44,
-              height: 44,
-              display: 'inline-flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              borderRadius: 10,
-              margin: '-10px 0 -10px -12px',
-              flexShrink: 0,
-            }}
-          >
+      <div className="hc-page">
+        <div className="hc-page-head hc-reveal">
+          <button className="hc-back" onClick={() => router.push('/jobs')} aria-label="Back">
             ←
           </button>
-          <h2
-            style={{
-              fontSize: 22,
-              fontWeight: 700,
-              color: 'var(--text-primary)',
-              margin: 0,
-              display: 'flex',
-              alignItems: 'center',
-              gap: 8,
-            }}
-          >
-            <span style={{ display: 'inline-flex', color: 'var(--accent-text)' }} aria-hidden="true">
-              <Icon name="building" size={22} />
-            </span>
-            Companies
-          </h2>
+          <div style={{ minWidth: 0 }}>
+            <span className="hc-eyebrow">Hiring</span>
+            <h1 className="hc-h1">Companies</h1>
+            <p className="hc-lede">Explore companies, job openings &amp; interview experiences</p>
+          </div>
         </div>
-        <p style={{ fontSize: 13, color: 'var(--text-muted)', margin: '0 0 20px', marginLeft: 34 }}>
-          Explore companies, job openings & interview experiences
-        </p>
 
-        {/* Search */}
-        <input
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          placeholder="🔍 Search companies..."
-          style={{
-            width: '100%',
-            border: '1px solid var(--border)',
-            borderRadius: 12,
-            padding: '12px 16px',
-            fontSize: 14,
-            outline: 'none',
-            fontFamily: 'inherit',
-            background: 'var(--bg)',
-            color: 'var(--text-primary)',
-            marginBottom: 12,
-            boxSizing: 'border-box',
-          }}
-        />
+        <div className="hc-search hc-reveal" style={{ '--hc-i': 1 } as React.CSSProperties}>
+          <span className="hc-search-ic">
+            <Icon name="search" size={16} />
+          </span>
+          <input
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Search companies…"
+            aria-label="Search companies"
+          />
+        </div>
 
-        {/* Industry filter */}
-        <div style={{ display: 'flex', gap: 6, marginBottom: 20, overflowX: 'auto', paddingBottom: 4 }}>
+        <div className="hc-chips hc-reveal" style={{ '--hc-i': 2 } as React.CSSProperties}>
           {INDUSTRIES.map((ind) => (
-            <button
-              key={ind}
-              onClick={() => setIndustry(ind)}
-              style={{
-                padding: '6px 14px',
-                borderRadius: 20,
-                border: 'none',
-                fontSize: 12,
-                fontWeight: 600,
-                cursor: 'pointer',
-                fontFamily: 'inherit',
-                whiteSpace: 'nowrap',
-                background: industry === ind ? 'var(--accent)' : 'var(--bg)',
-                color: industry === ind ? 'var(--on-accent)' : 'var(--text-secondary)',
-              }}
-            >
-              {ind === 'all' ? 'All' : ind.charAt(0).toUpperCase() + ind.slice(1)}
+            <button key={ind} onClick={() => setIndustry(ind)} className="hc-chip" aria-pressed={industry === ind}>
+              {INDUSTRY_LABEL[ind] ?? ind.charAt(0).toUpperCase() + ind.slice(1)}
             </button>
           ))}
         </div>
 
-        {/* Quick links */}
-        <div
-          style={{
-            display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fit, minmax(120px, 1fr))',
-            gap: 8,
-            marginBottom: 20,
-          }}
-        >
-          {' '}
-          <button
-            onClick={() => router.push('/jobs')}
-            style={{
-              background: 'var(--bg)',
-              border: '1px solid var(--border)',
-              borderRadius: 12,
-              padding: '12px 8px',
-              textAlign: 'center',
-              cursor: 'pointer',
-              fontFamily: 'inherit',
-              boxShadow: 'var(--shadow-sm)',
-            }}
-          >
-            <p style={{ margin: '0 0 4px', display: 'flex', justifyContent: 'center', color: 'var(--accent-text)' }}>
-              <Icon name="briefcase" size={20} />
-            </p>
-            <p style={{ fontSize: 11, fontWeight: 600, color: 'var(--text-primary)', margin: 0 }}>All Jobs</p>
-          </button>
-          <button
-            onClick={() => router.push('/applications')}
-            style={{
-              background: 'var(--bg)',
-              border: '1px solid var(--border)',
-              borderRadius: 12,
-              padding: '12px 8px',
-              textAlign: 'center',
-              cursor: 'pointer',
-              fontFamily: 'inherit',
-              boxShadow: 'var(--shadow-sm)',
-            }}
-          >
-            <p style={{ margin: '0 0 4px', display: 'flex', justifyContent: 'center', color: 'var(--accent-text)' }}>
-              <Icon name="copy" size={20} />
-            </p>
-            <p style={{ fontSize: 11, fontWeight: 600, color: 'var(--text-primary)', margin: 0 }}>Applications</p>
-          </button>
-          <button
-            onClick={() => router.push('/experiences')}
-            style={{
-              background: 'var(--bg)',
-              border: '1px solid var(--border)',
-              borderRadius: 12,
-              padding: '12px 8px',
-              textAlign: 'center',
-              cursor: 'pointer',
-              fontFamily: 'inherit',
-              boxShadow: 'var(--shadow-sm)',
-            }}
-          >
-            <p style={{ margin: '0 0 4px', display: 'flex', justifyContent: 'center', color: 'var(--accent-text)' }}>
-              <Icon name="pencil" size={20} />
-            </p>
-            <p style={{ fontSize: 11, fontWeight: 600, color: 'var(--text-primary)', margin: 0 }}>Experiences</p>
-          </button>
+        <div className="hc-quick hc-reveal" style={{ '--hc-i': 3 } as React.CSSProperties}>
+          {QUICK_LINKS.map((q) => (
+            <button key={q.href} className="hc-card hc-card--link" onClick={() => router.push(q.href)}>
+              <span className="hc-q-ic">
+                <Icon name={q.icon} size={20} />
+              </span>
+              <p className="hc-q-label">{q.label}</p>
+            </button>
+          ))}
         </div>
 
-        {/* Company list */}
         {loading ? (
-          <p style={{ textAlign: 'center', color: 'var(--text-muted)', padding: '40px 0' }}>Loading companies...</p>
+          <div className="hc-grid hc-grid--list">
+            {[0, 1, 2, 3, 4].map((i) => (
+              <div key={i} className="hc-card hc-reveal" style={{ '--hc-i': i } as React.CSSProperties}>
+                <div className="hc-card-head">
+                  <div className="skeleton" style={{ width: 48, height: 48, borderRadius: 12 }} />
+                  <div style={{ flex: 1 }}>
+                    <div className="skeleton" style={{ height: 13, width: '45%', marginBottom: 6 }} />
+                    <div className="skeleton" style={{ height: 11, width: '65%' }} />
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
         ) : companies.length === 0 ? (
-          <div
-            style={{
-              background: 'var(--bg)',
-              border: '1px solid var(--border)',
-              borderRadius: 16,
-              padding: '40px 20px',
-              textAlign: 'center',
-              boxShadow: 'var(--shadow-sm)',
-            }}
-          >
-            <div style={{ margin: '0 0 8px', color: 'var(--accent-text)', display: 'flex', justifyContent: 'center' }}>
-              <Icon name="building" size={32} strokeWidth={1.6} />
-            </div>
-            <p style={{ fontSize: 15, fontWeight: 600, color: 'var(--text-primary)', margin: '0 0 4px' }}>
-              No companies found
-            </p>
-            <p style={{ fontSize: 13, color: 'var(--text-muted)', margin: 0 }}>Try a different search or filter</p>
+          <div className="hc-empty hc-reveal" style={{ '--hc-i': 0 } as React.CSSProperties}>
+            <span className="hc-empty-ic">
+              <Icon name="building" size={28} strokeWidth={1.6} />
+            </span>
+            <p className="hc-empty-t">No companies found</p>
+            <p className="hc-empty-s">Try a different search or industry filter.</p>
           </div>
         ) : (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-            {companies.map((c) => (
+          <div className="hc-grid hc-grid--list">
+            {companies.map((c, i) => (
               <div
                 key={c.id}
+                className="hc-card hc-card--link hc-card--rail hc-reveal"
+                style={{ '--hc-i': i } as React.CSSProperties}
                 onClick={() => router.push(`/companies/${c.slug}`)}
-                style={{
-                  background: 'var(--bg)',
-                  border: '1px solid var(--border)',
-                  borderRadius: 14,
-                  padding: '16px 18px',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 14,
-                  cursor: 'pointer',
-                  boxShadow: 'var(--shadow-sm)',
-                }}
               >
-                {/* Logo placeholder */}
-                <div
-                  style={{
-                    width: 48,
-                    height: 48,
-                    borderRadius: 12,
-                    background: 'var(--bg-secondary)',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    fontSize: 24,
-                    flexShrink: 0,
-                  }}
-                >
-                  {c.logo_url ? (
-                    <img
-                      loading="lazy"
-                      decoding="async"
-                      src={c.logo_url}
-                      alt=""
-                      style={{ width: 48, height: 48, borderRadius: 12, objectFit: 'cover' }}
-                    />
-                  ) : (
-                    <Icon name="building" size={22} style={{ color: 'var(--text-muted)' }} />
-                  )}
-                </div>
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                    <p style={{ fontSize: 15, fontWeight: 600, color: 'var(--text-primary)', margin: 0 }}>{c.name}</p>
-                    {c.is_verified && <Icon name="check" size={13} style={{ color: 'var(--success-text)' }} />}
+                <div className="hc-card-head">
+                  <div className="hc-avatar" style={{ width: 48, height: 48, borderRadius: 12 }}>
+                    {c.logo_url ? (
+                      <img loading="lazy" decoding="async" src={c.logo_url} alt="" />
+                    ) : (
+                      <Icon name="building" size={22} />
+                    )}
                   </div>
-                  <p style={{ fontSize: 12, color: 'var(--text-muted)', margin: '2px 0 0' }}>
-                    {c.industry} · {c.company_size} · {c.hq_location || 'Global'}
-                  </p>
-                  {c.tech_stack?.length > 0 && (
-                    <div style={{ display: 'flex', gap: 4, marginTop: 4, flexWrap: 'wrap' }}>
-                      {c.tech_stack.slice(0, 4).map((t: string) => (
-                        <span
-                          key={t}
-                          style={{
-                            fontSize: 10,
-                            padding: '1px 6px',
-                            borderRadius: 6,
-                            background: 'var(--bg-secondary)',
-                            color: 'var(--text-muted)',
-                          }}
-                        >
-                          {t}
-                        </span>
-                      ))}
+
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                      <h3 className="hc-title">{c.name}</h3>
+                      {c.is_verified && <Icon name="check" size={13} style={{ color: 'var(--success-text)' }} />}
                     </div>
-                  )}
-                </div>
-                <div style={{ textAlign: 'right', flexShrink: 0 }}>
-                  <p
-                    style={{
-                      fontSize: 12,
-                      color: 'var(--text-muted)',
-                      margin: 0,
-                      display: 'inline-flex',
-                      alignItems: 'center',
-                      gap: 4,
-                    }}
-                  >
-                    <Icon name="users" size={11} /> {c.follower_count}
-                  </p>
-                  {c.glassdoor_rating && (
-                    <p style={{ fontSize: 12, color: 'var(--yellow-text)', margin: '2px 0 0' }}>
-                      <Icon name="star" size={11} style={{ verticalAlign: '-1px' }} /> {c.glassdoor_rating}
+                    <p className="hc-sub">
+                      {c.industry} · {c.company_size} · {c.hq_location || 'Global'}
                     </p>
-                  )}
+                    {c.tech_stack?.length > 0 && (
+                      <div className="hc-tags" style={{ marginTop: 6 }}>
+                        {c.tech_stack.slice(0, 4).map((t: string) => (
+                          <span key={t} className="hc-tag">
+                            {t}
+                          </span>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+
+                  <div style={{ textAlign: 'right', flexShrink: 0 }}>
+                    <span className="hc-meta">
+                      <Icon name="users" size={11} /> {c.follower_count}
+                    </span>
+                    {c.glassdoor_rating && (
+                      <p
+                        className="hc-meta"
+                        style={{ color: 'var(--warning-text)', marginTop: 2, justifyContent: 'flex-end' }}
+                      >
+                        <Icon name="star" size={11} /> {c.glassdoor_rating}
+                      </p>
+                    )}
+                  </div>
+
+                  <Icon name="chevron" size={16} style={{ color: 'var(--text-muted)' }} />
                 </div>
-                <span style={{ color: 'var(--text-muted)', fontSize: 16 }}>→</span>
               </div>
             ))}
           </div>

@@ -254,7 +254,10 @@ export default function IntegrationsPage() {
                   {/* Stats display (if connected) */}
                   {isConnected && p.key === 'github' && (
                     <div style={{ marginBottom: 16 }}>
-                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 8, marginBottom: 12 }}>
+                      <div
+                        className="mg-2"
+                        style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 8, marginBottom: 12 }}
+                      >
                         {[
                           { label: 'Repos', value: stats.public_repos || 0, icon: 'notebook' },
                           { label: 'Contributions', value: stats.total_contributions || 0, icon: 'github' },
@@ -366,7 +369,10 @@ export default function IntegrationsPage() {
 
                   {isConnected && p.key === 'leetcode' && (
                     <div style={{ marginBottom: 16 }}>
-                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 8, marginBottom: 12 }}>
+                      <div
+                        className="mg-2"
+                        style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 8, marginBottom: 12 }}
+                      >
                         {[
                           { label: 'Total Solved', value: stats.total_solved || 0, icon: 'check' },
                           {

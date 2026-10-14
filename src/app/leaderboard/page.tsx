@@ -244,86 +244,50 @@ export default function LeaderboardPage() {
         {/* ── Connect CTA ─────────────────────────────── */}
         <button
           onClick={() => router.push('/integrations')}
-          style={{
-            width: '100%',
-            background: 'linear-gradient(135deg, var(--accent), var(--accent-hover, #2563eb))',
-            border: 'none',
-            borderRadius: 14,
-            padding: '14px 18px',
-            marginBottom: 16,
-            cursor: 'pointer',
-            display: 'flex',
-            alignItems: 'center',
-            gap: 12,
-            fontFamily: 'inherit',
-            boxShadow: '0 4px 12px rgba(37,99,235,0.2)',
-          }}
+          className="hc-card hc-card--link hc-reveal"
+          style={{ flexDirection: 'row', alignItems: 'center', gap: 12, marginBottom: 16, width: '100%' }}
         >
-          <span style={{ fontSize: 24 }}>🔗</span>
+          <span
+            className="hc-avatar"
+            style={{
+              background: 'var(--accent-light)',
+              borderColor: 'var(--accent-border)',
+              color: 'var(--accent-text)',
+            }}
+          >
+            <Icon name="link" size={18} />
+          </span>
           <div style={{ textAlign: 'left', flex: 1 }}>
-            <p style={{ fontSize: 14, fontWeight: 700, color: '#fff', margin: '0 0 2px' }}>Boost Your Rank</p>
-            <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.8)', margin: 0 }}>
-              Connect GitHub & LeetCode to climb the leaderboard
-            </p>
+            <p className="hc-title">Boost your rank</p>
+            <p className="hc-sub">Connect GitHub &amp; LeetCode to climb the leaderboard</p>
           </div>
-          <span style={{ color: '#fff', fontSize: 18 }}>→</span>
+          <Icon name="chevron" size={16} style={{ color: 'var(--text-muted)' }} />
         </button>
 
         {/* ── Stats Cards ─────────────────────────────── */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 8, marginBottom: 16 }}>
-          <div
-            style={{
-              background: 'var(--bg)',
-              border: '1px solid var(--border)',
-              borderRadius: 12,
-              padding: '12px',
-              textAlign: 'center',
-              boxShadow: 'var(--shadow-sm)',
-            }}
-          >
-            <p
-              style={{
-                fontSize: 24,
-                fontWeight: 800,
-                color: 'var(--text-primary)',
-                margin: '0 0 2px',
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: 6,
-              }}
-            >
-              <Icon name="github" size={18} filled style={{ color: 'var(--text-secondary)' }} /> {withGitHub}
+        <div className="hc-stats hc-reveal" style={{ '--hc-i': 1 } as React.CSSProperties}>
+          <div className="hc-card">
+            <p className="hc-stat-v">
+              <Icon
+                name="github"
+                size={18}
+                filled
+                style={{ color: 'var(--text-secondary)', verticalAlign: '-2px', marginRight: 6 }}
+              />
+              {withGitHub}
             </p>
-            <p style={{ fontSize: 10, color: 'var(--text-muted)', margin: 0 }}>
-              GitHub · {totalGitHub.toLocaleString()} commits
-            </p>
+            <p className="hc-stat-l">GitHub · {totalGitHub.toLocaleString()} commits</p>
           </div>
-          <div
-            style={{
-              background: 'var(--bg)',
-              border: '1px solid var(--border)',
-              borderRadius: 12,
-              padding: '12px',
-              textAlign: 'center',
-              boxShadow: 'var(--shadow-sm)',
-            }}
-          >
-            <p
-              style={{
-                fontSize: 24,
-                fontWeight: 800,
-                color: 'var(--text-primary)',
-                margin: '0 0 2px',
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: 6,
-              }}
-            >
-              <Icon name="code" size={18} style={{ color: 'var(--warning-text)' }} /> {withLC}
+          <div className="hc-card">
+            <p className="hc-stat-v">
+              <Icon
+                name="code"
+                size={18}
+                style={{ color: 'var(--warning-text)', verticalAlign: '-2px', marginRight: 6 }}
+              />
+              {withLC}
             </p>
-            <p style={{ fontSize: 10, color: 'var(--text-muted)', margin: 0 }}>
-              LeetCode · {totalLC.toLocaleString()} solved
-            </p>
+            <p className="hc-stat-l">LeetCode · {totalLC.toLocaleString()} solved</p>
           </div>
         </div>
 
@@ -344,20 +308,21 @@ export default function LeaderboardPage() {
             fontFamily: 'inherit',
           }}
         >
-          <span style={{ fontSize: 16 }}>📐</span>
-          <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-primary)', flex: 1, textAlign: 'left' }}>
-            Scoring Formula
+          <span style={{ color: 'var(--accent-text)', display: 'inline-flex' }}>
+            <Icon name="layers" size={16} />
           </span>
-          <span
+          <span style={{ fontSize: 13, fontWeight: 650, color: 'var(--text-primary)', flex: 1, textAlign: 'left' }}>
+            Scoring formula
+          </span>
+          <Icon
+            name="chevron"
+            size={14}
             style={{
-              fontSize: 12,
               color: 'var(--text-muted)',
-              transform: showFormula ? 'rotate(180deg)' : 'none',
+              transform: showFormula ? 'rotate(90deg)' : 'none',
               transition: 'transform 0.2s',
             }}
-          >
-            ▼
-          </span>
+          />
         </button>
 
         {showFormula && (
@@ -564,34 +529,16 @@ export default function LeaderboardPage() {
         )}
 
         {/* ── Tabs ────────────────────────────────────── */}
-        <div style={{ display: 'flex', gap: 6, marginBottom: 16, overflowX: 'auto', paddingBottom: 4 }}>
+        <div className="hc-chips">
           {TABS.map((tab) => (
             <button
               key={tab.key}
               onClick={() => setActiveTab(tab.key)}
-              style={{
-                padding: '8px 16px',
-                fontSize: 12,
-                fontWeight: 600,
-                whiteSpace: 'nowrap',
-                borderRadius: 20,
-                border: activeTab === tab.key ? 'none' : '1px solid var(--border)',
-                background: activeTab === tab.key ? tab.color : 'var(--bg)',
-                color: activeTab === tab.key ? '#fff' : 'var(--text-secondary)',
-                cursor: 'pointer',
-                fontFamily: 'inherit',
-                transition: 'all 0.2s',
-              }}
+              className="hc-chip"
+              aria-pressed={activeTab === tab.key}
             >
-              <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
-                <Icon
-                  name={tab.icon}
-                  size={13}
-                  filled={tab.icon === 'github'}
-                  style={{ color: activeTab === tab.key ? 'var(--on-accent)' : tab.color }}
-                />
-                {tab.label}
-              </span>
+              <Icon name={tab.icon} size={13} filled={tab.icon === 'github'} />
+              {tab.label}
             </button>
           ))}
         </div>
@@ -739,7 +686,7 @@ export default function LeaderboardPage() {
             <p style={{ fontSize: 13, color: 'var(--text-muted)', margin: 0 }}>Connect your profiles to get ranked!</p>
           </div>
         ) : (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+          <div className="hc-grid hc-grid--list" style={{ gap: 6 }}>
             {sorted.map((leader, i) => {
               const breakdown = computeBreakdown(leader)
               const maxForTab =
@@ -773,15 +720,16 @@ export default function LeaderboardPage() {
                 <div
                   key={leader.user_id}
                   onClick={() => setShowUserDetail(isExpanded ? null : leader.user_id)}
-                  style={{
-                    background: 'var(--bg)',
-                    border: i < 3 ? '1px solid var(--accent-border)' : '1px solid var(--border)',
-                    borderRadius: 14,
-                    padding: 0,
-                    cursor: 'pointer',
-                    boxShadow: 'var(--shadow-sm)',
-                    overflow: 'hidden',
-                  }}
+                  className={`hc-card hc-card--link hc-reveal${i < 3 ? ' hc-card--rail' : ''}`}
+                  style={
+                    {
+                      '--hc-i': i,
+                      padding: 0,
+                      gap: 0,
+                      overflow: 'hidden',
+                      ...(i < 3 ? { borderColor: 'var(--accent-border)' } : {}),
+                    } as React.CSSProperties
+                  }
                 >
                   {/* Main row */}
                   <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '12px 14px' }}>
@@ -911,7 +859,10 @@ export default function LeaderboardPage() {
                       }}
                     >
                       {/* Score breakdown */}
-                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 6, marginTop: 10 }}>
+                      <div
+                        className="mg-2"
+                        style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 6, marginTop: 10 }}
+                      >
                         {[
                           {
                             label: 'Karma',
@@ -1060,36 +1011,13 @@ export default function LeaderboardPage() {
 
         {/* ── Bottom CTA ──────────────────────────────── */}
         <div
-          style={{
-            textAlign: 'center',
-            marginTop: 20,
-            padding: '16px',
-            background: 'var(--bg)',
-            border: '1px solid var(--border)',
-            borderRadius: 14,
-          }}
+          className="hc-card hc-reveal"
+          style={{ textAlign: 'center', alignItems: 'center', marginTop: 20, padding: 16 }}
         >
-          <p style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-primary)', margin: '0 0 4px' }}>
-            Want to rank higher?
-          </p>
-          <p style={{ fontSize: 12, color: 'var(--text-muted)', margin: '0 0 10px' }}>
-            Connect your coding profiles and stay active!
-          </p>
-          <button
-            onClick={() => router.push('/integrations')}
-            style={{
-              padding: '8px 20px',
-              borderRadius: 10,
-              border: 'none',
-              background: 'var(--accent)',
-              color: 'var(--on-accent)',
-              fontSize: 13,
-              fontWeight: 600,
-              cursor: 'pointer',
-              fontFamily: 'inherit',
-            }}
-          >
-            🔗 Connect Profiles
+          <p className="hc-title">Want to rank higher?</p>
+          <p className="hc-sub">Connect your coding profiles and stay active.</p>
+          <button className="hc-btn hc-btn--primary" onClick={() => router.push('/integrations')}>
+            <Icon name="link" size={13} /> Connect profiles
           </button>
         </div>
       </SectionShell>

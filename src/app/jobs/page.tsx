@@ -9,6 +9,21 @@ import { Icon } from '@/components/icons'
 
 const JOB_TYPES = ['all', 'internship', 'full_time', 'part_time', 'contract', 'freelance']
 
+const TYPE_LABEL: Record<string, string> = {
+  all: 'All',
+  internship: 'Internship',
+  full_time: 'Full-time',
+  part_time: 'Part-time',
+  contract: 'Contract',
+  freelance: 'Freelance',
+}
+
+const LOCATION_LABEL: Record<string, string> = {
+  remote: 'Remote',
+  hybrid: 'Hybrid',
+  onsite: 'Onsite',
+}
+
 export default function JobsPage() {
   const [user, setUser] = useState<any>(null)
   const [profile, setProfile] = useState<any>(null)
@@ -64,205 +79,106 @@ export default function JobsPage() {
         stats={[{ value: jobs.length, label: 'Openings' }]}
         actions={[{ label: 'Companies', icon: 'more', onClick: () => router.push('/companies') }]}
       >
-        <input
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          placeholder="🔍 Search jobs..."
-          style={{
-            width: '100%',
-            border: '1px solid var(--border)',
-            borderRadius: 12,
-            padding: '12px 16px',
-            fontSize: 14,
-            outline: 'none',
-            fontFamily: 'inherit',
-            background: 'var(--bg)',
-            color: 'var(--text-primary)',
-            marginBottom: 12,
-            boxSizing: 'border-box',
-          }}
-        />
+        <div className="hc-search">
+          <span className="hc-search-ic">
+            <Icon name="search" size={16} />
+          </span>
+          <input
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Search roles, companies, skills…"
+            aria-label="Search jobs"
+          />
+        </div>
 
-        <div style={{ display: 'flex', gap: 6, marginBottom: 20, overflowX: 'auto', paddingBottom: 4 }}>
+        <div className="hc-chips">
           {JOB_TYPES.map((t) => (
-            <button
-              key={t}
-              onClick={() => setJobType(t)}
-              style={{
-                padding: '6px 14px',
-                borderRadius: 20,
-                border: 'none',
-                fontSize: 12,
-                fontWeight: 600,
-                cursor: 'pointer',
-                fontFamily: 'inherit',
-                whiteSpace: 'nowrap',
-                background: jobType === t ? 'var(--accent)' : 'var(--bg)',
-                color: jobType === t ? 'var(--on-accent)' : 'var(--text-secondary)',
-              }}
-            >
-              {t === 'all' ? 'All' : t.replace('_', ' ')}
+            <button key={t} onClick={() => setJobType(t)} className="hc-chip" aria-pressed={jobType === t}>
+              {TYPE_LABEL[t] ?? t.replace('_', ' ')}
             </button>
           ))}
         </div>
 
         {loading ? (
-          <p style={{ textAlign: 'center', color: 'var(--text-muted)', padding: '40px 0' }}>Loading...</p>
+          <div className="hc-grid">
+            {[0, 1, 2, 3, 4, 5].map((i) => (
+              <div key={i} className="hc-card hc-reveal" style={{ '--hc-i': i } as React.CSSProperties}>
+                <div className="hc-card-head">
+                  <div className="skeleton" style={{ width: 40, height: 40, borderRadius: 11 }} />
+                  <div style={{ flex: 1 }}>
+                    <div className="skeleton" style={{ height: 13, width: '70%', marginBottom: 6 }} />
+                    <div className="skeleton" style={{ height: 11, width: '45%' }} />
+                  </div>
+                </div>
+                <div className="skeleton" style={{ height: 11, width: '80%' }} />
+              </div>
+            ))}
+          </div>
         ) : jobs.length === 0 ? (
-          <div
-            style={{
-              background: 'var(--bg)',
-              border: '1px solid var(--border)',
-              borderRadius: 16,
-              padding: '40px 20px',
-              textAlign: 'center',
-              boxShadow: 'var(--shadow-sm)',
-            }}
-          >
-            <div style={{ margin: '0 0 8px', color: 'var(--accent-text)', display: 'flex', justifyContent: 'center' }}>
-              <Icon name="briefcase" size={32} strokeWidth={1.6} />
-            </div>
-            <p style={{ fontSize: 15, fontWeight: 600, color: 'var(--text-primary)', margin: 0 }}>No jobs found</p>
+          <div className="hc-empty hc-reveal" style={{ '--hc-i': 0 } as React.CSSProperties}>
+            <span className="hc-empty-ic">
+              <Icon name="briefcase" size={28} strokeWidth={1.6} />
+            </span>
+            <p className="hc-empty-t">No roles here yet</p>
+            <p className="hc-empty-s">
+              {search ? 'Try a different search term.' : 'New openings land here as companies post them.'}
+            </p>
+            <button className="hc-btn" onClick={() => router.push('/companies')}>
+              Browse companies
+            </button>
           </div>
         ) : (
-          <div className="section-grid">
-            {jobs.map((job) => {
+          <div className="hc-grid">
+            {jobs.map((job, i) => {
               const company = job.companies
               return (
                 <div
                   key={job.id}
+                  className="hc-card hc-card--link hc-card--rail hc-reveal"
+                  style={{ '--hc-i': i } as React.CSSProperties}
                   onClick={() => router.push(`/jobs/${job.id}`)}
-                  style={{
-                    background: 'var(--bg)',
-                    border: '1px solid var(--border)',
-                    borderRadius: 14,
-                    padding: '16px 18px',
-                    cursor: 'pointer',
-                    boxShadow: 'var(--shadow-sm)',
-                  }}
                 >
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 8 }}>
-                    <div
-                      style={{
-                        width: 40,
-                        height: 40,
-                        borderRadius: 10,
-                        background: 'var(--bg-secondary)',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        fontSize: 18,
-                        flexShrink: 0,
-                      }}
-                    >
+                  <div className="hc-card-head">
+                    <div className="hc-avatar">
                       {company?.logo_url ? (
-                        <img
-                          src={company.logo_url}
-                          alt=""
-                          loading="lazy"
-                          decoding="async"
-                          style={{ width: 40, height: 40, borderRadius: 10 }}
-                        />
+                        <img src={company.logo_url} alt="" loading="lazy" decoding="async" />
                       ) : (
-                        <Icon name="building" size={18} style={{ color: 'var(--text-muted)' }} />
+                        <Icon name="building" size={18} />
                       )}
                     </div>
-                    <div style={{ flex: 1 }}>
-                      <p style={{ fontSize: 15, fontWeight: 600, color: 'var(--text-primary)', margin: 0 }}>
-                        {job.title}
-                      </p>
-                      <p style={{ fontSize: 12, color: 'var(--text-muted)', margin: '2px 0 0' }}>
-                        {company?.name || '—'}
-                      </p>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <h3 className="hc-title">{job.title}</h3>
+                      <p className="hc-sub">{company?.name || '—'}</p>
                     </div>
-                  </div>
-                  <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 6 }}>
-                    <span
-                      style={{
-                        fontSize: 11,
-                        padding: '2px 8px',
-                        borderRadius: 8,
-                        background: 'var(--accent-light)',
-                        color: 'var(--accent)',
-                        fontWeight: 600,
-                      }}
-                    >
-                      {job.job_type.replace('_', ' ')}
-                    </span>
                     {job.location_type && (
-                      <span
-                        style={{
-                          fontSize: 11,
-                          padding: '2px 8px',
-                          borderRadius: 8,
-                          background: 'var(--bg-secondary)',
-                          color: 'var(--text-secondary)',
-                        }}
-                      >
-                        {job.location_type === 'remote'
-                          ? 'Remote'
-                          : job.location_type === 'hybrid'
-                            ? 'Hybrid'
-                            : 'Onsite'}
-                      </span>
-                    )}
-                    {(job.stipend || job.salary_range) && (
-                      <span
-                        style={{
-                          fontSize: 11,
-                          padding: '2px 8px',
-                          borderRadius: 8,
-                          background: 'var(--success-light)',
-                          color: 'var(--success-text)',
-                          fontWeight: 600,
-                        }}
-                      >
-                        {job.stipend || job.salary_range}
+                      <span className="hc-tag hc-tag--ghost">
+                        {LOCATION_LABEL[job.location_type] || job.location_type}
                       </span>
                     )}
                   </div>
-                  {job.skills_required?.length > 0 && (
-                    <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap' }}>
-                      {job.skills_required.slice(0, 5).map((s: string) => (
-                        <span
-                          key={s}
-                          style={{
-                            fontSize: 10,
-                            padding: '1px 6px',
-                            borderRadius: 6,
-                            background: 'var(--bg-secondary)',
-                            color: 'var(--text-muted)',
-                          }}
-                        >
-                          {s}
-                        </span>
-                      ))}
-                    </div>
-                  )}
-                  <div
-                    style={{
-                      display: 'flex',
-                      flexWrap: 'wrap',
-                      gap: 8,
-                      marginTop: 8,
-                      paddingTop: 8,
-                      borderTop: '1px solid var(--border)',
-                    }}
-                  >
+
+                  <div className="hc-tags">
+                    <span className="hc-tag hc-tag--accent">
+                      {TYPE_LABEL[job.job_type] ?? job.job_type?.replace('_', ' ')}
+                    </span>
+                    {(job.stipend || job.salary_range) && (
+                      <span className="hc-tag hc-tag--success">{job.stipend || job.salary_range}</span>
+                    )}
+                    {job.skills_required?.slice(0, 4).map((s: string) => (
+                      <span key={s} className="hc-tag">
+                        {s}
+                      </span>
+                    ))}
+                  </div>
+
+                  <div className="hc-foot">
                     {job.deadline && (
-                      <span
-                        style={{
-                          fontSize: 11,
-                          color: 'var(--danger)',
-                          display: 'inline-flex',
-                          alignItems: 'center',
-                          gap: 3,
-                        }}
-                      >
-                        <Icon name="clock" size={10} /> {new Date(job.deadline).toLocaleDateString()}
+                      <span className="hc-meta" style={{ color: 'var(--danger-text)' }}>
+                        <Icon name="clock" size={11} />
+                        {new Date(job.deadline).toLocaleDateString()}
                       </span>
                     )}
-                    <span style={{ fontSize: 11, color: 'var(--text-muted)' }}>
+                    <span className="hc-meta">
                       {job.view_count} views · {job.apply_count} applied
                     </span>
                   </div>

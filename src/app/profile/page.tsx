@@ -1171,7 +1171,7 @@ function ProfileStats({
 }) {
   return (
     <div
-      className="profile-reveal"
+      className="profile-reveal mg-2"
       style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 8 }}
       aria-label="Profile statistics"
     >
