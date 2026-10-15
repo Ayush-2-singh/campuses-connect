@@ -106,6 +106,9 @@
   margin-left: 10px;
 }
 .hl-nav-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
   font-size: 13.5px;
   font-weight: 550;
   color: var(--text-secondary);
@@ -115,6 +118,9 @@
   transition:
     color 0.16s ease,
     background 0.16s ease;
+}
+.hl-nav-link svg {
+  opacity: 0.75;
 }
 .hl-nav-link:hover {
   color: var(--text-primary);
@@ -244,17 +250,28 @@
 .hl-hero {
   padding-top: clamp(44px, 6vw, 80px);
   padding-bottom: clamp(28px, 4vw, 44px);
+  /* The orbit's chips ride an ellipse that reaches ~50px beyond the preview
+     stage on every side — the stage cannot contain them, so the space AROUND
+     it has to (measured across 641–1920px: see .hl-stage/.hl-orbit below).
+     Every surface that sits next to the stage reuses this one gutter: the
+     side-by-side grid gap guards the copy column, the stacked gap guards the
+     copy above, and the metrics strip below. */
+  --hl-orbit-gutter: 58px;
 }
+/* The visual side gets the extra width: the orbit needs room to hold its
+   chips clear of both the preview panel and the copy column. */
 .hl-hero-grid {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(0, 1.02fr);
-  gap: clamp(30px, 4.5vw, 56px);
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.28fr);
+  gap: clamp(var(--hl-orbit-gutter), 4.5vw, 72px);
   align-items: center;
 }
 @media (max-width: 960px) {
   .hl-hero-grid {
     grid-template-columns: minmax(0, 1fr);
-    gap: 38px;
+    /* Stacked, the orbit's chips reach past the stage's top and bottom — this
+       gap is what keeps them off the copy above. */
+    gap: var(--hl-orbit-gutter);
   }
 }
 
@@ -327,9 +344,231 @@
   margin: 0;
 }
 
-/* ── Product preview: recruiter dashboard ───────────────────────────────── */
-.hl-preview {
+/* Three pillars in one row — the compact "what this is" summary that sits
+   between the promise and the buttons. */
+.hl-pill-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin: 0 0 22px;
+}
+.hl-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  font-size: 13px;
+  font-weight: 650;
+  color: var(--text-secondary);
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  padding: 7px 16px 7px 8px;
+}
+.hl-pill-ic {
+  width: 26px;
+  height: 26px;
+  flex-shrink: 0;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  color: var(--accent-text);
+  background: var(--accent-light);
+  border: 1px solid var(--accent-border);
+}
+
+/* ── Product preview: recruiter dashboard in an orbit stage ───────────────
+   The hero pattern: the preview sits at the centre of a dashed ellipse, and
+   candidate / signal chips ride that ellipse — slowly circling, labelled
+   upright. Same idea the reference (leetquery.com) uses, so the right-hand
+   side reads as a live cohort rather than a static screenshot.
+
+   Geometry — one squashed circle, undoing itself on every chip:
+     .hl-orbit-scale  squashes the ring on Y       → circle becomes ellipse
+     .hl-orbit-slot   rotate(--a) + translateX(50%) → a point on the ellipse,
+                       50% of its own width, so the radius stays responsive
+     .hl-orbit-ccw    spins the opposite way        → cancels the ring's spin
+     .hl-orbit-up     rotate(--a) + 1/squash on Y   → cancels the angle + squash
+   Net transform on each chip is the identity, so only its POSITION moves:
+   labels stay level and never look stretched.
+   All of it stops under prefers-reduced-motion. */
+/* The stage is sized BY the panel (height comes from the panel's content) and
+   the orbit is inset by 5% of it on every side, so the ellipse is always a
+   fixed proportion bigger than the panel — no guessing at pixel sizes. */
+.hl-stage {
   position: relative;
+  width: 100%;
+  max-width: 560px;
+  margin: 0 auto;
+}
+/* The orbit sits BEHIND the panel (z-index 0 vs the panel's 1). Chips therefore
+   slide out from behind the preview instead of striking through its rows — the
+   same reading the reference gives, where the dashed ring and the chips are
+   partly swallowed by the device mockup. It also means a chip never has to
+   dodge the panel's text, so the ellipse can stay inside the hero column. */
+.hl-orbit {
+  position: absolute;
+  inset: 5% 5%;
+  z-index: 0;
+  pointer-events: none;
+  --hl-orbit-dur: 46s;
+  --hl-orbit-squash: 0.95;
+}
+.hl-orbit-scale {
+  position: absolute;
+  inset: 0;
+  transform: scaleY(var(--hl-orbit-squash));
+}
+.hl-orbit-ring {
+  position: absolute;
+  inset: 0;
+  transform-origin: 50% 50%;
+  animation: hlOrbitSpin var(--hl-orbit-dur) linear infinite;
+}
+/* The dashed track. Two concentric ovals read as "a cohort", not a target. */
+.hl-orbit-ringline {
+  position: absolute;
+  inset: 0;
+  border: 1px dashed var(--border-strong);
+  border-radius: 50%;
+  opacity: 0.55;
+}
+.hl-orbit-ringline--inner {
+  inset: 14%;
+  opacity: 0.28;
+}
+.hl-orbit-slot {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  transform-origin: 50% 50%;
+  transform: rotate(var(--a)) translateX(calc(50% * var(--k, 1)));
+}
+.hl-orbit-ccw {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  transform-origin: 50% 50%;
+  animation: hlOrbitSpin var(--hl-orbit-dur) linear infinite reverse;
+}
+.hl-orbit-up {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  transform-origin: 50% 50%;
+  transform: rotate(calc(-1 * var(--a))) scaleY(calc(1 / var(--hl-orbit-squash)));
+}
+@keyframes hlOrbitSpin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Slot placements. Only the vertical extremes can host the wide candidate
+   chips without them running over the panel or past the column, so the chips
+   take 90°/270° and the compact signal tiles take the diagonals. */
+.hl-orbit-slot--1 {
+  --a: 90deg;
+  --k: 1;
+}
+.hl-orbit-slot--2 {
+  --a: 270deg;
+  --k: 1;
+}
+.hl-orbit-slot--3 {
+  --a: 30deg;
+  --k: 1;
+}
+.hl-orbit-slot--4 {
+  --a: 330deg;
+  --k: 1;
+}
+.hl-orbit-slot--5 {
+  --a: 150deg;
+  --k: 1;
+}
+.hl-orbit-slot--6 {
+  --a: 210deg;
+  --k: 1;
+}
+
+.hl-chip-card {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 7px 14px 7px 7px;
+  border-radius: 999px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow-md);
+  white-space: nowrap;
+}
+.hl-chip-card-av {
+  width: 30px;
+  height: 30px;
+  flex-shrink: 0;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  font-size: 11px;
+  font-weight: 800;
+  color: var(--accent-text);
+  background: var(--accent-light);
+  border: 1px solid var(--accent-border);
+}
+.hl-chip-card-tx {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.3;
+}
+.hl-chip-card-name {
+  font-size: 12.5px;
+  font-weight: 700;
+}
+.hl-chip-card-meta {
+  font-size: 10.5px;
+  color: var(--text-muted);
+}
+.hl-orbit-tile {
+  width: 44px;
+  height: 44px;
+  display: grid;
+  place-items: center;
+  border-radius: 14px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow-md);
+  color: var(--text-secondary);
+}
+
+/* The centre of the stage: the preview panel, held narrower than the orbit so
+   the chips ride its edge the way the reference does. */
+/* Kept wide on purpose: a narrower panel wraps its rows and grows TALLER than
+   the orbit can wrap around, so width here buys vertical clearance. */
+.hl-stage .hl-panel {
+  position: relative;
+  z-index: 1;
+  width: 72%;
+  margin: 0 auto;
+}
+/* The track sits BEHIND the panel, so its arcs can never strike through the
+   preview's text. */
+.hl-orbit-ringline {
+  z-index: -1;
+}
+
+/* On a phone the panel is far taller than it is wide, so no ellipse that fits
+   the screen can carry the chips around it — the orbit is a wide-viewport
+   composition. The preview panel stands alone there, exactly as before. */
+@media (max-width: 640px) {
+  .hl-orbit {
+    display: none;
+  }
+  .hl-stage .hl-panel {
+    width: 100%;
+  }
 }
 .hl-panel {
   background: var(--bg);
@@ -513,6 +752,14 @@
   margin-top: clamp(30px, 4vw, 48px);
   padding-top: 26px;
   border-top: 1px solid var(--border);
+}
+/* Stacked, the strip sits close enough under the stage that a chip would cut
+   its top rule — so it takes the hero's orbit gutter too. (≤640px the orbit is
+   hidden, so the strip keeps its normal margin there.) */
+@media (min-width: 641px) and (max-width: 960px) {
+  .hl-metrics {
+    margin-top: var(--hl-orbit-gutter);
+  }
 }
 @media (max-width: 640px) {
   .hl-metrics {
@@ -877,6 +1124,11 @@ textarea.hl-input {
   .hl-rise-2,
   .hl-rise-3,
   .hl-rise-4 {
+    animation: none;
+  }
+  /* The orbit holds its shape, it just stops circling. */
+  .hl-orbit-ring,
+  .hl-orbit-ccw {
     animation: none;
   }
   .hl-btn--primary:hover,

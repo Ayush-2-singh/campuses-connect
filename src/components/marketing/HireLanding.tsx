@@ -65,6 +65,33 @@ const DEMO_CANDIDATES = [
   },
 ]
 
+/**
+ * The chips that circle the hero preview.
+ *
+ * Honesty: these are the SAME demo candidates the panel renders (that panel
+ * carries its own "Demo data" badge), plus the signals that qualify them. The
+ * orbit invents no new names, employers or outcomes.
+ */
+type OrbitChip =
+  | { slot: number; kind: 'candidate'; initials: string; name: string; meta: string }
+  | { slot: number; kind: 'tile'; icon: string }
+
+const ORBIT: OrbitChip[] = [
+  { slot: 1, kind: 'candidate', initials: 'AS', name: 'Aarav S.', meta: 'Assessed · 86/100' },
+  { slot: 2, kind: 'candidate', initials: 'DM', name: 'Diya M.', meta: 'Assessed · 79/100' },
+  { slot: 3, kind: 'tile', icon: 'github' },
+  { slot: 4, kind: 'tile', icon: 'code' },
+  { slot: 5, kind: 'tile', icon: 'shield' },
+  { slot: 6, kind: 'tile', icon: 'target' },
+]
+
+/** The three pillars, summarised the way the reference does. */
+const PILLARS = [
+  { icon: 'target', label: 'Assessed' },
+  { icon: 'shield', label: 'Verified' },
+  { icon: 'trophy', label: 'Ranked' },
+]
+
 /** Demo skill breakdown for the candidate-evidence panel. */
 const DEMO_SKILLS = [
   { label: 'Correctness (tests passed)', value: '88%' },
@@ -187,12 +214,15 @@ export default function HireLanding({ stats }: { stats?: Stats }) {
           </div>
           <div className="hl-nav-links">
             <a className="hl-nav-link" href="#recruiters">
+              <Icon name="briefcase" size={15} />
               For Recruiters
             </a>
             <Link className="hl-nav-link" href="/auth/signup">
+              <Icon name="grad" size={15} />
               For Students
             </Link>
             <a className="hl-nav-link" href="#how">
+              <Icon name="layers" size={15} />
               How It Works
             </a>
           </div>
@@ -222,6 +252,16 @@ export default function HireLanding({ stats }: { stats?: Stats }) {
               We run standardised coding and technical assessments, then send you a shortlist of candidates whose{' '}
               <strong>skills, scores and projects are verified</strong> — not just self-reported on a résumé.
             </p>
+            <div className="hl-pill-row hl-rise hl-rise-3">
+              {PILLARS.map((p) => (
+                <span className="hl-pill" key={p.label}>
+                  <span className="hl-pill-ic">
+                    <Icon name={p.icon} size={14} />
+                  </span>
+                  {p.label}
+                </span>
+              ))}
+            </div>
             <div className="hl-cta-row hl-rise hl-rise-4">
               <a className="hl-btn hl-btn--primary hl-btn--lg" href="#demo">
                 Request a shortlist
@@ -237,8 +277,39 @@ export default function HireLanding({ stats }: { stats?: Stats }) {
             </p>
           </div>
 
-          {/* Recruiter dashboard preview */}
-          <div className="hl-preview hl-rise hl-rise-3">
+          {/* Recruiter dashboard preview — centred in the orbit stage, with
+              the cohort circling it on a dashed ellipse. */}
+          <div className="hl-stage hl-rise hl-rise-3">
+            <div className="hl-orbit" aria-hidden="true">
+              <div className="hl-orbit-scale">
+                <span className="hl-orbit-ringline" />
+                <span className="hl-orbit-ringline hl-orbit-ringline--inner" />
+                <div className="hl-orbit-ring">
+                  {ORBIT.map((o) => (
+                    <span className={`hl-orbit-slot hl-orbit-slot--${o.slot}`} key={o.slot}>
+                      <span className="hl-orbit-ccw">
+                        <span className="hl-orbit-up">
+                          {o.kind === 'candidate' ? (
+                            <span className="hl-chip-card">
+                              <span className="hl-chip-card-av">{o.initials}</span>
+                              <span className="hl-chip-card-tx">
+                                <span className="hl-chip-card-name">{o.name}</span>
+                                <span className="hl-chip-card-meta">{o.meta}</span>
+                              </span>
+                            </span>
+                          ) : (
+                            <span className="hl-orbit-tile">
+                              <Icon name={o.icon} size={19} />
+                            </span>
+                          )}
+                        </span>
+                      </span>
+                    </span>
+                  ))}
+                </div>
+              </div>
+            </div>
+
             <div className="hl-panel">
               <div className="hl-panel-head">
                 <div className="hl-panel-title">
