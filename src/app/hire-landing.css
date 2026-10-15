@@ -1,76 +1,204 @@
-/* ══════════════════════════════════════════════════════════════════════════
-   § Public landing — assessment-verified fresher hiring.
+/* ═════════════════════════════════════════════════════════════════════════
+   hire-landing.css — the public landing (/ and /hire).
 
-   Design language: premium, minimal SaaS. Light, warm-neutral surface with a
-   barely-there orange wash; strong type with a controlled measure; clean cards
-   with hairline borders, restrained shadows and medium radii; real interface
-   previews instead of decorative illustrations.
+   The visual language is a port of leetquery.com onto ConnectToCampus:
 
-   Everything is scoped to .hl- and consumes the global tokens, so the page
-   follows the theme (light default, dark optional) and the brand orange.
-   ══════════════════════════════════════════════════════════════════════════ */
+     • one blue brand accent (#2b6ef6) on a warm off-white canvas (#f4f2ee),
+       with a light + dark pair of the SAME token names (see .hl-page below);
+     • a display grotesque (Space Grotesk) for headlines and numerals, Inter
+       for everything readable, and Georgia italic for the one accent phrase;
+     • a hero that pairs a display headline with an app-window preview sitting
+       at the centre of dashed rings, with candidate chips and signal tiles
+       riding those rings.
 
+   Everything is scoped to `.hl-page`, so this file cannot leak into the app
+   shell. Token names are prefixed `--lq-` deliberately: they are a private
+   copy of the reference palette, not a rebrand of the product's own tokens.
+   ═════════════════════════════════════════════════════════════════════════ */
+
+/* ── Tokens ─────────────────────────────────────────────────────────────── */
 .hl-page {
-  /* The page speaks the LOGO orange (as BrandName does) rather than the
-     section gold, so the CTA gradient and the wordmark match exactly. */
-  --hl-brand: #fd8f01;
-  --accent: var(--hl-brand);
-  --accent-light: color-mix(in srgb, var(--hl-brand) 12%, transparent);
-  --accent-border: color-mix(in srgb, var(--hl-brand) 40%, transparent);
-  --accent-text: #b35c00;
+  /* Light is the default: warm paper, ink-black text, one blue accent. */
+  --lq-canvas: #f4f2ee;
+  --lq-surface: #ffffff;
+  --lq-sunken: #eae8e1;
+  --lq-chip: #ffffff;
+  --lq-text: #191817;
+  --lq-text-soft: #33322e;
+  --lq-muted: #5f5e59;
+  --lq-faint: #7c7b74;
+  --lq-line: rgba(0, 0, 0, 0.09);
+  --lq-line-strong: rgba(0, 0, 0, 0.16);
+  --lq-hover: rgba(0, 0, 0, 0.04);
+  --lq-hover-surface: #faf9f5;
+  --lq-brand: #2b6ef6;
+  --lq-brand-strong: #1a59d8;
+  --lq-brand-soft: #e7edfd;
+  --lq-brand-glow: #60a5fa;
+  --lq-success: #17754a;
+  --lq-shadow-card: 0 1px 2px rgba(0, 0, 0, 0.06), 0 4px 12px rgba(0, 0, 0, 0.05);
+  --lq-shadow-float: 0 6px 20px -6px rgba(0, 0, 0, 0.14);
+  --lq-shadow-panel: 0 1px 2px rgba(0, 0, 0, 0.05), 0 6px 16px -8px rgba(0, 0, 0, 0.1);
+  --lq-shadow-nav: 0 1px 2px rgba(0, 0, 0, 0.04), 0 4px 10px -6px rgba(0, 0, 0, 0.1);
+  --lq-shadow-brand: 0 8px 20px -8px rgba(43, 110, 246, 0.55);
+
+  --hl-wrap: 1180px;
+
+  /* Orbit geometry. The rings are circles that get squashed on Y (see
+     .hl-orbit-scale), and each chip undoes the squash on itself so its label
+     never looks stretched. Chips ride the inner ring, tiles the outer one. */
+  --hl-orbit-size: 660px;
+  --hl-orbit-scale: 0.84;
+  --hl-orbit-squash: 0.9;
+  --hl-orbit-r-in: 0.636; /* inner ring radius, as a share of the box radius */
+  --hl-orbit-r-out: 0.879;
+  --hl-orbit-dur: 54s;
+  /* How far the rings reach past the preview stage. Every surface that sits
+     next to the stage reuses this, so a chip can never cross into the copy. */
+  --hl-orbit-gutter: 96px;
 
   position: relative;
-  min-height: var(--app-vh);
-  background: var(--bg-page);
-  color: var(--text-primary);
+  min-height: 100%;
+  background: var(--lq-canvas);
+  color: var(--lq-text);
+  font-family:
+    var(--font-inter),
+    Inter,
+    -apple-system,
+    BlinkMacSystemFont,
+    'Segoe UI',
+    Roboto,
+    sans-serif;
   overflow-x: clip;
 }
+
+/* Dark keeps the same token names and the same blue. Only the surfaces and the
+   ink flip — the accent stays brand. */
 [data-theme='dark'] .hl-page {
-  --accent-light: color-mix(in srgb, var(--hl-brand) 14%, transparent);
-  --accent-border: color-mix(in srgb, var(--hl-brand) 42%, transparent);
-  --accent-text: #ffab47;
+  --lq-canvas: #141413;
+  --lq-surface: #1f1e1d;
+  --lq-sunken: #0f0f0e;
+  --lq-chip: #1a1a19;
+  --lq-text: #faf9f5;
+  --lq-text-soft: #c9c8c0;
+  --lq-muted: #87867f;
+  --lq-faint: #7a7972;
+  --lq-line: rgba(255, 255, 255, 0.1);
+  --lq-line-strong: rgba(255, 255, 255, 0.18);
+  --lq-hover: rgba(255, 255, 255, 0.05);
+  --lq-hover-surface: #24231f;
+  --lq-brand-soft: #16233d;
+  --lq-brand-strong: #7ba7f9;
+  --lq-shadow-card: 0 1px 2px rgba(0, 0, 0, 0.3);
+  --lq-shadow-float: 0 10px 30px -8px rgba(0, 0, 0, 0.75);
+  --lq-shadow-panel: 0 4px 24px -8px rgba(0, 0, 0, 0.9);
+  --lq-shadow-nav: 0 1px 2px rgba(0, 0, 0, 0.4), 0 4px 12px -6px rgba(0, 0, 0, 0.55);
 }
 
-/* Warm paper wash behind the top of the page. */
+/* ── Base ───────────────────────────────────────────────────────────────── */
+.hl-wrap {
+  width: 100%;
+  max-width: var(--hl-wrap);
+  margin-inline: auto;
+  padding-inline: clamp(18px, 4vw, 40px);
+}
+.hl-page h1,
+.hl-page h2,
+.hl-page h3 {
+  margin: 0;
+  color: var(--lq-text);
+}
+.hl-page a {
+  text-decoration: none;
+  color: inherit;
+}
 .hl-bg {
   position: absolute;
-  inset: 0;
-  z-index: -1;
+  inset: 0 0 auto;
+  height: 640px;
   pointer-events: none;
-  background-image: var(--grad-warm);
-  background-repeat: no-repeat;
-  background-size: 100% 900px;
+  background:
+    radial-gradient(880px 420px at 50% -12%, color-mix(in srgb, var(--lq-brand) 12%, transparent), transparent 70%),
+    radial-gradient(620px 320px at 88% 2%, color-mix(in srgb, var(--lq-brand-glow) 12%, transparent), transparent 72%);
 }
-.hl-bg::after {
+
+/* ── Buttons ────────────────────────────────────────────────────────────── */
+.hl-btn {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  overflow: hidden;
+  border: 1px solid transparent;
+  border-radius: 12px;
+  padding: 10px 18px;
+  font-size: 14px;
+  font-weight: 700;
+  font-family: inherit;
+  line-height: 1.2;
+  cursor: pointer;
+  white-space: nowrap;
+  transition:
+    transform 0.25s ease,
+    box-shadow 0.25s ease,
+    background-color 0.2s ease,
+    border-color 0.2s ease,
+    color 0.2s ease;
+}
+.hl-btn--brand {
+  background: linear-gradient(to bottom, #3d7cff, var(--lq-brand));
+  color: #fff;
+  box-shadow: var(--lq-shadow-brand);
+}
+.hl-btn--brand:hover {
+  transform: translateY(-1px);
+  background: linear-gradient(to bottom, #4d88ff, #3175ff);
+}
+.hl-btn--ghost {
+  background: var(--lq-surface);
+  border-color: var(--lq-line-strong);
+  color: var(--lq-text);
+}
+.hl-btn--ghost:hover {
+  background: var(--lq-hover-surface);
+  border-color: color-mix(in srgb, var(--lq-brand) 45%, transparent);
+}
+.hl-btn--sm {
+  padding: 8px 15px;
+  font-size: 13.5px;
+  border-radius: 11px;
+}
+.hl-btn--lg {
+  height: 50px;
+  padding: 0 26px;
+  border-radius: 14px;
+  font-size: 15.5px;
+  min-width: 200px;
+}
+/* The reference's CTA catches a light sweep on hover. */
+.hl-btn--shine::after {
   content: '';
   position: absolute;
   inset: 0;
-  background-image:
-    linear-gradient(to right, color-mix(in srgb, var(--border) 70%, transparent) 1px, transparent 1px),
-    linear-gradient(to bottom, color-mix(in srgb, var(--border) 70%, transparent) 1px, transparent 1px);
-  background-size: 72px 72px;
-  -webkit-mask-image: radial-gradient(820px 380px at 50% -60px, #000, transparent 72%);
-  mask-image: radial-gradient(820px 380px at 50% -60px, #000, transparent 72%);
-  opacity: 0.4;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.35), transparent);
+  transform: translateX(-150%) skewX(-30deg);
+  transition: transform 0.7s ease-out;
 }
-
-/* ── Layout helpers ─────────────────────────────────────────────────────── */
-.hl-wrap {
-  width: 100%;
-  max-width: 1140px;
-  margin: 0 auto;
-  padding-left: 24px;
-  padding-right: 24px;
+.hl-btn--shine:hover::after {
+  transform: translateX(150%) skewX(-30deg);
 }
-@media (max-width: 560px) {
-  .hl-wrap {
-    padding-left: 18px;
-    padding-right: 18px;
-  }
+.hl-arrow {
+  transition: transform 0.25s ease;
 }
-/* Controlled measure — long copy never runs the full container width. */
-.hl-measure {
-  max-width: 60ch;
+.hl-btn:hover .hl-arrow {
+  transform: translateX(3px);
+}
+.hl-page .hl-btn:focus-visible,
+.hl-page a:focus-visible,
+.hl-page button:focus-visible {
+  outline: 2px solid color-mix(in srgb, var(--lq-brand) 65%, transparent);
+  outline-offset: 2px;
 }
 
 /* ── Nav ────────────────────────────────────────────────────────────────── */
@@ -78,345 +206,302 @@
   position: sticky;
   top: 0;
   z-index: 50;
-  background: color-mix(in srgb, var(--bg-page) 80%, transparent);
-  backdrop-filter: blur(14px) saturate(150%);
-  -webkit-backdrop-filter: blur(14px) saturate(150%);
-  border-bottom: 1px solid var(--border);
+  background: color-mix(in srgb, var(--lq-canvas) 78%, transparent);
+  backdrop-filter: saturate(1.5) blur(14px);
+  border-bottom: 1px solid var(--lq-line);
 }
 .hl-nav-inner {
   display: flex;
   align-items: center;
-  gap: 16px;
-  height: 64px;
+  gap: 18px;
+  min-height: 66px;
 }
-.hl-nav-brand {
-  display: flex;
+.hl-brand {
+  display: inline-flex;
   align-items: center;
-  gap: 9px;
-  font-size: 16px;
-  font-weight: 800;
-  letter-spacing: -0.025em;
-  white-space: nowrap;
+  gap: 10px;
   flex-shrink: 0;
+}
+.hl-brand-logo {
+  border-radius: 9px;
+  flex-shrink: 0;
+}
+.hl-brand-name {
+  font-family: var(--font-space-grotesk), system-ui, sans-serif;
+  font-size: 24px;
+  font-weight: 700;
+  letter-spacing: -0.025em;
+  line-height: 1;
+  color: var(--lq-text);
 }
 .hl-nav-links {
   display: flex;
   align-items: center;
-  gap: 4px;
-  margin-left: 10px;
+  gap: 2px;
+  margin-inline: auto;
 }
 .hl-nav-link {
   display: inline-flex;
   align-items: center;
   gap: 7px;
-  font-size: 13.5px;
-  font-weight: 550;
-  color: var(--text-secondary);
-  text-decoration: none;
-  padding: 8px 11px;
-  border-radius: var(--radius-sm);
+  padding: 9px 12px;
+  border-radius: 12px;
+  font-size: 15px;
+  font-weight: 500;
+  color: var(--lq-text-soft);
+  white-space: nowrap;
   transition:
-    color 0.16s ease,
-    background 0.16s ease;
-}
-.hl-nav-link svg {
-  opacity: 0.75;
+    background-color 0.2s ease,
+    color 0.2s ease,
+    transform 0.2s ease;
 }
 .hl-nav-link:hover {
-  color: var(--text-primary);
-  background: var(--bg-secondary);
+  background: var(--lq-hover);
+  color: var(--lq-text);
+  transform: translateY(-1px);
+}
+.hl-nav-ic {
+  color: var(--lq-faint);
+  transition: color 0.2s ease;
+}
+.hl-nav-link:hover .hl-nav-ic {
+  color: var(--lq-brand-strong);
 }
 .hl-nav-right {
   display: flex;
   align-items: center;
-  gap: 8px;
-  margin-left: auto;
+  gap: 12px;
   flex-shrink: 0;
 }
 .hl-nav-signin {
-  font-size: 13.5px;
-  font-weight: 650;
-  color: var(--text-primary);
-  text-decoration: none;
-  padding: 8px 12px;
-  border-radius: var(--radius-sm);
+  font-size: 15px;
+  font-weight: 500;
+  color: var(--lq-muted);
+  padding: 8px 6px;
+  border-radius: 10px;
+  transition: color 0.2s ease;
 }
 .hl-nav-signin:hover {
-  background: var(--bg-secondary);
+  color: var(--lq-text);
 }
-@media (max-width: 900px) {
-  .hl-nav-links {
-    display: none;
-  }
+/* The shared theme toggle is a product component; on the landing it reads as a
+   quiet round control in the nav bar. */
+.hl-nav .theme-toggle--plain {
+  width: 36px;
+  height: 36px;
+  display: inline-grid;
+  place-items: center;
+  border-radius: 999px;
+  border: 1px solid var(--lq-line);
+  background: var(--lq-surface);
+  color: var(--lq-muted);
+  cursor: pointer;
+  transition:
+    background-color 0.2s ease,
+    color 0.2s ease,
+    border-color 0.2s ease;
 }
-@media (max-width: 480px) {
-  .hl-nav-signin {
-    display: none;
-  }
+.hl-nav .theme-toggle--plain:hover {
+  color: var(--lq-text);
+  border-color: var(--lq-line-strong);
+  background: var(--lq-hover-surface);
 }
-
-/* ── Buttons ────────────────────────────────────────────────────────────── */
-.hl-btn {
-  display: inline-flex;
+.hl-nav-burger {
+  display: none;
+  width: 42px;
+  height: 42px;
   align-items: center;
   justify-content: center;
-  gap: 8px;
-  font-family: inherit;
-  font-size: 14.5px;
-  font-weight: 650;
-  line-height: 1;
-  padding: 12px 20px;
-  border-radius: var(--radius);
-  border: 1px solid transparent;
-  text-decoration: none;
+  border-radius: 999px;
+  border: 1px solid var(--lq-line);
+  background: var(--lq-hover);
+  color: var(--lq-text);
   cursor: pointer;
-  white-space: nowrap;
-  transition:
-    transform 0.15s cubic-bezier(0.3, 0.9, 0.4, 1),
-    box-shadow 0.18s ease,
-    background 0.18s ease,
-    border-color 0.18s ease;
 }
-.hl-btn--primary {
-  background: var(--grad-brand);
-  color: #24160a;
-  box-shadow:
-    0 6px 16px -8px color-mix(in srgb, var(--hl-brand) 75%, transparent),
-    inset 0 1px 0 rgba(255, 255, 255, 0.4);
+.hl-nav-sheet {
+  border-top: 1px solid var(--lq-line);
+  background: var(--lq-surface);
+  box-shadow: var(--lq-shadow-float);
+  padding: 10px 0 18px;
 }
-.hl-btn--primary:hover {
-  transform: translateY(-1px);
-  box-shadow:
-    0 12px 26px -10px color-mix(in srgb, var(--hl-brand) 85%, transparent),
-    inset 0 1px 0 rgba(255, 255, 255, 0.5);
+.hl-nav-sheet .hl-wrap {
+  display: grid;
+  gap: 2px;
 }
-.hl-btn--ghost {
-  background: var(--bg);
-  border-color: var(--border-strong);
-  color: var(--text-primary);
-}
-.hl-btn--ghost:hover {
-  border-color: var(--border-strong);
-  background: var(--bg-secondary);
-}
-.hl-btn--lg {
+.hl-nav-sheet-link {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 10px;
+  border-radius: 12px;
   font-size: 15.5px;
-  padding: 15px 26px;
-  border-radius: var(--radius-lg);
+  font-weight: 500;
+  color: var(--lq-text-soft);
 }
-.hl-btn--sm {
-  font-size: 13.5px;
-  padding: 10px 16px;
+.hl-nav-sheet-link:hover {
+  background: var(--lq-hover);
+  color: var(--lq-text);
 }
-.hl-arrow {
-  transition: transform 0.18s ease;
+.hl-nav-sheet-link .hl-nav-ic,
+.hl-nav-sheet-link svg {
+  color: var(--lq-faint);
 }
-.hl-btn:hover .hl-arrow {
-  transform: translateX(3px);
-}
-
-/* ── Sections ───────────────────────────────────────────────────────────── */
-.hl-section {
-  padding-top: clamp(56px, 8vw, 96px);
-}
-/* Eyebrows stay NEUTRAL — orange is reserved for the CTA and the hero phrase
-   (leetquery discipline: the accent marks action, not structure). */
-.hl-eyebrow {
-  display: inline-block;
-  font-size: 12px;
-  font-weight: 700;
-  letter-spacing: 0.07em;
-  text-transform: uppercase;
-  color: var(--text-muted);
-  margin: 0 0 10px;
-}
-.hl-h2 {
-  font-size: clamp(25px, 3.2vw, 38px);
-  font-weight: 800;
-  letter-spacing: -0.032em;
-  line-height: 1.12;
-  margin: 0 0 14px;
-  max-width: 22ch;
-}
-.hl-lead {
-  font-size: clamp(14.5px, 1.5vw, 16.5px);
-  line-height: 1.65;
-  color: var(--text-secondary);
-  margin: 0 0 38px;
-  max-width: 62ch;
+.hl-nav-sheet-cta {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-top: 12px;
 }
 
 /* ── Hero ───────────────────────────────────────────────────────────────── */
 .hl-hero {
-  padding-top: clamp(44px, 6vw, 80px);
-  padding-bottom: clamp(28px, 4vw, 44px);
-  /* The orbit's chips ride an ellipse that reaches ~50px beyond the preview
-     stage on every side — the stage cannot contain them, so the space AROUND
-     it has to (measured across 641–1920px: see .hl-stage/.hl-orbit below).
-     Every surface that sits next to the stage reuses this one gutter: the
-     side-by-side grid gap guards the copy column, the stacked gap guards the
-     copy above, and the metrics strip below. */
-  --hl-orbit-gutter: 58px;
+  position: relative;
+  z-index: 1;
+  padding-top: clamp(40px, 5vw, 74px);
+  padding-bottom: clamp(30px, 4vw, 60px);
 }
-/* The visual side gets the extra width: the orbit needs room to hold its
-   chips clear of both the preview panel and the copy column. */
 .hl-hero-grid {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(0, 1.28fr);
-  gap: clamp(var(--hl-orbit-gutter), 4.5vw, 72px);
+  grid-template-columns: minmax(0, 1fr) minmax(0, 0.92fr);
+  gap: clamp(var(--hl-orbit-gutter), 4vw, 60px);
   align-items: center;
 }
-@media (max-width: 960px) {
-  .hl-hero-grid {
-    grid-template-columns: minmax(0, 1fr);
-    /* Stacked, the orbit's chips reach past the stage's top and bottom — this
-       gap is what keeps them off the copy above. */
-    gap: var(--hl-orbit-gutter);
-  }
+.hl-hero-copy {
+  min-width: 0;
 }
-
-/* Neutral pill, hairline border — only the dot carries the brand colour. */
-.hl-badge {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  font-size: 12px;
-  font-weight: 650;
-  color: var(--text-secondary);
-  background: var(--bg);
-  border: 1px solid var(--border-strong);
-  padding: 6px 12px 6px 10px;
-  border-radius: 999px;
-  margin-bottom: 20px;
-}
-.hl-badge-dot {
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-  background: var(--hl-brand);
-}
-
 .hl-h1 {
-  font-size: clamp(32px, 4.6vw, 56px);
-  line-height: 1.05;
-  font-weight: 800;
-  letter-spacing: -0.038em;
-  margin: 0 0 18px;
-  max-width: 17ch;
+  font-family: var(--font-space-grotesk), system-ui, sans-serif;
+  font-size: clamp(38px, 5.4vw, 74px);
+  font-weight: 700;
+  line-height: 0.98;
+  letter-spacing: -0.035em;
+  margin-bottom: 20px;
+  max-width: 14ch;
 }
-.hl-h1 em {
-  font-style: normal;
-}
-/* The ONE hero accent phrase — serif italic in solid brand orange, the way
-   leetquery highlights "Top 1% Analyst." Nothing else on the page gets this. */
-.hl-em {
-  font-family: Georgia, 'Iowan Old Style', 'Times New Roman', serif;
+/* The one accent phrase on the page — serif italic in the reference's blue. */
+.hl-h1-accent {
+  display: inline-block;
+  font-family: Georgia, 'Iowan Old Style', 'Times New Roman', Times, serif;
   font-style: italic;
   font-weight: 500;
-  color: var(--hl-brand);
   letter-spacing: -0.012em;
+  color: var(--lq-brand-glow);
 }
-
 .hl-sub {
-  font-size: clamp(15px, 1.6vw, 17.5px);
-  line-height: 1.6;
-  color: var(--text-secondary);
-  max-width: 56ch;
-  margin: 0 0 28px;
+  font-size: clamp(15.5px, 1.5vw, 18.5px);
+  line-height: 1.65;
+  color: var(--lq-muted);
+  max-width: 46ch;
+  margin: 0 0 26px;
 }
 .hl-sub strong {
-  color: var(--text-primary);
+  display: block;
   font-weight: 650;
+  color: var(--lq-text);
 }
-
+.hl-pill-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-bottom: 26px;
+}
+.hl-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  padding: 9px 20px 9px 9px;
+  border-radius: 999px;
+  background: var(--lq-surface);
+  border: 1px solid var(--lq-line);
+  box-shadow: var(--lq-shadow-card);
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--lq-text);
+  transition:
+    border-color 0.3s ease,
+    transform 0.3s ease;
+}
+.hl-pill:hover {
+  transform: translateY(-1px);
+  border-color: color-mix(in srgb, var(--lq-brand) 40%, transparent);
+}
+.hl-pill-ic {
+  width: 36px;
+  height: 36px;
+  flex-shrink: 0;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  color: var(--lq-brand-strong);
+  background: color-mix(in srgb, var(--lq-brand) 15%, transparent);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--lq-brand-glow) 30%, transparent);
+}
 .hl-cta-row {
   display: flex;
   flex-wrap: wrap;
-  gap: 11px;
-  margin-bottom: 16px;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 18px;
 }
 .hl-micro {
   display: flex;
   align-items: center;
   gap: 7px;
-  font-size: 12.5px;
-  color: var(--text-muted);
+  font-size: 13px;
+  color: var(--lq-muted);
   margin: 0;
 }
-
-/* Three pillars in one row — the compact "what this is" summary that sits
-   between the promise and the buttons. */
-.hl-pill-row {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 10px;
-  margin: 0 0 22px;
+.hl-micro svg {
+  color: var(--lq-brand-strong);
 }
-.hl-pill {
-  display: inline-flex;
-  align-items: center;
-  gap: 9px;
-  font-size: 13px;
-  font-weight: 650;
-  color: var(--text-secondary);
-  background: var(--bg);
-  border: 1px solid var(--border);
-  border-radius: 999px;
-  padding: 7px 16px 7px 8px;
-}
-.hl-pill-ic {
-  width: 26px;
-  height: 26px;
-  flex-shrink: 0;
-  display: grid;
-  place-items: center;
-  border-radius: 50%;
-  color: var(--accent-text);
-  background: var(--accent-light);
-  border: 1px solid var(--accent-border);
+.hl-micro--spaced {
+  margin-top: 20px;
 }
 
-/* ── Product preview: recruiter dashboard in an orbit stage ───────────────
-   The hero pattern: the preview sits at the centre of a dashed ellipse, and
-   candidate / signal chips ride that ellipse — slowly circling, labelled
-   upright. Same idea the reference (leetquery.com) uses, so the right-hand
-   side reads as a live cohort rather than a static screenshot.
-
-   Geometry — one squashed circle, undoing itself on every chip:
-     .hl-orbit-scale  squashes the ring on Y       → circle becomes ellipse
-     .hl-orbit-slot   rotate(--a) + translateX(50%) → a point on the ellipse,
-                       50% of its own width, so the radius stays responsive
+/* ── Orbit stage ─────────────────────────────────────────────────────────
+   Geometry — one squashed circle that undoes itself on every chip:
+     .hl-orbit-scale  squashes the rings on Y       → circle becomes ellipse
+     .hl-orbit-slot   rotate(--a) + translateX(r)   → a point on that circle
      .hl-orbit-ccw    spins the opposite way        → cancels the ring's spin
-     .hl-orbit-up     rotate(--a) + 1/squash on Y   → cancels the angle + squash
-   Net transform on each chip is the identity, so only its POSITION moves:
-   labels stay level and never look stretched.
-   All of it stops under prefers-reduced-motion. */
-/* The stage is sized BY the panel (height comes from the panel's content) and
-   the orbit is inset by 5% of it on every side, so the ellipse is always a
-   fixed proportion bigger than the panel — no guessing at pixel sizes. */
+     .hl-orbit-up     rotate(--a) + 1/squash on Y   → cancels the angle AND the
+                        squash, so the card itself renders undistorted while its
+                        POSITION stays on the ellipse
+   Net transform on each card is the identity apart from where it sits, which
+   is why labels stay level and never stretch. All of it stops under
+   prefers-reduced-motion. */
 .hl-stage {
   position: relative;
   width: 100%;
-  max-width: 560px;
-  margin: 0 auto;
+  min-height: calc(var(--hl-orbit-size) * var(--hl-orbit-scale));
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
 }
-/* The orbit sits BEHIND the panel (z-index 0 vs the panel's 1). Chips therefore
-   slide out from behind the preview instead of striking through its rows — the
-   same reading the reference gives, where the dashed ring and the chips are
-   partly swallowed by the device mockup. It also means a chip never has to
-   dodge the panel's text, so the ellipse can stay inside the hero column. */
 .hl-orbit {
   position: absolute;
-  inset: 5% 5%;
+  left: 50%;
+  top: 50%;
+  width: var(--hl-orbit-size);
+  height: var(--hl-orbit-size);
+  transform: translate(-50%, -50%) scale(var(--hl-orbit-scale));
   z-index: 0;
   pointer-events: none;
-  --hl-orbit-dur: 46s;
-  --hl-orbit-squash: 0.95;
 }
 .hl-orbit-scale {
   position: absolute;
   inset: 0;
   transform: scaleY(var(--hl-orbit-squash));
+}
+/* The dashed rings. Two concentric ovals read as "a cohort", not a target. */
+.hl-orbit-ringline {
+  position: absolute;
+  inset: 40px;
+  border: 1.5px dashed color-mix(in srgb, var(--lq-text) 24%, transparent);
+  border-radius: 50%;
+}
+.hl-orbit-ringline--inner {
+  inset: 120px;
+  border-color: color-mix(in srgb, var(--lq-text) 34%, transparent);
 }
 .hl-orbit-ring {
   position: absolute;
@@ -424,25 +509,13 @@
   transform-origin: 50% 50%;
   animation: hlOrbitSpin var(--hl-orbit-dur) linear infinite;
 }
-/* The dashed track. Two concentric ovals read as "a cohort", not a target. */
-.hl-orbit-ringline {
-  position: absolute;
-  inset: 0;
-  border: 1px dashed var(--border-strong);
-  border-radius: 50%;
-  opacity: 0.55;
-}
-.hl-orbit-ringline--inner {
-  inset: 14%;
-  opacity: 0.28;
-}
 .hl-orbit-slot {
   position: absolute;
   inset: 0;
   display: grid;
   place-items: center;
   transform-origin: 50% 50%;
-  transform: rotate(var(--a)) translateX(calc(50% * var(--k, 1)));
+  transform: rotate(var(--a)) translateX(calc(50% * var(--k)));
 }
 .hl-orbit-ccw {
   position: absolute;
@@ -465,320 +538,344 @@
     transform: rotate(360deg);
   }
 }
-
-/* Slot placements. Only the vertical extremes can host the wide candidate
-   chips without them running over the panel or past the column, so the chips
-   take 90°/270° and the compact signal tiles take the diagonals. */
+/* Slot placements: chips on the horizontal/vertical extremes (where a wide
+   card has room), tiles on the diagonals. */
 .hl-orbit-slot--1 {
-  --a: 90deg;
-  --k: 1;
-}
-.hl-orbit-slot--2 {
-  --a: 270deg;
-  --k: 1;
+  --a: 0deg;
+  --k: var(--hl-orbit-r-in);
 }
 .hl-orbit-slot--3 {
-  --a: 30deg;
-  --k: 1;
-}
-.hl-orbit-slot--4 {
-  --a: 330deg;
-  --k: 1;
+  --a: 90deg;
+  --k: var(--hl-orbit-r-in);
 }
 .hl-orbit-slot--5 {
-  --a: 150deg;
-  --k: 1;
+  --a: 180deg;
+  --k: var(--hl-orbit-r-in);
+}
+.hl-orbit-slot--7 {
+  --a: 270deg;
+  --k: var(--hl-orbit-r-in);
+}
+.hl-orbit-slot--2 {
+  --a: 45deg;
+  --k: var(--hl-orbit-r-out);
+}
+.hl-orbit-slot--4 {
+  --a: 135deg;
+  --k: var(--hl-orbit-r-out);
 }
 .hl-orbit-slot--6 {
-  --a: 210deg;
-  --k: 1;
+  --a: 225deg;
+  --k: var(--hl-orbit-r-out);
+}
+.hl-orbit-slot--8 {
+  --a: 315deg;
+  --k: var(--hl-orbit-r-out);
 }
 
+/* Candidate chip — avatar + name + the signal that qualifies them. */
 .hl-chip-card {
   display: flex;
   align-items: center;
-  gap: 9px;
-  padding: 7px 14px 7px 7px;
+  gap: 10px;
+  padding: 8px 17px 8px 8px;
   border-radius: 999px;
-  background: var(--bg);
-  border: 1px solid var(--border);
-  box-shadow: var(--shadow-md);
+  background: var(--lq-chip);
+  border: 1px solid var(--lq-line);
+  box-shadow: var(--lq-shadow-card);
   white-space: nowrap;
 }
 .hl-chip-card-av {
-  width: 30px;
-  height: 30px;
+  position: relative;
+  width: 38px;
+  height: 38px;
   flex-shrink: 0;
   display: grid;
   place-items: center;
   border-radius: 50%;
-  font-size: 11px;
+  font-size: 12.5px;
   font-weight: 800;
-  color: var(--accent-text);
-  background: var(--accent-light);
-  border: 1px solid var(--accent-border);
+  letter-spacing: 0.01em;
+  color: var(--lq-brand-strong);
+  background: var(--lq-brand-soft);
+  border: 2px solid var(--lq-line);
+}
+.hl-chip-card-dot {
+  position: absolute;
+  right: -1px;
+  bottom: -1px;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--lq-muted);
+  border: 1.5px solid var(--lq-chip);
 }
 .hl-chip-card-tx {
   display: flex;
   flex-direction: column;
-  line-height: 1.3;
+  line-height: 1.25;
 }
 .hl-chip-card-name {
-  font-size: 12.5px;
-  font-weight: 700;
-}
-.hl-chip-card-meta {
-  font-size: 10.5px;
-  color: var(--text-muted);
-}
-.hl-orbit-tile {
-  width: 44px;
-  height: 44px;
-  display: grid;
-  place-items: center;
-  border-radius: 14px;
-  background: var(--bg);
-  border: 1px solid var(--border);
-  box-shadow: var(--shadow-md);
-  color: var(--text-secondary);
-}
-
-/* The centre of the stage: the preview panel, held narrower than the orbit so
-   the chips ride its edge the way the reference does. */
-/* Kept wide on purpose: a narrower panel wraps its rows and grows TALLER than
-   the orbit can wrap around, so width here buys vertical clearance. */
-.hl-stage .hl-panel {
-  position: relative;
-  z-index: 1;
-  width: 72%;
-  margin: 0 auto;
-}
-/* The track sits BEHIND the panel, so its arcs can never strike through the
-   preview's text. */
-.hl-orbit-ringline {
-  z-index: -1;
-}
-
-/* On a phone the panel is far taller than it is wide, so no ellipse that fits
-   the screen can carry the chips around it — the orbit is a wide-viewport
-   composition. The preview panel stands alone there, exactly as before. */
-@media (max-width: 640px) {
-  .hl-orbit {
-    display: none;
-  }
-  .hl-stage .hl-panel {
-    width: 100%;
-  }
-}
-.hl-panel {
-  background: var(--bg);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-lg);
-  box-shadow: var(--shadow-md);
-  overflow: hidden;
-}
-.hl-panel-head {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 12px 14px;
-  border-bottom: 1px solid var(--border);
-  background: var(--bg-secondary);
-}
-.hl-panel-title {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  min-width: 0;
   font-size: 13px;
   font-weight: 700;
+  letter-spacing: 0.01em;
+  color: var(--lq-text);
 }
-.hl-panel-title span {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-.hl-demo {
-  margin-left: auto;
-  flex-shrink: 0;
-  font-size: 10px;
-  font-weight: 700;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  color: var(--warning-text, #925f0a);
-  background: var(--warning-light);
-  border: 1px solid var(--warning-border);
-  border-radius: 999px;
-  padding: 3px 8px;
-}
-.hl-panel-filters {
+.hl-chip-card-meta {
   display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-  padding: 10px 14px;
-  border-bottom: 1px solid var(--border);
-}
-.hl-chip {
-  display: inline-flex;
   align-items: center;
-  gap: 5px;
+  gap: 4px;
+}
+.hl-chip-card-label {
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 0.02em;
+  color: var(--lq-muted);
+}
+.hl-chip-card-value {
   font-size: 11px;
-  font-weight: 600;
-  color: var(--text-secondary);
-  background: var(--bg-secondary);
-  border: 1px solid var(--border);
-  border-radius: 999px;
-  padding: 4px 10px;
-  white-space: nowrap;
+  font-weight: 800;
+  letter-spacing: 0.015em;
+  color: var(--lq-text);
 }
-.hl-chip--on {
-  color: var(--text-primary);
-  background: var(--bg);
-  border-color: var(--border-strong);
-  font-weight: 700;
+/* Signal tile — the compact proof that rides the outer ring. */
+.hl-orbit-tile {
+  width: 56px;
+  height: 56px;
+  display: grid;
+  place-items: center;
+  border-radius: 16px;
+  background: var(--lq-chip);
+  border: 1px solid var(--lq-line);
+  box-shadow: var(--lq-shadow-card);
+  color: var(--lq-brand-strong);
+  transition: color 0.3s ease;
 }
-.hl-chip svg {
-  color: var(--success-text);
+.hl-orbit-tile:hover {
+  color: var(--lq-brand);
 }
 
-.hl-rows {
-  display: flex;
-  flex-direction: column;
+/* The centre of the stage: the shortlist preview, dressed as an app window.
+   It sits ABOVE the rings (z-index 1), so a chip sliding past tucks behind the
+   preview instead of covering its rows. */
+.hl-window {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  max-width: 372px;
+  margin-inline: auto;
+  border-radius: 26px;
+  overflow: hidden;
+  background: var(--lq-surface);
+  border: 1px solid var(--lq-line);
+  box-shadow: var(--lq-shadow-panel);
 }
-.hl-row {
+.hl-window-bar {
   display: flex;
   align-items: center;
   gap: 12px;
-  padding: 12px 14px;
-  border-bottom: 1px solid color-mix(in srgb, var(--border) 70%, transparent);
+  padding: 13px 16px;
+  background: var(--lq-sunken);
+  border-bottom: 1px solid var(--lq-line);
 }
-.hl-row:last-child {
-  border-bottom: none;
-}
-.hl-row:hover {
-  background: var(--bg-secondary);
-}
-.hl-av {
-  width: 36px;
-  height: 36px;
-  flex-shrink: 0;
-  border-radius: 50%;
-  display: grid;
-  place-items: center;
-  font-size: 12px;
-  font-weight: 800;
-  color: var(--text-secondary);
-  background: var(--bg-secondary);
-  border: 1px solid var(--border);
-}
-.hl-row-main {
-  flex: 1;
-  min-width: 0;
-}
-.hl-row-name {
-  font-size: 13.5px;
-  font-weight: 650;
-  margin: 0 0 3px;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-.hl-row-meta {
+.hl-window-dots {
   display: flex;
-  align-items: center;
   gap: 8px;
-  font-size: 11px;
-  color: var(--text-muted);
-  flex-wrap: wrap;
-}
-.hl-score {
   flex-shrink: 0;
-  text-align: right;
-  width: 82px;
 }
-.hl-score-val {
-  font-size: 13.5px;
-  font-weight: 800;
-  font-variant-numeric: tabular-nums;
+.hl-window-dots i {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  box-shadow: inset 0 1px 1px rgba(0, 0, 0, 0.22);
 }
-.hl-score-den {
+.hl-window-dots i:nth-child(1) {
+  background: #ff5f57;
+}
+.hl-window-dots i:nth-child(2) {
+  background: #febc2e;
+}
+.hl-window-dots i:nth-child(3) {
+  background: #28c840;
+}
+.hl-window-pill {
+  flex: 1;
+  text-align: center;
+  padding: 4px 12px;
+  border-radius: 9px;
+  background: var(--lq-chip);
+  border: 1px solid var(--lq-line);
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 11px;
+  letter-spacing: 0.02em;
+  color: var(--lq-muted);
+}
+.hl-window-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
   font-size: 10.5px;
-  color: var(--text-muted);
-  font-weight: 600;
-}
-.hl-bar {
-  height: 3px;
-  border-radius: 999px;
-  background: var(--bg-tertiary);
-  margin-top: 5px;
-  overflow: hidden;
-}
-.hl-bar-fill {
-  height: 100%;
-  border-radius: 999px;
-  background: var(--hl-brand);
-}
-.hl-badge-status {
-  flex-shrink: 0;
-  font-size: 10px;
   font-weight: 700;
-  letter-spacing: 0.03em;
-  border-radius: 999px;
-  padding: 3px 8px;
-  color: var(--success-text);
-  background: var(--success-light);
-  border: 1px solid var(--success-border);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--lq-brand-strong);
 }
-.hl-badge-status--wait {
-  color: var(--text-muted);
-  background: var(--bg-secondary);
-  border-color: var(--border);
+.hl-live-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--lq-brand);
+  box-shadow: 0 0 0 0 color-mix(in srgb, var(--lq-brand) 45%, transparent);
+  animation: hlPulse 2.4s ease-out infinite;
 }
-.hl-demo-note {
-  padding: 10px 14px;
-  border-top: 1px solid var(--border);
-  background: var(--bg-secondary);
-  font-size: 11px;
-  color: var(--text-muted);
-  line-height: 1.5;
-  margin: 0;
+@keyframes hlPulse {
+  70% {
+    box-shadow: 0 0 0 7px transparent;
+  }
+  100% {
+    box-shadow: 0 0 0 0 transparent;
+  }
+}
+.hl-window-body {
+  padding: 16px;
 }
 
-/* ── Metrics strip (genuine counts only) ────────────────────────────────── */
+/* ── Company strip (genuine rows only) ──────────────────────────────────── */
+.hl-strip {
+  position: relative;
+  z-index: 1;
+  border-top: 1px solid var(--lq-line);
+  background: var(--lq-surface);
+  padding: clamp(26px, 3.4vw, 44px) 0;
+}
+.hl-strip-eyebrow {
+  margin: 0 0 22px;
+  text-align: center;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.28em;
+  text-transform: uppercase;
+  color: var(--lq-muted);
+}
+.hl-strip-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 20px 46px;
+}
+.hl-strip-item {
+  display: inline-flex;
+  align-items: center;
+  opacity: 0.62;
+  transition:
+    opacity 0.2s ease,
+    transform 0.2s ease;
+}
+.hl-strip-item:hover {
+  opacity: 1;
+  transform: translateY(-1px);
+}
+.hl-strip-logo {
+  height: 34px;
+  width: auto;
+  object-fit: contain;
+  filter: grayscale(1);
+  transition: filter 0.2s ease;
+}
+.hl-strip-item:hover .hl-strip-logo {
+  filter: grayscale(0);
+}
+.hl-strip-word {
+  font-family: var(--font-space-grotesk), system-ui, sans-serif;
+  font-size: 20px;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  color: var(--lq-text-soft);
+}
+
+/* ── Metrics band (genuine counts only) ─────────────────────────────────── */
+.hl-metrics-band {
+  position: relative;
+  z-index: 1;
+  border-top: 1px solid var(--lq-line);
+  background: var(--lq-canvas);
+  padding: clamp(26px, 3.4vw, 46px) 0;
+}
 .hl-metrics {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 14px;
-  margin-top: clamp(30px, 4vw, 48px);
-  padding-top: 26px;
-  border-top: 1px solid var(--border);
-}
-/* Stacked, the strip sits close enough under the stage that a chip would cut
-   its top rule — so it takes the hero's orbit gutter too. (≤640px the orbit is
-   hidden, so the strip keeps its normal margin there.) */
-@media (min-width: 641px) and (max-width: 960px) {
-  .hl-metrics {
-    margin-top: var(--hl-orbit-gutter);
-  }
-}
-@media (max-width: 640px) {
-  .hl-metrics {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-    gap: 10px;
-  }
+  gap: 22px;
+  text-align: center;
 }
 .hl-metric-v {
-  font-size: clamp(22px, 3vw, 30px);
-  font-weight: 800;
+  margin: 0 0 4px;
+  font-family: var(--font-space-grotesk), system-ui, sans-serif;
+  font-size: clamp(28px, 3.4vw, 42px);
+  font-weight: 700;
   letter-spacing: -0.03em;
-  margin: 0 0 2px;
+  line-height: 1;
+  color: var(--lq-text);
   font-variant-numeric: tabular-nums;
 }
 .hl-metric-l {
-  font-size: 12.5px;
-  color: var(--text-muted);
   margin: 0;
-  line-height: 1.4;
+  font-size: 13px;
+  color: var(--lq-muted);
+}
+
+/* ── Sections ───────────────────────────────────────────────────────────── */
+.hl-section {
+  position: relative;
+  z-index: 1;
+  padding: clamp(56px, 7vw, 104px) 0;
+  padding-inline: clamp(18px, 4vw, 40px);
+}
+.hl-eyebrow {
+  margin: 0 0 14px;
+  font-size: 11.5px;
+  font-weight: 700;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--lq-brand-strong);
+}
+.hl-h2 {
+  font-family: var(--font-space-grotesk), system-ui, sans-serif;
+  font-size: clamp(26px, 3.2vw, 42px);
+  font-weight: 700;
+  line-height: 1.08;
+  letter-spacing: -0.03em;
+  margin-bottom: 16px;
+  max-width: 22ch;
+}
+.hl-h2--tight {
+  margin-bottom: 12px;
+}
+.hl-lead {
+  font-size: clamp(15px, 1.4vw, 17px);
+  line-height: 1.65;
+  color: var(--lq-muted);
+  margin: 0 0 38px;
+  max-width: 62ch;
+}
+.hl-lead--flush {
+  margin-bottom: 0;
+}
+.hl-measure {
+  max-width: 54ch;
+}
+.hl-split {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: clamp(28px, 4vw, 64px);
+  align-items: start;
+}
+.hl-split-copy {
+  min-width: 0;
+}
+.hl-split--reverse > :first-child {
+  order: 2;
 }
 
 /* ── Workflow ───────────────────────────────────────────────────────────── */
@@ -787,182 +884,357 @@
   grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 16px;
 }
-@media (max-width: 980px) {
-  .hl-flow {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-}
-@media (max-width: 560px) {
-  .hl-flow {
-    grid-template-columns: minmax(0, 1fr);
-  }
-}
 .hl-step {
-  position: relative;
-  background: var(--bg);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-lg);
-  padding: 20px;
+  padding: 22px 20px;
+  border-radius: 18px;
+  background: var(--lq-surface);
+  border: 1px solid var(--lq-line);
+  box-shadow: var(--lq-shadow-card);
   transition:
-    border-color 0.18s ease,
-    box-shadow 0.18s ease,
-    transform 0.18s ease;
+    transform 0.25s ease,
+    border-color 0.25s ease;
 }
 .hl-step:hover {
-  transform: translateY(-2px);
-  border-color: var(--border-strong);
-  box-shadow: var(--shadow-sm);
+  transform: translateY(-3px);
+  border-color: color-mix(in srgb, var(--lq-brand) 35%, transparent);
 }
 .hl-step-n {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
+  display: inline-grid;
+  place-items: center;
   width: 30px;
   height: 30px;
-  border-radius: 9px;
+  margin-bottom: 14px;
+  border-radius: 10px;
+  background: var(--lq-brand-soft);
+  color: var(--lq-brand-strong);
   font-size: 13px;
   font-weight: 800;
-  color: var(--text-secondary);
-  background: var(--bg-secondary);
-  border: 1px solid var(--border);
-  margin-bottom: 14px;
 }
 .hl-step h3 {
-  font-size: 15px;
+  font-family: var(--font-space-grotesk), system-ui, sans-serif;
+  font-size: 18px;
   font-weight: 700;
-  letter-spacing: -0.015em;
-  margin: 0 0 7px;
+  letter-spacing: -0.02em;
+  margin-bottom: 8px;
 }
 .hl-step p {
-  font-size: 13px;
-  line-height: 1.6;
-  color: var(--text-secondary);
   margin: 0;
+  font-size: 14px;
+  line-height: 1.6;
+  color: var(--lq-muted);
 }
 
-/* ── Two-column section (copy + preview) ────────────────────────────────── */
-.hl-split {
-  display: grid;
-  grid-template-columns: minmax(0, 0.92fr) minmax(0, 1.08fr);
-  gap: clamp(28px, 4vw, 52px);
-  align-items: center;
-}
-@media (max-width: 960px) {
-  .hl-split {
-    grid-template-columns: minmax(0, 1fr);
-    gap: 32px;
-  }
-}
-.hl-split--reverse .hl-split-copy {
-  order: 2;
-}
-@media (max-width: 960px) {
-  .hl-split--reverse .hl-split-copy {
-    order: 0;
-  }
-}
-
+/* ── List ───────────────────────────────────────────────────────────────── */
 .hl-list {
   list-style: none;
   margin: 0;
   padding: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 14px;
+  display: grid;
+  gap: 16px;
 }
 .hl-li {
-  display: flex;
-  gap: 12px;
-  align-items: flex-start;
+  display: grid;
+  grid-template-columns: 38px minmax(0, 1fr);
+  gap: 14px;
+  align-items: start;
 }
 .hl-li-ic {
+  width: 38px;
+  height: 38px;
   display: grid;
   place-items: center;
-  width: 32px;
-  height: 32px;
-  flex-shrink: 0;
-  border-radius: 9px;
-  color: var(--text-secondary);
-  background: var(--bg-secondary);
-  border: 1px solid var(--border);
+  border-radius: 12px;
+  color: var(--lq-brand-strong);
+  background: var(--lq-brand-soft);
+}
+.hl-li-ic--lg {
+  width: 46px;
+  height: 46px;
+  margin: 0 auto 14px;
+  border-radius: 15px;
 }
 .hl-li strong {
   display: block;
-  font-size: 13.5px;
-  font-weight: 650;
-  margin-bottom: 2px;
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--lq-text);
+  margin-bottom: 3px;
 }
-.hl-li span {
-  font-size: 13px;
-  color: var(--text-secondary);
-  line-height: 1.55;
+.hl-li span span,
+.hl-li > span > span:last-child {
+  display: block;
+  font-size: 14px;
+  line-height: 1.6;
+  color: var(--lq-muted);
 }
 
-/* Skill-wise score bars — methodology, not fabricated results. */
-.hl-skills {
+/* ── Panels ─────────────────────────────────────────────────────────────── */
+.hl-panel {
+  border-radius: 20px;
+  background: var(--lq-surface);
+  border: 1px solid var(--lq-line);
+  box-shadow: var(--lq-shadow-panel);
+  overflow: hidden;
+}
+.hl-panel-head {
   display: flex;
-  flex-direction: column;
+  align-items: center;
+  justify-content: space-between;
   gap: 14px;
-  margin-top: 22px;
+  padding: 15px 18px;
+  border-bottom: 1px solid var(--lq-line);
+  background: var(--lq-sunken);
+}
+.hl-panel-title {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--lq-text);
+}
+.hl-panel-title svg {
+  color: var(--lq-brand-strong);
+}
+.hl-demo {
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: var(--lq-brand-soft);
+  color: var(--lq-brand-strong);
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+.hl-panel-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 14px 18px;
+  border-bottom: 1px solid var(--lq-line);
+}
+.hl-panel-filters--bare {
+  border: none;
+  padding: 0;
+  margin-bottom: 16px;
+}
+.hl-panel-pad {
+  padding: 18px;
+}
+.hl-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 5px 11px;
+  border-radius: 999px;
+  background: var(--lq-hover);
+  border: 1px solid var(--lq-line);
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--lq-muted);
+  white-space: nowrap;
+}
+.hl-chip--on {
+  background: var(--lq-brand-soft);
+  border-color: color-mix(in srgb, var(--lq-brand) 28%, transparent);
+  color: var(--lq-brand-strong);
+}
+.hl-rows {
+  display: grid;
+}
+.hl-row {
+  display: grid;
+  grid-template-columns: 38px minmax(0, 1fr) auto auto;
+  align-items: center;
+  gap: 14px;
+  padding: 13px 18px;
+  border-bottom: 1px solid var(--lq-line);
+}
+.hl-rows--tight .hl-row {
+  grid-template-columns: 32px minmax(0, 1fr) auto;
+  padding: 10px 0;
+}
+.hl-rows--tight .hl-row:last-child {
+  border-bottom: none;
+}
+.hl-row:last-child {
+  border-bottom: none;
+}
+.hl-av {
+  width: 36px;
+  height: 36px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: var(--lq-brand-soft);
+  color: var(--lq-brand-strong);
+  font-size: 12px;
+  font-weight: 800;
+}
+.hl-av--lg {
+  width: 44px;
+  height: 44px;
+  font-size: 14px;
+}
+.hl-rows--tight .hl-av {
+  width: 30px;
+  height: 30px;
+  font-size: 11px;
+}
+.hl-row-main {
+  min-width: 0;
+}
+.hl-row-name {
+  margin: 0 0 4px;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--lq-text);
+}
+.hl-row-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: var(--lq-muted);
+}
+.hl-score {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 92px;
+  justify-content: flex-end;
+}
+.hl-score-val {
+  font-family: var(--font-space-grotesk), system-ui, sans-serif;
+  font-size: 17px;
+  font-weight: 700;
+  color: var(--lq-text);
+  font-variant-numeric: tabular-nums;
+}
+.hl-score-den {
+  font-size: 11.5px;
+  color: var(--lq-faint);
+}
+.hl-bar {
+  width: 54px;
+  height: 5px;
+  border-radius: 999px;
+  background: var(--lq-hover);
+  overflow: hidden;
+}
+.hl-bar-fill {
+  height: 100%;
+  border-radius: 999px;
+  background: var(--lq-brand);
+}
+.hl-badge-status {
+  padding: 5px 11px;
+  border-radius: 999px;
+  background: var(--lq-brand-soft);
+  color: var(--lq-brand-strong);
+  font-size: 11.5px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+.hl-badge-status--wait {
+  background: var(--lq-hover);
+  color: var(--lq-muted);
+}
+.hl-demo-note {
+  margin: 0;
+  padding: 12px 18px;
+  border-top: 1px solid var(--lq-line);
+  background: var(--lq-sunken);
+  font-size: 11.5px;
+  line-height: 1.55;
+  color: var(--lq-faint);
+}
+.hl-demo-note--bare {
+  border: none;
+  background: none;
+  padding: 14px 0 0;
+}
+
+/* Skill bars */
+.hl-skills {
+  display: grid;
+  gap: 14px;
 }
 .hl-skill-top {
   display: flex;
   align-items: baseline;
   justify-content: space-between;
-  gap: 10px;
-  font-size: 12.5px;
-  font-weight: 600;
-  margin-bottom: 6px;
+  gap: 12px;
+  margin-bottom: 7px;
+  font-size: 13px;
+  color: var(--lq-muted);
 }
 .hl-skill-top span:last-child {
-  color: var(--text-muted);
-  font-weight: 500;
-  font-size: 11.5px;
+  font-weight: 700;
+  color: var(--lq-text);
   font-variant-numeric: tabular-nums;
 }
 .hl-skill-bar {
-  height: 6px;
+  height: 7px;
   border-radius: 999px;
-  background: var(--bg-tertiary);
+  background: var(--lq-hover);
   overflow: hidden;
 }
 .hl-skill-fill {
   height: 100%;
   border-radius: 999px;
-  background: var(--hl-brand);
+  background: linear-gradient(90deg, var(--lq-brand-glow), var(--lq-brand));
+}
+.hl-profile {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+.hl-profile-tx {
+  min-width: 0;
+}
+.hl-profile-name {
+  margin: 0 0 2px;
+  font-size: 15px;
+  font-weight: 700;
+}
+.hl-profile-meta {
+  margin: 0;
+  font-size: 12.5px;
+  color: var(--lq-muted);
+}
+.hl-profile .hl-badge-status {
+  margin-left: auto;
 }
 
-/* ── Final CTA ──────────────────────────────────────────────────────────── */
+/* ── Closing CTA + lead form ────────────────────────────────────────────── */
 .hl-cta {
-  position: relative;
-  overflow: hidden;
-  border-radius: var(--radius-2xl);
-  border: 1px solid var(--border);
-  background: var(--bg);
-  box-shadow: var(--shadow-md);
-  padding: clamp(28px, 5vw, 48px);
-  margin-top: clamp(56px, 8vw, 88px);
+  padding: clamp(28px, 4vw, 56px) clamp(20px, 4vw, 52px);
+  border-radius: 28px;
+  background: var(--lq-surface);
+  border: 1px solid var(--lq-line);
+  box-shadow: var(--lq-shadow-panel);
 }
-
-/* ── Form card ──────────────────────────────────────────────────────────── */
 .hl-card {
-  background: var(--bg);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-xl);
-  padding: clamp(22px, 4vw, 34px);
-  box-shadow: var(--shadow-sm);
-  margin-top: 26px;
+  padding: clamp(20px, 3vw, 30px);
+  border-radius: 20px;
+  background: var(--lq-canvas);
+  border: 1px solid var(--lq-line);
 }
 .hl-form-title {
-  font-size: clamp(19px, 2.3vw, 24px);
-  font-weight: 800;
-  letter-spacing: -0.025em;
-  margin: 0 0 5px;
+  font-family: var(--font-space-grotesk), system-ui, sans-serif;
+  font-size: 21px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  margin-bottom: 6px;
 }
 .hl-form-sub {
+  margin: 0 0 20px;
   font-size: 13.5px;
-  color: var(--text-muted);
-  margin: 0 0 22px;
+  color: var(--lq-muted);
 }
 .hl-form-grid {
   display: grid;
@@ -975,94 +1247,260 @@
 }
 .hl-row-3 {
   display: grid;
-  grid-template-columns: minmax(0, 1.7fr) minmax(0, 1fr);
+  grid-template-columns: minmax(0, 2fr) minmax(0, 1fr);
   gap: 14px;
-}
-@media (max-width: 560px) {
-  .hl-row-2,
-  .hl-row-3 {
-    grid-template-columns: minmax(0, 1fr);
-  }
 }
 .hl-label {
   display: block;
-  font-size: 12px;
-  font-weight: 650;
-  color: var(--text-secondary);
   margin-bottom: 6px;
+  font-size: 12.5px;
+  font-weight: 650;
+  color: var(--lq-text-soft);
 }
 .hl-input {
   width: 100%;
-  padding: 12px 13px;
-  border-radius: var(--radius);
-  border: 1px solid var(--border-strong);
-  background: var(--bg);
-  color: var(--text-primary);
-  font-size: 14px;
+  padding: 11px 13px;
+  border-radius: 11px;
+  background: var(--lq-surface);
+  border: 1px solid var(--lq-line-strong);
+  color: var(--lq-text);
   font-family: inherit;
-  outline: none;
-  box-sizing: border-box;
+  font-size: 14.5px;
   transition:
-    border-color 0.16s ease,
-    box-shadow 0.16s ease;
+    border-color 0.2s ease,
+    box-shadow 0.2s ease;
 }
 .hl-input::placeholder {
-  color: var(--text-muted);
+  color: var(--lq-faint);
 }
 .hl-input:focus {
-  border-color: var(--hl-brand);
-  box-shadow: 0 0 0 3px color-mix(in srgb, var(--hl-brand) 20%, transparent);
+  outline: none;
+  border-color: var(--lq-brand);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--lq-brand) 22%, transparent);
 }
-textarea.hl-input {
-  resize: vertical;
-  min-height: 84px;
-  line-height: 1.55;
+.hl-honeypot {
+  position: absolute;
+  left: -9999px;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
 }
 .hl-err {
-  font-size: 13px;
-  color: var(--danger-text);
   margin: 0;
+  padding: 10px 12px;
+  border-radius: 11px;
+  background: color-mix(in srgb, #c02626 10%, transparent);
+  border: 1px solid color-mix(in srgb, #c02626 30%, transparent);
+  color: #c02626;
+  font-size: 13px;
 }
 .hl-note {
-  font-size: 11.5px;
-  color: var(--text-muted);
+  margin: 0;
   text-align: center;
-  margin: 2px 0 0;
+  font-size: 12px;
+  color: var(--lq-faint);
+}
+.hl-success {
+  text-align: center;
+  padding: 16px 0;
+}
+.hl-success-line {
+  margin: 0 0 6px;
+  font-size: 14px;
+  line-height: 1.6;
+  color: var(--lq-text-soft);
+}
+.hl-success-sub {
+  margin: 0;
+  font-size: 13px;
+  color: var(--lq-muted);
 }
 
 /* ── Footer ─────────────────────────────────────────────────────────────── */
 .hl-footer {
-  border-top: 1px solid var(--border);
-  margin-top: clamp(44px, 6vw, 72px);
-  padding: 26px 0 44px;
+  position: relative;
+  z-index: 1;
+  border-top: 1px solid var(--lq-line);
+  background: var(--lq-surface);
+  padding-top: 26px;
+  padding-bottom: 26px;
 }
 .hl-footer-inner {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   justify-content: space-between;
-  flex-wrap: wrap;
-  gap: 12px;
-  font-size: 12.5px;
-  color: var(--text-muted);
+  gap: 14px;
+  font-size: 13px;
+  color: var(--lq-muted);
 }
 .hl-footer-links {
   display: flex;
   flex-wrap: wrap;
-  gap: 8px 18px;
+  gap: 18px;
 }
-.hl-footer a {
-  color: var(--text-muted);
-  text-decoration: none;
+.hl-footer-links a {
+  color: var(--lq-muted);
+  transition: color 0.2s ease;
 }
-.hl-footer a:hover {
-  color: var(--text-primary);
+.hl-footer-links a:hover {
+  color: var(--lq-brand-strong);
 }
 
-/* ── Sticky mobile CTA ──────────────────────────────────────────────────── */
+/* ── Floating feedback + sticky mobile CTA ──────────────────────────────── */
+.hl-feedback {
+  position: fixed;
+  right: 22px;
+  bottom: 22px;
+  z-index: 60;
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  padding: 11px 18px 11px 14px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--lq-surface) 95%, transparent);
+  border: 1px solid var(--lq-line);
+  box-shadow: var(--lq-shadow-float);
+  backdrop-filter: blur(6px);
+  font-size: 13.5px;
+  font-weight: 600;
+  color: var(--lq-text);
+  transition:
+    transform 0.2s ease,
+    border-color 0.2s ease,
+    box-shadow 0.2s ease;
+}
+.hl-feedback:hover {
+  transform: translateY(-2px);
+  border-color: color-mix(in srgb, var(--lq-brand) 50%, transparent);
+  box-shadow: 0 16px 38px -10px rgba(43, 110, 246, 0.4);
+}
+.hl-feedback-ic {
+  display: grid;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  color: var(--lq-brand-strong);
+  background: color-mix(in srgb, var(--lq-brand) 16%, transparent);
+}
 .hl-mobilecta {
   display: none;
 }
-@media (max-width: 760px) {
+
+/* ── Entrance ───────────────────────────────────────────────────────────── */
+.hl-rise {
+  animation: hlRise 0.7s cubic-bezier(0.22, 0.8, 0.32, 1) both;
+}
+.hl-rise-1 {
+  animation-delay: 0.05s;
+}
+.hl-rise-2 {
+  animation-delay: 0.16s;
+}
+.hl-rise-3 {
+  animation-delay: 0.28s;
+}
+.hl-rise-4 {
+  animation-delay: 0.4s;
+}
+@keyframes hlRise {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* ── Responsive ─────────────────────────────────────────────────────────── */
+
+/* Nav collapses to a sheet before the six links can crowd the bar. */
+@media (max-width: 1100px) {
+  .hl-nav-links {
+    display: none;
+  }
+  .hl-nav-burger {
+    display: inline-flex;
+  }
+  .hl-brand-name {
+    font-size: 21px;
+  }
+}
+
+/* Desktop: the wrap caps the stage column, so one orbit scale covers the whole
+   desktop range. */
+@media (min-width: 1024px) {
+  .hl-page {
+    --hl-orbit-scale: 0.84;
+  }
+}
+
+/* Stacked hero: copy first, then the stage. The stage now owns the full wrap
+   width, so the orbit can grow — and the row gap must clear its rings. */
+@media (max-width: 1023px) {
+  .hl-hero-grid {
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--hl-orbit-gutter);
+  }
+  .hl-page {
+    --hl-orbit-scale: 0.92;
+  }
+  .hl-h1 {
+    max-width: 18ch;
+  }
+  .hl-sub {
+    max-width: 56ch;
+  }
+  .hl-flow {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .hl-split,
+  .hl-split--reverse {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .hl-split--reverse > :first-child {
+    order: 1;
+  }
+}
+
+@media (max-width: 767px) {
+  .hl-page {
+    --hl-orbit-scale: 0.8;
+    --hl-orbit-gutter: 84px;
+  }
+  .hl-h1 {
+    font-size: clamp(34px, 10.5vw, 52px);
+  }
+  .hl-flow {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .hl-metrics {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 18px;
+  }
+  .hl-row {
+    grid-template-columns: 32px minmax(0, 1fr) auto;
+  }
+  .hl-row .hl-btn {
+    display: none;
+  }
+  .hl-row-2,
+  .hl-row-3 {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .hl-nav-signin,
+  .hl-nav .hl-btn--brand {
+    display: none;
+  }
+  .hl-feedback {
+    display: none;
+  }
+  .hl-page {
+    padding-bottom: 78px;
+  }
   .hl-mobilecta {
     position: fixed;
     left: 0;
@@ -1071,68 +1509,57 @@ textarea.hl-input {
     z-index: 60;
     display: flex;
     align-items: center;
-    gap: 12px;
-    padding: 10px 16px calc(10px + env(safe-area-inset-bottom));
-    background: color-mix(in srgb, var(--bg-page) 88%, transparent);
-    backdrop-filter: blur(14px) saturate(150%);
-    -webkit-backdrop-filter: blur(14px) saturate(150%);
-    border-top: 1px solid var(--border);
+    justify-content: space-between;
+    gap: 14px;
+    padding: 11px 16px calc(11px + env(safe-area-inset-bottom));
+    background: color-mix(in srgb, var(--lq-surface) 94%, transparent);
+    backdrop-filter: blur(14px);
+    border-top: 1px solid var(--lq-line);
   }
   .hl-mobilecta-text {
-    flex: 1;
-    min-width: 0;
-    font-size: 12px;
-    line-height: 1.3;
-    color: var(--text-secondary);
+    display: flex;
+    flex-direction: column;
+    font-size: 11.5px;
+    line-height: 1.35;
+    color: var(--lq-muted);
   }
   .hl-mobilecta-text strong {
-    display: block;
-    font-size: 13px;
-    color: var(--text-primary);
+    font-size: 13.5px;
     font-weight: 700;
-  }
-  .hl-footer {
-    padding-bottom: calc(84px + env(safe-area-inset-bottom));
+    color: var(--lq-text);
   }
 }
 
-/* ── Motion ─────────────────────────────────────────────────────────────── */
-@keyframes hlRise {
-  from {
-    opacity: 0;
-    transform: translateY(12px);
+/* Below this the rings cannot wrap the preview without crowding the screen —
+   the window stands alone, exactly as the reference does on phones. */
+@media (max-width: 640px) {
+  .hl-orbit {
+    display: none;
   }
-  to {
-    opacity: 1;
-    transform: none;
+  .hl-stage {
+    min-height: 0;
+  }
+  .hl-strip-row {
+    gap: 16px 28px;
+  }
+  .hl-strip-word {
+    font-size: 17px;
   }
 }
-.hl-rise {
-  animation: hlRise 0.55s cubic-bezier(0.22, 0.8, 0.3, 1) both;
-}
-.hl-rise-2 {
-  animation-delay: 0.07s;
-}
-.hl-rise-3 {
-  animation-delay: 0.14s;
-}
-.hl-rise-4 {
-  animation-delay: 0.21s;
-}
+
+/* ── Reduced motion ─────────────────────────────────────────────────────── */
 @media (prefers-reduced-motion: reduce) {
-  .hl-rise,
-  .hl-rise-2,
-  .hl-rise-3,
-  .hl-rise-4 {
-    animation: none;
-  }
-  /* The orbit holds its shape, it just stops circling. */
   .hl-orbit-ring,
   .hl-orbit-ccw {
     animation: none;
   }
-  .hl-btn--primary:hover,
-  .hl-step:hover {
-    transform: none;
+  .hl-live-dot {
+    animation: none;
+  }
+  .hl-rise {
+    animation: none;
+  }
+  .hl-btn--shine::after {
+    display: none;
   }
 }

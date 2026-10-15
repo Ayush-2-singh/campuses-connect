@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from 'next'
-import { Inter } from 'next/font/google'
+import { Inter, Space_Grotesk } from 'next/font/google'
 import './globals.css'
 import './landing.css'
 import './hire-landing.css'
@@ -24,6 +24,20 @@ const inter = Inter({
   subsets: ['latin'],
   display: 'swap',
   variable: '--font-inter',
+})
+
+/**
+ * Space Grotesk — the DISPLAY face for marketing surfaces (the public landing).
+ *
+ * The landing's headline is set in a geometric grotesque, while the product UI
+ * stays on Inter: one display face for the promise, one reading face for the
+ * interface. It is exposed as `--font-space-grotesk`, so only the marketing
+ * stylesheet (hire-landing.css) opts into it — app pages are untouched.
+ */
+const spaceGrotesk = Space_Grotesk({
+  subsets: ['latin'],
+  display: 'swap',
+  variable: '--font-space-grotesk',
 })
 
 /**
@@ -222,7 +236,7 @@ const swScript = `(function(){
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" dir="ltr" suppressHydrationWarning className={inter.variable}>
+    <html lang="en" dir="ltr" suppressHydrationWarning className={`${inter.variable} ${spaceGrotesk.variable}`}>
       <head>
         {/* Preconnect to Supabase — only external API actually called from client.
             The project ref is never hardcoded here: it belongs in NEXT_PUBLIC_SUPABASE_URL. */}
