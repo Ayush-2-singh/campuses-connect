@@ -140,7 +140,45 @@ async function getWins(): Promise<Win[]> {
   }
 }
 
+/**
+ * Recommended reading. A post with a title is the proxy for "someone wrote
+ * something" until the blog feeds the landing directly. When nothing qualifies
+ * the band says so itself, rather than dressing up invented sources — the same
+ * rule the wins band follows.
+ */
+type Reading = { tag: string; title: string; body: string; source: string }
+
+async function getReading(): Promise<Reading[]> {
+  const db = getAdmin()
+  if (!db) return []
+  try {
+    const { data } = await db
+      .from('posts')
+      .select('title, body, post_type, company_org, created_at')
+      .not('title', 'is', null)
+      .eq('is_archived', false)
+      .order('created_at', { ascending: false })
+      .limit(3)
+    return (data ?? [])
+      .filter((p: any) => p?.title && p?.body)
+      .map((p: any) => ({
+        tag: p.company_org ? String(p.company_org) : 'From the community',
+        title: String(p.title),
+        body: String(p.body).replace(/\s+/g, ' ').trim().slice(0, 150),
+        source: p.company_org ? String(p.company_org) : 'Posted on ConnectToCampus',
+      }))
+  } catch {
+    return []
+  }
+}
+
 export default async function Home() {
-  const [stats, companies, problems, wins] = await Promise.all([getStats(), getCompanies(), getProblems(), getWins()])
-  return <HireLanding stats={stats} companies={companies} problems={problems} wins={wins} />
+  const [stats, companies, problems, wins, reading] = await Promise.all([
+    getStats(),
+    getCompanies(),
+    getProblems(),
+    getWins(),
+    getReading(),
+  ])
+  return <HireLanding stats={stats} companies={companies} problems={problems} wins={wins} reading={reading} />
 }

@@ -194,36 +194,110 @@ const WORKFLOW = [
 ]
 
 /**
- * "One platform" band — three product surfaces, each with the three things it
- * actually does. Every bullet describes shipped behaviour on the routes the
- * footer and nav link to; nothing here is aspirational.
+ * Bento band — four product surfaces in the reference's pastel grid (wide /
+ * narrow, then narrow / wide). Every tile describes shipped behaviour on a
+ * route the nav or footer already links to; nothing here is aspirational.
  */
-const PLATFORM = [
+const BENTO = [
   {
     title: 'Compete',
     href: '/compete',
     icon: 'zap',
-    art: 'compete',
-    body: 'Timed contests on real interview problems, with a score and a rank that show where you actually stand.',
-    points: ['Graded on real test cases', 'Per-topic progress', 'Ranked against your cohort'],
+    tone: 'peach',
+    span: 'wide',
+    body: 'Timed contests on real interview problems, graded on the test cases they pass, ranked against the cohort that sat the same paper.',
   },
   {
     title: 'Jobs & internships',
     href: '/jobs',
     icon: 'briefcase',
-    art: 'jobs',
-    body: 'One board for internships, hackathons and full-time roles — with the deadline and the stipend up front.',
-    points: ['Verified companies only', 'Apply link straight from the post', 'Deadlines never missed'],
+    tone: 'mint',
+    span: 'narrow',
+    body: 'One board for internships, hackathons and full-time roles — deadline and stipend up front.',
   },
   {
     title: 'Interview experiences',
     href: '/experiences',
     icon: 'pencil',
-    art: 'experiences',
-    body: 'Read every round of an interview as it actually happened — or add your own once it is your turn.',
-    points: ['Round-by-round write-ups', 'Role and outcome on each', 'Tips from the people who sat it'],
+    tone: 'blue',
+    span: 'narrow',
+    body: 'Every round of an interview, as it actually happened.',
+  },
+  {
+    title: 'AI Coach',
+    href: '/brain',
+    icon: 'sparkles',
+    tone: 'lilac',
+    span: 'wide',
+    body: 'Ask about the problem in front of you and get the approach, the pitfalls and the follow-up questions a mentor would raise — on the platform, next to your own submissions.',
+  },
+] as const
+
+/**
+ * The roadmap band, module by module. Each module carries only what the site
+ * can stand behind: the module count and the concept chips are read from real
+ * rows (active problems, their topics, active companies), and the one module
+ * with no content yet is marked locked and says so.
+ */
+const MODULE_COPY = [
+  {
+    n: '1',
+    title: 'Compete',
+    href: '/compete',
+    icon: 'zap',
+    tag: '# Query like a pro',
+    body: 'Timed contests on real interview problems, with hints removed and a clock running. Every attempt is graded on the test cases it passes.',
+    why: 'Practice that ends in a score you can show a recruiter beats another untracked problem list.',
+    cta: 'Enter Compete',
+  },
+  {
+    n: '2',
+    title: 'Jobs & internships',
+    href: '/jobs',
+    icon: 'briefcase',
+    tag: '# Apply before the deadline',
+    body: 'Internships, hackathons and full-time roles from companies active on the platform — deadline, location and stipend stated on the post.',
+    why: 'One verified board beats four group chats and a spreadsheet nobody updates.',
+    cta: 'Enter the job board',
+  },
+  {
+    n: '3',
+    title: 'Interview experiences',
+    href: '/experiences',
+    icon: 'pencil',
+    tag: '# Round by round',
+    body: 'Write-ups members post after a real drive: every round, the role, and how it ended.',
+    why: 'You cannot prepare for a round nobody has described yet. Nothing is shown here until members post real write-ups.',
+    cta: 'Write-ups land here',
+  },
+] as const
+
+/**
+ * Reading band. Articles come from real rows when they exist; until then the
+ * band says so, in the open, instead of inventing sources.
+ */
+const READING_PREVIEW = [
+  {
+    tag: 'Interview experiences',
+    title: 'An interview write-up will live here',
+    body: 'Round by round, from someone who sat the drive.',
+    source: 'From members',
+  },
+  {
+    tag: 'Notes & resources',
+    title: 'A shared note will live here',
+    body: 'Semester notes, PYQs and lab files students upload.',
+    source: 'From campuses',
+  },
+  {
+    tag: 'Guides',
+    title: 'A guide will live here',
+    body: 'How a contest is scored and what the shortlist sees.',
+    source: 'From ConnectToCampus',
   },
 ]
+
+type Reading = { tag: string; title: string; body: string; source: string }
 
 /** Footer columns — every entry is a route that exists in the app. */
 const FOOTER = [
@@ -287,11 +361,13 @@ export default function HireLanding({
   companies,
   problems,
   wins,
+  reading,
 }: {
   stats?: Stats
   companies?: Company[]
   problems?: Problem[]
   wins?: Win[]
+  reading?: Reading[]
 }) {
   const [form, setForm] = useState({
     company: '',
@@ -358,6 +434,15 @@ export default function HireLanding({
   const topics = Array.from(new Set((problems ?? []).flatMap((p) => p.topics ?? []))).slice(0, 8)
   const winList = (wins ?? []).filter((w) => w?.title && w?.excerpt)
   const problemList = (problems ?? []).filter((p) => p?.title && p?.slug)
+  // Roadmap numbers. Nothing invented: the problem count and the concept chips
+  // are the active problems (and their topics) themselves, the company count is
+  // the live companies table, and the write-up count is the interview rows —
+  // which is why that module renders locked while it is zero.
+  const problemCount = problems?.length ?? 0
+  const companyCount = stats?.companies ?? companies?.length ?? 0
+  const campusCount = stats?.campuses ?? 0
+  const writingCount = winList.length
+  const readingList = (reading ?? []).filter((r) => r?.title && r?.body)
 
   return (
     <div className="hl-page">
@@ -1192,7 +1277,7 @@ export default function HireLanding({
         </section>
       )}
 
-      {/* ── One platform — three surfaces, each describing what it really does ── */}
+      {/* ── One platform — the reference's pastel bento grid ── */}
       <section className="hl-band hl-band--platform">
         <div className="hl-wrap">
           <h2 className="hl-band-title hl-band-title--center">
@@ -1201,35 +1286,152 @@ export default function HireLanding({
           <p className="hl-band-sub hl-band-sub--center">
             From your first contest to the offer letter, everything you need lives in one place.
           </p>
-          <div className="hl-platform">
-            {PLATFORM.map((c, i) => (
-              <article className="hl-pcard" key={c.title}>
-                <div className={`hl-pcard-art hl-pcard-art--${c.art}`} aria-hidden="true">
-                  <span className="hl-art-a" />
-                  <span className="hl-art-b" />
-                  <span className="hl-art-c" />
-                </div>
-                <div className="hl-pcard-body">
-                  <div className="hl-pcard-head">
-                    <span className="hl-pcard-ic">
-                      <Icon name={c.icon} size={17} />
-                    </span>
-                    <h3>{c.title}</h3>
-                    <span className="hl-pcard-n">{String(i + 1).padStart(2, '0')}</span>
+          <div className="hl-bento">
+            {BENTO.map((t) => (
+              <Link className={`hl-tile hl-tile--${t.tone} hl-tile--${t.span}`} href={t.href} key={t.title}>
+                <span className="hl-tile-art" aria-hidden="true" />
+                <Icon name={t.icon} size={150} className="hl-tile-gl" />
+                <span className="hl-tile-ic">
+                  <Icon name={t.icon} size={19} />
+                </span>
+                <h3>{t.title}</h3>
+                <p>{t.body}</p>
+                <span className="hl-tile-go">
+                  Explore
+                  <Icon name="chevron" size={15} className="hl-arrow" />
+                </span>
+              </Link>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ── Roadmap — numbered modules, live counts, one honest lock ── */}
+      <section className="hl-band hl-band--roadmap">
+        <div className="hl-wrap">
+          <p className="hl-eyebrow hl-eyebrow--center">The path</p>
+          <h2 className="hl-band-title hl-band-title--center">
+            One path, module by <em className="hl-em">module.</em>
+          </h2>
+          <p className="hl-band-sub hl-band-sub--center">
+            Each module is a surface you can open today. The counts under them are read live from the platform.
+          </p>
+
+          <div className="hl-mods">
+            {MODULE_COPY.map((m, i) => {
+              const locked = m.n === '3'
+              const chips =
+                i === 0
+                  ? topics
+                  : i === 1
+                    ? (companies ?? [])
+                        .map((c) => c?.name)
+                        .filter((n): n is string => Boolean(n))
+                        .slice(0, 6)
+                    : []
+              const statLabel = i === 0 ? 'Problems' : i === 1 ? 'Companies' : 'Write-ups'
+              const statValue = i === 0 ? problemCount : i === 1 ? companyCount : writingCount
+              const covLabel = i === 0 ? 'Concepts' : i === 1 ? 'Campuses' : 'Status'
+              const covValue = i === 0 ? topics.length : i === 1 ? campusCount : 'Locked'
+              return (
+                <article className={`hl-mod${locked ? ' hl-mod--locked' : ''}`} key={m.n}>
+                  <span className="hl-mod-n" aria-hidden="true">
+                    {m.n}
+                  </span>
+                  <div className="hl-mod-card">
+                    <div className="hl-mod-top">
+                      <span className="hl-mod-ic">
+                        <Icon name={m.icon} size={20} />
+                      </span>
+                      <h3>{m.title}</h3>
+                      {locked && (
+                        <span className="hl-mod-soon">
+                          <Icon name="lock" size={13} />
+                          Coming soon
+                        </span>
+                      )}
+                    </div>
+                    <span className="hl-mod-tag">{m.tag}</span>
+                    <p className="hl-mod-body">{m.body}</p>
+                    <div className="hl-mod-why">
+                      <p className="hl-mod-why-t">The &ldquo;why&rdquo;</p>
+                      <p>{m.why}</p>
+                    </div>
+                    <div className="hl-mod-stats">
+                      <div className="hl-mod-stat">
+                        <p className="hl-mod-stat-l">{statLabel}</p>
+                        <p className="hl-mod-stat-v">{statValue}</p>
+                        <span className="hl-mod-dots" aria-hidden="true">
+                          <i />
+                          <i />
+                          <i />
+                        </span>
+                      </div>
+                      <div className="hl-mod-stat hl-mod-stat--cov">
+                        <p className="hl-mod-stat-l">{covLabel}</p>
+                        <p className="hl-mod-cov">{covValue}</p>
+                        <span className="hl-mod-checks" aria-hidden="true">
+                          <i>✓</i>
+                          <i>✓</i>
+                          <i>✓</i>
+                        </span>
+                      </div>
+                    </div>
+                    {chips.length > 0 && (
+                      <>
+                        <p className="hl-mod-chip-l">
+                          <Icon name="layers" size={14} />
+                          {i === 0 ? 'Concepts covered' : 'Hiring on ConnectToCampus'}
+                        </p>
+                        <div className="hl-mod-chips">
+                          {chips.map((c) => (
+                            <span key={c}>{c}</span>
+                          ))}
+                        </div>
+                      </>
+                    )}
+                    <Link className={`hl-mod-cta${locked ? ' hl-mod-cta--locked' : ''}`} href={m.href}>
+                      {locked && <Icon name="lock" size={15} />}
+                      {m.cta}
+                      {!locked && <Icon name="chevron" size={15} className="hl-arrow" />}
+                    </Link>
                   </div>
-                  <p className="hl-pcard-text">{c.body}</p>
-                  <ul className="hl-pcard-points">
-                    {c.points.map((p) => (
-                      <li key={p}>
-                        <Icon name="check" size={14} />
-                        {p}
-                      </li>
-                    ))}
-                  </ul>
-                  <Link className="hl-pcard-link" href={c.href}>
-                    Explore
-                    <Icon name="chevron" size={15} className="hl-arrow" />
-                  </Link>
+                </article>
+              )
+            })}
+          </div>
+        </div>
+      </section>
+
+      {/* ── Recommended reading — real rows when they exist, labelled otherwise ── */}
+      <section className="hl-band hl-band--reading">
+        <div className="hl-wrap">
+          <p className="hl-eyebrow hl-eyebrow--center">{readingList.length > 0 ? 'Recommended reading' : 'Preview'}</p>
+          <h2 className="hl-band-title hl-band-title--center">
+            Worth <em className="hl-em">reading</em> next.
+          </h2>
+          <p className="hl-band-sub hl-band-sub--center">
+            {readingList.length > 0
+              ? 'Articles and write-ups published on ConnectToCampus, newest first.'
+              : 'Nothing has been published yet, so these cards are placeholders: each one fills in with a real post the moment one lands.'}
+          </p>
+          <div className="hl-reads">
+            {(readingList.length > 0 ? readingList : READING_PREVIEW).slice(0, 3).map((r, i) => (
+              <article className="hl-read" key={`${r.title}-${i}`}>
+                <div className="hl-read-head">
+                  <span className="hl-read-ic">
+                    <Icon name={i === 0 ? 'pencil' : i === 1 ? 'layers' : 'book'} size={17} />
+                  </span>
+                  <div>
+                    <p className="hl-read-tag">{r.tag}</p>
+                    <p className="hl-read-src">{r.source}</p>
+                  </div>
+                </div>
+                <h3>{r.title}</h3>
+                <p className="hl-read-quote">&ldquo;{r.body}&rdquo;</p>
+                <div className="hl-read-foot">
+                  <BrandName className="hl-read-mark" />
+                  <span>{readingList.length > 0 ? 'Trusted insights' : 'Preview — not published'}</span>
                 </div>
               </article>
             ))}

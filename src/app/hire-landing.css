@@ -1451,172 +1451,499 @@
   margin-top: 40px;
 }
 
-/* Three product cards: illustration, then what it does. */
-.hl-platform {
+/* ── Bento grid — the reference's pastel tiles, wide/narrow then narrow/wide ── */
+.hl-bento {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: clamp(18px, 2vw, 28px);
+  gap: clamp(16px, 1.8vw, 24px);
+  margin-top: 44px;
 }
-.hl-pcard {
+.hl-tile {
+  position: relative;
   display: flex;
   flex-direction: column;
-  border-radius: 22px;
-  background: var(--lq-surface);
-  border: 1px solid var(--lq-line);
-  box-shadow: var(--lq-shadow-panel);
+  min-height: 268px;
+  padding: 26px 28px 22px;
+  border-radius: 24px;
   overflow: hidden;
+  border: 1px solid color-mix(in srgb, var(--lq-text) 9%, transparent);
   transition:
     transform 0.25s ease,
-    border-color 0.25s ease;
+    box-shadow 0.25s ease;
 }
-.hl-pcard:hover {
-  transform: translateY(-4px);
-  border-color: color-mix(in srgb, var(--lq-brand) 32%, transparent);
+.hl-tile:hover {
+  transform: translateY(-3px);
+  box-shadow: var(--lq-shadow-float);
 }
-/* CSS-only illustration panel — grid paper plus a few accent shapes. */
-.hl-pcard-art {
-  position: relative;
-  height: 148px;
-  overflow: hidden;
-  background-color: var(--lq-sunken);
-  background-image:
-    linear-gradient(color-mix(in srgb, var(--lq-text) 7%, transparent) 1px, transparent 1px),
-    linear-gradient(90deg, color-mix(in srgb, var(--lq-text) 7%, transparent) 1px, transparent 1px);
-  background-size: 22px 22px;
-  border-bottom: 1px solid var(--lq-line);
+.hl-tile--wide {
+  grid-column: span 2;
 }
-.hl-pcard-art span {
+/* The four pastel tones, light and dark, from the reference's palette. Each
+   tile keeps one ink colour for its title, motif and dotted paper. */
+.hl-tile--peach {
+  background: #f7e2c8;
+  --tile-ink: #6b3f10;
+}
+.hl-tile--mint {
+  background: #cfe0cb;
+  --tile-ink: #2c5134;
+}
+.hl-tile--blue {
+  background: #cfe2f8;
+  --tile-ink: #1b4877;
+}
+.hl-tile--lilac {
+  background: #dcd6ee;
+  --tile-ink: #3d3270;
+}
+[data-theme='dark'] .hl-tile--peach {
+  background: color-mix(in srgb, #f0a04b 17%, var(--lq-canvas));
+  --tile-ink: #f0c58e;
+}
+[data-theme='dark'] .hl-tile--mint {
+  background: color-mix(in srgb, #6aa86f 17%, var(--lq-canvas));
+  --tile-ink: #a9d3ac;
+}
+[data-theme='dark'] .hl-tile--blue {
+  background: color-mix(in srgb, #4f8ce0 17%, var(--lq-canvas));
+  --tile-ink: #a8c8f3;
+}
+[data-theme='dark'] .hl-tile--lilac {
+  background: color-mix(in srgb, #8b7fd6 19%, var(--lq-canvas));
+  --tile-ink: #c3baf0;
+}
+/* Dotted paper, plus the reference's faint line motif in the corner. */
+.hl-tile-art {
   position: absolute;
-  border-radius: 999px;
+  inset: 0;
+  pointer-events: none;
+  color: var(--tile-ink);
+  opacity: 0.16;
+  background-image: radial-gradient(currentColor 1px, transparent 1.4px);
+  background-size: 18px 18px;
 }
-.hl-art-a,
-.hl-art-b {
-  width: 34px;
-  height: 34px;
-  background: var(--lq-brand);
-  box-shadow: 0 10px 22px -8px color-mix(in srgb, var(--lq-brand) 70%, transparent);
+.hl-tile-gl {
+  position: absolute;
+  right: -18px;
+  bottom: -26px;
+  color: var(--tile-ink);
+  opacity: 0.18;
+  pointer-events: none;
 }
-.hl-art-a {
-  left: 16%;
-  bottom: 22%;
-}
-.hl-art-b {
-  right: 18%;
-  top: 20%;
-  background: var(--lq-brand-glow);
-}
-.hl-art-c {
-  left: 22%;
-  right: 24%;
-  top: 52%;
-  height: 3px;
-  border-radius: 2px;
-  background: linear-gradient(90deg, color-mix(in srgb, var(--lq-brand) 65%, transparent), transparent);
-}
-.hl-pcard-art--compete .hl-art-a {
-  width: 54px;
-  height: 30px;
-  border-radius: 999px;
-  transform: rotate(-12deg);
-}
-.hl-pcard-art--compete .hl-art-b {
-  width: 30px;
-  height: 30px;
-  border-radius: 999px;
-  right: 24%;
-}
-.hl-pcard-art--jobs .hl-art-a {
-  border-radius: 12px;
+.hl-tile-ic {
+  position: relative;
   width: 46px;
   height: 46px;
-}
-.hl-pcard-art--jobs .hl-art-b {
-  border-radius: 12px;
-}
-.hl-pcard-art--experiences .hl-art-a,
-.hl-pcard-art--experiences .hl-art-b {
-  border-radius: 8px;
-  width: 40px;
-  height: 52px;
-}
-.hl-pcard-body {
-  display: flex;
-  flex-direction: column;
-  flex: 1;
-  padding: 20px;
-}
-.hl-pcard-head {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding-bottom: 14px;
-  border-bottom: 1px solid var(--lq-line);
-  margin-bottom: 14px;
-}
-.hl-pcard-ic {
-  width: 30px;
-  height: 30px;
   display: grid;
   place-items: center;
-  border-radius: 10px;
-  color: var(--lq-brand-strong);
-  background: var(--lq-brand-soft);
-  flex-shrink: 0;
+  border-radius: 15px;
+  background: color-mix(in srgb, var(--lq-surface) 88%, transparent);
+  border: 1px solid color-mix(in srgb, var(--tile-ink) 18%, transparent);
+  color: var(--tile-ink);
 }
-.hl-pcard-head h3 {
+.hl-tile h3 {
+  position: relative;
+  margin: 20px 0 10px;
   font-family: var(--font-space-grotesk), system-ui, sans-serif;
-  font-size: 17px;
+  font-size: clamp(19px, 1.5vw, 23px);
   font-weight: 700;
-  letter-spacing: -0.02em;
+  letter-spacing: -0.025em;
+  color: var(--tile-ink);
 }
-.hl-pcard-n {
-  margin-left: auto;
-  font-size: 12px;
-  font-weight: 700;
-  color: var(--lq-faint);
-  font-variant-numeric: tabular-nums;
+.hl-tile p {
+  position: relative;
+  margin: 0 0 22px;
+  max-width: 46ch;
+  font-size: 14.5px;
+  line-height: 1.62;
+  color: color-mix(in srgb, var(--tile-ink) 82%, var(--lq-text));
 }
-.hl-pcard-text {
-  margin: 0 0 16px;
-  font-size: 14px;
-  line-height: 1.6;
-  color: var(--lq-muted);
-}
-.hl-pcard-points {
-  list-style: none;
-  margin: 0 0 20px;
-  padding: 0;
-  display: grid;
-  gap: 10px;
-}
-.hl-pcard-points li {
-  display: flex;
-  align-items: center;
-  gap: 9px;
-  padding-bottom: 10px;
-  border-bottom: 1px solid var(--lq-line);
-  font-size: 13.5px;
-  color: var(--lq-text-soft);
-}
-.hl-pcard-points li:last-child {
-  border-bottom: none;
-  padding-bottom: 0;
-}
-.hl-pcard-points svg {
-  color: var(--lq-brand);
-  flex-shrink: 0;
-}
-.hl-pcard-link {
+.hl-tile-go {
+  position: relative;
   margin-top: auto;
   display: inline-flex;
   align-items: center;
   gap: 7px;
-  font-size: 14px;
+  font-size: 13.5px;
   font-weight: 700;
+  color: var(--tile-ink);
+}
+
+/* ── Roadmap — numbered modules, live counts, one honest lock ─────────────── */
+.hl-eyebrow--center {
+  text-align: center;
+}
+.hl-mods {
+  display: grid;
+  gap: clamp(52px, 6vw, 92px);
+  margin-top: 48px;
+}
+.hl-mod {
+  position: relative;
+  display: grid;
+  grid-template-columns: 118px minmax(0, 1fr);
+  align-items: start;
+}
+/* The dashed run between one module and the next, the way the reference threads
+   them together. */
+.hl-mod:not(:first-child)::before {
+  content: '';
+  position: absolute;
+  left: 52px;
+  top: calc(-1 * clamp(52px, 6vw, 92px));
+  height: clamp(52px, 6vw, 92px);
+  border-left: 3px dashed color-mix(in srgb, var(--lq-text) 20%, transparent);
+}
+.hl-mod-n {
+  position: relative;
+  z-index: 0;
+  font-family: var(--font-space-grotesk), system-ui, sans-serif;
+  font-size: clamp(74px, 8.6vw, 138px);
+  font-weight: 700;
+  line-height: 0.78;
+  letter-spacing: -0.06em;
+  color: color-mix(in srgb, var(--lq-text) 13%, transparent);
+  user-select: none;
+}
+.hl-mod-card {
+  position: relative;
+  z-index: 1;
+  margin-left: -34px;
+  display: grid;
+  grid-template-columns: minmax(0, 1.32fr) minmax(0, 1fr);
+  grid-template-areas:
+    'top stats'
+    'tag stats'
+    'body chipL'
+    'why chipR'
+    'cta cta';
+  align-items: start;
+  column-gap: clamp(24px, 3vw, 52px);
+  padding: 30px 32px 28px;
+  border-radius: 26px;
+  background: var(--lq-surface);
+  border: 1px solid var(--lq-line-strong);
+  box-shadow: var(--lq-shadow-panel);
+}
+/* The reference's second, hand-drawn outline around each module card. */
+.hl-mod-card::after {
+  content: '';
+  position: absolute;
+  inset: -9px -8px -12px -10px;
+  border: 1px dashed color-mix(in srgb, var(--lq-brand) 26%, transparent);
+  border-radius: 30px 24px 32px 26px;
+  pointer-events: none;
+}
+.hl-mod-top {
+  grid-area: top;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.hl-mod-ic {
+  width: 54px;
+  height: 54px;
+  flex-shrink: 0;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  color: var(--lq-brand-strong);
+  background: color-mix(in srgb, var(--lq-brand) 12%, transparent);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--lq-brand) 26%, transparent);
+}
+.hl-mod-top h3 {
+  font-family: var(--font-space-grotesk), system-ui, sans-serif;
+  font-size: clamp(23px, 2.1vw, 31px);
+  font-weight: 700;
+  letter-spacing: -0.03em;
+}
+.hl-mod-soon {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  margin-left: 4px;
+  padding: 7px 14px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--lq-text) 88%, transparent);
+  color: var(--lq-canvas);
+  font-size: 10.5px;
+  font-weight: 800;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+.hl-mod-tag {
+  grid-area: tag;
+  justify-self: start;
+  margin: 14px 0 16px;
+  padding: 6px 13px;
+  border-radius: 9px;
+  background: color-mix(in srgb, var(--lq-brand) 12%, transparent);
+  color: var(--lq-brand-strong);
+  font-size: 12.5px;
+  font-weight: 650;
+}
+.hl-mod-body {
+  grid-area: body;
+  margin: 0 0 22px;
+  font-size: 15px;
+  line-height: 1.68;
+  color: var(--lq-text-soft);
+}
+.hl-mod-why {
+  grid-area: why;
+  padding: 18px 20px 20px;
+  border-radius: 16px;
+  background: color-mix(in srgb, #e8b93f 16%, var(--lq-surface));
+}
+.hl-mod-why-t {
+  margin: 0 0 10px;
+  padding-bottom: 8px;
+  border-bottom: 2px solid color-mix(in srgb, #b8892a 70%, transparent);
+  display: inline-block;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: color-mix(in srgb, #8a6415 85%, var(--lq-text));
+}
+.hl-mod-why p:last-child {
+  margin: 0;
+  font-size: 14.5px;
+  line-height: 1.62;
+  color: var(--lq-text-soft);
+}
+.hl-mod-stats {
+  grid-area: stats;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+.hl-mod-stat {
+  padding: 16px 16px 14px;
+  border-radius: 18px;
+  background: var(--lq-sunken);
+  border: 1px solid var(--lq-line);
+}
+.hl-mod-stat--cov {
+  background: color-mix(in srgb, #6aa86f 12%, var(--lq-surface));
+  border-color: color-mix(in srgb, #4f8a56 34%, transparent);
+}
+.hl-mod-stat-l {
+  margin: 0;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--lq-muted);
+}
+.hl-mod-stat-v,
+.hl-mod-cov {
+  margin: 6px 0 0;
+  font-family: var(--font-space-grotesk), system-ui, sans-serif;
+  font-size: clamp(34px, 3.4vw, 46px);
+  font-weight: 700;
+  line-height: 1;
+  letter-spacing: -0.04em;
+  color: var(--lq-text);
+}
+.hl-mod-cov {
+  font-family: Georgia, 'Iowan Old Style', 'Times New Roman', Times, serif;
+  font-style: italic;
+  font-weight: 500;
+  font-size: clamp(26px, 2.6vw, 36px);
+  color: color-mix(in srgb, #2c5134 80%, var(--lq-text));
+}
+.hl-mod-dots {
+  display: flex;
+  gap: 4px;
+  margin-top: 12px;
+}
+.hl-mod-dots i {
+  flex: 1;
+  height: 3px;
+  border-radius: 2px;
+  background: color-mix(in srgb, var(--lq-text) 16%, transparent);
+}
+.hl-mod-checks {
+  display: flex;
+  gap: 6px;
+  margin-top: 12px;
+  font-size: 12px;
+  font-style: normal;
+  color: #3f7a47;
+}
+.hl-mod-checks i {
+  font-style: normal;
+}
+.hl-mod-chip-l {
+  grid-area: chipL;
+  margin: 22px 0 10px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-family: Georgia, 'Iowan Old Style', 'Times New Roman', Times, serif;
+  font-style: italic;
+  font-size: 15px;
+  color: color-mix(in srgb, #2c5134 85%, var(--lq-text));
+}
+.hl-mod-chips {
+  grid-area: chipR;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.hl-mod-chips span {
+  padding: 7px 13px;
+  border-radius: 10px;
+  background: var(--lq-surface);
+  border: 1px solid var(--lq-line);
+  box-shadow: var(--lq-shadow-card);
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--lq-text-soft);
+}
+.hl-mod-cta {
+  grid-area: cta;
+  margin-top: 26px;
+  min-height: 54px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+  border-radius: 16px;
+  background: color-mix(in srgb, #6aa86f 15%, var(--lq-surface));
+  border: 1px solid color-mix(in srgb, #4f8a56 42%, transparent);
+  color: color-mix(in srgb, #2c5134 85%, var(--lq-text));
+  font-size: 15px;
+  font-weight: 700;
+}
+.hl-mod-cta:hover {
+  background: color-mix(in srgb, #6aa86f 24%, var(--lq-surface));
+}
+.hl-mod-cta--locked {
+  background: var(--lq-sunken);
+  border-style: dashed;
+  border-color: var(--lq-line-strong);
+  color: var(--lq-muted);
+  cursor: not-allowed;
+}
+/* The module with nothing behind it yet reads as locked, not as a promise. */
+.hl-mod--locked .hl-mod-card {
+  background: color-mix(in srgb, var(--lq-sunken) 55%, var(--lq-surface));
+}
+.hl-mod--locked .hl-mod-ic {
+  color: var(--lq-faint);
+  background: var(--lq-sunken);
+  box-shadow: 0 0 0 3px var(--lq-line);
+}
+.hl-mod--locked .hl-mod-n {
+  color: color-mix(in srgb, var(--lq-text) 8%, transparent);
+}
+
+/* ── Recommended reading ─────────────────────────────────────────────────── */
+.hl-reads {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: clamp(18px, 2vw, 26px);
+  margin-top: 44px;
+}
+.hl-read {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  padding: 22px 22px 18px;
+  border-radius: 20px;
+  overflow: hidden;
+  background: linear-gradient(
+    180deg,
+    var(--lq-surface) 0%,
+    color-mix(in srgb, var(--lq-sunken) 55%, var(--lq-surface)) 100%
+  );
+  border: 1px solid var(--lq-line);
+  box-shadow: var(--lq-shadow-card);
+}
+/* Faint paper-fold motif in the corner, as the reference cards carry. */
+.hl-read::after {
+  content: '';
+  position: absolute;
+  right: -46px;
+  top: -34px;
+  width: 132px;
+  height: 132px;
+  border-radius: 28px;
+  transform: rotate(24deg);
+  background: color-mix(in srgb, var(--lq-text) 4%, transparent);
+  pointer-events: none;
+}
+.hl-read-head {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.hl-read-ic {
+  width: 42px;
+  height: 42px;
+  flex-shrink: 0;
+  display: grid;
+  place-items: center;
+  border-radius: 13px;
+  background: var(--lq-surface);
+  border: 1px solid var(--lq-line);
   color: var(--lq-brand-strong);
 }
-.hl-pcard-link:hover {
-  color: var(--lq-brand);
+.hl-read-tag {
+  margin: 0;
+  font-size: 10.5px;
+  font-weight: 800;
+  letter-spacing: 0.17em;
+  text-transform: uppercase;
+  color: var(--lq-brand-strong);
+}
+.hl-read-src {
+  margin: 3px 0 0;
+  font-size: 11.5px;
+  letter-spacing: 0.06em;
+  color: var(--lq-muted);
+}
+.hl-read h3 {
+  position: relative;
+  margin: 18px 0 0;
+  font-family: var(--font-space-grotesk), system-ui, sans-serif;
+  font-size: 19px;
+  font-weight: 700;
+  letter-spacing: -0.025em;
+  line-height: 1.25;
+}
+.hl-read-quote {
+  position: relative;
+  margin: 10px 0 22px;
+  font-size: 13.5px;
+  line-height: 1.65;
+  font-style: italic;
+  color: var(--lq-muted);
+}
+.hl-read-foot {
+  position: relative;
+  margin-top: auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding-top: 14px;
+  border-top: 1px solid var(--lq-line);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--lq-muted);
+}
+.hl-read-mark {
+  font-size: 15.5px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  text-transform: none;
+  color: var(--lq-text);
 }
 
 /* Members' wins — real write-ups, photo-card presentation. */
@@ -2163,8 +2490,39 @@
 }
 
 @media (max-width: 900px) {
-  .hl-platform {
+  /* The new bands stack: the bento and the reading cards to one column, and the
+     roadmap drops its numeral column so the numeral sits above each card. */
+  .hl-bento,
+  .hl-reads {
     grid-template-columns: minmax(0, 1fr);
+  }
+  .hl-tile--wide {
+    grid-column: auto;
+  }
+  .hl-tile {
+    min-height: 0;
+  }
+  .hl-mod {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .hl-mod-n {
+    font-size: 76px;
+  }
+  .hl-mod-card {
+    margin-left: 0;
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-areas:
+      'top'
+      'tag'
+      'body'
+      'why'
+      'stats'
+      'chipL'
+      'chipR'
+      'cta';
+  }
+  .hl-mod:not(:first-child)::before {
+    left: 24px;
   }
   .hl-footer-cols {
     grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -2176,6 +2534,20 @@
   .hl-page {
     --hl-orbit-scale: 0.8;
     --hl-orbit-gutter: 84px;
+  }
+  /* Phones: the hand-drawn outline comes off, and the two stat tiles and the
+     concept chips take the full width instead of a cramped half. */
+  .hl-mod-card {
+    padding: 22px 20px 20px;
+  }
+  .hl-mod-card::after {
+    display: none;
+  }
+  .hl-mod-stats {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .hl-tile {
+    padding: 22px 20px 18px;
   }
   .hl-band-title,
   .hl-band-title--center {
