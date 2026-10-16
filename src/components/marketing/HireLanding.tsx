@@ -443,6 +443,11 @@ export default function HireLanding({
   const campusCount = stats?.campuses ?? 0
   const writingCount = winList.length
   const readingList = (reading ?? []).filter((r) => r?.title && r?.body)
+  // The rail scrolls right to left on a loop, so the track holds the card list
+  // TWICE: the second pass is what the loop slides into, and it is hidden from
+  // assistive tech (and from the keyboard) because it repeats the first.
+  const readingCards = (readingList.length > 0 ? readingList : READING_PREVIEW).slice(0, 6)
+  const railCards = [...readingCards, ...readingCards]
 
   return (
     <div className="hl-page">
@@ -1415,26 +1420,35 @@ export default function HireLanding({
               ? 'Articles and write-ups published on ConnectToCampus, newest first.'
               : 'Nothing has been published yet, so these cards are placeholders: each one fills in with a real post the moment one lands.'}
           </p>
-          <div className="hl-reads">
-            {(readingList.length > 0 ? readingList : READING_PREVIEW).slice(0, 3).map((r, i) => (
-              <article className="hl-read" key={`${r.title}-${i}`}>
-                <div className="hl-read-head">
-                  <span className="hl-read-ic">
-                    <Icon name={i === 0 ? 'pencil' : i === 1 ? 'layers' : 'book'} size={17} />
-                  </span>
-                  <div>
-                    <p className="hl-read-tag">{r.tag}</p>
-                    <p className="hl-read-src">{r.source}</p>
-                  </div>
-                </div>
-                <h3>{r.title}</h3>
-                <p className="hl-read-quote">&ldquo;{r.body}&rdquo;</p>
-                <div className="hl-read-foot">
-                  <BrandName className="hl-read-mark" />
-                  <span>{readingList.length > 0 ? 'Trusted insights' : 'Preview — not published'}</span>
-                </div>
-              </article>
-            ))}
+          <div className="hl-rail">
+            <div className="hl-rail-track">
+              {railCards.map((r, i) => {
+                const repeat = i >= readingCards.length
+                return (
+                  <article
+                    className={`hl-read${repeat ? ' hl-rail-dup' : ''}`}
+                    key={`${r.title}-${i}`}
+                    aria-hidden={repeat || undefined}
+                  >
+                    <div className="hl-read-head">
+                      <span className="hl-read-ic">
+                        <Icon name={i % 3 === 0 ? 'pencil' : i % 3 === 1 ? 'layers' : 'book'} size={17} />
+                      </span>
+                      <div>
+                        <p className="hl-read-tag">{r.tag}</p>
+                        <p className="hl-read-src">{r.source}</p>
+                      </div>
+                    </div>
+                    <h3>{r.title}</h3>
+                    <p className="hl-read-quote">&ldquo;{r.body}&rdquo;</p>
+                    <div className="hl-read-foot">
+                      <BrandName className="hl-read-mark" />
+                      <span>{readingList.length > 0 ? 'Trusted insights' : 'Preview — not published'}</span>
+                    </div>
+                  </article>
+                )
+              })}
+            </div>
           </div>
         </div>
       </section>

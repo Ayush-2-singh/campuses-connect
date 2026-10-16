@@ -1840,15 +1840,74 @@
   color: color-mix(in srgb, var(--lq-text) 8%, transparent);
 }
 
-/* ── Recommended reading ─────────────────────────────────────────────────── */
-.hl-reads {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: clamp(18px, 2vw, 26px);
+/* ── Recommended reading — a rail that travels right to left ───────────────
+   The reference slides its cards sideways past the edges of the section, so the
+   list is one continuous track rather than a grid. The track holds the cards
+   twice, which is what makes the loop seamless: it slides exactly half its own
+   width and the second pass is already where the first one started. The same
+   rail is what future question cards (with their scores) drop into — only the
+   card inside changes. */
+.hl-rail {
+  --hl-rail-gap: clamp(18px, 2vw, 26px);
+  position: relative;
   margin-top: 44px;
+  padding-block: 6px;
+  overflow: hidden;
+  -webkit-mask-image: linear-gradient(90deg, transparent, #000 4%, #000 96%, transparent);
+  mask-image: linear-gradient(90deg, transparent, #000 4%, #000 96%, transparent);
+}
+.hl-rail-track {
+  display: flex;
+  gap: var(--hl-rail-gap);
+  /* The trailing gap is what makes the loop seamless: it brings the track to an
+     exact 2x of (cards + gaps), so sliding 50% lands on the repeat pass and the
+     seam never shows. */
+  padding-right: var(--hl-rail-gap);
+  width: max-content;
+  animation: hlRail 52s linear infinite;
+}
+/* Reading is easier when it waits for you. */
+.hl-rail:hover .hl-rail-track,
+.hl-rail:focus-within .hl-rail-track {
+  animation-play-state: paused;
+}
+@keyframes hlRail {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-50%);
+  }
+}
+/* Phones — and anyone who asked for less motion — get the same cards as a
+   sideways scroll they control instead of a loop they cannot stop. */
+@media (max-width: 767px), (prefers-reduced-motion: reduce) {
+  .hl-rail {
+    overflow-x: auto;
+    overscroll-behavior-x: contain;
+    -webkit-overflow-scrolling: touch;
+    -webkit-mask-image: none;
+    mask-image: none;
+    scrollbar-width: none;
+  }
+  .hl-rail::-webkit-scrollbar {
+    display: none;
+  }
+  .hl-rail-track {
+    animation: none;
+  }
+  /* Both halves of the track are the same cards, so the repeat pass would only
+     show every card twice in a row you can scroll. `.hl-read` sets its own
+     `display` further down the file, so this needs the parent in front of it to
+     win the tie rather than lose on source order. */
+  .hl-rail-track .hl-rail-dup {
+    display: none;
+  }
 }
 .hl-read {
   position: relative;
+  flex: 0 0 auto;
+  width: clamp(276px, 25vw, 358px);
   display: flex;
   flex-direction: column;
   padding: 22px 22px 18px;
@@ -2490,10 +2549,9 @@
 }
 
 @media (max-width: 900px) {
-  /* The new bands stack: the bento and the reading cards to one column, and the
-     roadmap drops its numeral column so the numeral sits above each card. */
-  .hl-bento,
-  .hl-reads {
+  /* The new bands stack: the bento to one column, and the roadmap drops its
+     numeral column so the numeral sits above each card. */
+  .hl-bento {
     grid-template-columns: minmax(0, 1fr);
   }
   .hl-tile--wide {
