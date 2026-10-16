@@ -491,41 +491,14 @@ export default function HireLanding({
           </div>
 
           {/* Recruiter shortlist preview — the app window sits at the centre of
-              the orbit; the cohort and its signals ride the dashed rings. */}
+              the orbit. The dashed rings ride BEHIND it and the cohort in front,
+              the way the reference layers them, so a chip drifts across the
+              preview while the dashes vanish behind its edge. */}
           <div className="hl-stage hl-rise hl-rise-3">
-            <div className="hl-orbit" aria-hidden="true">
+            <div className="hl-orbit hl-orbit--rings" aria-hidden="true">
               <div className="hl-orbit-scale">
                 <span className="hl-orbit-ringline hl-orbit-ringline--inner" />
                 <span className="hl-orbit-ringline" />
-                <div className="hl-orbit-ring">
-                  {ORBIT.map((o) => (
-                    <span className={`hl-orbit-slot hl-orbit-slot--${o.slot}`} key={o.slot}>
-                      <span className="hl-orbit-ccw">
-                        <span className="hl-orbit-up">
-                          {o.kind === 'candidate' ? (
-                            <span className="hl-chip-card">
-                              <span className="hl-chip-card-av">
-                                {o.initials}
-                                <span className="hl-chip-card-dot" />
-                              </span>
-                              <span className="hl-chip-card-tx">
-                                <span className="hl-chip-card-name">{o.name}</span>
-                                <span className="hl-chip-card-meta">
-                                  <span className="hl-chip-card-label">{o.meta}</span>
-                                  <span className="hl-chip-card-value">{o.value}</span>
-                                </span>
-                              </span>
-                            </span>
-                          ) : (
-                            <span className="hl-orbit-tile">
-                              <Icon name={o.icon} size={22} />
-                            </span>
-                          )}
-                        </span>
-                      </span>
-                    </span>
-                  ))}
-                </div>
               </div>
             </div>
 
@@ -583,6 +556,41 @@ export default function HireLanding({
                 Illustrative interface preview — these are not real candidates. Your shortlist shows real profiles from
                 the platform.
               </p>
+            </div>
+
+            {/* Front layer: the chips and signal tiles, painted over the preview. */}
+            <div className="hl-orbit hl-orbit--chips" aria-hidden="true">
+              <div className="hl-orbit-scale">
+                <div className="hl-orbit-ring">
+                  {ORBIT.map((o) => (
+                    <span className={`hl-orbit-slot hl-orbit-slot--${o.slot}`} key={o.slot}>
+                      <span className="hl-orbit-ccw">
+                        <span className="hl-orbit-up">
+                          {o.kind === 'candidate' ? (
+                            <span className="hl-chip-card">
+                              <span className="hl-chip-card-av">
+                                {o.initials}
+                                <span className="hl-chip-card-dot" />
+                              </span>
+                              <span className="hl-chip-card-tx">
+                                <span className="hl-chip-card-name">{o.name}</span>
+                                <span className="hl-chip-card-meta">
+                                  <span className="hl-chip-card-label">{o.meta}</span>
+                                  <span className="hl-chip-card-value">{o.value}</span>
+                                </span>
+                              </span>
+                            </span>
+                          ) : (
+                            <span className="hl-orbit-tile">
+                              <Icon name={o.icon} size={30} />
+                            </span>
+                          )}
+                        </span>
+                      </span>
+                    </span>
+                  ))}
+                </div>
+              </div>
             </div>
           </div>
         </div>

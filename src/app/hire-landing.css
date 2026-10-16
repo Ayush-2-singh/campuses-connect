@@ -468,7 +468,12 @@
                         POSITION stays on the ellipse
    Net transform on each card is the identity apart from where it sits, which
    is why labels stay level and never stretch. All of it stops under
-   prefers-reduced-motion. */
+   prefers-reduced-motion.
+
+   Two LAYERS share that geometry, because the reference paints them either
+   side of the preview: `.hl-orbit--rings` (the dashed circles) sits under the
+   window, `.hl-orbit--chips` over it — so a chip floats across the preview
+   while the dashes disappear behind it. */
 .hl-stage {
   position: relative;
   width: 100%;
@@ -491,6 +496,13 @@
   position: absolute;
   inset: 0;
   transform: scaleY(var(--hl-orbit-squash));
+}
+/* Rings behind the preview, chips and tiles in front of it. */
+.hl-orbit--rings {
+  z-index: 0;
+}
+.hl-orbit--chips {
+  z-index: 2;
 }
 /* The dashed rings. Two concentric ovals read as "a cohort", not a target. */
 .hl-orbit-ringline {
@@ -573,32 +585,42 @@
   --k: var(--hl-orbit-r-out);
 }
 
-/* Candidate chip — avatar + name + the signal that qualifies them. */
+/* Candidate chip — avatar + name + the signal that qualifies them, shaped like
+   the reference: a rounded panel rather than a pill, a rounded-square avatar,
+   the name set large on top and the qualifying signal underneath. */
 .hl-chip-card {
   display: flex;
   align-items: center;
-  gap: 10px;
-  padding: 8px 17px 8px 8px;
-  border-radius: 999px;
+  gap: 13px;
+  padding: 10px 22px 10px 10px;
+  border-radius: 18px;
   background: var(--lq-chip);
-  border: 1px solid var(--lq-line);
-  box-shadow: var(--lq-shadow-card);
+  border: 1px solid var(--lq-line-strong);
+  box-shadow: var(--lq-shadow-float);
   white-space: nowrap;
+}
+/* Dark keeps the reference's glassy panels: lighter than the canvas, with a
+   hint of whatever slides beneath showing through. */
+[data-theme='dark'] .hl-page .hl-chip-card,
+[data-theme='dark'] .hl-page .hl-orbit-tile {
+  background: color-mix(in srgb, var(--lq-text) 8%, var(--lq-canvas));
+  backdrop-filter: blur(10px);
 }
 .hl-chip-card-av {
   position: relative;
-  width: 38px;
-  height: 38px;
+  width: 42px;
+  height: 42px;
   flex-shrink: 0;
   display: grid;
   place-items: center;
-  border-radius: 50%;
-  font-size: 12.5px;
+  border-radius: 13px;
+  font-size: 13.5px;
   font-weight: 800;
   letter-spacing: 0.01em;
   color: var(--lq-brand-strong);
   background: var(--lq-brand-soft);
-  border: 2px solid var(--lq-line);
+  border: 1px solid var(--lq-line);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--lq-brand-glow) 22%, transparent);
 }
 .hl-chip-card-dot {
   position: absolute;
@@ -613,41 +635,43 @@
 .hl-chip-card-tx {
   display: flex;
   flex-direction: column;
+  gap: 3px;
   line-height: 1.25;
 }
 .hl-chip-card-name {
-  font-size: 13px;
+  font-size: 15.5px;
   font-weight: 700;
-  letter-spacing: 0.01em;
+  letter-spacing: -0.005em;
   color: var(--lq-text);
 }
 .hl-chip-card-meta {
   display: flex;
   align-items: center;
-  gap: 4px;
+  gap: 5px;
 }
 .hl-chip-card-label {
-  font-size: 10px;
+  font-size: 12.5px;
   font-weight: 500;
-  letter-spacing: 0.02em;
+  letter-spacing: 0.01em;
   color: var(--lq-muted);
 }
 .hl-chip-card-value {
-  font-size: 11px;
+  font-size: 13px;
   font-weight: 800;
-  letter-spacing: 0.015em;
+  letter-spacing: 0.01em;
   color: var(--lq-text);
 }
-/* Signal tile — the compact proof that rides the outer ring. */
+/* Signal tile — the compact proof that rides the outer ring, dressed as the
+   reference's rounded-square logo plate. */
 .hl-orbit-tile {
-  width: 56px;
-  height: 56px;
+  width: 66px;
+  height: 66px;
   display: grid;
   place-items: center;
-  border-radius: 16px;
+  border-radius: 20px;
   background: var(--lq-chip);
-  border: 1px solid var(--lq-line);
-  box-shadow: var(--lq-shadow-card);
+  border: 1px solid var(--lq-line-strong);
+  box-shadow: var(--lq-shadow-float);
   color: var(--lq-brand-strong);
   transition: color 0.3s ease;
 }
@@ -2062,20 +2086,22 @@
 }
 
 /* Desktop: the wrap caps the stage column, so one orbit scale covers the whole
-   desktop range. */
+   desktop range. 0.80, not 0.84: the full-size chips need the outward reach of
+   the two-column stage to stay inside the screen at a 1280 laptop. */
 @media (min-width: 1024px) {
   .hl-page {
-    --hl-orbit-scale: 0.84;
+    --hl-orbit-scale: 0.8;
   }
 }
 
 /* Just above the stacking breakpoint the two-column grid leaves the stage too
    narrow for the rings: measured, the right-hand candidate chip runs 33px past
-   a 1024 screen (and 5px past a 1140 one), where `.hl-page`'s horizontal clip
-   simply slices it off. The stage needs the full wrap width until the copy and
-   the rings can genuinely share the row — so the hero stays STACKED here and
-   only the hero does: every other block keeps its wide-screen grid. */
-@media (min-width: 1024px) and (max-width: 1179px) {
+   a 1024 screen (and, with the chip at its full size, past a 1279 one), where
+   `.hl-page`'s horizontal clip simply slices it off. The stage needs the full
+   wrap width until the copy and the rings can genuinely share the row — so the
+   hero stays STACKED here and only the hero does: every other block keeps its
+   wide-screen grid. */
+@media (min-width: 1024px) and (max-width: 1279px) {
   .hl-hero-grid {
     grid-template-columns: minmax(0, 1fr);
     gap: var(--hl-orbit-gutter);
