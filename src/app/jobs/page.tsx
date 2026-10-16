@@ -79,24 +79,28 @@ export default function JobsPage() {
         stats={[{ value: jobs.length, label: 'Openings' }]}
         actions={[{ label: 'Companies', icon: 'more', onClick: () => router.push('/companies') }]}
       >
-        <div className="hc-search">
-          <span className="hc-search-ic">
-            <Icon name="search" size={16} />
-          </span>
-          <input
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            placeholder="Search roles, companies, skills…"
-            aria-label="Search jobs"
-          />
-        </div>
+        {/* Search and the type filters share one row, so the options sit in the
+            same place as on every other section. */}
+        <div className="hc-bar">
+          <div className="hc-search">
+            <span className="hc-search-ic">
+              <Icon name="search" size={16} />
+            </span>
+            <input
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Search roles, companies, skills…"
+              aria-label="Search jobs"
+            />
+          </div>
 
-        <div className="hc-chips">
-          {JOB_TYPES.map((t) => (
-            <button key={t} onClick={() => setJobType(t)} className="hc-chip" aria-pressed={jobType === t}>
-              {TYPE_LABEL[t] ?? t.replace('_', ' ')}
-            </button>
-          ))}
+          <div className="hc-chips" role="group" aria-label="Job type">
+            {JOB_TYPES.map((t) => (
+              <button key={t} onClick={() => setJobType(t)} className="hc-chip" aria-pressed={jobType === t}>
+                {TYPE_LABEL[t] ?? t.replace('_', ' ')}
+              </button>
+            ))}
+          </div>
         </div>
 
         {loading ? (

@@ -86,27 +86,31 @@ export default function CompaniesPage() {
           </div>
         </div>
 
-        <div className="hc-search hc-reveal" style={{ '--hc-i': 1 } as React.CSSProperties}>
-          <span className="hc-search-ic">
-            <Icon name="search" size={16} />
-          </span>
-          <input
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            placeholder="Search companies…"
-            aria-label="Search companies"
-          />
+        {/* Search and the industry filters share one row, so the options sit in
+            the same place as on every other section. */}
+        <div className="hc-bar hc-reveal" style={{ '--hc-i': 1 } as React.CSSProperties}>
+          <div className="hc-search">
+            <span className="hc-search-ic">
+              <Icon name="search" size={16} />
+            </span>
+            <input
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Search companies…"
+              aria-label="Search companies"
+            />
+          </div>
+
+          <div className="hc-chips" role="group" aria-label="Industry">
+            {INDUSTRIES.map((ind) => (
+              <button key={ind} onClick={() => setIndustry(ind)} className="hc-chip" aria-pressed={industry === ind}>
+                {INDUSTRY_LABEL[ind] ?? ind.charAt(0).toUpperCase() + ind.slice(1)}
+              </button>
+            ))}
+          </div>
         </div>
 
-        <div className="hc-chips hc-reveal" style={{ '--hc-i': 2 } as React.CSSProperties}>
-          {INDUSTRIES.map((ind) => (
-            <button key={ind} onClick={() => setIndustry(ind)} className="hc-chip" aria-pressed={industry === ind}>
-              {INDUSTRY_LABEL[ind] ?? ind.charAt(0).toUpperCase() + ind.slice(1)}
-            </button>
-          ))}
-        </div>
-
-        <div className="hc-quick hc-reveal" style={{ '--hc-i': 3 } as React.CSSProperties}>
+        <div className="hc-quick hc-reveal" style={{ '--hc-i': 2 } as React.CSSProperties}>
           {QUICK_LINKS.map((q) => (
             <button key={q.href} className="hc-card hc-card--link" onClick={() => router.push(q.href)}>
               <span className="hc-q-ic">

@@ -1470,6 +1470,63 @@ a,
 }
 
 /* ── Search + filter toolbar ───────────────────────────────────────── */
+/* One toolbar row, the way the reference lays its catalogue controls out: the
+   search field grows, the filters sit beside it on the same line. Sections that
+   render the search block and the chip block together get the row for free, so
+   switching section keeps the options in the same place. */
+.hc-bar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 18px;
+}
+.hc-bar .hc-search {
+  flex: 1 1 260px;
+  margin-bottom: 0;
+}
+/* Filters stay horizontal: they scroll sideways instead of stacking into rows
+   of their own. */
+.hc-bar .hc-chips {
+  flex: 0 1 auto;
+  flex-wrap: nowrap;
+  margin-bottom: 0;
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+  -webkit-overflow-scrolling: touch;
+  /* A thin bar is the only affordance that says "there are more options to the
+     right" once the row stays on one line. */
+  scrollbar-width: thin;
+}
+.hc-bar .hc-chips::-webkit-scrollbar {
+  height: 4px;
+}
+.hc-bar .hc-chips::-webkit-scrollbar-thumb {
+  background: var(--border);
+  border-radius: 4px;
+}
+/* Touch devices already know the row scrolls; keep the line clean there. */
+@media (pointer: coarse) {
+  .hc-bar .hc-chips {
+    scrollbar-width: none;
+  }
+  .hc-bar .hc-chips::-webkit-scrollbar {
+    display: none;
+  }
+}
+.hc-bar .hc-chip {
+  padding: 9px 15px;
+  font-size: 12.5px;
+}
+@media (max-width: 700px) {
+  .hc-bar {
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  .hc-bar .hc-search,
+  .hc-bar .hc-chips {
+    flex-basis: 100%;
+  }
+}
 .hc-search {
   position: relative;
   display: flex;
