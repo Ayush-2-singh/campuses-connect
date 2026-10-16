@@ -852,6 +852,15 @@
 .hl-h2--tight {
   margin-bottom: 12px;
 }
+/* The one accent phrase inside a section heading. Same serif italic as the
+   hero's `.hl-h1-accent`, so the pattern reads as one deliberate device. */
+.hl-em {
+  font-family: Georgia, 'Iowan Old Style', 'Times New Roman', Times, serif;
+  font-style: italic;
+  font-weight: 500;
+  letter-spacing: -0.012em;
+  color: var(--lq-brand-glow);
+}
 .hl-lead {
   font-size: clamp(15px, 1.4vw, 17px);
   line-height: 1.65;
@@ -1210,6 +1219,566 @@
   margin-left: auto;
 }
 
+/* ── Feature blocks (copy beside a product mockup) ───────────────────────── */
+.hl-feature {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.05fr);
+  gap: clamp(28px, 4vw, 64px);
+  align-items: center;
+}
+.hl-feature--reverse > :first-child {
+  order: 2;
+}
+.hl-feature-copy {
+  min-width: 0;
+}
+/* The reference labels each block with an icon + name over a hairline rule. */
+.hl-feature-head {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  padding-bottom: 14px;
+  border-bottom: 1px solid var(--lq-line-strong);
+  margin-bottom: 26px;
+}
+.hl-feature-ic {
+  width: 34px;
+  height: 34px;
+  display: grid;
+  place-items: center;
+  border-radius: 11px;
+  color: var(--lq-brand-strong);
+  background: var(--lq-brand-soft);
+  flex-shrink: 0;
+}
+.hl-feature-title {
+  font-family: var(--font-space-grotesk), system-ui, sans-serif;
+  font-size: 21px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+.hl-h2--lead {
+  font-size: clamp(30px, 4vw, 54px);
+  line-height: 1.02;
+  max-width: 15ch;
+  margin-bottom: 18px;
+}
+.hl-chip-label {
+  margin: 0 0 10px;
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--lq-muted);
+}
+.hl-chip-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 26px;
+}
+.hl-chip-row .hl-chip {
+  background: var(--lq-surface);
+  padding: 7px 13px;
+  font-size: 12.5px;
+  font-weight: 650;
+  box-shadow: var(--lq-shadow-card);
+}
+.hl-feature-art {
+  min-width: 0;
+}
+.hl-feature-art .hl-window {
+  max-width: 480px;
+}
+
+/* Compact list used inside the windows (problems, openings). */
+.hl-list-rows {
+  display: grid;
+  margin-bottom: 16px;
+}
+.hl-list-row {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 12px;
+  padding: 11px 0;
+  border-bottom: 1px solid var(--lq-line);
+}
+.hl-list-row:last-child {
+  border-bottom: none;
+}
+.hl-list-mark {
+  width: 30px;
+  height: 30px;
+  display: grid;
+  place-items: center;
+  border-radius: 9px;
+  background: var(--lq-hover);
+  color: var(--lq-muted);
+  font-size: 11px;
+  font-weight: 800;
+}
+.hl-list-main {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+.hl-list-title {
+  font-size: 13.5px;
+  font-weight: 700;
+  color: var(--lq-text);
+}
+.hl-list-sub {
+  font-size: 11.5px;
+  color: var(--lq-muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.hl-tag {
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  background: var(--lq-hover);
+  color: var(--lq-muted);
+}
+.hl-tag--easy {
+  background: color-mix(in srgb, #17754a 14%, transparent);
+  color: #17754a;
+}
+.hl-tag--medium {
+  background: color-mix(in srgb, #8a5a00 16%, transparent);
+  color: #8a5a00;
+}
+.hl-tag--hard {
+  background: color-mix(in srgb, #c02626 14%, transparent);
+  color: #c02626;
+}
+.hl-tag--type {
+  background: var(--lq-brand-soft);
+  color: var(--lq-brand-strong);
+}
+.hl-empty {
+  margin: 0 0 16px;
+  font-size: 13px;
+  color: var(--lq-muted);
+}
+.hl-btn--block {
+  width: 100%;
+  padding: 12px 18px;
+}
+
+/* ── Centered bands (platform + wins) ──────────────────────────────────── */
+.hl-band {
+  position: relative;
+  z-index: 1;
+  padding: clamp(56px, 7vw, 104px) 0;
+  padding-inline: clamp(18px, 4vw, 40px);
+  border-top: 1px solid var(--lq-line);
+}
+.hl-band--platform {
+  background: var(--lq-canvas);
+}
+.hl-band--wins {
+  background: var(--lq-surface);
+}
+.hl-band-eyebrow {
+  margin: 0 0 12px;
+  text-align: center;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.28em;
+  text-transform: uppercase;
+  color: var(--lq-muted);
+}
+.hl-band-title {
+  font-family: var(--font-space-grotesk), system-ui, sans-serif;
+  font-size: clamp(26px, 3.4vw, 46px);
+  font-weight: 700;
+  line-height: 1.05;
+  letter-spacing: -0.032em;
+  margin: 0 0 14px;
+  max-width: 24ch;
+}
+.hl-band-title--center {
+  text-align: center;
+  max-width: 20ch;
+  margin-inline: auto;
+}
+.hl-band-sub {
+  margin: 0 0 40px;
+  font-size: clamp(15px, 1.4vw, 17px);
+  line-height: 1.6;
+  color: var(--lq-muted);
+  max-width: 60ch;
+}
+.hl-band-sub--center {
+  text-align: center;
+  max-width: 52ch;
+  margin-inline: auto;
+}
+.hl-band-cta {
+  display: flex;
+  justify-content: center;
+  margin-top: 40px;
+}
+
+/* Three product cards: illustration, then what it does. */
+.hl-platform {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: clamp(18px, 2vw, 28px);
+}
+.hl-pcard {
+  display: flex;
+  flex-direction: column;
+  border-radius: 22px;
+  background: var(--lq-surface);
+  border: 1px solid var(--lq-line);
+  box-shadow: var(--lq-shadow-panel);
+  overflow: hidden;
+  transition:
+    transform 0.25s ease,
+    border-color 0.25s ease;
+}
+.hl-pcard:hover {
+  transform: translateY(-4px);
+  border-color: color-mix(in srgb, var(--lq-brand) 32%, transparent);
+}
+/* CSS-only illustration panel — grid paper plus a few accent shapes. */
+.hl-pcard-art {
+  position: relative;
+  height: 148px;
+  overflow: hidden;
+  background-color: var(--lq-sunken);
+  background-image:
+    linear-gradient(color-mix(in srgb, var(--lq-text) 7%, transparent) 1px, transparent 1px),
+    linear-gradient(90deg, color-mix(in srgb, var(--lq-text) 7%, transparent) 1px, transparent 1px);
+  background-size: 22px 22px;
+  border-bottom: 1px solid var(--lq-line);
+}
+.hl-pcard-art span {
+  position: absolute;
+  border-radius: 999px;
+}
+.hl-art-a,
+.hl-art-b {
+  width: 34px;
+  height: 34px;
+  background: var(--lq-brand);
+  box-shadow: 0 10px 22px -8px color-mix(in srgb, var(--lq-brand) 70%, transparent);
+}
+.hl-art-a {
+  left: 16%;
+  bottom: 22%;
+}
+.hl-art-b {
+  right: 18%;
+  top: 20%;
+  background: var(--lq-brand-glow);
+}
+.hl-art-c {
+  left: 22%;
+  right: 24%;
+  top: 52%;
+  height: 3px;
+  border-radius: 2px;
+  background: linear-gradient(90deg, color-mix(in srgb, var(--lq-brand) 65%, transparent), transparent);
+}
+.hl-pcard-art--compete .hl-art-a {
+  width: 54px;
+  height: 30px;
+  border-radius: 999px;
+  transform: rotate(-12deg);
+}
+.hl-pcard-art--compete .hl-art-b {
+  width: 30px;
+  height: 30px;
+  border-radius: 999px;
+  right: 24%;
+}
+.hl-pcard-art--jobs .hl-art-a {
+  border-radius: 12px;
+  width: 46px;
+  height: 46px;
+}
+.hl-pcard-art--jobs .hl-art-b {
+  border-radius: 12px;
+}
+.hl-pcard-art--experiences .hl-art-a,
+.hl-pcard-art--experiences .hl-art-b {
+  border-radius: 8px;
+  width: 40px;
+  height: 52px;
+}
+.hl-pcard-body {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  padding: 20px;
+}
+.hl-pcard-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding-bottom: 14px;
+  border-bottom: 1px solid var(--lq-line);
+  margin-bottom: 14px;
+}
+.hl-pcard-ic {
+  width: 30px;
+  height: 30px;
+  display: grid;
+  place-items: center;
+  border-radius: 10px;
+  color: var(--lq-brand-strong);
+  background: var(--lq-brand-soft);
+  flex-shrink: 0;
+}
+.hl-pcard-head h3 {
+  font-family: var(--font-space-grotesk), system-ui, sans-serif;
+  font-size: 17px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+.hl-pcard-n {
+  margin-left: auto;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--lq-faint);
+  font-variant-numeric: tabular-nums;
+}
+.hl-pcard-text {
+  margin: 0 0 16px;
+  font-size: 14px;
+  line-height: 1.6;
+  color: var(--lq-muted);
+}
+.hl-pcard-points {
+  list-style: none;
+  margin: 0 0 20px;
+  padding: 0;
+  display: grid;
+  gap: 10px;
+}
+.hl-pcard-points li {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--lq-line);
+  font-size: 13.5px;
+  color: var(--lq-text-soft);
+}
+.hl-pcard-points li:last-child {
+  border-bottom: none;
+  padding-bottom: 0;
+}
+.hl-pcard-points svg {
+  color: var(--lq-brand);
+  flex-shrink: 0;
+}
+.hl-pcard-link {
+  margin-top: auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--lq-brand-strong);
+}
+.hl-pcard-link:hover {
+  color: var(--lq-brand);
+}
+
+/* Members' wins — real write-ups, photo-card presentation. */
+.hl-wins {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(238px, 1fr));
+  gap: 18px;
+}
+.hl-win {
+  position: relative;
+  padding: 18px;
+  border-radius: 18px;
+  background: var(--lq-surface);
+  border: 1px solid var(--lq-line);
+  box-shadow: var(--lq-shadow-card);
+}
+/* The washi-tape corner the reference pins its cards with. */
+.hl-win::before {
+  content: '';
+  position: absolute;
+  top: -6px;
+  left: 22px;
+  width: 54px;
+  height: 12px;
+  background: color-mix(in srgb, var(--lq-brand) 30%, transparent);
+  transform: rotate(-2deg);
+}
+.hl-win-photo {
+  position: relative;
+  display: grid;
+  place-items: center;
+  height: 108px;
+  margin-bottom: 16px;
+  border-radius: 12px;
+  background: var(--lq-sunken);
+}
+.hl-win-av {
+  font-family: var(--font-space-grotesk), system-ui, sans-serif;
+  font-size: 30px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: var(--lq-faint);
+}
+.hl-win-badge {
+  position: absolute;
+  right: 10px;
+  bottom: -10px;
+  padding: 5px 11px;
+  border-radius: 999px;
+  background: var(--lq-surface);
+  border: 1px solid var(--lq-line);
+  box-shadow: var(--lq-shadow-card);
+  font-size: 11.5px;
+  font-weight: 700;
+  color: var(--lq-text);
+}
+.hl-win-quote {
+  margin: 0 0 10px;
+  font-size: 13.5px;
+  line-height: 1.55;
+  color: var(--lq-text-soft);
+}
+.hl-win-name {
+  margin: 0 0 2px;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--lq-text);
+}
+.hl-win-role {
+  margin: 0;
+  font-size: 11.5px;
+  color: var(--lq-muted);
+}
+
+/* ── Phones: the hero shows a three-step path card instead of the preview ── */
+.hl-path {
+  display: none;
+}
+.hl-path-eyebrow {
+  margin: 0 0 14px;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--lq-muted);
+}
+.hl-path-track {
+  display: grid;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+.hl-path-step {
+  position: relative;
+  display: grid;
+  grid-template-columns: 34px minmax(0, 1fr);
+  grid-template-areas: 'ic label' 'ic sub';
+  align-items: center;
+  gap: 0 12px;
+  padding: 12px 14px;
+  border-radius: 14px;
+  background: linear-gradient(180deg, color-mix(in srgb, var(--lq-brand) 8%, var(--lq-surface)), var(--lq-surface));
+  border: 1px solid var(--lq-line);
+}
+.hl-path-ic {
+  grid-area: ic;
+  width: 34px;
+  height: 34px;
+  display: grid;
+  place-items: center;
+  border-radius: 10px;
+  color: var(--lq-brand-strong);
+  background: var(--lq-brand-soft);
+}
+.hl-path-step strong {
+  grid-area: label;
+  font-size: 14.5px;
+  font-weight: 700;
+}
+.hl-path-sub {
+  grid-area: sub;
+  font-size: 11.5px;
+  color: var(--lq-muted);
+}
+.hl-path-n {
+  position: absolute;
+  top: -6px;
+  left: 10px;
+  width: 18px;
+  height: 18px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: var(--lq-brand);
+  color: #fff;
+  font-size: 10px;
+  font-weight: 800;
+}
+.hl-path-proof {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  padding: 12px 14px;
+  border-radius: 14px;
+  background: var(--lq-brand-soft);
+  border: 1px solid color-mix(in srgb, var(--lq-brand) 24%, transparent);
+  margin-bottom: 16px;
+}
+.hl-path-proof-ic {
+  width: 30px;
+  height: 30px;
+  display: grid;
+  place-items: center;
+  border-radius: 9px;
+  background: var(--lq-surface);
+  color: var(--lq-brand-strong);
+  flex-shrink: 0;
+}
+.hl-path-proof-tx {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+.hl-path-proof-tx strong {
+  font-size: 13.5px;
+  font-weight: 700;
+  color: var(--lq-text);
+}
+.hl-path-proof-tx span {
+  font-size: 11.5px;
+  color: var(--lq-muted);
+}
+.hl-path-goal {
+  margin-left: auto;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: var(--lq-surface);
+  color: var(--lq-brand-strong);
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+.hl-path-cta {
+  width: 100%;
+}
+
 /* ── Closing CTA + lead form ────────────────────────────────────────────── */
 .hl-cta {
   padding: clamp(28px, 4vw, 56px) clamp(20px, 4vw, 52px);
@@ -1322,28 +1891,69 @@
   z-index: 1;
   border-top: 1px solid var(--lq-line);
   background: var(--lq-surface);
-  padding-top: 26px;
-  padding-bottom: 26px;
+  padding: clamp(38px, 5vw, 64px) 0 24px;
 }
-.hl-footer-inner {
+.hl-footer-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.15fr) minmax(0, 1.85fr);
+  gap: clamp(28px, 4vw, 60px);
+}
+.hl-footer-brand {
+  min-width: 0;
+}
+.hl-footer-tag {
+  margin: 16px 0 0;
+  max-width: 34ch;
+  font-size: 13.5px;
+  line-height: 1.65;
+  color: var(--lq-muted);
+}
+.hl-footer-cols {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 22px;
+}
+.hl-footer-col {
+  display: grid;
+  align-content: start;
+  gap: 11px;
+}
+.hl-footer-col-title {
+  margin: 0 0 4px;
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+  color: var(--lq-muted);
+}
+.hl-footer-col a {
+  font-size: 13.5px;
+  color: var(--lq-text-soft);
+  transition: color 0.2s ease;
+}
+.hl-footer-col a:hover {
+  color: var(--lq-brand-strong);
+}
+.hl-footer-bottom {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
   justify-content: space-between;
-  gap: 14px;
-  font-size: 13px;
+  gap: 12px;
+  margin-top: clamp(28px, 4vw, 46px);
+  padding-top: 20px;
+  border-top: 1px solid var(--lq-line);
+  font-size: 12.5px;
   color: var(--lq-muted);
 }
-.hl-footer-links {
+.hl-footer-legal {
   display: flex;
-  flex-wrap: wrap;
   gap: 18px;
 }
-.hl-footer-links a {
+.hl-footer-legal a {
   color: var(--lq-muted);
-  transition: color 0.2s ease;
 }
-.hl-footer-links a:hover {
+.hl-footer-legal a:hover {
   color: var(--lq-brand-strong);
 }
 
@@ -1417,8 +2027,10 @@
 
 /* ── Responsive ─────────────────────────────────────────────────────────── */
 
-/* Nav collapses to a sheet before the six links can crowd the bar. */
-@media (max-width: 1100px) {
+/* Nav collapses to a sheet before the six links can crowd the bar. Measured:
+   the row needs ~1160px, so the links return once the wrap can hold that with
+   room left over — a 1280 screen and up. Below it they live in the sheet. */
+@media (max-width: 1279px) {
   .hl-nav-links {
     display: none;
   }
@@ -1430,11 +2042,52 @@
   }
 }
 
+/* The six destinations and the account controls have to share a wrap that stops
+   growing at 1180px. With the per-link icons in place the row measures ~1434px
+   against 1298px of wrap on a 1440 screen, so the theme toggle, "Login" and the
+   "Get Started" button were pushed past the right edge — off-screen and clipped
+   by `.hl-page`. Dropping the icons from the desktop bar (the phone sheet keeps
+   them) plus a tighter label/padding pair brings the row inside the wrap. */
+@media (min-width: 1280px) {
+  .hl-nav-inner {
+    gap: 10px;
+  }
+  .hl-nav-link {
+    padding: 9px 8px;
+    font-size: 14.5px;
+  }
+  .hl-nav-link .hl-nav-ic {
+    display: none;
+  }
+}
+
 /* Desktop: the wrap caps the stage column, so one orbit scale covers the whole
    desktop range. */
 @media (min-width: 1024px) {
   .hl-page {
     --hl-orbit-scale: 0.84;
+  }
+}
+
+/* Just above the stacking breakpoint the two-column grid leaves the stage too
+   narrow for the rings: measured, the right-hand candidate chip runs 33px past
+   a 1024 screen (and 5px past a 1140 one), where `.hl-page`'s horizontal clip
+   simply slices it off. The stage needs the full wrap width until the copy and
+   the rings can genuinely share the row — so the hero stays STACKED here and
+   only the hero does: every other block keeps its wide-screen grid. */
+@media (min-width: 1024px) and (max-width: 1179px) {
+  .hl-hero-grid {
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--hl-orbit-gutter);
+  }
+  .hl-page {
+    --hl-orbit-scale: 0.92;
+  }
+  .hl-h1 {
+    max-width: 18ch;
+  }
+  .hl-sub {
+    max-width: 56ch;
   }
 }
 
@@ -1466,10 +2119,47 @@
   }
 }
 
+@media (max-width: 1023px) {
+  /* Feature blocks stack: copy first, mockup under it, both directions. */
+  .hl-feature {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 30px;
+  }
+  .hl-feature--reverse > :first-child {
+    order: 1;
+  }
+  .hl-feature-art .hl-window {
+    max-width: none;
+  }
+  .hl-footer-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+@media (max-width: 900px) {
+  .hl-platform {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .hl-footer-cols {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 24px 20px;
+  }
+}
+
 @media (max-width: 767px) {
   .hl-page {
     --hl-orbit-scale: 0.8;
     --hl-orbit-gutter: 84px;
+  }
+  .hl-band-title,
+  .hl-band-title--center {
+    max-width: none;
+  }
+  .hl-h2--lead {
+    max-width: none;
+  }
+  .hl-cta-row--stacked .hl-btn {
+    width: 100%;
   }
   .hl-h1 {
     font-size: clamp(34px, 10.5vw, 52px);
@@ -1537,13 +2227,55 @@
     display: none;
   }
   .hl-stage {
-    min-height: 0;
+    display: none;
+  }
+  /* Phones get the path card in the hero's place — same information, no room
+     for the rings. */
+  .hl-path {
+    display: block;
+    margin-top: 30px;
+  }
+  .hl-footer-cols {
+    grid-template-columns: minmax(0, 1fr);
   }
   .hl-strip-row {
     gap: 16px 28px;
   }
   .hl-strip-word {
     font-size: 17px;
+  }
+}
+
+/* Phones: with the six links hidden behind the sheet the nav row is only the
+   wordmark plus the controls, and at 360px and below the row is wider than the
+   wrap — the burger used to hang 2px past the screen and get clipped, 42px at
+   320. The controls never shrink; the wordmark is the one that gives, so it
+   ends in an ellipsis instead of dragging the row off the edge. */
+@media (max-width: 480px) {
+  .hl-nav-inner {
+    gap: 12px;
+  }
+  .hl-brand {
+    min-width: 0;
+    flex-shrink: 1;
+  }
+  .hl-brand-name {
+    min-width: 0;
+    font-size: 19px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .hl-nav-right {
+    gap: 8px;
+  }
+  .hl-nav .theme-toggle--plain {
+    width: 34px;
+    height: 34px;
+  }
+  .hl-nav-burger {
+    width: 38px;
+    height: 38px;
   }
 }
 

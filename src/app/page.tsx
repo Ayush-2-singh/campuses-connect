@@ -18,6 +18,18 @@ import HireLanding from '@/components/marketing/HireLanding'
 export const revalidate = 3600
 
 type Company = { name: string; slug: string; logo_url: string | null }
+type Problem = { title: string; slug: string; difficulty: string | null; topics: string[] | null }
+type Win = {
+  id: string
+  title: string
+  role: string | null
+  result: string | null
+  difficulty: string | null
+  upvotes: number | null
+  excerpt: string
+  company: string
+  initials: string
+}
 
 let _admin: SupabaseClient | null = null
 function getAdmin(): SupabaseClient | null {
@@ -69,7 +81,66 @@ async function getCompanies(): Promise<Company[]> {
   }
 }
 
+/**
+ * Real assessment problems, for the "Compete" block's list. Titles, difficulty
+ * and topics come straight from public.dsa_problems — no invented questions.
+ */
+async function getProblems(): Promise<Problem[]> {
+  const db = getAdmin()
+  if (!db) return []
+  try {
+    const { data } = await db
+      .from('dsa_problems')
+      .select('title, slug, difficulty, topics')
+      .eq('is_active', true)
+      .limit(5)
+    return (data ?? []).filter((p): p is Problem => Boolean(p?.title && p?.slug))
+  } catch {
+    return []
+  }
+}
+
+/**
+ * The members' wins band. These are REAL interview write-ups posted by members
+ * (public.interview_experiences) — the band renders nothing until there is at
+ * least one, because inventing candidates, quotes or employers is not an option
+ * on this page. The excerpt is trimmed in SQL-free fashion here so the query
+ * never ships a wall of text to the browser.
+ */
+async function getWins(): Promise<Win[]> {
+  const db = getAdmin()
+  if (!db) return []
+  try {
+    const { data } = await db
+      .from('interview_experiences')
+      .select('id, title, role, result, difficulty, upvotes, experience, companies(name)')
+      .order('upvotes', { ascending: false })
+      .limit(6)
+    const rows = data ?? []
+    return rows
+      .filter((r: any) => r?.title && r?.experience && r?.companies?.name)
+      .map((r: any) => ({
+        id: r.id,
+        title: r.title,
+        role: r.role,
+        result: r.result,
+        difficulty: r.difficulty,
+        upvotes: r.upvotes,
+        excerpt: String(r.experience).replace(/\s+/g, ' ').trim().slice(0, 150),
+        company: r.companies.name,
+        initials: String(r.companies.name)
+          .split(/\s+/)
+          .map((w: string) => w[0])
+          .join('')
+          .slice(0, 2)
+          .toUpperCase(),
+      }))
+  } catch {
+    return []
+  }
+}
+
 export default async function Home() {
-  const [stats, companies] = await Promise.all([getStats(), getCompanies()])
-  return <HireLanding stats={stats} companies={companies} />
+  const [stats, companies, problems, wins] = await Promise.all([getStats(), getCompanies(), getProblems(), getWins()])
+  return <HireLanding stats={stats} companies={companies} problems={problems} wins={wins} />
 }

@@ -33,6 +33,18 @@ import { Icon } from '@/components/icons'
 
 type Stats = { students: number; campuses: number; companies: number } | null
 type Company = { name: string; slug: string; logo_url: string | null }
+type Problem = { title: string; slug: string; difficulty: string | null; topics: string[] | null }
+type Win = {
+  id: string
+  title: string
+  role: string | null
+  result: string | null
+  difficulty: string | null
+  upvotes: number | null
+  excerpt: string
+  company: string
+  initials: string
+}
 
 /** Demo candidate rows — labelled "Demo data" wherever they are rendered. */
 const DEMO_CANDIDATES = [
@@ -115,6 +127,16 @@ const PILLARS = [
 ]
 
 /**
+ * The three-step path card on phones (hidden on wider screens, where the hero
+ * shows the product preview instead). Mirrors the reference's mobile hero.
+ */
+const PATH = [
+  { n: '1', icon: 'zap', label: 'Compete', sub: 'Timed DSA contests' },
+  { n: '2', icon: 'briefcase', label: 'Get hired', sub: 'Jobs & internships' },
+  { n: '3', icon: 'pencil', label: 'Go prepared', sub: 'Interview experiences' },
+]
+
+/**
  * Landing nav — the six destinations the front door offers. Five are product
  * surfaces a student can open right away; the last one jumps to the recruiter
  * block on this page (the only recruiter entry point that exists).
@@ -126,6 +148,18 @@ const NAV = [
   { label: 'Experiences', href: '/experiences', icon: 'pencil' },
   { label: 'Leaderboard', href: '/leaderboard', icon: 'trophy' },
   { label: 'For Recruiters', href: '#recruiters', icon: 'users' },
+]
+
+/**
+ * Illustrative board rows for the Career block's preview. These are NOT real
+ * listings (public.job_postings is empty today), and the panel says so on its
+ * own footer. Once real posts exist they can replace this constant directly.
+ */
+const DEMO_OPENINGS = [
+  { company: 'Razorpay', role: 'SDE Intern — Backend', location: 'Bangalore', type: 'Internship' },
+  { company: 'Zerodha', role: 'Frontend Engineer', location: 'Bangalore', type: 'Full-time' },
+  { company: 'Swiggy', role: 'Data Analyst', location: 'Hyderabad', type: 'Full-time' },
+  { company: 'Flipkart', role: 'SDE I — Platform', location: 'Remote', type: 'Full-time' },
 ]
 
 /** Demo skill breakdown for the candidate-evidence panel. */
@@ -159,6 +193,72 @@ const WORKFLOW = [
   },
 ]
 
+/**
+ * "One platform" band — three product surfaces, each with the three things it
+ * actually does. Every bullet describes shipped behaviour on the routes the
+ * footer and nav link to; nothing here is aspirational.
+ */
+const PLATFORM = [
+  {
+    title: 'Compete',
+    href: '/compete',
+    icon: 'zap',
+    art: 'compete',
+    body: 'Timed contests on real interview problems, with a score and a rank that show where you actually stand.',
+    points: ['Graded on real test cases', 'Per-topic progress', 'Ranked against your cohort'],
+  },
+  {
+    title: 'Jobs & internships',
+    href: '/jobs',
+    icon: 'briefcase',
+    art: 'jobs',
+    body: 'One board for internships, hackathons and full-time roles — with the deadline and the stipend up front.',
+    points: ['Verified companies only', 'Apply link straight from the post', 'Deadlines never missed'],
+  },
+  {
+    title: 'Interview experiences',
+    href: '/experiences',
+    icon: 'pencil',
+    art: 'experiences',
+    body: 'Read every round of an interview as it actually happened — or add your own once it is your turn.',
+    points: ['Round-by-round write-ups', 'Role and outcome on each', 'Tips from the people who sat it'],
+  },
+]
+
+/** Footer columns — every entry is a route that exists in the app. */
+const FOOTER = [
+  {
+    title: 'Platform',
+    links: [
+      { label: 'Compete', href: '/compete' },
+      { label: 'Jobs', href: '/jobs' },
+      { label: 'Companies', href: '/companies' },
+      { label: 'Interview experiences', href: '/experiences' },
+      { label: 'Leaderboard', href: '/leaderboard' },
+    ],
+  },
+  {
+    title: 'Resources',
+    links: [
+      { label: 'AI Coach', href: '/brain' },
+      { label: 'Blog', href: '/blog' },
+      { label: 'Find talent', href: '/talent' },
+      { label: 'Integrations', href: '/integrations' },
+      { label: 'All features', href: '/more' },
+    ],
+  },
+  {
+    title: 'Company',
+    links: [
+      { label: 'About us', href: '/about' },
+      { label: 'Premium', href: '/premium' },
+      { label: 'Privacy policy', href: '/privacy' },
+      { label: 'Terms of service', href: '/terms' },
+      { label: 'Reminders', href: '/reminders' },
+    ],
+  },
+]
+
 const METHODOLOGY = [
   {
     icon: 'target',
@@ -182,7 +282,17 @@ const METHODOLOGY = [
   },
 ]
 
-export default function HireLanding({ stats, companies }: { stats?: Stats; companies?: Company[] }) {
+export default function HireLanding({
+  stats,
+  companies,
+  problems,
+  wins,
+}: {
+  stats?: Stats
+  companies?: Company[]
+  problems?: Problem[]
+  wins?: Win[]
+}) {
   const [form, setForm] = useState({
     company: '',
     contact_name: '',
@@ -244,6 +354,10 @@ export default function HireLanding({ stats, companies }: { stats?: Stats; compa
   }
 
   const strip = (companies ?? []).filter((c) => c?.name).slice(0, 12)
+  // Topics are read off the problems that actually exist on the platform.
+  const topics = Array.from(new Set((problems ?? []).flatMap((p) => p.topics ?? []))).slice(0, 8)
+  const winList = (wins ?? []).filter((w) => w?.title && w?.excerpt)
+  const problemList = (problems ?? []).filter((p) => p?.title && p?.slug)
 
   return (
     <div className="hl-page">
@@ -342,6 +456,38 @@ export default function HireLanding({ stats, companies }: { stats?: Stats; compa
               <Icon name="check" size={13} />
               Free for every Indian CS student · No credit card
             </p>
+
+            {/* Phones get the three-step path card in place of the desktop
+                preview: same information, sized for a thumb. */}
+            <div className="hl-path">
+              <p className="hl-path-eyebrow">Your path, not another playlist</p>
+              <div className="hl-path-track">
+                {PATH.map((p) => (
+                  <div className="hl-path-step" key={p.n}>
+                    <span className="hl-path-n">{p.n}</span>
+                    <span className="hl-path-ic">
+                      <Icon name={p.icon} size={17} />
+                    </span>
+                    <strong>{p.label}</strong>
+                    <span className="hl-path-sub">{p.sub}</span>
+                  </div>
+                ))}
+              </div>
+              <div className="hl-path-proof">
+                <span className="hl-path-proof-ic">
+                  <Icon name="shield" size={16} />
+                </span>
+                <span className="hl-path-proof-tx">
+                  <strong>Interview-ready proof</strong>
+                  <span>Scores, ranks and a profile recruiters can open</span>
+                </span>
+                <span className="hl-path-goal">Goal</span>
+              </div>
+              <Link className="hl-btn hl-btn--brand hl-btn--lg hl-path-cta" href="/compete">
+                Explore Compete
+                <Icon name="chevron" size={17} className="hl-arrow" />
+              </Link>
+            </div>
           </div>
 
           {/* Recruiter shortlist preview — the app window sits at the centre of
@@ -481,6 +627,167 @@ export default function HireLanding({ stats, companies }: { stats?: Stats; compa
           </div>
         </section>
       )}
+
+      {/* ── Feature: Compete — REAL problems from public.dsa_problems ── */}
+      <section className="hl-section hl-wrap">
+        <div className="hl-feature">
+          <div className="hl-feature-copy">
+            <div className="hl-feature-head">
+              <span className="hl-feature-ic">
+                <Icon name="zap" size={18} />
+              </span>
+              <h2 className="hl-feature-title">Compete</h2>
+            </div>
+            <p className="hl-eyebrow">Real coding assessments</p>
+            <h3 className="hl-h2 hl-h2--lead">
+              Drill the problems <em className="hl-em">that get asked.</em>
+            </h3>
+            <p className="hl-lead hl-measure">
+              <strong>Timed assessments on real interview problems.</strong> Solve them in the browser in C++, Java,
+              Python or JavaScript, and get a verdict on your code instead of your confidence.
+            </p>
+            {topics.length > 0 && (
+              <>
+                <p className="hl-chip-label">Topics on the platform</p>
+                <div className="hl-chip-row">
+                  {topics.map((t) => (
+                    <span className="hl-chip" key={t}>
+                      {t}
+                    </span>
+                  ))}
+                </div>
+              </>
+            )}
+            <div className="hl-cta-row hl-cta-row--stacked">
+              <Link className="hl-btn hl-btn--brand hl-btn--lg" href="/compete">
+                Start practising
+                <Icon name="chevron" size={17} className="hl-arrow" />
+              </Link>
+            </div>
+          </div>
+
+          <div className="hl-feature-art">
+            <div className="hl-window">
+              <div className="hl-window-bar">
+                <span className="hl-window-dots" aria-hidden="true">
+                  <i />
+                  <i />
+                  <i />
+                </span>
+                <span className="hl-window-pill">problems.json</span>
+                <span className="hl-window-status">
+                  <i className="hl-live-dot" />
+                  Live
+                </span>
+              </div>
+              <div className="hl-window-body">
+                {problemList.length > 0 ? (
+                  <div className="hl-list-rows">
+                    {problemList.map((p) => (
+                      <div className="hl-list-row" key={p.slug}>
+                        <span className="hl-list-main">
+                          <span className="hl-list-title">{p.title}</span>
+                          <span className="hl-list-sub">{(p.topics ?? []).join(' · ')}</span>
+                        </span>
+                        <span className={`hl-tag hl-tag--${p.difficulty ?? 'easy'}`}>{p.difficulty}</span>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="hl-empty">No problems published yet.</p>
+                )}
+                <Link className="hl-btn hl-btn--brand hl-btn--block" href="/compete">
+                  Try a problem
+                  <Icon name="chevron" size={16} className="hl-arrow" />
+                </Link>
+              </div>
+              <p className="hl-demo-note">
+                These five are the problems currently published on the platform. Open Compete for the full set.
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ── Feature: the hiring loop ── */}
+      <section className="hl-section hl-wrap">
+        <div className="hl-feature hl-feature--reverse">
+          <div className="hl-feature-copy">
+            <div className="hl-feature-head">
+              <span className="hl-feature-ic">
+                <Icon name="briefcase" size={18} />
+              </span>
+              <h2 className="hl-feature-title">Career</h2>
+            </div>
+            <p className="hl-eyebrow">Jobs &amp; internships</p>
+            <h3 className="hl-h2 hl-h2--lead">
+              Apply where <em className="hl-em">it actually matters.</em>
+            </h3>
+            <p className="hl-lead hl-measure">
+              <strong>One board for internships, hackathons and full-time roles.</strong> Every post carries its
+              deadline, location and pay up front, so you spend your time applying — not digging.
+            </p>
+            {strip.length > 0 && (
+              <>
+                <p className="hl-chip-label">Companies hiring here</p>
+                <div className="hl-chip-row">
+                  {strip.slice(0, 6).map((c) => (
+                    <span className="hl-chip" key={c.slug}>
+                      {c.name}
+                    </span>
+                  ))}
+                </div>
+              </>
+            )}
+            <div className="hl-cta-row hl-cta-row--stacked">
+              <Link className="hl-btn hl-btn--brand hl-btn--lg" href="/jobs">
+                Browse openings
+                <Icon name="chevron" size={17} className="hl-arrow" />
+              </Link>
+            </div>
+          </div>
+
+          <div className="hl-feature-art">
+            <div className="hl-window">
+              <div className="hl-window-bar">
+                <span className="hl-window-dots" aria-hidden="true">
+                  <i />
+                  <i />
+                  <i />
+                </span>
+                <span className="hl-window-pill">openings.json</span>
+                <span className="hl-window-status">
+                  <i className="hl-live-dot" />
+                  Demo data
+                </span>
+              </div>
+              <div className="hl-window-body">
+                <div className="hl-list-rows">
+                  {DEMO_OPENINGS.map((o) => (
+                    <div className="hl-list-row" key={o.role}>
+                      <span className="hl-list-mark">{o.company.slice(0, 2).toUpperCase()}</span>
+                      <span className="hl-list-main">
+                        <span className="hl-list-title">{o.role}</span>
+                        <span className="hl-list-sub">
+                          {o.company} · {o.location}
+                        </span>
+                      </span>
+                      <span className="hl-tag hl-tag--type">{o.type}</span>
+                    </div>
+                  ))}
+                </div>
+                <Link className="hl-btn hl-btn--brand hl-btn--block" href="/jobs">
+                  See all openings
+                  <Icon name="chevron" size={16} className="hl-arrow" />
+                </Link>
+              </div>
+              <p className="hl-demo-note">
+                Illustrative board preview — these are not live listings. Open Jobs to see what is posted right now.
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
 
       {/* ── 5. Workflow ── */}
       <section id="how" className="hl-section hl-wrap">
@@ -844,16 +1151,115 @@ export default function HireLanding({ stats, companies }: { stats?: Stats; compa
         </div>
       </section>
 
+      {/* ── Members' wins — REAL interview write-ups, hidden until there are any.
+             Nothing is invented here: no quotes, no employers, no outcomes. ── */}
+      {winList.length > 0 && (
+        <section className="hl-band hl-band--wins">
+          <div className="hl-wrap">
+            <p className="hl-band-eyebrow">The wall of wins</p>
+            <h2 className="hl-band-title">
+              They interviewed there. <em className="hl-em">Now you know how it went.</em>
+            </h2>
+            <p className="hl-band-sub">Write-ups pinned by members who sat the round.</p>
+            <div className="hl-wins">
+              {winList.map((w) => (
+                <article className="hl-win" key={w.id}>
+                  <div className="hl-win-photo">
+                    <span className="hl-win-av">{w.initials}</span>
+                    <span className="hl-win-badge">{w.company}</span>
+                  </div>
+                  <p className="hl-win-quote">&ldquo;{w.excerpt}&hellip;&rdquo;</p>
+                  <p className="hl-win-name">{w.title}</p>
+                  <p className="hl-win-role">{[w.role, w.result].filter(Boolean).join(' · ')}</p>
+                </article>
+              ))}
+            </div>
+            <div className="hl-band-cta">
+              <Link className="hl-btn hl-btn--brand hl-btn--lg" href="/experiences">
+                Read every experience
+                <Icon name="chevron" size={17} className="hl-arrow" />
+              </Link>
+            </div>
+          </div>
+        </section>
+      )}
+
+      {/* ── One platform — three surfaces, each describing what it really does ── */}
+      <section className="hl-band hl-band--platform">
+        <div className="hl-wrap">
+          <h2 className="hl-band-title hl-band-title--center">
+            One platform for the <em className="hl-em">entire placement season.</em>
+          </h2>
+          <p className="hl-band-sub hl-band-sub--center">
+            From your first contest to the offer letter, everything you need lives in one place.
+          </p>
+          <div className="hl-platform">
+            {PLATFORM.map((c, i) => (
+              <article className="hl-pcard" key={c.title}>
+                <div className={`hl-pcard-art hl-pcard-art--${c.art}`} aria-hidden="true">
+                  <span className="hl-art-a" />
+                  <span className="hl-art-b" />
+                  <span className="hl-art-c" />
+                </div>
+                <div className="hl-pcard-body">
+                  <div className="hl-pcard-head">
+                    <span className="hl-pcard-ic">
+                      <Icon name={c.icon} size={17} />
+                    </span>
+                    <h3>{c.title}</h3>
+                    <span className="hl-pcard-n">{String(i + 1).padStart(2, '0')}</span>
+                  </div>
+                  <p className="hl-pcard-text">{c.body}</p>
+                  <ul className="hl-pcard-points">
+                    {c.points.map((p) => (
+                      <li key={p}>
+                        <Icon name="check" size={14} />
+                        {p}
+                      </li>
+                    ))}
+                  </ul>
+                  <Link className="hl-pcard-link" href={c.href}>
+                    Explore
+                    <Icon name="chevron" size={15} className="hl-arrow" />
+                  </Link>
+                </div>
+              </article>
+            ))}
+          </div>
+        </div>
+      </section>
+
       {/* ── Footer ── */}
-      <footer className="hl-footer hl-wrap">
-        <div className="hl-footer-inner">
+      <footer className="hl-footer">
+        <div className="hl-wrap hl-footer-grid">
+          <div className="hl-footer-brand">
+            <Link className="hl-brand" href="/">
+              <img className="hl-brand-logo" src={logoSrc} alt="" width={30} height={30} />
+              <BrandName className="hl-brand-name" />
+            </Link>
+            <p className="hl-footer-tag">
+              India&rsquo;s campus community for CS students — contests, the hiring loop and the proof that comes out of
+              it, in one place.
+            </p>
+          </div>
+          <nav className="hl-footer-cols" aria-label="Footer">
+            {FOOTER.map((col) => (
+              <div className="hl-footer-col" key={col.title}>
+                <p className="hl-footer-col-title">{col.title}</p>
+                {col.links.map((l) => (
+                  <Link href={l.href} key={l.href}>
+                    {l.label}
+                  </Link>
+                ))}
+              </div>
+            ))}
+          </nav>
+        </div>
+        <div className="hl-wrap hl-footer-bottom">
           <span>
-            <BrandName /> · India&rsquo;s campus community for CS students
+            <BrandName /> · Built for Indian campuses
           </span>
-          <span className="hl-footer-links">
-            <Link href="/about">About</Link>
-            <Link href="/privacy">Privacy</Link>
-            <Link href="/terms">Terms</Link>
+          <span className="hl-footer-legal">
             <Link href="/cookies">Cookies</Link>
             <Link href="/refund">Refunds</Link>
           </span>
