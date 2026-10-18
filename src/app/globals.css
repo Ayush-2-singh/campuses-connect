@@ -3335,9 +3335,6 @@ html.nav-hidden .fab-wrap {
   }
 }
 @media (max-width: 768px) {
-  .desktop-sidebar {
-    display: none !important;
-  }
   .main-content {
     margin-left: 0 !important;
   }
@@ -3349,6 +3346,343 @@ html.nav-hidden .fab-wrap {
   }
   .app-topbar {
     display: none !important;
+  }
+}
+
+/* ═══════════════ Top navigation (desktop) ═══════════════
+   The app shipped with a 240px left sidebar: vertical, always-on, and it ate
+   a sixth of every screen before a single row of content. This is the
+   horizontal replacement — brand left, destinations in one row, account
+   controls right — matching the reference's nav strip.
+
+   Second-level links (Hiring's companies/applications/experiences, Skills'
+   leaderboard/coach/integrations/blog) are NOT a permanent indented list any
+   more: each pillar owns a dropdown that opens when the pointer OR keyboard
+   focus enters it. Pure CSS (`:hover` + `:focus-within`), so opening a menu
+   costs no React state and no re-render, and tabbing into the trigger opens
+   it for keyboard users too — which also keeps the sub-links in tab order.
+
+   The 9px `padding-top` on `.topnav-drop` is a hover BRIDGE, not spacing: it
+   makes the gap between the trigger and the panel part of the hoverable box,
+   so moving the pointer down to an item never closes the menu mid-travel. */
+
+.topnav {
+  position: sticky;
+  top: 0;
+  z-index: 30;
+  background: color-mix(in srgb, var(--bg-page) 84%, transparent);
+  backdrop-filter: blur(14px) saturate(160%);
+  -webkit-backdrop-filter: blur(14px) saturate(160%);
+  border-bottom: 1px solid var(--border);
+}
+
+.topnav-inner {
+  max-width: 1180px;
+  margin: 0 auto;
+  padding: 0 22px;
+  height: 60px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+/* ── Brand ── */
+.topnav-brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  flex-shrink: 0;
+  padding: 0;
+  border: none;
+  background: none;
+  color: var(--text-primary);
+  font-family: inherit;
+  cursor: pointer;
+}
+.topnav-brand:hover {
+  color: var(--accent-text);
+}
+.topnav-logo {
+  flex-shrink: 0;
+  border-radius: 9px;
+}
+.topnav-brand-name {
+  font-size: 16px;
+  font-weight: 800;
+  letter-spacing: -0.025em;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+/* ── Destinations ── */
+/* No overflow here on purpose: an `overflow` value would clip the dropdowns
+   (they must escape the row). The row fits by shrinking the brand wordmark and
+   the labels on narrow desktops — see the media queries below. */
+.topnav-links {
+  flex: 1 1 auto;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+}
+
+.topnav-item {
+  position: relative;
+  flex-shrink: 0;
+}
+
+.topnav-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  height: 36px;
+  padding: 0 11px;
+  border-radius: 9px;
+  border: none;
+  background: transparent;
+  color: var(--text-secondary);
+  font-family: inherit;
+  font-size: 13.5px;
+  font-weight: 600;
+  white-space: nowrap;
+  cursor: pointer;
+}
+.topnav-link:hover {
+  color: var(--text-primary);
+  background: var(--bg-secondary);
+}
+.topnav-link[data-active='1'] {
+  color: var(--accent-text);
+  background: var(--accent-light);
+  box-shadow: inset 0 0 0 1px var(--accent-border);
+}
+
+/* The shared `chevron` icon points right; these two states turn it into a
+   caret that flips up while the menu is open. */
+.topnav-caret {
+  opacity: 0.7;
+  transform: rotate(90deg);
+  transition: transform 0.18s ease;
+}
+.topnav-item:hover .topnav-caret,
+.topnav-item:focus-within .topnav-caret {
+  transform: rotate(-90deg);
+}
+
+/* ── Dropdown ── */
+.topnav-drop {
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  z-index: 5;
+  padding-top: 9px; /* hover bridge over the visual gap */
+  transform: translate(-50%, -4px);
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transition:
+    opacity 0.16s ease,
+    transform 0.16s ease,
+    visibility 0.16s ease;
+}
+.topnav-item:hover .topnav-drop,
+.topnav-item:focus-within .topnav-drop {
+  opacity: 1;
+  visibility: visible;
+  pointer-events: auto;
+  transform: translate(-50%, 0);
+}
+
+.topnav-panel {
+  min-width: 224px;
+  padding: 7px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  box-shadow: var(--shadow-lg), var(--highlight);
+}
+
+.topnav-sub {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 8px 10px;
+  border-radius: 9px;
+  border: none;
+  background: transparent;
+  color: var(--text-secondary);
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  text-align: left;
+  white-space: nowrap;
+  cursor: pointer;
+}
+.topnav-sub:hover,
+.topnav-sub:focus-visible {
+  background: var(--accent-light);
+  color: var(--accent-text);
+}
+.topnav-sub[data-active='1'] {
+  color: var(--accent-text);
+}
+.topnav-sub-ic {
+  display: inline-flex;
+  color: var(--text-muted);
+}
+.topnav-sub:hover .topnav-sub-ic {
+  color: var(--accent-text);
+}
+
+/* ── Account + controls ── */
+.topnav-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.topnav-search {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  height: 34px;
+  padding: 0 10px;
+  border-radius: 9px;
+  border: 1px solid var(--border);
+  background: var(--bg-secondary);
+  color: var(--text-muted);
+  font-family: inherit;
+  font-size: 12.5px;
+  font-weight: 600;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+.topnav-search:hover {
+  border-color: var(--accent-border);
+  color: var(--text-primary);
+}
+.topnav-search-k {
+  font-family: inherit;
+  font-size: 10.5px;
+  line-height: 1;
+  padding: 3px 5px;
+  border-radius: 5px;
+  border: 1px solid var(--border-strong);
+  background: var(--bg);
+  color: var(--text-muted);
+}
+
+.topnav-icon {
+  position: relative;
+  width: 36px;
+  height: 36px;
+  flex-shrink: 0;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  border: 1px solid var(--border);
+  background: var(--bg);
+  color: var(--text-secondary);
+  cursor: pointer;
+}
+.topnav-icon:hover {
+  border-color: var(--accent-border);
+  background: var(--accent-light);
+  color: var(--accent-text);
+}
+.topnav-badge {
+  position: absolute;
+  top: -2px;
+  right: -2px;
+  min-width: 16px;
+  height: 16px;
+  padding: 0 4px;
+  border-radius: 10px;
+  background: var(--danger);
+  color: var(--on-accent);
+  font-size: 10px;
+  font-weight: 700;
+  line-height: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.topnav-auth {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+}
+.topnav-signin {
+  height: 34px;
+  padding: 0 12px;
+  border-radius: 9px;
+  border: 1px solid transparent;
+  background: transparent;
+  color: var(--text-secondary);
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.topnav-signin:hover {
+  color: var(--text-primary);
+  background: var(--bg-secondary);
+}
+.topnav-join {
+  height: 34px;
+  padding: 0 14px;
+  border-radius: 9px;
+  border: none;
+  background: var(--grad-brand);
+  color: var(--on-accent);
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: 0 8px 18px -10px color-mix(in srgb, var(--accent) 85%, transparent);
+}
+.topnav-join:hover {
+  transform: translateY(-1px);
+}
+
+/* The decorative theme-synced logo badge sat in the old top bar; the brand
+   logo at the left already does that job, so it is not rendered in the nav. */
+@media (prefers-reduced-motion: reduce) {
+  .topnav-join:hover {
+    transform: none;
+  }
+}
+
+/* Narrow desktop (and the sub-1024 tablet band): the wordmark and the search
+   label give way first — labels on the destinations are what the user reads. */
+@media (max-width: 1199px) {
+  .topnav-search-t,
+  .topnav-search-k {
+    display: none;
+  }
+  .topnav-search {
+    width: 36px;
+    justify-content: center;
+    padding: 0;
+  }
+}
+
+/* Below ~1000px the row would need more than a zoomed 1024px screen has: drop
+   the wordmark and the destination labels, keeping every icon (and the
+   dropdowns) reachable. */
+@media (max-width: 1000px) {
+  .topnav-brand-name,
+  .topnav-link-t,
+  .topnav-caret {
+    display: none;
+  }
+  .topnav-link {
+    padding: 0 9px;
   }
 }
 
