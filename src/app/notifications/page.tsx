@@ -143,53 +143,24 @@ export default function NotificationsPage() {
   return (
     <Layout user={user} profile={profile}>
       <div style={{ maxWidth: 680, margin: '0 auto', padding: '28px 20px 40px' }}>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-            <button
-              onClick={() => router.push('/more')}
-              aria-label="Back"
-              style={{
-                background: 'none',
-                border: 'none',
-                cursor: 'pointer',
-                fontSize: 18,
-                color: 'var(--text-muted)',
-                width: 44,
-                height: 44,
-                display: 'inline-flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                borderRadius: 10,
-                margin: '-10px 0 -10px -12px',
-                flexShrink: 0,
-              }}
-            >
-              ←
-            </button>
-            <h2 style={{ fontSize: 24, fontWeight: 800, color: 'var(--text-primary)', margin: 0 }}>Notifications</h2>
+        <div className="hc-page-head">
+          <button className="hc-back" onClick={() => router.push('/more')} aria-label="Back">
+            ←
+          </button>
+          <div style={{ minWidth: 0 }}>
+            <h1 className="hc-h1">
+              Everything that <em className="hc-em">happened.</em>
+            </h1>
+            <p className="hc-lede">
+              {unreadCount > 0 ? `${unreadCount} unread · ${notifications.length} total` : 'You’re all caught up'}
+            </p>
           </div>
           {unreadCount > 0 && (
-            <button
-              onClick={markAllRead}
-              style={{
-                background: 'var(--accent-light)',
-                color: 'var(--accent-text)',
-                border: 'none',
-                borderRadius: 20,
-                padding: '6px 14px',
-                fontSize: 12,
-                fontWeight: 600,
-                cursor: 'pointer',
-                fontFamily: 'inherit',
-              }}
-            >
+            <button className="hc-btn" onClick={markAllRead} style={{ marginTop: 14 }}>
               Mark all as read
             </button>
           )}
         </div>
-        <p style={{ fontSize: 13, color: 'var(--text-muted)', margin: '0 0 20px', marginLeft: 34 }}>
-          {unreadCount > 0 ? `${unreadCount} unread · ${notifications.length} total` : 'You’re all caught up'}
-        </p>
 
         {loading ? (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }} aria-busy="true">
