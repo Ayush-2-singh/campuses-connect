@@ -157,7 +157,7 @@ export default function BlogPage() {
 
   return (
     <Layout user={user} profile={profile}>
-      <div style={{ maxWidth: 800, margin: '0 auto', padding: '28px 20px 40px' }}>
+      <div className="page-wrap">
         {/* Header */}
         <div className="blog-header">
           <div className="blog-header-left">

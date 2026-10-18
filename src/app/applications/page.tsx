@@ -61,7 +61,7 @@ export default function ApplicationsPage() {
 
   return (
     <Layout user={user} profile={profile}>
-      <div className="hc-page" style={{ maxWidth: 720 }}>
+      <div className="hc-page">
         <div className="hc-page-head hc-reveal">
           <button className="hc-back" onClick={() => router.push('/companies')} aria-label="Back">
             ←

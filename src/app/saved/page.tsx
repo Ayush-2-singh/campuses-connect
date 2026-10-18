@@ -61,7 +61,7 @@ export default function SavedPage() {
 
   return (
     <Layout user={user} profile={profile}>
-      <div style={{ maxWidth: 680, margin: '0 auto', padding: '24px 20px' }}>
+      <div className="page-wrap">
         <h2 style={{ fontSize: 22, fontWeight: 700, color: 'var(--text-primary)', margin: '0 0 4px' }}>Saved</h2>
         <p style={{ fontSize: 13, color: 'var(--text-muted)', margin: '0 0 20px' }}>Posts you bookmarked</p>
 

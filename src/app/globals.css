@@ -988,9 +988,9 @@ a,
    beside it. */
 
 .ss-wrap {
-  max-width: 1120px;
+  max-width: var(--page-max);
   margin: 0 auto;
-  padding: 34px 24px 56px;
+  padding: 34px var(--page-pad) 56px;
 }
 
 .ss-head {
@@ -1134,7 +1134,9 @@ a,
 }
 @media (max-width: 640px) {
   .ss-wrap {
-    padding: 22px 16px 44px;
+    /* Same gutter token as every other page frame — a hardcoded 16px here made
+       section pages start 2px inboard of the landing and of `.hc-page`. */
+    padding: 22px var(--page-pad) 44px;
   }
   .ss-head {
     padding: 2px 0 20px;
@@ -1428,9 +1430,9 @@ a,
 
 /* ── Page frame + header ───────────────────────────────────────────── */
 .hc-page {
-  max-width: 780px;
+  max-width: var(--page-max);
   margin: 0 auto;
-  padding: 22px 20px 48px;
+  padding: 22px var(--page-pad) 48px;
 }
 /* Same titled-section header as SectionShell, for the pages that hand-roll
    theirs. The back button floats to the page's left edge so the headline can
@@ -3358,6 +3360,27 @@ html.nav-hidden .fab-wrap {
   }
 }
 
+/* ───────────────────────── Page container ─────────────────────────
+   ONE horizontal frame for every screen: the landing, the app's top nav and
+   all section pages share these two values, so the brand, a headline and a
+   card all start on the same x — switching between the landing and a page no
+   longer shifts the content sideways.
+
+   `--page-pad` is the gutter, `--page-max` the widest the content gets. Pages
+   that read rather than catalogue (a blog article, a form) keep a narrower
+   INNER measure, but they still start off this same frame. */
+:root {
+  --page-max: 1180px;
+  --page-pad: clamp(18px, 4vw, 40px);
+}
+
+.page-wrap {
+  width: 100%;
+  max-width: var(--page-max);
+  margin: 0 auto;
+  padding: 28px var(--page-pad) 44px;
+}
+
 /* ───────────────────────── Layout responsive rules ───────────────────────── */
 /* Moved from inline <style> in Layout.tsx — avoids DOM churn on every render. */
 .app-topbar {
@@ -3411,9 +3434,9 @@ html.nav-hidden .fab-wrap {
 }
 
 .topnav-inner {
-  max-width: 1180px;
+  max-width: var(--page-max);
   margin: 0 auto;
-  padding: 0 22px;
+  padding: 0 var(--page-pad);
   height: 60px;
   display: flex;
   align-items: center;

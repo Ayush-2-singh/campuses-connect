@@ -142,7 +142,7 @@ export default function NotificationsPage() {
 
   return (
     <Layout user={user} profile={profile}>
-      <div style={{ maxWidth: 680, margin: '0 auto', padding: '28px 20px 40px' }}>
+      <div className="page-wrap">
         <div className="hc-page-head">
           <button className="hc-back" onClick={() => router.push('/more')} aria-label="Back">
             ←

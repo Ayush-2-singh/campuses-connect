@@ -98,7 +98,7 @@ export default function GlobalPage() {
 
   return (
     <Layout user={user} profile={profile}>
-      <div style={{ maxWidth: 680, margin: '0 auto', padding: '28px 20px 40px' }}>
+      <div className="page-wrap">
         {/* Header */}
         <div style={{ marginBottom: 20 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 4 }}>

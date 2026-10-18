@@ -80,7 +80,7 @@ export default function MorePage() {
 
   return (
     <Layout user={user} profile={profile}>
-      <div style={{ maxWidth: 720, margin: '0 auto', padding: '24px 20px' }}>
+      <div className="page-wrap">
         <div className="hc-page-head">
           <div style={{ minWidth: 0 }}>
             <h1 className="hc-h1">
