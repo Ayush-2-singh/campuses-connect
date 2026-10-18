@@ -68,7 +68,9 @@ export default function ApplicationsPage() {
           </button>
           <div style={{ minWidth: 0 }}>
             <span className="hc-eyebrow">Hiring</span>
-            <h1 className="hc-h1">My Applications</h1>
+            <h1 className="hc-h1">
+              Every application, <em className="hc-em">one place.</em>
+            </h1>
             <p className="hc-lede">Track your job applications and their status</p>
           </div>
         </div>

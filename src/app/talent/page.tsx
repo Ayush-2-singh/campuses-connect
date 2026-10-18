@@ -145,8 +145,9 @@ export default function TalentPage() {
     <Layout user={user} profile={profile}>
       <SectionShell
         icon="star"
-        title="Candidate discovery"
-        subtitle="Filter the student pool by role, skills, campus and assessment score"
+        title="Find the next"
+        accent="teammate."
+        subtitle="Filter the student pool by role, skills, campus and assessment score — every result is a real profile, not a sample."
         stats={[
           { value: filtered.length, label: 'Candidates' },
           { value: assessedCount, label: 'Assessed' },

@@ -127,7 +127,9 @@ export default function ExperiencesPage() {
           </button>
           <div style={{ minWidth: 0 }}>
             <span className="hc-eyebrow">Community</span>
-            <h1 className="hc-h1">Interview Experiences</h1>
+            <h1 className="hc-h1">
+              Interviews, <em className="hc-em">as they happened.</em>
+            </h1>
             <p className="hc-lede">Learn from real interviews shared by students</p>
           </div>
         </div>

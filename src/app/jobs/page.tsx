@@ -74,8 +74,9 @@ export default function JobsPage() {
     <Layout user={user} profile={profile}>
       <SectionShell
         icon="briefcase"
-        title="Job Openings"
-        subtitle="Latest internships, full-time roles & more"
+        title="Roles worth"
+        accent="applying to."
+        subtitle="Internships, hackathons and full-time roles from companies hiring here — deadline, location and stipend stated on every post."
         stats={[{ value: jobs.length, label: 'Openings' }]}
         actions={[{ label: 'Companies', icon: 'more', onClick: () => router.push('/companies') }]}
       >

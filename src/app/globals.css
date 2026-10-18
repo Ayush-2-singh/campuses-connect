@@ -971,84 +971,108 @@ a,
    they are removed rather than resurrected under guessed names. The gated
    social home still styles itself with the .f4-* classes in landing.css. */
 
-/* ───────────────── Section shell — the app dashboard frame ─────────────────
-   SectionShell gives every section page (Jobs, Talent, Companies, Compete…)
-   the same header strip. These classes carry its premium chrome: a gradient
-   accent bar, a top lit edge, and hover/focus states that inline styles could
-   not express. Presentation only — the component's props and children are
-   untouched. */
+/* ───────────────── Section shell — the app's page header ─────────────────
+   Every section page (Jobs, Talent, Companies, Compete, Leaderboard…) opens
+   with the SAME header: one display-serif line with a single italic accent
+   phrase, a short lede under it, then the page's own controls. This is the
+   marketing page's band language brought inside the product, so a section
+   reads as a titled chapter instead of a control strip glued to the top.
+
+   It replaced the old "card" header (icon tile + gradient rail + stat boxes):
+   that chrome competed with the page content for attention and made every
+   section look like a dashboard widget. Presentation only — SectionShell's
+   props and children are untouched.
+
+   The italic accent is `.hc-em` / `.sec-em`: serif, accent-coloured, and it
+   inherits the surrounding size, so it sits inside the headline rather than
+   beside it. */
+
 .ss-wrap {
-  max-width: 1200px;
+  max-width: 1120px;
   margin: 0 auto;
-  padding: 22px 24px 48px;
+  padding: 34px 24px 56px;
 }
+
 .ss-head {
   position: relative;
   display: flex;
-  align-items: center;
-  gap: 14px;
-  flex-wrap: wrap;
-  padding: 15px 18px 15px 20px;
-  margin-bottom: 16px;
-  border-radius: var(--radius-lg);
-  border: 1px solid var(--border);
-  background: linear-gradient(180deg, var(--bg-elevated), var(--bg) 72%);
-  box-shadow: var(--shadow-sm), var(--highlight);
-  overflow: hidden;
-}
-/* Brand accent rail down the left edge of the header strip. */
-.ss-head::before {
-  content: '';
-  position: absolute;
-  inset: 0 auto 0 0;
-  width: 3px;
-  background: var(--grad-brand);
-}
-.ss-icon {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 44px;
-  height: 44px;
-  border-radius: 13px;
-  flex-shrink: 0;
-  color: var(--accent-text);
-  background: var(--accent-light);
-  border: 1px solid var(--accent-border);
-}
-.ss-title {
-  font-size: 19px;
-  font-weight: 800;
-  letter-spacing: -0.02em;
-  color: var(--text-primary);
-  margin: 0;
-  line-height: 1.2;
-}
-.ss-sub {
-  font-size: 12.5px;
-  color: var(--text-muted);
-  margin: 3px 0 0;
-}
-.ss-spacer {
-  flex: 1 1 auto;
-}
-.ss-stats {
-  display: flex;
-  gap: 10px;
-  flex-wrap: wrap;
-}
-.ss-stat {
-  display: flex;
   flex-direction: column;
   align-items: center;
-  min-width: 64px;
-  padding: 6px 12px;
-  border-radius: var(--radius);
+  text-align: center;
+  flex-wrap: nowrap;
+  padding: 4px 0 24px;
+  margin-bottom: 28px;
+  border: none;
+  background: none;
+  box-shadow: none;
+  overflow: visible;
+}
+
+/* Faint hairline under the header — the divider the reference puts between
+   bands, so the content below reads as its own section. */
+.ss-head::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  bottom: 0;
+  width: min(100%, 760px);
+  height: 1px;
+  transform: translateX(-50%);
+  background: linear-gradient(90deg, transparent, var(--border-strong), transparent);
+}
+
+/* No icon tile in a titled section — the headline is the identity. */
+.ss-icon {
+  display: none;
+}
+
+/* One display face for the section title; the italic phrase inside it is
+   `.hc-em`. Sized with clamp so a phone gets a headline, not a caption. */
+.ss-title,
+.hc-h1 {
+  font-family: Georgia, 'Iowan Old Style', 'Times New Roman', serif;
+  font-size: clamp(27px, 3.3vw, 42px);
+  font-weight: 600;
+  line-height: 1.1;
+  letter-spacing: -0.022em;
+  color: var(--text-primary);
+  margin: 0;
+  text-align: center;
+}
+
+.ss-sub,
+.hc-lede {
+  font-size: 14.5px;
+  line-height: 1.55;
+  color: var(--text-secondary);
+  max-width: 620px;
+  margin: 12px auto 0;
+  text-align: center;
+}
+
+.ss-spacer {
+  display: none;
+}
+
+.ss-stats {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  justify-content: center;
+  margin-top: 16px;
+}
+.ss-stat {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  min-width: 72px;
+  padding: 7px 14px;
+  border-radius: 999px;
   border: 1px solid var(--border);
-  background: color-mix(in srgb, var(--bg-page) 55%, transparent);
+  background: var(--bg-secondary);
 }
 .ss-stat-v {
-  font-size: 16px;
+  font-size: 15px;
   font-weight: 800;
   line-height: 1.15;
   color: var(--text-primary);
@@ -1059,11 +1083,15 @@ a,
   color: var(--text-muted);
   margin-top: 1px;
 }
+
 .ss-actions {
   display: flex;
   gap: 8px;
-  flex-shrink: 0;
+  flex-wrap: wrap;
+  justify-content: center;
+  margin-top: 16px;
 }
+
 .ss-btn {
   min-height: 38px;
   padding: 0 16px;
@@ -1106,15 +1134,11 @@ a,
 }
 @media (max-width: 640px) {
   .ss-wrap {
-    padding: 16px 16px 40px;
+    padding: 22px 16px 44px;
   }
   .ss-head {
-    padding: 13px 14px 13px 16px;
-    gap: 12px;
-  }
-  .ss-stats {
-    order: 3;
-    width: 100%;
+    padding: 2px 0 20px;
+    margin-bottom: 22px;
   }
   .ss-actions {
     width: 100%;
@@ -1408,11 +1432,33 @@ a,
   margin: 0 auto;
   padding: 22px 20px 48px;
 }
+/* Same titled-section header as SectionShell, for the pages that hand-roll
+   theirs. The back button floats to the page's left edge so the headline can
+   stay optically centred. */
 .hc-page-head {
+  position: relative;
   display: flex;
+  flex-direction: column;
   align-items: center;
-  gap: 11px;
-  margin-bottom: 18px;
+  text-align: center;
+  gap: 0;
+  padding: 4px 0 22px;
+  margin-bottom: 24px;
+}
+.hc-page-head::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  bottom: 0;
+  width: min(100%, 760px);
+  height: 1px;
+  transform: translateX(-50%);
+  background: linear-gradient(90deg, transparent, var(--border-strong), transparent);
+}
+.hc-page-head > .hc-back {
+  position: absolute;
+  left: 0;
+  top: 0;
 }
 .hc-back {
   width: 34px;
@@ -1441,25 +1487,13 @@ a,
   display: block;
   font-size: 10.5px;
   font-weight: 700;
-  letter-spacing: 0.09em;
+  letter-spacing: 0.14em;
   text-transform: uppercase;
   color: var(--text-muted);
-  margin: 0 0 3px;
+  margin: 0 0 10px;
+  text-align: center;
 }
-.hc-h1 {
-  font-size: 21px;
-  font-weight: 800;
-  letter-spacing: -0.028em;
-  line-height: 1.15;
-  color: var(--text-primary);
-  margin: 0;
-}
-.hc-lede {
-  font-size: 12.5px;
-  line-height: 1.5;
-  color: var(--text-muted);
-  margin: 3px 0 0;
-}
+
 /* The ONE accent phrase allowed in a header — serif italic, like the landing. */
 .hc-em {
   font-family: Georgia, 'Iowan Old Style', 'Times New Roman', serif;
@@ -3689,42 +3723,56 @@ html.nav-hidden .fab-wrap {
 /* ───────────────────────── Blog section ───────────────────────── */
 /* Cards, chips and search for /blog — emoji-free, category-tinted. */
 
+/* The blog opens with the same titled-section header as every other page:
+   display-serif headline, one italic accent phrase, short lede. The icon tile
+   is retired — the headline carries the identity. */
 .blog-header {
   display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  flex-wrap: wrap;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
   gap: 14px;
-  margin-bottom: 22px;
+  margin-bottom: 26px;
+  padding-bottom: 22px;
+  position: relative;
+}
+.blog-header::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  bottom: 0;
+  width: min(100%, 760px);
+  height: 1px;
+  transform: translateX(-50%);
+  background: linear-gradient(90deg, transparent, var(--border-strong), transparent);
 }
 .blog-header-left {
   display: flex;
+  flex-direction: column;
   align-items: center;
-  gap: 14px;
+  gap: 0;
   min-width: 0;
 }
 .blog-head-tile {
-  display: grid;
-  place-items: center;
-  width: 46px;
-  height: 46px;
-  flex-shrink: 0;
-  border-radius: 14px;
-  background: linear-gradient(135deg, var(--accent), color-mix(in srgb, var(--accent) 45%, var(--purple-text)));
-  color: var(--on-accent);
-  box-shadow: 0 8px 18px -8px color-mix(in srgb, var(--accent) 65%, transparent);
+  display: none;
 }
 .blog-head-title {
-  font-size: 28px;
-  font-weight: 800;
+  font-family: Georgia, 'Iowan Old Style', 'Times New Roman', serif;
+  font-size: clamp(27px, 3.3vw, 42px);
+  font-weight: 600;
+  line-height: 1.1;
+  letter-spacing: -0.022em;
   color: var(--text-primary);
-  margin: 0 0 3px;
-  line-height: 1.2;
+  margin: 0;
+  text-align: center;
 }
 .blog-head-sub {
-  font-size: 14px;
-  color: var(--text-muted);
-  margin: 0;
+  font-size: 14.5px;
+  line-height: 1.55;
+  color: var(--text-secondary);
+  max-width: 620px;
+  margin: 12px auto 0;
+  text-align: center;
 }
 
 /* Search field — icon + focus ring live in CSS so themes can restyle */
@@ -4103,9 +4151,9 @@ html.nav-hidden .fab-wrap {
     height: 40px;
     border-radius: 12px;
   }
-  .blog-head-title {
-    font-size: 23px;
-  }
+  /* No size override: the header title is the shared display-serif section
+     headline, and its own clamp already handles phones (23px here made the
+     blog the one page with a smaller headline than every other section). */
   .blog-card {
     gap: 12px;
     padding: 14px;

@@ -234,8 +234,9 @@ export default function LeaderboardPage() {
     <Layout user={user} profile={profile}>
       <SectionShell
         icon="star"
-        title="Leaderboard"
-        subtitle="Karma + GitHub + LeetCode — combined ranking"
+        title="Who is"
+        accent="leading."
+        subtitle="Karma, GitHub and LeetCode signals combined into one ranking of the students shipping real work."
         stats={leaders.length ? [{ value: leaders.length, label: 'Ranked' }] : undefined}
         actions={[
           { label: 'Connect accounts', icon: 'link', primary: true, onClick: () => router.push('/integrations') },

@@ -81,7 +81,9 @@ export default function CompaniesPage() {
           </button>
           <div style={{ minWidth: 0 }}>
             <span className="hc-eyebrow">Hiring</span>
-            <h1 className="hc-h1">Companies</h1>
+            <h1 className="hc-h1">
+              Companies that are <em className="hc-em">hiring.</em>
+            </h1>
             <p className="hc-lede">Explore companies, job openings &amp; interview experiences</p>
           </div>
         </div>

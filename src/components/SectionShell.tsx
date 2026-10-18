@@ -4,9 +4,10 @@
  * SECTION SHELL — the shared frame for every section page.
  *
  * Gives each section:
- *   1. the wide container (1200px, same padding rhythm)
- *   2. a premium header strip: brand accent rail, icon tile, title + subtitle
- *      on the left, dynamic stat chips and action buttons on the right
+ *   1. the wide container (1120px, same padding rhythm)
+ *   2. one titled header — display-serif headline with a single italic accent
+ *      phrase, a short lede under it, then the page's live counts and actions
+ *      as centred chips/buttons
  *   3. optional stat chips (dynamic counts) under the header
  *
  * IMPORTANT: this is a pure visual wrapper. It renders {children} untouched,
@@ -35,13 +36,21 @@ export interface SectionAction {
 export default function SectionShell({
   icon,
   title,
+  accent,
   subtitle,
   stats,
   actions,
   children,
 }: {
   icon: string
+  /** The headline. Kept short — the accent phrase finishes the sentence. */
   title: string
+  /**
+   * The one italic accent phrase in the headline ("Companies that are
+   * *hiring.*"). Rendered inside the h2 as `.hc-em`, so it inherits the
+   * display size and sits in the line rather than beside it.
+   */
+  accent?: string
   subtitle: string
   stats?: SectionStat[]
   actions?: SectionAction[]
@@ -55,7 +64,15 @@ export default function SectionShell({
         </span>
 
         <div style={{ minWidth: 0 }}>
-          <h2 className="ss-title">{title}</h2>
+          <h2 className="ss-title">
+            {title}
+            {accent ? (
+              <>
+                {' '}
+                <em className="hc-em">{accent}</em>
+              </>
+            ) : null}
+          </h2>
           <p className="ss-sub">{subtitle}</p>
         </div>
 

@@ -81,9 +81,13 @@ export default function MorePage() {
   return (
     <Layout user={user} profile={profile}>
       <div style={{ maxWidth: 720, margin: '0 auto', padding: '24px 20px' }}>
-        <div style={{ marginBottom: 24 }}>
-          <h2 style={{ fontSize: 22, fontWeight: 700, color: 'var(--text-primary)', margin: '0 0 4px' }}>More</h2>
-          <p style={{ fontSize: 13, color: 'var(--text-muted)', margin: 0 }}>All features in one place</p>
+        <div className="hc-page-head">
+          <div style={{ minWidth: 0 }}>
+            <h1 className="hc-h1">
+              Everything else, <em className="hc-em">in one place.</em>
+            </h1>
+            <p className="hc-lede">Every feature the app ships, grouped so nothing gets lost.</p>
+          </div>
         </div>
 
         {/* Stats Card */}

@@ -234,7 +234,9 @@ function CompetePageInner() {
               <Icon name="zap" size={20} />
             </span>
             <div style={{ minWidth: 0 }}>
-              <h2 className="ss-title">Compete</h2>
+              <h2 className="ss-title">
+                Rank. Play. Win. <em className="hc-em">Earn aura.</em>
+              </h2>
               <p className="ss-sub">Rank. Play. Win. Earn Aura.</p>
             </div>
             <span className="ss-spacer" />

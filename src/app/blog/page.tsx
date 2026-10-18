@@ -165,7 +165,9 @@ export default function BlogPage() {
               <Icon name="notebook" size={24} strokeWidth={2} />
             </div>
             <div style={{ minWidth: 0 }}>
-              <h1 className="blog-head-title">Blog</h1>
+              <h1 className="blog-head-title">
+                Notes worth <em className="hc-em">reading.</em>
+              </h1>
               <p className="blog-head-sub">Interview experiences, tech guides, campus stories &amp; more</p>
             </div>
           </div>
