@@ -786,6 +786,16 @@
   text-transform: uppercase;
   color: var(--lq-muted);
 }
+/* The line under the band's eyebrow: says outright that none of these firms has
+   posted a role, so the logo row can never read as a client list. */
+.hl-strip-sub {
+  margin: -12px auto 22px;
+  max-width: 46ch;
+  text-align: center;
+  font-size: 13px;
+  line-height: 1.55;
+  color: var(--lq-faint);
+}
 .hl-strip-row {
   display: flex;
   flex-wrap: wrap;

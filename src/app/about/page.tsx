@@ -103,14 +103,18 @@ export default function AboutPage() {
           top: 0,
           background: 'var(--bg)',
           borderBottom: '1px solid var(--border)',
-          padding: '14px 20px',
           zIndex: 10,
         }}
       >
         <div
           style={{
-            maxWidth: 1040,
+            // The app's shared frame, so this page starts on the same x as the
+            // landing and every section page instead of its own 1040px column.
+            // The gutter lives INSIDE this box, so the brand lines up with the
+            // hero copy below it rather than 24px to its left.
+            maxWidth: 'var(--page-max)',
             margin: '0 auto',
+            padding: '14px var(--page-pad)',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'space-between',
@@ -205,7 +209,10 @@ export default function AboutPage() {
       </nav>
 
       {/* Hero */}
-      <div className="ambient" style={{ maxWidth: 1040, margin: '0 auto', padding: '72px 20px 64px' }}>
+      <div
+        className="ambient"
+        style={{ maxWidth: 'var(--page-max)', margin: '0 auto', padding: '72px var(--page-pad) 64px' }}
+      >
         <div className="landing-hero-grid">
           <div>
             <div
@@ -421,7 +428,7 @@ export default function AboutPage() {
       </div>
 
       {/* Features */}
-      <div style={{ maxWidth: 1040, margin: '0 auto', padding: '0 20px 80px' }}>
+      <div style={{ maxWidth: 'var(--page-max)', margin: '0 auto', padding: '0 var(--page-pad) 80px' }}>
         <h3
           style={{
             fontSize: 28,

@@ -15,7 +15,7 @@ import { Icon } from '@/components/icons'
  * italic for the one accent phrase. Information architecture is unchanged:
  *   1. Nav (product links + theme + login + Get Started)
  *   2. Hero: display headline, pillars, primary CTA, orbit stage
- *   3. Companies hiring here — GENUINE rows from public.companies
+ *   3. Companies we're onboarding — GENUINE rows from public.companies
  *   4. Trust metrics — GENUINE counts only, passed in from the server
  *   5. Workflow: Assessment → Verification → Ranking → Shortlisting
  *   6. Candidate discovery preview (filters + ranked table)
@@ -686,11 +686,14 @@ export default function HireLanding({
         </div>
       </section>
 
-      {/* ── 3. Companies hiring here — GENUINE rows, hidden when unavailable ── */}
+      {/* ── 3. Companies we're onboarding — GENUINE rows, hidden when unavailable ── */}
       {strip.length > 0 && (
         <section className="hl-strip">
           <div className="hl-wrap">
-            <p className="hl-strip-eyebrow">Companies hiring here</p>
+            {/* Not "companies hiring here": the directory is an onboarding
+                list, so the band names what it actually is. */}
+            <p className="hl-strip-eyebrow">Future partners we&rsquo;re onboarding</p>
+            <p className="hl-strip-sub">Real firms we&rsquo;re in touch with — none of them posts a role here yet.</p>
             <div className="hl-strip-row">
               {strip.map((c) => (
                 <Link className="hl-strip-item" href={`/companies/${c.slug}`} key={c.slug} title={c.name}>
@@ -720,7 +723,7 @@ export default function HireLanding({
             </div>
             <div>
               <p className="hl-metric-v">{stats.companies.toLocaleString('en-IN')}</p>
-              <p className="hl-metric-l">companies hiring here</p>
+              <p className="hl-metric-l">companies on our list</p>
             </div>
           </div>
         </section>
@@ -827,7 +830,7 @@ export default function HireLanding({
             </p>
             {strip.length > 0 && (
               <>
-                <p className="hl-chip-label">Companies hiring here</p>
+                <p className="hl-chip-label">Future partners</p>
                 <div className="hl-chip-row">
                   {strip.slice(0, 6).map((c) => (
                     <span className="hl-chip" key={c.slug}>
@@ -853,7 +856,7 @@ export default function HireLanding({
                   <i />
                   <i />
                 </span>
-                <span className="hl-window-pill">openings.json</span>
+                <span className="hl-window-pill">preview.json</span>
                 <span className="hl-window-status">
                   <i className="hl-live-dot" />
                   Demo data
@@ -880,7 +883,8 @@ export default function HireLanding({
                 </Link>
               </div>
               <p className="hl-demo-note">
-                Illustrative board preview — these are not live listings. Open Jobs to see what is posted right now.
+                Illustrative board preview — not live listings. The firms shown are future partners; no roles are posted
+                here yet. Open Jobs to see what is posted right now.
               </p>
             </div>
           </div>

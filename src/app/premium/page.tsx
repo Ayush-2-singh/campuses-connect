@@ -38,7 +38,7 @@ export default function PremiumPage() {
 
   return (
     <Layout user={user} profile={profile}>
-      <div style={{ maxWidth: 720, margin: '0 auto', padding: '20px 16px' }}>
+      <div className="page-wrap">
         {/* Header */}
         <div style={{ textAlign: 'center', marginBottom: 24 }}>
           <div
