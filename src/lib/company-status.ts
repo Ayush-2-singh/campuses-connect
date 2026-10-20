@@ -25,8 +25,9 @@ export const PARTNER_STATUS_LABEL: Record<PartnerStatus, string> = {
 
 export const PARTNER_STATUS_NOTE: Record<PartnerStatus, string> = {
   hiring_partner: 'Posts roles on ConnectToCampus.',
-  assisting_partner: 'Students have shared interview experiences; no roles posted yet.',
-  future_partner: 'On our onboarding list — no roles posted yet.',
+  assisting_partner: 'Students have shared their interview process; nothing posted here yet.',
+  future_partner:
+    'On our onboarding list — nothing live yet. It can become an assisting partner as soon as students share its process.',
 }
 
 /** Chip tone per status, so the same label always paints the same way. */

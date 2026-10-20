@@ -1,9 +1,11 @@
 import type { Metadata } from 'next'
 
 export const metadata: Metadata = {
-  title: 'Companies — Recruiter Profiles for CS Students',
+  title: 'Companies — future & assisting partners',
+  // No hiring claim: the directory is an onboarding list, so the snippet says so
+  // rather than advertising roles that do not exist yet.
   description:
-    'Profiles for Google, Microsoft, Amazon, and top Indian startups hiring CS students — roles, interview experiences and application tracking in one place.',
+    'The real companies ConnectToCampus is onboarding — Google, Microsoft, Amazon and Indian startups. Each card shows whether a company posts roles here, has shared interview experiences, or is still a future partner.',
   alternates: { canonical: '/companies' },
 }
 

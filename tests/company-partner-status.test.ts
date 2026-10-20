@@ -51,9 +51,9 @@ describe('partner status labels', () => {
     }
   })
 
-  it('does not call an unposted company a partner of the hiring kind', () => {
+  it('does not promise a live relationship for an unposted company', () => {
     expect(PARTNER_STATUS_LABEL.future_partner).not.toMatch(/hiring/i)
-    expect(PARTNER_STATUS_NOTE.future_partner).toMatch(/no roles posted/i)
+    expect(PARTNER_STATUS_NOTE.future_partner).toMatch(/nothing live/i)
   })
 
   it('renders a founding year only when the directory holds one', () => {

@@ -87,13 +87,13 @@ export default function CompaniesPage() {
             ←
           </button>
           <div style={{ minWidth: 0 }}>
-            <span className="hc-eyebrow">Hiring</span>
+            <span className="hc-eyebrow">Company directory</span>
             <h1 className="hc-h1">
-              Companies &amp; <em className="hc-em">future partners.</em>
+              Companies we&rsquo;re <em className="hc-em">onboarding.</em>
             </h1>
             <p className="hc-lede">
-              Real companies we&rsquo;re onboarding for campus hiring — every card says where the relationship actually
-              stands.
+              Real firms we&rsquo;re building toward. Nothing is signed yet — these are the names that could start
+              assisting with roles and interviews.
             </p>
           </div>
         </div>
@@ -134,9 +134,9 @@ export default function CompaniesPage() {
         </div>
 
         <p className="hc-note hc-reveal" style={{ '--hc-i': 3, marginBottom: 20 } as React.CSSProperties}>
-          A company is labelled <strong>hiring partner</strong> only after it posts a role here, and{' '}
-          <strong>assisting partner</strong> once students have filed interview experiences for it. Everything else is a{' '}
-          <strong>future partner</strong> we are onboarding — never a logo we borrowed.
+          No partnership claims here. <strong>Future partner</strong> means we&rsquo;re in touch but nothing is live;{' '}
+          <strong>assisting partner</strong> means students have shared experiences from that company&rsquo;s process. A
+          card only changes label once the company actually does something on ConnectToCampus.
         </p>
 
         {loading ? (
@@ -202,7 +202,7 @@ export default function CompaniesPage() {
                     <span className={`hc-tag ${PARTNER_STATUS_TONE[status]}`}>{PARTNER_STATUS_LABEL[status]}</span>
                     {c.company_size && <span className="hc-tag">{c.company_size} employees</span>}
                     <span className="hc-tag hc-tag--ghost">
-                      {roles > 0 ? `${roles} open ${roles === 1 ? 'role' : 'roles'}` : 'No open roles yet'}
+                      {roles > 0 ? `${roles} open ${roles === 1 ? 'role' : 'roles'}` : 'Nothing posted yet'}
                     </span>
                     {c.follower_count > 0 && (
                       <span className="hc-meta">
