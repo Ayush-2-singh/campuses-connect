@@ -1701,6 +1701,17 @@ a,
 .hc-grid--list {
   grid-template-columns: minmax(0, 1fr);
 }
+/* Row-shaped catalogue cards (the Companies directory). One per row left half a
+   large monitor empty; they pair up as soon as two 430px rows fit, and stay
+   single-file on a phone. */
+.hc-grid--pairs {
+  grid-template-columns: repeat(auto-fill, minmax(430px, 1fr));
+}
+@media (max-width: 900px) {
+  .hc-grid--pairs {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
 @media (max-width: 640px) {
   .hc-grid {
     grid-template-columns: minmax(0, 1fr);
@@ -3372,6 +3383,29 @@ html.nav-hidden .fab-wrap {
 :root {
   --page-max: 1180px;
   --page-pad: clamp(18px, 4vw, 40px);
+}
+
+/* The frame steps up on a big monitor.
+   1180px was sized for a 1440 laptop, where it already fills the window. Past
+   ~1800px the same frame leaves 300–600px of dead margin on each side, which is
+   what made every catalogue read as half-empty (a 1440-wide screen shows the
+   frame at ~97% of its width, a 1920-wide one at ~72%, a 24" 2560 at ~54%).
+   Growing in steps keeps the step visible only where the space actually is, so
+   a laptop layout is untouched and nothing stretches into an unreadable row. */
+@media (min-width: 1800px) {
+  :root {
+    --page-max: 1360px;
+  }
+}
+@media (min-width: 2200px) {
+  :root {
+    --page-max: 1500px;
+  }
+}
+@media (min-width: 2600px) {
+  :root {
+    --page-max: 1600px;
+  }
 }
 
 .page-wrap {

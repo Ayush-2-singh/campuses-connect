@@ -5,6 +5,13 @@ import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
 import Layout from '@/components/Layout'
 import { Icon } from '@/components/icons'
+import {
+  PARTNER_STATUS_LABEL,
+  PARTNER_STATUS_TONE,
+  foundedLabel,
+  partnerStatusOf,
+  type PartnerStatus,
+} from '@/lib/company-status'
 
 const INDUSTRIES = ['all', 'tech', 'finance', 'consulting', 'startup', 'ecommerce', 'fintech', 'edtech', 'other']
 
@@ -82,9 +89,12 @@ export default function CompaniesPage() {
           <div style={{ minWidth: 0 }}>
             <span className="hc-eyebrow">Hiring</span>
             <h1 className="hc-h1">
-              Companies that are <em className="hc-em">hiring.</em>
+              Companies &amp; <em className="hc-em">future partners.</em>
             </h1>
-            <p className="hc-lede">Explore companies, job openings &amp; interview experiences</p>
+            <p className="hc-lede">
+              Real companies we&rsquo;re onboarding for campus hiring — every card says where the relationship actually
+              stands.
+            </p>
           </div>
         </div>
 
@@ -123,8 +133,14 @@ export default function CompaniesPage() {
           ))}
         </div>
 
+        <p className="hc-note hc-reveal" style={{ '--hc-i': 3, marginBottom: 20 } as React.CSSProperties}>
+          A company is labelled <strong>hiring partner</strong> only after it posts a role here, and{' '}
+          <strong>assisting partner</strong> once students have filed interview experiences for it. Everything else is a{' '}
+          <strong>future partner</strong> we are onboarding — never a logo we borrowed.
+        </p>
+
         {loading ? (
-          <div className="hc-grid hc-grid--list">
+          <div className="hc-grid hc-grid--pairs">
             {[0, 1, 2, 3, 4].map((i) => (
               <div key={i} className="hc-card hc-reveal" style={{ '--hc-i': i } as React.CSSProperties}>
                 <div className="hc-card-head">
@@ -146,60 +162,62 @@ export default function CompaniesPage() {
             <p className="hc-empty-s">Try a different search or industry filter.</p>
           </div>
         ) : (
-          <div className="hc-grid hc-grid--list">
-            {companies.map((c, i) => (
-              <div
-                key={c.id}
-                className="hc-card hc-card--link hc-card--rail hc-reveal"
-                style={{ '--hc-i': i } as React.CSSProperties}
-                onClick={() => router.push(`/companies/${c.slug}`)}
-              >
-                <div className="hc-card-head">
-                  <div className="hc-avatar" style={{ width: 48, height: 48, borderRadius: 12 }}>
-                    {c.logo_url ? (
-                      <img loading="lazy" decoding="async" src={c.logo_url} alt="" />
-                    ) : (
-                      <Icon name="building" size={22} />
-                    )}
-                  </div>
-
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                      <h3 className="hc-title">{c.name}</h3>
-                      {c.is_verified && <Icon name="check" size={13} style={{ color: 'var(--success-text)' }} />}
+          <div className="hc-grid hc-grid--pairs">
+            {companies.map((c, i) => {
+              const status: PartnerStatus =
+                c.partner_status ?? partnerStatusOf({ openRoles: c.open_roles, experienceCount: c.experience_count })
+              // Only facts the directory actually holds — no "Global" stand-in,
+              // no invented follower or rating figure.
+              const facts = [
+                c.industry ? (INDUSTRY_LABEL[c.industry] ?? c.industry) : null,
+                c.hq_location,
+                foundedLabel(c.founded_year),
+              ].filter(Boolean)
+              const roles = c.open_roles ?? 0
+              return (
+                <div
+                  key={c.id}
+                  className="hc-card hc-card--link hc-card--rail hc-reveal"
+                  style={{ '--hc-i': i } as React.CSSProperties}
+                  onClick={() => router.push(`/companies/${c.slug}`)}
+                >
+                  <div className="hc-card-head">
+                    <div className="hc-avatar" style={{ width: 48, height: 48, borderRadius: 12 }}>
+                      {c.logo_url ? (
+                        <img loading="lazy" decoding="async" src={c.logo_url} alt="" />
+                      ) : (
+                        <Icon name="building" size={22} />
+                      )}
                     </div>
-                    <p className="hc-sub">
-                      {c.industry} · {c.company_size} · {c.hq_location || 'Global'}
-                    </p>
-                    {c.tech_stack?.length > 0 && (
-                      <div className="hc-tags" style={{ marginTop: 6 }}>
-                        {c.tech_stack.slice(0, 4).map((t: string) => (
-                          <span key={t} className="hc-tag">
-                            {t}
-                          </span>
-                        ))}
-                      </div>
-                    )}
+
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <h3 className="hc-title">{c.name}</h3>
+                      {facts.length > 0 && <p className="hc-sub">{facts.join(' · ')}</p>}
+                    </div>
+
+                    <Icon name="chevron" size={16} style={{ color: 'var(--text-muted)' }} />
                   </div>
 
-                  <div style={{ textAlign: 'right', flexShrink: 0 }}>
-                    <span className="hc-meta">
-                      <Icon name="users" size={11} /> {c.follower_count}
+                  <div className="hc-tags">
+                    <span className={`hc-tag ${PARTNER_STATUS_TONE[status]}`}>{PARTNER_STATUS_LABEL[status]}</span>
+                    {c.company_size && <span className="hc-tag">{c.company_size} employees</span>}
+                    <span className="hc-tag hc-tag--ghost">
+                      {roles > 0 ? `${roles} open ${roles === 1 ? 'role' : 'roles'}` : 'No open roles yet'}
                     </span>
+                    {c.follower_count > 0 && (
+                      <span className="hc-meta">
+                        <Icon name="users" size={11} /> {c.follower_count}
+                      </span>
+                    )}
                     {c.glassdoor_rating && (
-                      <p
-                        className="hc-meta"
-                        style={{ color: 'var(--warning-text)', marginTop: 2, justifyContent: 'flex-end' }}
-                      >
+                      <span className="hc-meta" style={{ color: 'var(--warning-text)' }}>
                         <Icon name="star" size={11} /> {c.glassdoor_rating}
-                      </p>
+                      </span>
                     )}
                   </div>
-
-                  <Icon name="chevron" size={16} style={{ color: 'var(--text-muted)' }} />
                 </div>
-              </div>
-            ))}
+              )
+            })}
           </div>
         )}
       </div>

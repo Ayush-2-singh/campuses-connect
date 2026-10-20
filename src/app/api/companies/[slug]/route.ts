@@ -1,19 +1,18 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
+import { partnerStatusOf } from '@/lib/company-status'
 
 /** GET /api/companies/[slug] — company detail with jobs, experiences, followers */
 export async function GET(req: NextRequest, { params }: { params: Promise<{ slug: string }> }) {
   const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
   const { slug } = await params
 
-  const { data: company, error } = await supabase
-    .from('companies')
-    .select('*')
-    .eq('slug', slug)
-    .single()
+  const { data: company, error } = await supabase.from('companies').select('*').eq('slug', slug).single()
 
   if (error || !company) return NextResponse.json({ error: 'Company not found' }, { status: 404 })
 
@@ -59,5 +58,8 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ slug
     jobs: jobs || [],
     experiences: experiences || [],
     avg_rating: avgRating,
+    // Same rule as the catalogue — the detail page must not call a company a
+    // partner unless it has posted a role or students have filed experiences.
+    partner_status: partnerStatusOf({ openRoles: jobs?.length ?? 0, experienceCount: experiences?.length ?? 0 }),
   })
 }

@@ -5,6 +5,14 @@ import { createClient } from '@/lib/supabase/client'
 import { useRouter, useParams } from 'next/navigation'
 import Layout from '@/components/Layout'
 import { Icon } from '@/components/icons'
+import {
+  PARTNER_STATUS_LABEL,
+  PARTNER_STATUS_NOTE,
+  PARTNER_STATUS_TONE,
+  foundedLabel,
+  partnerStatusOf,
+  type PartnerStatus,
+} from '@/lib/company-status'
 
 export default function CompanyPage() {
   const [user, setUser] = useState<any>(null)
@@ -15,6 +23,7 @@ export default function CompanyPage() {
   const [followerCount, setFollowerCount] = useState(0)
   const [isFollowing, setIsFollowing] = useState(false)
   const [avgRating, setAvgRating] = useState<string | null>(null)
+  const [partnerStatus, setPartnerStatus] = useState<PartnerStatus>('future_partner')
   const [loading, setLoading] = useState(true)
   const [activeTab, setActiveTab] = useState<'jobs' | 'experiences'>('jobs')
   const router = useRouter()
@@ -42,6 +51,10 @@ export default function CompanyPage() {
           setFollowerCount(data.follower_count)
           setIsFollowing(data.is_following)
           setAvgRating(data.avg_rating)
+          setPartnerStatus(
+            data.partner_status ??
+              partnerStatusOf({ openRoles: data.jobs?.length ?? 0, experienceCount: data.experiences?.length ?? 0 })
+          )
         }
       } catch {
         /* ignore */
@@ -156,10 +169,22 @@ export default function CompanyPage() {
                 <h2 style={{ fontSize: 20, fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>
                   {company.name}
                 </h2>
-                {company.is_verified && <Icon name="check" size={15} style={{ color: 'var(--success-text)' }} />}
+                <span className={`hc-tag ${PARTNER_STATUS_TONE[partnerStatus]}`}>
+                  {PARTNER_STATUS_LABEL[partnerStatus]}
+                </span>
               </div>
               <p style={{ fontSize: 13, color: 'var(--text-muted)', margin: '0 0 8px' }}>
-                {company.industry} · {company.company_size} · {company.hq_location || 'Global'}
+                {[
+                  company.industry,
+                  company.company_size && `${company.company_size} employees`,
+                  company.hq_location,
+                  foundedLabel(company.founded_year),
+                ]
+                  .filter(Boolean)
+                  .join(' · ')}
+              </p>
+              <p style={{ fontSize: 12.5, color: 'var(--text-muted)', margin: '0 0 10px' }}>
+                {PARTNER_STATUS_NOTE[partnerStatus]}
               </p>
               {company.description && (
                 <p style={{ fontSize: 13, color: 'var(--text-secondary)', margin: '0 0 10px', lineHeight: 1.6 }}>
