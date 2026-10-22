@@ -1,0 +1,349 @@
+/* ═════════════════════════════════════════════════════════════════════════
+   orbit-hero.css — the orbiting skill/company hero.
+
+   Two deliberate fixes over the source snippet:
+
+   1. The stage is a CONTAINER (`container-type: size`), and each ring's radius
+      is expressed in `cqw`. The original used `%`, which resolves against the
+      1px anchor element the badge sits on — so every badge collapsed into the
+      centre instead of spreading onto the ring.
+   2. The demo profile is chosen on the client after mount (see OrbitHero.tsx),
+      so the server and client render the same name and React never has to
+      patch a hydration mismatch.
+
+   Everything is scoped to `.orbit-hero` so it cannot leak into the app.
+   ═════════════════════════════════════════════════════════════════════════ */
+
+.orbit-hero {
+  --orbit-blue: #3478f6;
+  --orbit-text: #171717;
+
+  display: grid;
+  grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr);
+  align-items: center;
+  gap: 24px;
+  width: 100%;
+  min-height: 650px;
+  padding: 64px clamp(20px, 5vw, 76px);
+  overflow: hidden;
+  color: var(--orbit-text);
+  background: radial-gradient(ellipse at 76% 48%, #eaf1ff 0%, transparent 42%), #faf9f6;
+  font-family: Inter, ui-sans-serif, system-ui, sans-serif;
+}
+
+.orbit-copy {
+  position: relative;
+  z-index: 2;
+  max-width: 560px;
+}
+
+.orbit-eyebrow {
+  display: inline-block;
+  margin-bottom: 22px;
+  color: var(--orbit-blue);
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 2.5px;
+}
+
+.orbit-copy h1 {
+  margin: 0;
+  font-size: clamp(40px, 5.2vw, 76px);
+  font-weight: 850;
+  line-height: 1.04;
+  letter-spacing: -3.5px;
+}
+
+.orbit-copy h1 span {
+  color: #5798ff;
+  font-family: Georgia, 'Times New Roman', serif;
+  font-weight: 700;
+  font-style: italic;
+}
+
+.orbit-copy > p {
+  max-width: 460px;
+  margin: 24px 0;
+  color: #666;
+  font-size: 17px;
+  line-height: 1.8;
+}
+
+.orbit-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.orbit-actions a {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 46px;
+  padding: 0 20px;
+  border-radius: 14px;
+  font-size: 14px;
+  font-weight: 750;
+  text-decoration: none;
+  transition:
+    transform 180ms ease,
+    box-shadow 180ms ease;
+}
+
+.orbit-actions a:hover {
+  transform: translateY(-3px);
+}
+
+.orbit-primary {
+  color: white;
+  background: var(--orbit-blue);
+  box-shadow: 0 8px 22px #3478f633;
+}
+
+.orbit-secondary {
+  color: #242424;
+  border: 1px solid #e4e5eb;
+  background: white;
+}
+
+/* Orbit stage */
+.orbit-visual {
+  position: relative;
+  isolation: isolate;
+  width: 100%;
+  max-width: 680px;
+  aspect-ratio: 1;
+  margin-inline: auto;
+  border-radius: 50%;
+  background: radial-gradient(circle, #ffffff 0%, #f5f8ff 36%, transparent 69%);
+  /* Radius tokens are cqw, so the stage must be the size container. */
+  container-type: size;
+}
+
+/* Each ring rotates independently */
+.orbit-ring {
+  position: absolute;
+  inset: 4%;
+  border: 1px dashed #c9ced7;
+  border-radius: 50%;
+  pointer-events: none;
+}
+
+.orbit-ring:nth-of-type(2) {
+  inset: 21%;
+  border-color: #b8cdf4;
+}
+
+/* Position badges around the ellipse */
+.orbit-item {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 1px;
+  height: 1px;
+  transform: rotate(var(--angle)) translateX(var(--orbit-radius)) rotate(calc(-1 * var(--angle)));
+  transform-origin: 0 0;
+  pointer-events: auto;
+}
+
+.orbit-badge {
+  position: absolute;
+  top: 0;
+  left: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 7px;
+  width: max-content;
+  transform: translate(-50%, -50%);
+}
+
+.orbit-icon {
+  box-sizing: content-box;
+  width: 28px;
+  height: 28px;
+  padding: 13px;
+  color: var(--item-color);
+  border: 1px solid #ffffff;
+  border-radius: 19px;
+  background: rgba(255, 255, 255, 0.97);
+  box-shadow: 0 6px 22px #1c2f5015;
+  transition:
+    box-shadow 200ms ease,
+    scale 200ms ease;
+}
+
+.orbit-badge:hover .orbit-icon {
+  scale: 1.12;
+  box-shadow: 0 10px 30px #3478f62c;
+}
+
+.orbit-label {
+  padding: 5px 9px;
+  border: 1px solid #eceef3;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.96);
+  box-shadow: 0 4px 12px #1c2f500c;
+  color: #292929;
+  font-size: 10px;
+  font-weight: 750;
+  white-space: nowrap;
+}
+
+/* Center profile */
+.orbit-profile {
+  position: absolute;
+  z-index: 3;
+  top: 50%;
+  left: 50%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 190px;
+  padding: 15px 12px 17px;
+  border: 1px solid #ffffff;
+  border-radius: 24px;
+  background: rgba(255, 255, 255, 0.88);
+  box-shadow: 0 12px 40px #2d5b9f16;
+  text-align: center;
+  transform: translate(-50%, -50%);
+  backdrop-filter: blur(12px);
+}
+
+.orbit-avatar-wrap {
+  position: relative;
+  width: 100px;
+  height: 100px;
+  margin-bottom: 10px;
+}
+
+.orbit-avatar {
+  display: block;
+  width: 100%;
+  height: 100%;
+  border: 5px solid white;
+  border-radius: 50%;
+  object-fit: cover;
+  box-shadow:
+    0 0 0 2px #a9c8ff,
+    0 8px 22px #3478f62a;
+}
+
+.orbit-online {
+  position: absolute;
+  right: 3px;
+  bottom: 5px;
+  width: 14px;
+  height: 14px;
+  border: 3px solid white;
+  border-radius: 50%;
+  background: #22c55e;
+}
+
+.orbit-profile h2 {
+  max-width: 170px;
+  margin: 0;
+  overflow: hidden;
+  color: #191919;
+  font-size: 16px;
+  font-weight: 800;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.orbit-profile p {
+  margin: 5px 0 0;
+  color: #747474;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+/* Tablet */
+@media (max-width: 900px) {
+  .orbit-hero {
+    grid-template-columns: 1fr;
+    gap: 25px;
+    padding-block: 50px;
+  }
+
+  .orbit-copy {
+    max-width: 650px;
+    margin-inline: auto;
+    text-align: center;
+  }
+
+  .orbit-copy > p {
+    margin-inline: auto;
+  }
+
+  .orbit-actions {
+    justify-content: center;
+  }
+
+  .orbit-visual {
+    width: min(100%, 600px);
+  }
+}
+
+/* Mobile */
+@media (max-width: 480px) {
+  .orbit-hero {
+    padding: 40px 12px;
+    gap: 24px;
+  }
+
+  .orbit-copy h1 {
+    font-size: clamp(37px, 10vw, 48px);
+    letter-spacing: -1.8px;
+  }
+
+  .orbit-copy > p {
+    font-size: 14px;
+  }
+
+  .orbit-visual {
+    width: 100%;
+  }
+
+  .orbit-icon {
+    width: 19px;
+    height: 19px;
+    padding: 8px;
+    border-radius: 14px;
+  }
+
+  .orbit-label {
+    padding: 3px 5px;
+    font-size: 8px;
+  }
+
+  .orbit-profile {
+    width: 135px;
+    padding: 10px 6px 12px;
+    border-radius: 18px;
+  }
+
+  .orbit-avatar-wrap {
+    width: 72px;
+    height: 72px;
+  }
+
+  .orbit-profile h2 {
+    max-width: 125px;
+    font-size: 13px;
+  }
+
+  .orbit-profile p {
+    font-size: 10px;
+  }
+}
+
+/* Respect reduced-motion preferences */
+@media (prefers-reduced-motion: reduce) {
+  .orbit-hero *,
+  .orbit-hero *::before,
+  .orbit-hero *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}

@@ -2,8 +2,8 @@
 
 import Link from 'next/link'
 import PublicNav from '@/components/marketing/PublicNav'
+import OrbitHero from '@/components/OrbitHero'
 import PublicFooter from '@/components/marketing/PublicFooter'
-import { Icon } from '@/components/icons'
 
 /**
  * PlacementLanding — the public landing for the student-facing product.
@@ -72,43 +72,8 @@ export default function PlacementLanding({
       {/* Shared public header — the same one every public page renders. */}
       <PublicNav />
 
-      {/* ── Hero ── */}
-      <section className="hl-hero hl-wrap">
-        <div className="hl-hero-copy">
-          <p className="hl-eyebrow hl-rise hl-rise-1">Placement intelligence, written by students</p>
-          <h1 className="hl-h1 hl-rise hl-rise-2">
-            Every round, every company.{' '}
-            <span className="hl-h1-accent">Written down by the ones who sat through it.</span>
-          </h1>
-          <p className="hl-sub hl-rise hl-rise-3">
-            Real placement write-ups from Indian campuses — which companies visited, what each round actually asked, and
-            who got selected. Read it before your drive instead of guessing from a Tier-1 blog that has nothing to do
-            with your college.
-          </p>
-
-          <div className="hl-pill-row hl-rise hl-rise-4">
-            {['Round-by-round', 'Company-wise', 'Free to read'].map((p) => (
-              <span className="hl-pill" key={p}>
-                <span className="hl-pill-ic">
-                  <Icon name="check" size={14} />
-                </span>
-                {p}
-              </span>
-            ))}
-          </div>
-
-          <div className="hl-cta-row hl-rise hl-rise-4">
-            <Link className="hl-btn hl-btn--brand hl-btn--lg hl-btn--shine" href="/experiences">
-              Read experiences
-            </Link>
-            <Link className="hl-btn hl-btn--ghost hl-btn--lg" href="/companies">
-              Browse companies
-            </Link>
-          </div>
-
-          <p className="hl-micro">No account needed to read. Sign in only to write yours.</p>
-        </div>
-      </section>
+      {/* ── Hero (orbit stage) ── */}
+      <OrbitHero />
 
       {/* ── Real counts (hidden entirely when the query fails) ── */}
       {stats && (
