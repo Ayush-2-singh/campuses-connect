@@ -235,7 +235,12 @@
   white-space: nowrap;
 }
 
-/* Center profile */
+/* Center profile — a CIRCLE, so it reads as the hub the rings turn around
+   instead of a card that happens to sit in the middle.
+   A circle must be square, so the box is fixed at 190×190 and the radius does
+   all the shaping. Text is capped well under the full diameter (see max-width
+   below): a chord shrinks fast off-centre, and a long name would otherwise
+   touch the curve. */
 .orbit-profile {
   position: absolute;
   z-index: 3;
@@ -244,12 +249,17 @@
   display: flex;
   flex-direction: column;
   align-items: center;
+  justify-content: center;
+  gap: 3px;
   width: 190px;
-  padding: 15px 12px 17px;
+  height: 190px;
+  padding: 0;
   border: 1px solid var(--lq-line, #ffffff);
-  border-radius: 24px;
-  background: color-mix(in srgb, var(--lq-surface, #fff) 90%, transparent);
-  box-shadow: 0 12px 40px #2d5b9f16;
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--lq-surface, #fff) 92%, transparent);
+  box-shadow:
+    0 12px 40px #2d5b9f16,
+    inset 0 0 0 6px color-mix(in srgb, var(--orbit-blue) 6%, transparent);
   text-align: center;
   transform: translate(-50%, -50%);
   backdrop-filter: blur(12px);
@@ -257,16 +267,16 @@
 
 .orbit-avatar-wrap {
   position: relative;
-  width: 100px;
-  height: 100px;
-  margin-bottom: 10px;
+  width: 78px;
+  height: 78px;
+  margin-bottom: 6px;
 }
 
 .orbit-avatar {
   display: block;
   width: 100%;
   height: 100%;
-  border: 5px solid var(--lq-surface, #fff);
+  border: 4px solid var(--lq-surface, #fff);
   border-radius: 50%;
   object-fit: cover;
   box-shadow:
@@ -276,31 +286,35 @@
 
 .orbit-online {
   position: absolute;
-  right: 3px;
-  bottom: 5px;
-  width: 14px;
-  height: 14px;
+  right: 1px;
+  bottom: 2px;
+  width: 13px;
+  height: 13px;
   border: 3px solid var(--lq-surface, #fff);
   border-radius: 50%;
   background: #22c55e;
 }
 
 .orbit-profile h2 {
-  max-width: 170px;
+  max-width: 132px;
   margin: 0;
   overflow: hidden;
   color: var(--lq-text, #191919);
-  font-size: 16px;
+  font-size: 14px;
   font-weight: 800;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
 .orbit-profile p {
-  margin: 5px 0 0;
+  max-width: 118px;
+  margin: 0;
+  overflow: hidden;
   color: var(--lq-muted, #747474);
-  font-size: 12px;
+  font-size: 11px;
   font-weight: 600;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 /* Tablet */
@@ -380,23 +394,40 @@
   }
 
   .orbit-profile {
-    width: 135px;
-    padding: 10px 6px 12px;
-    border-radius: 18px;
+    width: 132px;
+    height: 132px;
+    gap: 2px;
+    padding: 0;
+    border-radius: 50%;
+    box-shadow:
+      0 8px 26px #2d5b9f14,
+      inset 0 0 0 4px color-mix(in srgb, var(--orbit-blue) 6%, transparent);
   }
 
   .orbit-avatar-wrap {
-    width: 72px;
-    height: 72px;
+    width: 54px;
+    height: 54px;
+    margin-bottom: 4px;
+  }
+
+  .orbit-avatar {
+    border-width: 3px;
+  }
+
+  .orbit-online {
+    width: 11px;
+    height: 11px;
+    border-width: 2px;
   }
 
   .orbit-profile h2 {
-    max-width: 125px;
-    font-size: 13px;
+    max-width: 92px;
+    font-size: 11px;
   }
 
   .orbit-profile p {
-    font-size: 10px;
+    max-width: 86px;
+    font-size: 9px;
   }
 }
 
