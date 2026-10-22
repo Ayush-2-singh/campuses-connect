@@ -69,7 +69,8 @@ describe('retired-route matching', () => {
   })
 
   it('redirects to a kept hub', () => {
-    expect(FALLBACK_ROUTE).toBe('/jobs')
+    // The hub moved from /jobs to /colleges when the job board was hidden.
+    expect(FALLBACK_ROUTE).toBe('/colleges')
     expect(isRetiredPath(FALLBACK_ROUTE)).toBe(false)
   })
 

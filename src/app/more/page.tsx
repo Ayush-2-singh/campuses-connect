@@ -11,7 +11,6 @@ import { Icon } from '@/components/icons'
 // its routes redirect via src/lib/featureGates.ts, so nothing here may link to
 // it (that would dead-end through the gate).
 const SECTIONS = [
-  { icon: 'building', label: 'Jobs', desc: 'Internships, full-time & remote openings', href: '/jobs' },
   {
     icon: 'school',
     label: 'Colleges',
@@ -23,12 +22,6 @@ const SECTIONS = [
     label: 'Companies',
     desc: 'Explore companies, roles & interview experiences',
     href: '/companies',
-  },
-  {
-    icon: 'bookmark',
-    label: 'Applications',
-    desc: 'Track every application from applied to offer',
-    href: '/applications',
   },
   {
     icon: 'pencil',

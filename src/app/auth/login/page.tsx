@@ -74,7 +74,7 @@ export default function LoginPage() {
       return
     }
     router.refresh()
-    const target = getSafeRedirect(new URLSearchParams(window.location.search).get('redirect'), '/jobs')
+    const target = getSafeRedirect(new URLSearchParams(window.location.search).get('redirect'), '/colleges')
     router.replace(target)
   }
 

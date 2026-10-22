@@ -17,7 +17,6 @@ export default function sitemap(): MetadataRoute.Sitemap {
     // lib/featureGates.ts), and listing a redirecting URL in a sitemap is an
     // SEO error. /jobs is listed once.
     { path: '/', priority: 1, changeFrequency: 'daily' },
-    { path: '/jobs', priority: 0.9, changeFrequency: 'daily' },
     { path: '/blog', priority: 0.9, changeFrequency: 'daily' },
     { path: '/compete', priority: 0.8, changeFrequency: 'daily' },
     { path: '/leaderboard', priority: 0.7, changeFrequency: 'daily' },

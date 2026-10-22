@@ -1,6 +1,13 @@
 import { createServerClient } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
-import { FALLBACK_ROUTE, SALES_FALLBACK_ROUTE, isHiddenSalesPath, isRetiredPath } from '@/lib/featureGates'
+import {
+  FALLBACK_ROUTE,
+  JOBS_FALLBACK_ROUTE,
+  SALES_FALLBACK_ROUTE,
+  isHiddenJobsPath,
+  isHiddenSalesPath,
+  isRetiredPath,
+} from '@/lib/featureGates'
 
 /**
  * Session refresh + route protection.
@@ -48,6 +55,12 @@ export async function middleware(request: NextRequest) {
   // reachable. Fully reversible: see RECRUITER_SALES_HIDDEN in featureGates.
   if (!path.startsWith('/api/') && isHiddenSalesPath(path)) {
     return NextResponse.redirect(new URL(SALES_FALLBACK_ROUTE, request.url))
+  }
+
+  // The job board and its tracker are hidden while the product is
+  // placement information. Reversible: JOBS_BOARD_HIDDEN in featureGates.
+  if (!path.startsWith('/api/') && isHiddenJobsPath(path)) {
+    return NextResponse.redirect(new URL(JOBS_FALLBACK_ROUTE, request.url))
   }
 
   // Determine if we need auth at all for this route
@@ -116,12 +129,12 @@ export async function middleware(request: NextRequest) {
     const isAdmin = (grants as any[])?.some(
       (grant: any) => grant.admin_type === 'platform_admin' || grant.admin_type === 'campus_admin'
     )
-    if (!isAdmin) return NextResponse.redirect(new URL('/jobs', request.url))
+    if (!isAdmin) return NextResponse.redirect(new URL(JOBS_FALLBACK_ROUTE, request.url))
   }
 
   // Auth pages redirect to feed if already signed in
   if (user && isAuthPage) {
-    return NextResponse.redirect(new URL('/jobs', request.url))
+    return NextResponse.redirect(new URL(JOBS_FALLBACK_ROUTE, request.url))
   }
 
   // /onboarding: authenticated users only

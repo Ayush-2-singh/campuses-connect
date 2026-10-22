@@ -36,7 +36,6 @@ const COMMANDS: CmdItem[] = [
     group: 'Ask Connect My Campus',
   },
   // Navigation
-  { icon: 'building', label: 'Jobs & openings', href: '/jobs', group: 'Navigate' },
   { icon: 'building', label: 'Companies', href: '/companies', group: 'Navigate' },
   { icon: 'bookmark', label: 'My applications', href: '/applications', group: 'Navigate' },
   { icon: 'trophy', label: 'Leaderboard', href: '/leaderboard', group: 'Navigate' },

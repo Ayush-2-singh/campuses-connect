@@ -69,7 +69,7 @@ export default function ResetPasswordPage() {
       return
     }
     toast('Password updated successfully.', { tone: 'success' })
-    router.replace('/jobs')
+    router.replace('/colleges')
     router.refresh()
   }
 

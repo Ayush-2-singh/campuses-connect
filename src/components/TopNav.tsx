@@ -35,29 +35,27 @@ type NavEntry = { label: string; href: string; icon: string; items?: NavLeaf[] }
 const NAV: NavEntry[] = [
   {
     label: 'Hiring',
-    href: '/companies',
-    icon: 'briefcase',
+    href: '/colleges',
+    icon: 'school',
     items: [
-      { label: 'Colleges', href: '/colleges', icon: 'school' },
-      { label: 'Companies', href: '/companies', icon: 'building' },
-      { label: 'Applications', href: '/applications', icon: 'bookmark' },
+      { label: 'All colleges', href: '/colleges', icon: 'school' },
       { label: 'Experiences', href: '/experiences', icon: 'pencil' },
+      { label: 'Companies', href: '/companies', icon: 'building' },
     ],
   },
-  { label: 'Jobs', href: '/jobs', icon: 'building' },
   { label: 'Rooms', href: '/live-voice-chat', icon: 'mic' },
-  { label: 'Compete', href: '/compete', icon: 'zap' },
   {
-    label: 'Skills',
-    href: '/leaderboard',
-    icon: 'sparkles',
+    label: 'Practice',
+    href: '/compete',
+    icon: 'zap',
     items: [
+      { label: 'Arena', href: '/compete', icon: 'zap' },
       { label: 'Leaderboard', href: '/leaderboard', icon: 'trophy' },
       { label: 'AI Coach', href: '/brain', icon: 'sparkles' },
       { label: 'Integrations', href: '/integrations', icon: 'link' },
-      { label: 'Blog', href: '/blog', icon: 'pencil' },
     ],
   },
+  { label: 'Blog', href: '/blog', icon: 'pencil' },
   { label: 'Profile', href: '/profile', icon: 'user' },
 ]
 
