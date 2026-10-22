@@ -367,6 +367,13 @@
     border-radius: 14px;
   }
 
+  /* Phone: the outer ring carries the 15-mark tech stack, and at ~55px per
+     badge the labels touch each other. Drop them to icons on the outer ring
+     only — the companies on the inner ring keep their names. */
+  .orbit-ring:first-of-type .orbit-label {
+    display: none;
+  }
+
   .orbit-label {
     padding: 3px 5px;
     font-size: 8px;

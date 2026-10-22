@@ -222,11 +222,13 @@ export default function OrbitHero({
       </div>
 
       <div className="orbit-visual" aria-label="Rotating technology and company orbits">
-        {/* Outer company orbit */}
-        <OrbitRing items={companyItems} radius={46} duration={45} />
+        {/* Outer orbit: the tech stack (15 marks, so it gets the long
+            circumference — crowding them onto the inner ring overlapped the
+            labels). */}
+        <OrbitRing items={techItems} radius={46} duration={45} />
 
-        {/* Inner technology orbit */}
-        <OrbitRing items={techItems} radius={29} duration={32} reverse />
+        {/* Inner orbit: companies (9 marks) stay legible on the short ring. */}
+        <OrbitRing items={companyItems} radius={29} duration={32} reverse />
 
         {/* Static center profile */}
         <div className="orbit-profile">
