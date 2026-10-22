@@ -242,6 +242,24 @@ export default function LiveVoiceChatPage() {
     router.push(`/live-voice-chat/${groupId}`)
   }
 
+  /**
+   * Open the create panel, pre-seeded with the topic being browsed.
+   *
+   * Browsing "Java" and pressing "+ New Room" used to open the form on
+   * whatever section was last chosen (`random` on first load), so the room the
+   * student thought they were creating for Java silently landed somewhere
+   * else. The browsed topic is now the default, and the snippet below keeps the
+   * picker in sync while the panel is open.
+   */
+  const openCreate = () => {
+    if (showCreate) {
+      setShowCreate(false)
+      return
+    }
+    if (sectionFilter !== 'all') setForm((f) => ({ ...f, section: sectionFilter }))
+    setShowCreate(true)
+  }
+
   /** Open a room from a pasted invite link (or a bare room id). */
   const openInvite = () => {
     const raw = inviteInput.trim()
@@ -281,10 +299,14 @@ export default function LiveVoiceChatPage() {
           user
             ? [
                 {
-                  label: showCreate ? 'Cancel' : '+ New Room',
+                  label: showCreate
+                    ? 'Cancel'
+                    : sectionFilter !== 'all'
+                      ? `+ New Room in ${activeFilterLabel}`
+                      : '+ New Room',
                   primary: true,
                   icon: 'plus',
-                  onClick: () => setShowCreate((s) => !s),
+                  onClick: openCreate,
                 },
               ]
             : undefined
@@ -393,7 +415,15 @@ export default function LiveVoiceChatPage() {
             All topics
           </button>
           {browsableSections.map((s) => (
-            <button key={s.id} onClick={() => setSectionFilter(s.id)} style={topicChip(sectionFilter === s.id)}>
+            <button
+              key={s.id}
+              onClick={() => {
+                setSectionFilter(s.id)
+                // A room created from this view must belong to this topic.
+                if (showCreate) setForm((f) => ({ ...f, section: s.id }))
+              }}
+              style={topicChip(sectionFilter === s.id)}
+            >
               <Icon name={s.icon} size={13} strokeWidth={2.2} />
               {s.label}
             </button>
@@ -561,9 +591,31 @@ export default function LiveVoiceChatPage() {
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
           {visible.length === 0 ? (
-            <p style={{ textAlign: 'center', color: 'var(--text-muted)', padding: '40px 0' }}>
-              No rooms in {activeFilterLabel} yet
-            </p>
+            <div style={{ textAlign: 'center', padding: '40px 0' }}>
+              <p style={{ color: 'var(--text-muted)', margin: '0 0 14px' }}>No rooms in {activeFilterLabel} yet</p>
+              {/* Empty state carries the action: the student is already on the
+                  topic they want, so creating one is a single click away. */}
+              <button
+                onClick={user ? openCreate : requireLogin}
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: 6,
+                  background: 'var(--accent)',
+                  color: 'var(--on-accent)',
+                  border: 'none',
+                  borderRadius: 10,
+                  padding: '10px 16px',
+                  fontSize: 13.5,
+                  fontWeight: 600,
+                  cursor: 'pointer',
+                  fontFamily: 'inherit',
+                }}
+              >
+                <Icon name="plus" size={15} strokeWidth={2.4} />
+                {user ? `Create a room in ${activeFilterLabel}` : 'Sign in to create a room'}
+              </button>
+            </div>
           ) : (
             visible.map((g) => {
               const isMember = memberships.includes(g.id)
