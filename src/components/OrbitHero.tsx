@@ -38,9 +38,13 @@ import './orbit-hero.css'
  * OrbitHero — two counter-rotating rings of logos around the student's card.
  *
  * ── Notes on the port ───────────────────────────────────────────────────────
- *  • Radius is expressed in `cqw`, and `.orbit-visual` is a size container
- *    (`container-type: size`). With `%` the translate resolved against the 1px
- *    anchor each badge sits on, so all badges piled into the centre.
+ *  • Radius is expressed in `cqw`, and `.orbit-visual` is an inline-size
+ *    container (`container-type: inline-size`). With `%` the translate resolved
+ *    against the 1px anchor each badge sits on, so all badges piled into the
+ *    centre.
+ *  • Badges are centred with `translate`, not `transform`: framer-motion writes
+ *    `transform: rotate()` inline on the counter-rotated badge and would wipe a
+ *    `translate(-50%,-50%)` transform.
  *  • The demo profile is picked AFTER mount. Picking it during render gives the
  *    server and the browser different names and React reports a hydration
  *    mismatch, so the first paint shows a fixed profile and randomises on the

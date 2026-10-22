@@ -3,11 +3,16 @@
 
    Two deliberate fixes over the source snippet:
 
-   1. The stage is a CONTAINER (`container-type: size`), and each ring's radius
-      is expressed in `cqw`. The original used `%`, which resolves against the
-      1px anchor element the badge sits on — so every badge collapsed into the
-      centre instead of spreading onto the ring.
-   2. The demo profile is chosen on the client after mount (see OrbitHero.tsx),
+   1. The stage is a CONTAINER (`container-type: inline-size`), and each ring's
+      radius is expressed in `cqw`. The original used `%`, which resolves
+      against the 1px anchor element the badge sits on — so every badge
+      collapsed into the centre instead of spreading onto the ring.
+      `inline-size` (not `size`): height comes from `aspect-ratio`, so `size`
+      containment would collapse the stage to a square and wreck the ring.
+   2. Badges are centred with the `translate` property, never `transform`.
+      framer-motion writes `transform: rotate(...)` inline on the counter-
+      rotated badge, which would wipe a `translate(-50%,-50%)` there.
+   3. The demo profile is chosen on the client after mount (see OrbitHero.tsx),
       so the server and client render the same name and React never has to
       patch a hydration mismatch.
 
@@ -206,6 +211,16 @@
 .orbit-badge:hover .orbit-icon {
   scale: 1.12;
   box-shadow: 0 10px 30px #3478f62c;
+}
+
+/* Dark canvas: half the brand marks are near-black (#111827 for Apple, Uber,
+   GitHub and Next.js; #232F3E for Amazon), so they disappeared into the
+   #1f1e1d icon surface — the ring looked half-empty. Lift every brand colour
+   toward white at the same strength: dark marks climb into legibility while
+   already-bright ones (Netflix red, NVIDIA green) only soften.
+   `color-mix` keeps the hue, so the logo is still recognisable. */
+[data-theme='dark'] .orbit-icon {
+  color: color-mix(in srgb, var(--item-color) 58%, #ffffff);
 }
 
 .orbit-label {
