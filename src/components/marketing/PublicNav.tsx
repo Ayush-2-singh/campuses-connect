@@ -2,10 +2,12 @@
 
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
+import type { User } from '@supabase/supabase-js'
 import BrandName from '@/components/BrandName'
 import ThemeToggle from '@/components/ThemeToggle'
 import { getLogoSrc } from '@/components/LogoToggle'
 import { Icon } from '@/components/icons'
+import { createClient, getBootUser } from '@/lib/supabase/client'
 
 /**
  * PublicNav — the ONE header for every unauthenticated page.
@@ -23,6 +25,11 @@ import { Icon } from '@/components/icons'
 /**
  * Four destinations, not fourteen. Blog is a subsection of Experiences now, so
  * it does not get its own link.
+ *
+ * Auth-aware: the header starts as the guest version (the landing is static, so
+ * the server cannot know who is reading it) and swaps "Sign in / Get started"
+ * for "Your profile" as soon as the local session says someone is signed in.
+ * Without that, a logged-in visitor kept being offered Sign in.
  */
 export const PUBLIC_NAV = [
   { label: 'Rooms', href: '/live-voice-chat', icon: 'mic' },
@@ -33,12 +40,34 @@ export const PUBLIC_NAV = [
 export default function PublicNav() {
   const [logoSrc, setLogoSrc] = useState('/connect-to-campus-logo-dark.png')
   const [menuOpen, setMenuOpen] = useState(false)
+  const [user, setUser] = useState<User | null>(null)
 
   useEffect(() => {
     setLogoSrc(getLogoSrc())
     const sync = () => setLogoSrc(getLogoSrc())
     window.addEventListener('cc-theme-change', sync)
     return () => window.removeEventListener('cc-theme-change', sync)
+  }, [])
+
+  useEffect(() => {
+    const supabase = createClient()
+    let cancelled = false
+
+    getBootUser(supabase).then((bootUser) => {
+      if (!cancelled) setUser(bootUser)
+    })
+
+    // Signing in or out in another tab (or on /auth/login) must update here too.
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, session) => {
+      setUser(session?.user ?? null)
+    })
+
+    return () => {
+      cancelled = true
+      subscription.unsubscribe()
+    }
   }, [])
 
   return (
@@ -60,12 +89,20 @@ export default function PublicNav() {
 
         <div className="hl-nav-right">
           <ThemeToggle mode="plain" />
-          <Link className="hl-nav-signin" href="/auth/login">
-            Sign in
-          </Link>
-          <Link className="hl-btn hl-btn--brand hl-btn--sm" href="/auth/signup">
-            Get started
-          </Link>
+          {user ? (
+            <Link className="hl-btn hl-btn--brand hl-btn--sm" href="/profile">
+              Your profile
+            </Link>
+          ) : (
+            <>
+              <Link className="hl-nav-signin" href="/auth/login">
+                Sign in
+              </Link>
+              <Link className="hl-btn hl-btn--brand hl-btn--sm" href="/auth/signup">
+                Get started
+              </Link>
+            </>
+          )}
           <button
             className="hl-nav-burger"
             onClick={() => setMenuOpen((v) => !v)}
@@ -88,12 +125,20 @@ export default function PublicNav() {
               </Link>
             ))}
             <div className="hl-nav-sheet-cta">
-              <Link className="hl-btn hl-btn--ghost" href="/auth/login" onClick={() => setMenuOpen(false)}>
-                Sign in
-              </Link>
-              <Link className="hl-btn hl-btn--brand" href="/auth/signup" onClick={() => setMenuOpen(false)}>
-                Get started
-              </Link>
+              {user ? (
+                <Link className="hl-btn hl-btn--brand" href="/profile" onClick={() => setMenuOpen(false)}>
+                  Your profile
+                </Link>
+              ) : (
+                <>
+                  <Link className="hl-btn hl-btn--ghost" href="/auth/login" onClick={() => setMenuOpen(false)}>
+                    Sign in
+                  </Link>
+                  <Link className="hl-btn hl-btn--brand" href="/auth/signup" onClick={() => setMenuOpen(false)}>
+                    Get started
+                  </Link>
+                </>
+              )}
             </div>
           </div>
         </div>
