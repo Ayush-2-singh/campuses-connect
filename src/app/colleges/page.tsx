@@ -1,6 +1,7 @@
 import Link from 'next/link'
 import type { Metadata } from 'next'
-import BrandName from '@/components/BrandName'
+import PublicNav from '@/components/marketing/PublicNav'
+import PublicFooter from '@/components/marketing/PublicFooter'
 import { getAdminClient } from '@/lib/supabase/admin'
 
 /**
@@ -98,21 +99,7 @@ export default async function CollegesPage({ searchParams }: { searchParams: Pro
     <div className="hl-page">
       <div className="hl-bg" aria-hidden="true" />
 
-      <header className="hl-nav">
-        <div className="hl-wrap hl-nav-inner">
-          <Link className="hl-brand" href="/" aria-label="ConnectToCampus home">
-            <BrandName className="hl-brand-name" />
-          </Link>
-          <div className="hl-nav-right">
-            <Link className="hl-nav-signin" href="/experiences">
-              Experiences
-            </Link>
-            <Link className="hl-btn hl-btn--brand hl-btn--sm" href="/auth/signup">
-              Get started
-            </Link>
-          </div>
-        </div>
-      </header>
+      <PublicNav />
 
       <section className="hl-section hl-wrap">
         <p className="hl-eyebrow">Campus directory</p>
@@ -176,6 +163,8 @@ export default async function CollegesPage({ searchParams }: { searchParams: Pro
           </p>
         )}
       </section>
+
+      <PublicFooter />
     </div>
   )
 }

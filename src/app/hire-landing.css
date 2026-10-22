@@ -3,8 +3,10 @@
 
    The visual language is a port of leetquery.com onto ConnectToCampus:
 
-     • one blue brand accent (#2b6ef6) on a warm off-white canvas (#f4f2ee),
-       with a light + dark pair of the SAME token names (see .hl-page below);
+     • the PRODUCT's own palette (globals.css — brand orange on charcoal), not a
+       second brand of its own. Every `--lq-*` token below is an ALIAS of an app
+       token, so the public pages and the signed-in product move together and
+       the landing can never drift into a different colour scheme again;
      • a display grotesque (Space Grotesk) for headlines and numerals, Inter
        for everything readable, and Georgia italic for the one accent phrase;
      • a hero that pairs a display headline with an app-window preview sitting
@@ -18,29 +20,34 @@
 
 /* ── Tokens ─────────────────────────────────────────────────────────────── */
 .hl-page {
-  /* Light is the default: warm paper, ink-black text, one blue accent. */
-  --lq-canvas: #f4f2ee;
-  --lq-surface: #ffffff;
-  --lq-sunken: #eae8e1;
-  --lq-chip: #ffffff;
-  --lq-text: #191817;
-  --lq-text-soft: #33322e;
-  --lq-muted: #5f5e59;
-  --lq-faint: #7c7b74;
-  --lq-line: rgba(0, 0, 0, 0.09);
-  --lq-line-strong: rgba(0, 0, 0, 0.16);
-  --lq-hover: rgba(0, 0, 0, 0.04);
-  --lq-hover-surface: #faf9f5;
-  --lq-brand: #2b6ef6;
-  --lq-brand-strong: #1a59d8;
-  --lq-brand-soft: #e7edfd;
-  --lq-brand-glow: #60a5fa;
-  --lq-success: #17754a;
-  --lq-shadow-card: 0 1px 2px rgba(0, 0, 0, 0.06), 0 4px 12px rgba(0, 0, 0, 0.05);
-  --lq-shadow-float: 0 6px 20px -6px rgba(0, 0, 0, 0.14);
-  --lq-shadow-panel: 0 1px 2px rgba(0, 0, 0, 0.05), 0 6px 16px -8px rgba(0, 0, 0, 0.1);
-  --lq-shadow-nav: 0 1px 2px rgba(0, 0, 0, 0.04), 0 4px 10px -6px rgba(0, 0, 0, 0.1);
-  --lq-shadow-brand: 0 8px 20px -8px rgba(43, 110, 246, 0.55);
+  /* ── Aliases, not a second palette ──────────────────────────────────────
+     Surfaces and ink follow the app's elevation ladder, so the public pages
+     and the product render the same surfaces in BOTH themes. Change a token
+     in globals.css and this file follows; nothing here needs editing again. */
+  --lq-canvas: var(--bg-page);
+  --lq-surface: var(--bg);
+  --lq-sunken: var(--bg-secondary);
+  --lq-chip: var(--bg-tertiary);
+  --lq-text: var(--text-primary);
+  --lq-text-soft: var(--text-secondary);
+  --lq-muted: var(--text-secondary);
+  --lq-faint: var(--text-muted);
+  --lq-line: var(--border);
+  --lq-line-strong: var(--border-strong);
+  --lq-hover: var(--accent-light);
+  --lq-hover-surface: var(--bg-secondary);
+  /* Brand = the ONE accent the whole site is unified on (brand orange).
+     `-strong` is a hover step derived from it rather than a second colour. */
+  --lq-brand: var(--accent);
+  --lq-brand-strong: color-mix(in srgb, var(--accent) 82%, var(--bg-page));
+  --lq-brand-soft: var(--accent-light);
+  --lq-brand-glow: var(--accent);
+  --lq-success: var(--success-text);
+  --lq-shadow-card: var(--shadow-sm);
+  --lq-shadow-float: var(--shadow-md);
+  --lq-shadow-panel: var(--shadow);
+  --lq-shadow-nav: var(--shadow-sm);
+  --lq-shadow-brand: var(--accent-glow);
 
   /* The landing takes the app's page frame (globals.css `--page-max` /
      `--page-pad`), so the nav, the hero and a section card all line up with
@@ -76,28 +83,8 @@
   overflow-x: clip;
 }
 
-/* Dark keeps the same token names and the same blue. Only the surfaces and the
-   ink flip — the accent stays brand. */
-[data-theme='dark'] .hl-page {
-  --lq-canvas: #141413;
-  --lq-surface: #1f1e1d;
-  --lq-sunken: #0f0f0e;
-  --lq-chip: #1a1a19;
-  --lq-text: #faf9f5;
-  --lq-text-soft: #c9c8c0;
-  --lq-muted: #87867f;
-  --lq-faint: #7a7972;
-  --lq-line: rgba(255, 255, 255, 0.1);
-  --lq-line-strong: rgba(255, 255, 255, 0.18);
-  --lq-hover: rgba(255, 255, 255, 0.05);
-  --lq-hover-surface: #24231f;
-  --lq-brand-soft: #16233d;
-  --lq-brand-strong: #7ba7f9;
-  --lq-shadow-card: 0 1px 2px rgba(0, 0, 0, 0.3);
-  --lq-shadow-float: 0 10px 30px -8px rgba(0, 0, 0, 0.75);
-  --lq-shadow-panel: 0 4px 24px -8px rgba(0, 0, 0, 0.9);
-  --lq-shadow-nav: 0 1px 2px rgba(0, 0, 0, 0.4), 0 4px 12px -6px rgba(0, 0, 0, 0.55);
-}
+/* No per-theme override block any more: the aliases above resolve against
+   whatever theme is active, so light and dark are handled once, in globals. */
 
 /* ── Base ───────────────────────────────────────────────────────────────── */
 .hl-wrap {
@@ -2408,7 +2395,7 @@
 .hl-feedback:hover {
   transform: translateY(-2px);
   border-color: color-mix(in srgb, var(--lq-brand) 50%, transparent);
-  box-shadow: 0 16px 38px -10px rgba(43, 110, 246, 0.4);
+  box-shadow: 0 16px 38px -10px color-mix(in srgb, var(--accent) 40%, transparent);
 }
 .hl-feedback-ic {
   display: grid;
