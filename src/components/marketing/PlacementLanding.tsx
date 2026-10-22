@@ -4,29 +4,29 @@ import Link from 'next/link'
 import PublicNav from '@/components/marketing/PublicNav'
 import OrbitHero from '@/components/OrbitHero'
 import PublicFooter from '@/components/marketing/PublicFooter'
+import BrandName from '@/components/BrandName'
+import { Icon } from '@/components/icons'
 
 /**
  * PlacementLanding — the public landing for the student-facing product.
  *
- * Replaces the recruiter sales page (`HireLanding`) on `/` while
- * `RECRUITER_SALES_HIDDEN` is true — see src/lib/featureGates.ts. The old
- * landing sold a recruiter console that was never built; this one sells the
- * thing that actually ships: interview write-ups and the company rounds behind
- * them.
+ * The band sequence and the visuals are the leetquery.com port (bento grid,
+ * numbered roadmap modules, looping reading rail, company strip); the CONTENT is
+ * this product's. Every href below resolves to a route that exists in src/app,
+ * and every number comes from a live query passed in by src/app/page.tsx.
  *
- * ── Honesty rules (same contract as the page it replaces) ───────────────────
- * Every band that looks like real data is read from the live database and is
- * passed in by the server (src/app/page.tsx). A band whose query returns
- * nothing hides itself or states that plainly — there are no invented
- * candidates, quotes, employers or outcome statistics on this page.
+ * ── Honesty rules (unchanged contract) ──────────────────────────────────────
+ * A band whose query returned nothing hides itself, or says plainly that
+ * nothing is published yet. There are no invented candidates, quotes, employers
+ * or outcome statistics on this page, and the "preview" reading cards are
+ * labelled as previews rather than dressed up as real posts.
  *
  * ── Copy rule ───────────────────────────────────────────────────────────────
- * Nothing here promises a page that does not exist. College-scoped placement
- * pages are still being built, so the copy describes them as the direction of
- * travel ("one campus at a time") instead of linking to them.
+ * Leads are one sentence. The page is scanned, not read.
  */
 
 type Stats = { students: number; campuses: number; companies: number } | null
+type Company = { name: string; slug: string; logo_url: string | null }
 type Problem = { title: string; slug: string; difficulty: string | null; topics: string[] | null }
 type Win = {
   id: string
@@ -39,6 +39,13 @@ type Win = {
   company: string
   initials: string
 }
+type Post = {
+  title: string
+  slug: string
+  excerpt: string | null
+  category: string
+  author: string | null
+}
 
 const DIFF_TAG: Record<string, string> = {
   easy: 'hl-tag hl-tag--easy',
@@ -49,17 +56,167 @@ const DIFF_TAG: Record<string, string> = {
 const tagFor = (difficulty?: string | null) =>
   (difficulty && DIFF_TAG[difficulty.toLowerCase()]) || 'hl-tag hl-tag--type'
 
+/**
+ * Bento band — four surfaces, every tile a route the nav already links to.
+ * Tones and spans are the reference's wide/narrow rhythm.
+ */
+const BENTO = [
+  {
+    title: 'Compete',
+    href: '/compete',
+    icon: 'zap',
+    tone: 'peach',
+    span: 'wide',
+    body: 'Timed contests on real interview problems, ranked against the batch that sat the same paper.',
+  },
+  {
+    title: 'Live rooms',
+    href: '/live-voice-chat',
+    icon: 'mic',
+    tone: 'mint',
+    span: 'narrow',
+    body: 'Study out loud with your batch, by topic.',
+  },
+  {
+    title: 'Experiences',
+    href: '/experiences',
+    icon: 'pencil',
+    tone: 'blue',
+    span: 'narrow',
+    body: 'Every round of a real drive, as it happened.',
+  },
+  {
+    title: 'AI Coach',
+    href: '/brain',
+    icon: 'sparkles',
+    tone: 'lilac',
+    span: 'wide',
+    body: 'Ask about the problem in front of you: the approach, the pitfalls, and the follow-up a mentor would ask.',
+  },
+] as const
+
+const ROOMS_STEPS = [
+  {
+    n: '1',
+    title: 'Open or join a room',
+    sub: 'Filed by topic — DSA, web dev, a language, or whatever you are stuck on.',
+  },
+  {
+    n: '2',
+    title: 'Explain it out loud',
+    sub: 'The fastest test of whether you know something is saying it to someone.',
+  },
+  {
+    n: '3',
+    title: 'Quiz each other',
+    sub: 'Run the rounds you just read, before the drive runs them on you.',
+  },
+]
+
+const COLLEGE_STEPS = [
+  {
+    n: '1',
+    title: 'Students write what happened',
+    sub: 'The rounds, the questions, the result — first-hand.',
+  },
+  {
+    n: '2',
+    title: 'Companies stay linked',
+    sub: 'Every write-up sits against the company it belongs to.',
+  },
+  {
+    n: '3',
+    title: 'Practice sits next to the reading',
+    sub: 'The problem you just read about is ready to attempt.',
+  },
+]
+
+/** Shown only while nothing is published — and labelled as a preview there. */
+const READING_PREVIEW: Post[] = [
+  {
+    slug: '',
+    title: 'An interview write-up will live here',
+    excerpt: 'Round by round, from someone who sat the drive.',
+    category: 'Interview experience',
+    author: 'From students',
+  },
+  {
+    slug: '',
+    title: 'A tech post will live here',
+    excerpt: 'What got built, what broke, and what was learnt fixing it.',
+    category: 'Tech',
+    author: 'From the community',
+  },
+  {
+    slug: '',
+    title: 'A how-to will live here',
+    excerpt: 'A method that worked, written down for the next batch.',
+    category: 'How-to',
+    author: 'From ConnectToCampus',
+  },
+]
+
 export default function PlacementLanding({
   stats,
+  companies,
   problems,
   wins,
+  posts,
 }: {
   stats?: Stats
+  companies?: Company[]
   problems?: Problem[]
   wins?: Win[]
+  posts?: Post[]
 }) {
+  const companyList = companies ?? []
   const problemList = problems ?? []
   const winList = wins ?? []
+  const postList = posts ?? []
+
+  const modules = [
+    {
+      n: '1',
+      title: 'Practise',
+      href: '/compete',
+      icon: 'zap',
+      tag: '# Score, not skim',
+      body: 'Timed sets on real interview problems, graded on the test cases they pass.',
+      statLabel: 'Problems live',
+      statValue: String(problemList.length),
+      covLabel: 'Topics',
+      covValue: String(new Set(problemList.flatMap((p) => p.topics ?? [])).size || problemList.length),
+      cta: 'Enter Compete',
+    },
+    {
+      n: '2',
+      title: 'Read',
+      href: '/experiences',
+      icon: 'book',
+      tag: '# Round by round',
+      body: 'Write-ups students post after a real drive: every round, the role, the result.',
+      statLabel: 'Write-ups',
+      statValue: String(winList.length),
+      covLabel: 'Companies',
+      covValue: String(stats?.companies ?? companyList.length),
+      cta: 'Read experiences',
+    },
+    {
+      n: '3',
+      title: 'Write',
+      href: '/experiences',
+      icon: 'pencil',
+      tag: '# Two minutes',
+      body: 'Your drive is the one thing the next batch cannot look up anywhere else.',
+      statLabel: 'Campuses',
+      statValue: String(stats?.campuses ?? 0),
+      covLabel: 'Sign-up',
+      covValue: 'Open',
+      cta: 'Add your round',
+    },
+  ]
+
+  const railCards = postList.length > 0 ? postList : READING_PREVIEW
 
   return (
     <div className="hl-page">
@@ -86,6 +243,28 @@ export default function PlacementLanding({
             <div>
               <p className="hl-metric-v">{stats.students}</p>
               <p className="hl-metric-l">Students</p>
+            </div>
+          </div>
+        </section>
+      )}
+
+      {/* ── Companies strip — live rows only ──
+          Links point at /experiences: the per-company pages are archived, and a
+          strip of brand logos that leads to a 404 is worse than no strip. */}
+      {companyList.length > 0 && (
+        <section className="hl-strip">
+          <div className="hl-wrap">
+            <p className="hl-strip-eyebrow">Companies students have written about</p>
+            <div className="hl-strip-row">
+              {companyList.slice(0, 10).map((c) => (
+                <Link className="hl-strip-item" href="/experiences" key={c.slug}>
+                  {c.logo_url ? (
+                    <img className="hl-strip-logo" src={c.logo_url} alt={c.name} height={34} />
+                  ) : (
+                    <span className="hl-strip-word">{c.name}</span>
+                  )}
+                </Link>
+              ))}
             </div>
           </div>
         </section>
@@ -164,15 +343,181 @@ export default function PlacementLanding({
         </section>
       )}
 
+      {/* ── Bento grid (reference's pastel tiles) ── */}
+      <section className="hl-band hl-band--platform">
+        <div className="hl-wrap">
+          <p className="hl-eyebrow hl-eyebrow--center">What is inside</p>
+          <h2 className="hl-band-title hl-band-title--center">
+            One platform for the <em className="hl-em">whole placement year.</em>
+          </h2>
+          <p className="hl-band-sub hl-band-sub--center">Four surfaces, one login.</p>
+
+          <div className="hl-bento">
+            {BENTO.map((t) => (
+              <Link className={`hl-tile hl-tile--${t.tone} hl-tile--${t.span}`} href={t.href} key={t.title}>
+                <span className="hl-tile-art" aria-hidden="true" />
+                <Icon name={t.icon} size={150} className="hl-tile-gl" />
+                <span className="hl-tile-ic">
+                  <Icon name={t.icon} size={19} />
+                </span>
+                <h3>{t.title}</h3>
+                <p>{t.body}</p>
+                <span className="hl-tile-go">
+                  Explore
+                  <Icon name="chevron" size={15} className="hl-arrow" />
+                </span>
+              </Link>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ── Roadmap — numbered modules, live counts ── */}
+      <section className="hl-band">
+        <div className="hl-wrap">
+          <p className="hl-eyebrow hl-eyebrow--center">The path</p>
+          <h2 className="hl-band-title hl-band-title--center">
+            Practise, read, then <em className="hl-em">write it down.</em>
+          </h2>
+          <p className="hl-band-sub hl-band-sub--center">
+            Three steps, every one of them open today. The counts are read live.
+          </p>
+
+          <div className="hl-mods">
+            {modules.map((m) => (
+              <article className="hl-mod" key={m.n}>
+                <span className="hl-mod-n" aria-hidden="true">
+                  {m.n}
+                </span>
+                <div className="hl-mod-card">
+                  <div className="hl-mod-top">
+                    <span className="hl-mod-ic">
+                      <Icon name={m.icon} size={20} />
+                    </span>
+                    <h3>{m.title}</h3>
+                  </div>
+                  <span className="hl-mod-tag">{m.tag}</span>
+                  <p className="hl-mod-body">{m.body}</p>
+                  <div className="hl-mod-stats">
+                    <div className="hl-mod-stat">
+                      <p className="hl-mod-stat-l">{m.statLabel}</p>
+                      <p className="hl-mod-stat-v">{m.statValue}</p>
+                    </div>
+                    <div className="hl-mod-stat hl-mod-stat--cov">
+                      <p className="hl-mod-stat-l">{m.covLabel}</p>
+                      <p className="hl-mod-cov">{m.covValue}</p>
+                    </div>
+                  </div>
+                  <Link className="hl-mod-cta" href={m.href}>
+                    {m.cta}
+                    <Icon name="chevron" size={15} className="hl-arrow" />
+                  </Link>
+                </div>
+              </article>
+            ))}
+          </div>
+        </div>
+      </section>
+
       {/* ── Live rooms ── */}
       <section className="hl-section hl-wrap">
         <p className="hl-eyebrow">Study together</p>
         <h2 className="hl-h2">Don&apos;t read alone</h2>
         <p className="hl-lead hl-measure">Open a room, quiz each other out loud.</p>
+
+        <div className="hl-list-rows">
+          {ROOMS_STEPS.map((s) => (
+            <div className="hl-list-row" key={s.n}>
+              <span className="hl-list-mark" aria-hidden="true">
+                {s.n}
+              </span>
+              <span className="hl-list-main">
+                <span className="hl-list-title">{s.title}</span>
+                <span className="hl-list-sub">{s.sub}</span>
+              </span>
+            </div>
+          ))}
+        </div>
+
         <div className="hl-band-cta">
           <Link className="hl-btn hl-btn--brand" href="/live-voice-chat">
             Open live rooms
           </Link>
+        </div>
+      </section>
+
+      {/* ── Reading rail (reference's looping cards) ── */}
+      <section className="hl-band">
+        <div className="hl-wrap">
+          <p className="hl-eyebrow hl-eyebrow--center">{postList.length > 0 ? 'Latest writing' : 'Preview'}</p>
+          <h2 className="hl-band-title hl-band-title--center">
+            Worth <em className="hl-em">reading</em> next.
+          </h2>
+          <p className="hl-band-sub hl-band-sub--center">
+            {postList.length > 0
+              ? 'Published on ConnectToCampus, newest first.'
+              : 'Nothing published yet — these cards fill in with real posts the moment one lands.'}
+          </p>
+
+          <div className="hl-rail">
+            <div className="hl-rail-track">
+              {[...railCards, ...railCards].map((r, i) => {
+                const repeat = i >= railCards.length
+                return (
+                  <article
+                    className={`hl-read${repeat ? ' hl-rail-dup' : ''}`}
+                    key={`${r.title}-${i}`}
+                    aria-hidden={repeat || undefined}
+                  >
+                    <div className="hl-read-head">
+                      <span className="hl-read-ic">
+                        <Icon name={i % 3 === 0 ? 'pencil' : i % 3 === 1 ? 'layers' : 'book'} size={17} />
+                      </span>
+                      <div>
+                        <p className="hl-read-tag">{r.category}</p>
+                        <p className="hl-read-src">{r.author || 'ConnectToCampus'}</p>
+                      </div>
+                    </div>
+                    <h3>{r.title}</h3>
+                    <p className="hl-read-quote">&ldquo;{r.excerpt || 'A short read from the community.'}&rdquo;</p>
+                    <div className="hl-read-foot">
+                      <BrandName className="hl-read-mark" />
+                      <span>{postList.length > 0 ? 'Published' : 'Preview — not published'}</span>
+                    </div>
+                  </article>
+                )
+              })}
+            </div>
+          </div>
+
+          <div className="hl-band-cta">
+            <Link className="hl-btn hl-btn--ghost" href="/blog">
+              Read the blog
+            </Link>
+          </div>
+        </div>
+      </section>
+
+      {/* ── College first ── */}
+      <section className="hl-section hl-wrap">
+        <p className="hl-eyebrow">College first</p>
+        <h2 className="hl-h2">One campus at a time</h2>
+        <p className="hl-lead hl-measure">
+          The same company runs a different process at a different college, so the write-ups stay campus-specific.
+        </p>
+
+        <div className="hl-list-rows">
+          {COLLEGE_STEPS.map((s) => (
+            <div className="hl-list-row" key={s.n}>
+              <span className="hl-list-mark" aria-hidden="true">
+                {s.n}
+              </span>
+              <span className="hl-list-main">
+                <span className="hl-list-title">{s.title}</span>
+                <span className="hl-list-sub">{s.sub}</span>
+              </span>
+            </div>
+          ))}
         </div>
       </section>
 

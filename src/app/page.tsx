@@ -35,6 +35,13 @@ type Win = {
   company: string
   initials: string
 }
+type Post = {
+  title: string
+  slug: string
+  excerpt: string | null
+  category: string
+  author: string | null
+}
 
 let _admin: SupabaseClient | null = null
 function getAdmin(): SupabaseClient | null {
@@ -144,7 +151,42 @@ async function getWins(): Promise<Win[]> {
     return []
   }
 }
+/**
+ * Published blog posts for the landing's reading rail. Same honesty rule as
+ * every other band: only `status = 'published'` rows, and the rail falls back to
+ * cards that say "preview — not published" when this returns nothing.
+ */
+async function getPosts(): Promise<Post[]> {
+  const db = getAdmin()
+  if (!db) return []
+  try {
+    const { data } = await db
+      .from('blog_posts')
+      .select('title, slug, excerpt, category, published_at, profiles(full_name, username)')
+      .eq('status', 'published')
+      .order('published_at', { ascending: false })
+      .limit(8)
+    return (data ?? [])
+      .filter((p: any) => Boolean(p?.title))
+      .map((p: any) => ({
+        title: p.title,
+        slug: p.slug ?? '',
+        excerpt: p.excerpt ?? null,
+        category: p.category ?? 'Blog',
+        author: p.profiles?.full_name || p.profiles?.username || null,
+      }))
+  } catch {
+    return []
+  }
+}
+
 export default async function Home() {
-  const [stats, companies, problems, wins] = await Promise.all([getStats(), getCompanies(), getProblems(), getWins()])
-  return <PlacementLanding stats={stats} problems={problems} wins={wins} />
+  const [stats, companies, problems, wins, posts] = await Promise.all([
+    getStats(),
+    getCompanies(),
+    getProblems(),
+    getWins(),
+    getPosts(),
+  ])
+  return <PlacementLanding stats={stats} companies={companies} problems={problems} wins={wins} posts={posts} />
 }
