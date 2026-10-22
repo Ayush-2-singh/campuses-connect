@@ -1,5 +1,6 @@
 /**
- * ADZUNA JOB FEED — server-only adapter.
+ * ADZUNA JOB FEED — server-only adapter (PAID: 25 test calls, then £8/month).
+ * The free keyless feeds in ./remote.ts carry the board until this is paid for.
  *
  * `/jobs` has an empty `job_postings` table, so the board shows nothing. This
  * adapter fills it from a LICENSED aggregator (Adzuna) instead of scraping
@@ -17,27 +18,14 @@
  *     lets the UI hide the feed and keep the campus board working.
  */
 
+import type { ExternalJob } from './types'
+
 const COUNTRY = 'in' // Adzuna India
 const PAGE_SIZE = 20
 const CACHE_SECONDS = 3600
 
-export type ExternalJob = {
-  /** Stable id from the provider — used to de-duplicate across refreshes. */
-  id: string
-  title: string
-  company: string
-  location: string
-  /** Short plain-text blurb; the full description lives on the source page. */
-  excerpt: string
-  /** Always an external URL — this is where "Apply" sends the student. */
-  applyUrl: string
-  postedAt: string | null
-  salaryMin: number | null
-  salaryMax: number | null
-  contractTime: string | null
-  category: string | null
-  source: 'adzuna'
-}
+/** Salary rows from the India endpoint are rupees. */
+const CURRENCY = 'INR'
 
 export type ExternalJobPage = {
   jobs: ExternalJob[]
@@ -96,6 +84,7 @@ function normalise(raw: RawJob): ExternalJob | null {
     postedAt: raw.created ?? null,
     salaryMin,
     salaryMax,
+    currency: salaryMin !== null || salaryMax !== null ? CURRENCY : null,
     contractTime: raw.contract_time ? clean(raw.contract_time, 20) : null,
     category: raw.category?.label ? clean(raw.category.label, 60) : null,
     source: 'adzuna',
