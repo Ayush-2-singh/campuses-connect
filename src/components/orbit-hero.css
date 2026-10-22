@@ -179,7 +179,13 @@
   align-items: center;
   gap: 7px;
   width: max-content;
-  transform: translate(-50%, -50%);
+  /* THE bug: this element is counter-rotated by framer-motion, which writes
+     `transform: rotate(...)` INLINE and therefore wipes any transform() here.
+     The separate `translate` property composes with that inline transform
+     instead of fighting it, so the badge stays centred on its ring point while
+     it spins. Order is translate → rotate about its own centre. */
+  translate: -50% -50%;
+  transform-origin: center;
 }
 
 .orbit-icon {
