@@ -428,20 +428,35 @@ export default function ProfilePage() {
             boxShadow: 'var(--shadow-sm)',
           }}
         >
-          {/* Gradient banner */}
+          {/* Gradient banner — the accent family, not three raw hues. A gold→cyan
+              →purple ramp fought every other surface on the page; one accent at
+              three strengths reads as depth instead of decoration. */}
           <div
             style={{
-              height: 84,
+              height: 'clamp(64px, 14vw, 96px)',
               background:
-                'linear-gradient(120deg, var(--accent-gold) 0%, var(--accent-cyan) 55%, var(--accent-purple) 100%)',
+                'linear-gradient(120deg, color-mix(in srgb, var(--accent) 26%, var(--bg)) 0%, color-mix(in srgb, var(--accent) 10%, var(--bg)) 55%, var(--bg) 100%)',
               position: 'relative',
+              overflow: 'hidden',
             }}
           >
             <div
               style={{
                 position: 'absolute',
                 inset: 0,
-                background: 'radial-gradient(300px 90px at 85% 20%, rgba(255,255,255,0.35), transparent 70%)',
+                background:
+                  'radial-gradient(320px 120px at 82% 8%, color-mix(in srgb, var(--accent) 34%, transparent), transparent 70%)',
+              }}
+            />
+            {/* Faint dot grid: gives the empty band texture without a second hue. */}
+            <div
+              style={{
+                position: 'absolute',
+                inset: 0,
+                opacity: 0.35,
+                backgroundImage:
+                  'radial-gradient(color-mix(in srgb, var(--accent) 30%, transparent) 1px, transparent 1px)',
+                backgroundSize: '16px 16px',
               }}
             />
           </div>
@@ -452,18 +467,34 @@ export default function ProfilePage() {
                 display: 'flex',
                 alignItems: 'flex-end',
                 gap: 14,
+                // Wraps instead of squeezing the name column on a narrow phone.
+                flexWrap: 'wrap',
                 marginTop: -34,
                 marginBottom: 14,
                 position: 'relative',
               }}
             >
-              <Avatar
-                name={profile?.full_name}
-                avatarUrl={previewUrl || profile?.avatar_url}
-                size={76}
-                ring
-                fontSize={30}
-              />
+              {/* The photo sits in its own surface ring so it stays legible over
+                  the banner in BOTH themes — previously the avatar's edge melted
+                  into the gradient on dark. */}
+              <div
+                style={{
+                  padding: 4,
+                  borderRadius: '50%',
+                  background: 'var(--bg)',
+                  boxShadow:
+                    '0 0 0 2px color-mix(in srgb, var(--accent) 45%, transparent), 0 6px 18px -6px rgba(0,0,0,0.35)',
+                  display: 'inline-flex',
+                  flexShrink: 0,
+                }}
+              >
+                <Avatar
+                  name={profile?.full_name}
+                  avatarUrl={previewUrl || profile?.avatar_url}
+                  size={76}
+                  fontSize={30}
+                />
+              </div>
               {editing && (
                 <>
                   <input ref={fileRef} type="file" accept="image/*" style={{ display: 'none' }} onChange={onFile} />
