@@ -20,13 +20,15 @@ import { Icon } from '@/components/icons'
  * product palette in globals.css.
  */
 
+/**
+ * Four destinations, not fourteen. Blog is a subsection of Experiences now, so
+ * it does not get its own link.
+ */
 export const PUBLIC_NAV = [
-  { label: 'Colleges', href: '/colleges', icon: 'school' },
+  { label: 'Rooms', href: '/live-voice-chat', icon: 'mic' },
   { label: 'Experiences', href: '/experiences', icon: 'pencil' },
   { label: 'Companies', href: '/companies', icon: 'building' },
-  { label: 'Blog', href: '/blog', icon: 'book' },
-  { label: 'Rooms', href: '/live-voice-chat', icon: 'mic' },
-  { label: 'Practice', href: '/compete', icon: 'zap' },
+  { label: 'Compete', href: '/compete', icon: 'zap' },
 ]
 
 export default function PublicNav() {

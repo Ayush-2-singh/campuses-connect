@@ -33,29 +33,10 @@ type NavEntry = { label: string; href: string; icon: string; items?: NavLeaf[] }
  * as an indented list, and the primary destinations stay flat.
  */
 const NAV: NavEntry[] = [
-  {
-    label: 'Hiring',
-    href: '/colleges',
-    icon: 'school',
-    items: [
-      { label: 'All colleges', href: '/colleges', icon: 'school' },
-      { label: 'Experiences', href: '/experiences', icon: 'pencil' },
-      { label: 'Companies', href: '/companies', icon: 'building' },
-    ],
-  },
   { label: 'Rooms', href: '/live-voice-chat', icon: 'mic' },
-  {
-    label: 'Practice',
-    href: '/compete',
-    icon: 'zap',
-    items: [
-      { label: 'Arena', href: '/compete', icon: 'zap' },
-      { label: 'Leaderboard', href: '/leaderboard', icon: 'trophy' },
-      { label: 'AI Coach', href: '/brain', icon: 'sparkles' },
-      { label: 'Integrations', href: '/integrations', icon: 'link' },
-    ],
-  },
-  { label: 'Blog', href: '/blog', icon: 'pencil' },
+  { label: 'Experiences', href: '/experiences', icon: 'pencil' },
+  { label: 'Companies', href: '/companies', icon: 'building' },
+  { label: 'Compete', href: '/compete', icon: 'zap' },
   { label: 'Profile', href: '/profile', icon: 'user' },
 ]
 

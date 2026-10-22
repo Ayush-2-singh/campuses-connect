@@ -15,26 +15,18 @@
 // with the social plane and then re-enabled, so they appear here.
 
 export const MOBILE_NAV = [
-  { label: 'Colleges', href: '/colleges', icon: 'school' },
   { label: 'Rooms', href: '/live-voice-chat', icon: 'mic' },
+  { label: 'Experiences', href: '/experiences', icon: 'pencil' },
   { label: 'Compete', href: '/compete', icon: 'zap' },
   { label: 'Profile', href: '/profile', icon: 'user' },
 ]
 
 export const MOBILE_MENU_NAV = [
-  // ── Campus & placement info ─────────────────────────────────
-  { label: 'Colleges', href: '/colleges', icon: 'school' },
-  { label: 'Companies', href: '/companies', icon: 'building' },
-  { label: 'Interview Experiences', href: '/experiences', icon: 'pencil' },
-  // ── Skill & readiness ───────────────────────────────────────
+  // ── The four sections ───────────────────────────────────────
   { label: 'Live Rooms', href: '/live-voice-chat', icon: 'mic' },
+  { label: 'Experiences', href: '/experiences', icon: 'pencil' },
+  { label: 'Companies', href: '/companies', icon: 'building' },
   { label: 'Compete', href: '/compete', icon: 'zap' },
-  { label: 'Leaderboard', href: '/leaderboard', icon: 'trophy' },
-  { label: 'AI Coach', href: '/brain', icon: 'sparkles' },
-  { label: 'Integrations', href: '/integrations', icon: 'link' },
   // ── Account ─────────────────────────────────────────────────
-  { label: 'Blog', href: '/blog', icon: 'pencil' },
-  { label: 'Reminders', href: '/reminders', icon: 'clock' },
   { label: 'Notifications', href: '/notifications', icon: 'bell' },
-  { label: 'Premium', href: '/premium', icon: 'sparkles' },
 ]
