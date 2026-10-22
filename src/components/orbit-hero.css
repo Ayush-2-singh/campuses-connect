@@ -52,6 +52,9 @@
 
 .orbit-copy h1 {
   margin: 0;
+  /* Explicit so the first line follows the theme instead of inheriting a
+     baked-in ink colour and vanishing on the dark canvas. */
+  color: var(--lq-text, #171717);
   font-size: clamp(40px, 5.2vw, 76px);
   font-weight: 850;
   line-height: 1.04;
@@ -59,10 +62,20 @@
 }
 
 .orbit-copy h1 span {
-  color: #6fa0ff;
+  color: #4f8ef7;
   font-family: Georgia, 'Times New Roman', serif;
   font-weight: 700;
   font-style: italic;
+}
+
+/* Dark canvas: the accent needs a lighter step to stay readable, while the
+   first line keeps the inverted ink. */
+[data-theme='dark'] .orbit-copy h1 {
+  color: var(--lq-text, #faf9f5);
+}
+
+[data-theme='dark'] .orbit-copy h1 span {
+  color: #8fb8ff;
 }
 
 .orbit-copy > p {

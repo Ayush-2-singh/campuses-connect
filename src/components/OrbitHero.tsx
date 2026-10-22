@@ -200,9 +200,9 @@ export default function OrbitHero({
       <div className="orbit-copy">
         <span className="orbit-eyebrow">BUILD • LEARN • GROW</span>
         <h1>
-          Become a
+          Become the
           <br />
-          <span>Top Developer.</span>
+          <span>Top 1% SDE</span>
         </h1>
         <p>
           Master the technologies, build real-world projects, and prepare for opportunities at leading tech companies.
