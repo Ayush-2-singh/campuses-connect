@@ -27,7 +27,6 @@ import PublicFooter from '@/components/marketing/PublicFooter'
  */
 
 type Stats = { students: number; campuses: number; companies: number } | null
-type Company = { name: string; slug: string; logo_url: string | null }
 type Problem = { title: string; slug: string; difficulty: string | null; topics: string[] | null }
 type Win = {
   id: string
@@ -52,16 +51,13 @@ const tagFor = (difficulty?: string | null) =>
 
 export default function PlacementLanding({
   stats,
-  companies,
   problems,
   wins,
 }: {
   stats?: Stats
-  companies?: Company[]
   problems?: Problem[]
   wins?: Win[]
 }) {
-  const companyList = companies ?? []
   const problemList = problems ?? []
   const winList = wins ?? []
 
@@ -95,34 +91,11 @@ export default function PlacementLanding({
         </section>
       )}
 
-      {/* ── Companies strip — live rows only ── */}
-      {companyList.length > 0 && (
-        <section className="hl-strip">
-          <div className="hl-wrap">
-            <p className="hl-strip-eyebrow">Companies students have written about</p>
-            <div className="hl-strip-row">
-              {companyList.slice(0, 10).map((c) => (
-                <Link className="hl-strip-item" href={`/companies/${c.slug}`} key={c.slug}>
-                  {c.logo_url ? (
-                    <img className="hl-strip-logo" src={c.logo_url} alt={c.name} height={34} />
-                  ) : (
-                    <span className="hl-strip-word">{c.name}</span>
-                  )}
-                </Link>
-              ))}
-            </div>
-          </div>
-        </section>
-      )}
-
       {/* ── Write-ups ── */}
       <section className="hl-section hl-wrap">
         <p className="hl-eyebrow">From the students</p>
-        <h2 className="hl-h2">What the round actually asked</h2>
-        <p className="hl-lead hl-measure">
-          Each write-up below is a real post from a student on ConnectToCampus: the company, the role, how hard it felt,
-          and how it ended.
-        </p>
+        <h2 className="hl-h2">The rounds</h2>
+        <p className="hl-lead hl-measure">Real rounds, real results.</p>
 
         {winList.length > 0 ? (
           <div className="hl-list-rows">
@@ -163,11 +136,8 @@ export default function PlacementLanding({
       {problemList.length > 0 && (
         <section className="hl-section hl-wrap">
           <p className="hl-eyebrow">Then practise it</p>
-          <h2 className="hl-h2">The questions that keep coming back</h2>
-          <p className="hl-lead hl-measure">
-            Reading a round is half the job. These are live practice problems on the platform, so the thing you just
-            read about is the thing you can attempt tonight.
-          </p>
+          <h2 className="hl-h2">Practise them</h2>
+          <p className="hl-lead hl-measure">Practise what they asked.</p>
 
           <div className="hl-list-rows">
             {problemList.map((p, i) => (
@@ -194,45 +164,11 @@ export default function PlacementLanding({
         </section>
       )}
 
-      {/* ── Live rooms (LiveKit) ── */}
+      {/* ── Live rooms ── */}
       <section className="hl-section hl-wrap">
-        <p className="hl-eyebrow">Not alone at 1am</p>
-        <h2 className="hl-h2">Study together, in the same room</h2>
-        <p className="hl-lead hl-measure">
-          Reading a round on your own only gets you so far. Open a live room, share what you are studying, and let the
-          batch quiz you until you actually know it — voice, not a thread nobody replies to.
-        </p>
-
-        <div className="hl-list-rows">
-          {[
-            {
-              n: '1',
-              title: 'Open or join a room',
-              sub: 'Filed by topic — DSA, web dev, a language, or just the subject you are stuck on.',
-            },
-            {
-              n: '2',
-              title: 'Read and explain out loud',
-              sub: 'The fastest way to find out whether you know something is to say it to someone.',
-            },
-            {
-              n: '3',
-              title: 'Verify yourself before the drive',
-              sub: 'Quiz each other on the rounds you just read. Free to use, no add-on.',
-            },
-          ].map((s) => (
-            <div className="hl-list-row" key={s.n}>
-              <span className="hl-list-mark" aria-hidden="true">
-                {s.n}
-              </span>
-              <span className="hl-list-main">
-                <span className="hl-list-title">{s.title}</span>
-                <span className="hl-list-sub">{s.sub}</span>
-              </span>
-            </div>
-          ))}
-        </div>
-
+        <p className="hl-eyebrow">Study together</p>
+        <h2 className="hl-h2">Don&apos;t read alone</h2>
+        <p className="hl-lead hl-measure">Open a room, quiz each other out loud.</p>
         <div className="hl-band-cta">
           <Link className="hl-btn hl-btn--brand" href="/live-voice-chat">
             Open live rooms
@@ -240,61 +176,11 @@ export default function PlacementLanding({
         </div>
       </section>
 
-      {/* ── How the product is built ── */}
-      <section className="hl-section hl-wrap">
-        <p className="hl-eyebrow">College first</p>
-        <h2 className="hl-h2">One campus at a time, on purpose</h2>
-        <p className="hl-lead hl-measure">
-          Placement advice is only useful if it comes from the campus it happened at — the same company runs a different
-          process at a different college. So this platform grows campus by campus instead of pretending one national
-          average fits everyone.
-        </p>
-
-        <div className="hl-band-cta">
-          <Link className="hl-btn hl-btn--brand" href="/experiences">
-            Read the experiences
-          </Link>
-        </div>
-
-        <div className="hl-list-rows">
-          {[
-            {
-              n: '1',
-              title: 'Students write what happened',
-              sub: 'The rounds, the questions, the result — first-hand, not aggregated from other sites.',
-            },
-            {
-              n: '2',
-              title: 'Companies and rounds stay linked',
-              sub: 'Every write-up sits against the company it belongs to, so the next batch sees the pattern.',
-            },
-            {
-              n: '3',
-              title: 'Practice sits next to the reading',
-              sub: 'The problem you just read about is on the platform, ready to attempt.',
-            },
-          ].map((s) => (
-            <div className="hl-list-row" key={s.n}>
-              <span className="hl-list-mark" aria-hidden="true">
-                {s.n}
-              </span>
-              <span className="hl-list-main">
-                <span className="hl-list-title">{s.title}</span>
-                <span className="hl-list-sub">{s.sub}</span>
-              </span>
-            </div>
-          ))}
-        </div>
-      </section>
-
       {/* ── Final CTA ── */}
       <section className="hl-section hl-wrap">
         <p className="hl-eyebrow">Add your campus</p>
-        <h2 className="hl-h2 hl-h2--tight">Your juniors will read this next year</h2>
-        <p className="hl-lead hl-measure">
-          Five minutes of writing saves the next batch months of guessing. Sign in, pick your company, describe the
-          rounds.
-        </p>
+        <h2 className="hl-h2 hl-h2--tight">Write yours in two minutes</h2>
+        <p className="hl-lead hl-measure">Two minutes. Helps the next batch.</p>
         <div className="hl-cta-row">
           <Link className="hl-btn hl-btn--brand hl-btn--lg hl-btn--shine" href="/auth/signup">
             Write your experience

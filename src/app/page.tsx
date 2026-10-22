@@ -146,5 +146,5 @@ async function getWins(): Promise<Win[]> {
 }
 export default async function Home() {
   const [stats, companies, problems, wins] = await Promise.all([getStats(), getCompanies(), getProblems(), getWins()])
-  return <PlacementLanding stats={stats} companies={companies} problems={problems} wins={wins} />
+  return <PlacementLanding stats={stats} problems={problems} wins={wins} />
 }
