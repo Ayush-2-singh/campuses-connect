@@ -15,7 +15,7 @@
    ═════════════════════════════════════════════════════════════════════════ */
 
 .orbit-hero {
-  --orbit-blue: #3478f6;
+  --orbit-blue: #4f8ef7;
   --orbit-text: #171717;
 
   display: grid;
@@ -55,7 +55,7 @@
 }
 
 .orbit-copy h1 span {
-  color: #5798ff;
+  color: #6fa0ff;
   font-family: Georgia, 'Times New Roman', serif;
   font-weight: 700;
   font-style: italic;

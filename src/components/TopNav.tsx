@@ -35,7 +35,6 @@ type NavEntry = { label: string; href: string; icon: string; items?: NavLeaf[] }
 const NAV: NavEntry[] = [
   { label: 'Rooms', href: '/live-voice-chat', icon: 'mic' },
   { label: 'Experiences', href: '/experiences', icon: 'pencil' },
-  { label: 'Companies', href: '/companies', icon: 'building' },
   { label: 'Compete', href: '/compete', icon: 'zap' },
   { label: 'Profile', href: '/profile', icon: 'user' },
 ]

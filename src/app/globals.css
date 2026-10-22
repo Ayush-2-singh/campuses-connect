@@ -210,6 +210,10 @@
   --cyan-text: #0b7683;
   --cyan-border: color-mix(in srgb, #0fa6b8 42%, white);
 
+  --accent: #4f8ef7;
+  --accent-text: #2f6fe0;
+  --accent-light: color-mix(in srgb, #4f8ef7 12%, white);
+  --accent-border: color-mix(in srgb, #4f8ef7 40%, white);
   --blue: #2f6fe0;
   --blue-light: color-mix(in srgb, #2f6fe0 13%, white);
   --blue-text: #2456c9;

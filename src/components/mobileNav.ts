@@ -25,7 +25,6 @@ export const MOBILE_MENU_NAV = [
   // ── The four sections ───────────────────────────────────────
   { label: 'Live Rooms', href: '/live-voice-chat', icon: 'mic' },
   { label: 'Experiences', href: '/experiences', icon: 'pencil' },
-  { label: 'Companies', href: '/companies', icon: 'building' },
   { label: 'Compete', href: '/compete', icon: 'zap' },
   // ── Account ─────────────────────────────────────────────────
   { label: 'Notifications', href: '/notifications', icon: 'bell' },

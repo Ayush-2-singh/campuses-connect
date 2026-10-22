@@ -27,7 +27,6 @@ import { Icon } from '@/components/icons'
 export const PUBLIC_NAV = [
   { label: 'Rooms', href: '/live-voice-chat', icon: 'mic' },
   { label: 'Experiences', href: '/experiences', icon: 'pencil' },
-  { label: 'Companies', href: '/companies', icon: 'building' },
   { label: 'Compete', href: '/compete', icon: 'zap' },
 ]
 

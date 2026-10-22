@@ -122,7 +122,7 @@ export default function ExperiencesPage() {
     <Layout user={user} profile={profile}>
       <div className="hc-page">
         <div className="hc-page-head hc-reveal">
-          <button className="hc-back" onClick={() => router.push('/companies')} aria-label="Back">
+          <button className="hc-back" onClick={() => router.push('/')} aria-label="Back">
             ←
           </button>
           <div style={{ minWidth: 0 }}>
@@ -132,6 +132,17 @@ export default function ExperiencesPage() {
             </h1>
             <p className="hc-lede">Learn from real interviews shared by students</p>
           </div>
+        </div>
+
+        {/* Blog is a SUBSECTION of Experiences, not a sibling page: one tab
+            strip keeps the two together instead of two nav entries. */}
+        <div className="hc-reveal" style={{ display: 'flex', gap: 8, marginBottom: 16, flexWrap: 'wrap' }}>
+          <button className="hc-btn hc-btn--primary" type="button" aria-current="page">
+            Interview experiences
+          </button>
+          <button className="hc-btn" type="button" onClick={() => router.push('/blog')}>
+            Guides &amp; blogs
+          </button>
         </div>
 
         <button

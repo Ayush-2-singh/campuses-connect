@@ -171,6 +171,19 @@ export default function BlogPage() {
               <p className="blog-head-sub">Interview experiences, tech guides, campus stories &amp; more</p>
             </div>
           </div>
+        </div>
+
+        {/* The other half of the Experiences section — same tab strip there. */}
+        <div style={{ display: 'flex', gap: 8, marginBottom: 16, flexWrap: 'wrap' }}>
+          <button className="hc-btn" type="button" onClick={() => router.push('/experiences')}>
+            Interview experiences
+          </button>
+          <button className="hc-btn hc-btn--primary" type="button" aria-current="page">
+            Guides &amp; blogs
+          </button>
+        </div>
+
+        <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 12 }}>
           {user && (
             <button
               onClick={() => {

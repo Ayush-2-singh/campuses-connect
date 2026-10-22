@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import type { CSSProperties } from 'react'
 import Link from 'next/link'
 import { motion } from 'framer-motion'
+import { createClient } from '@/lib/supabase/client'
 import {
   SiGoogle,
   SiMeta,
@@ -148,13 +149,48 @@ export default function OrbitHero({
 }) {
   // Deterministic first paint, randomised once the component is on the client.
   const [demo, setDemo] = useState(demoProfiles[0])
+  const [me, setMe] = useState<OrbitProfile | null>(user)
 
   useEffect(() => {
     setDemo(demoProfiles[Math.floor(Math.random() * demoProfiles.length)])
   }, [])
 
-  const profileName = user?.name || demo.name
-  const profileImage = user?.image || `https://i.pravatar.cc/180?img=${demo.img}`
+  // Signed-in visitor: show THEIR card, fetched on the client so the landing
+  // stays a static page (a server-side session read would make it dynamic for
+  // everybody, including the guests it mostly serves).
+  useEffect(() => {
+    if (user) return
+    let cancelled = false
+    const load = async () => {
+      try {
+        const sb = createClient()
+        const {
+          data: { user: authUser },
+        } = await sb.auth.getUser()
+        if (!authUser || cancelled) return
+        const { data } = await sb
+          .from('profiles')
+          .select('full_name, username, avatar_url, headline')
+          .eq('id', authUser.id)
+          .maybeSingle()
+        if (cancelled) return
+        setMe({
+          name: data?.full_name || data?.username || authUser.email?.split('@')[0] || 'Student',
+          image: data?.avatar_url ?? null,
+          role: data?.headline ?? null,
+        })
+      } catch {
+        /* a guest keeps the demo card */
+      }
+    }
+    load()
+    return () => {
+      cancelled = true
+    }
+  }, [user])
+
+  const profileName = me?.name || demo.name
+  const profileImage = me?.image || `https://i.pravatar.cc/180?img=${demo.img}`
 
   const techItems = customTechnologies || technologies
   const companyItems = customCompanies || companies
@@ -205,7 +241,7 @@ export default function OrbitHero({
             <span className="orbit-online" />
           </div>
           <h2>{profileName}</h2>
-          <p>{user?.role || 'Full-Stack Developer'}</p>
+          <p>{me?.role || 'Full-Stack Developer'}</p>
         </div>
       </div>
     </section>
