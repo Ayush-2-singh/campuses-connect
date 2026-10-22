@@ -78,8 +78,18 @@ export default function CookiePolicyPage() {
             <td>Remembers whether you chose the dark or light theme.</td>
           </tr>
           <tr>
+            <td>cc_consent</td>
+            <td>
+              Remembers whether you chose &ldquo;Accept all&rdquo; or &ldquo;Reject non-essential&rdquo;, so we do not
+              ask again. Stored as a first-party cookie for 180 days.
+            </td>
+          </tr>
+          <tr>
             <td>cc-cookie-consent</td>
-            <td>Remembers whether you accepted or declined optional analytics, so we do not ask again.</td>
+            <td>
+              A local-storage copy of the same choice, so the banner and the analytics gate can read it before any
+              request is made.
+            </td>
           </tr>
         </tbody>
       </table>
@@ -118,8 +128,10 @@ export default function CookiePolicyPage() {
       <p>You can control cookies in a few ways:</p>
       <ul>
         <li>
-          <strong>Our banner</strong> — accept or decline optional analytics when you first visit. You can change your
-          choice at any time by clearing your browser&rsquo;s local storage for this site and reloading.
+          <strong>Our banner</strong> — on your first visit you get two choices: <strong>Accept all</strong> or{' '}
+          <strong>Reject non-essential</strong>. Strictly necessary cookies (the sign-in session) are not optional and
+          are not switched off by either choice. To change your answer later, clear this site&rsquo;s cookies and local
+          storage and reload.
         </li>
         <li>
           <strong>Your browser</strong> — most browsers let you view, block and delete cookies and local storage. See
