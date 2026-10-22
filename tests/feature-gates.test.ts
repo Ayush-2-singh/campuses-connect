@@ -30,7 +30,6 @@ describe('retired-route matching', () => {
     expect(isRetiredPath('/global/abc')).toBe(true)
     expect(isRetiredPath('/community')).toBe(true)
     expect(isRetiredPath('/communities')).toBe(true)
-    expect(isRetiredPath('/live-voice-chat/room-1')).toBe(true)
     expect(isRetiredPath('/post/123')).toBe(true)
   })
 
@@ -41,6 +40,11 @@ describe('retired-route matching', () => {
       '/companies',
       '/applications',
       '/experiences',
+      // Re-enabled: LiveKit study rooms are a kept product feature (see the
+      // RECRUITER_SALES_HIDDEN-era policy note in src/lib/featureGates.ts).
+      '/live-voice-chat',
+      '/live-voice-chat/room-1',
+      '/hire/b/token-1',
       '/talent',
       '/compete',
       '/leaderboard',
@@ -70,18 +74,17 @@ describe('retired-route matching', () => {
   })
 
   it('lists the full retired surface', () => {
-    for (const route of [
-      '/global',
-      '/community',
-      '/communities',
-      '/chat',
-      '/messages',
-      '/games',
-      '/watch',
-      '/live-voice-chat',
-    ]) {
+    for (const route of ['/global', '/community', '/communities', '/chat', '/messages', '/games', '/watch']) {
       expect(RETIRED_ROUTES).toContain(route)
     }
+  })
+
+  it('keeps the re-enabled live study rooms out of the retired surface', () => {
+    // The LiveKit rooms were retired with the social plane and then re-enabled:
+    // reading/studying together is part of the student product, not social.
+    expect(RETIRED_ROUTES).not.toContain('/live-voice-chat')
+    expect(isRetiredPath('/live-voice-chat')).toBe(false)
+    expect(isRetiredPath('/live-voice-chat/room-1/call')).toBe(false)
   })
 })
 

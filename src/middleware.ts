@@ -1,6 +1,6 @@
 import { createServerClient } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
-import { FALLBACK_ROUTE, isRetiredPath } from '@/lib/featureGates'
+import { FALLBACK_ROUTE, SALES_FALLBACK_ROUTE, isHiddenSalesPath, isRetiredPath } from '@/lib/featureGates'
 
 /**
  * Session refresh + route protection.
@@ -41,6 +41,13 @@ export async function middleware(request: NextRequest) {
   // API routes are never gated here, so backend contracts stay intact.
   if (!path.startsWith('/api/') && isRetiredPath(path)) {
     return NextResponse.redirect(new URL(FALLBACK_ROUTE, request.url))
+  }
+
+  // The recruiter storefront is hidden while the product is student-facing.
+  // Only `/hire` is matched — delivered shortlist links (`/hire/b/...`) stay
+  // reachable. Fully reversible: see RECRUITER_SALES_HIDDEN in featureGates.
+  if (!path.startsWith('/api/') && isHiddenSalesPath(path)) {
+    return NextResponse.redirect(new URL(SALES_FALLBACK_ROUTE, request.url))
   }
 
   // Determine if we need auth at all for this route

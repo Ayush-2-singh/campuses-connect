@@ -13,14 +13,18 @@
  *
  * ── What is retired (social plane) ─────────────────────────────────────────
  *   /global (feed) · /community + /communities · /chat · /messages ·
- *   /connections · /groups · /live-voice-chat · /meetings · /watch · /games ·
+ *   /connections · /groups · /meetings · /watch · /games ·
  *   /polls · /saved · /weekly · /badges · /teams · /post/[id]
+ *
+ * `/live-voice-chat` was on this list and has been RE-ENABLED: the LiveKit
+ * study rooms are a kept feature of the student product (read together, quiz
+ * each other in a room), not part of the retired social plane.
  *
  * ── What stays (hiring plane) ──────────────────────────────────────────────
  *   /jobs · /companies · /applications · /experiences · /opportunities ·
  *   /talent · /leaderboard · /compete (→ assessment engine) · /brain (→ coach)
  *   · /integrations · /profile · /campus-change · /admin · /notifications ·
- *   /reminders · /premium · /blog
+ *   /reminders · /premium · /blog · /live-voice-chat
  */
 
 export const SOCIAL_LAYER_RETIRED = true
@@ -37,7 +41,6 @@ export const RETIRED_ROUTES = [
   '/messages',
   '/connections',
   '/groups',
-  '/live-voice-chat',
   '/meetings',
   '/watch',
   '/games',
@@ -56,4 +59,33 @@ export const RETIRED_ROUTES = [
 export function isRetiredPath(pathname: string): boolean {
   if (!SOCIAL_LAYER_RETIRED) return false
   return RETIRED_ROUTES.some((r) => pathname === r || pathname.startsWith(r + '/'))
+}
+
+/**
+ * RECRUITER SALES SURFACE — hidden, not deleted.
+ *
+ * The product is a student-facing placement-information platform right now:
+ * interview experiences, company rounds and campus data. The B2B *storefront*
+ * (`/hire`, which asked recruiters to request a demo batch) advertised a
+ * console that was never built, so it is hidden until that console exists.
+ *
+ * ── What is hidden vs what stays ───────────────────────────────────────────
+ *   HIDDEN : `/hire` only — the lead-capture landing.
+ *   STAYS  : `/companies`, `/jobs`, `/applications` — the *data* plane.
+ *            Interview experiences and blog posts reference companies, so
+ *            removing those tables would break the student product.
+ *   STAYS  : `/hire/b/[token]` — an already-delivered shortlist link. It is a
+ *            shared deliverable, not a storefront, and must keep working.
+ *
+ * Set `RECRUITER_SALES_HIDDEN = false` to restore the landing and its links.
+ */
+export const RECRUITER_SALES_HIDDEN = true
+
+/** Where a hidden sales page sends the visitor — the student landing. */
+export const SALES_FALLBACK_ROUTE = '/'
+
+/** True only for the storefront itself — exact match, so `/hire/b/…` survives. */
+export function isHiddenSalesPath(pathname: string): boolean {
+  if (!RECRUITER_SALES_HIDDEN) return false
+  return pathname === '/hire'
 }

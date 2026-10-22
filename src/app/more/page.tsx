@@ -13,6 +13,12 @@ import { Icon } from '@/components/icons'
 const SECTIONS = [
   { icon: 'building', label: 'Jobs', desc: 'Internships, full-time & remote openings', href: '/jobs' },
   {
+    icon: 'school',
+    label: 'Colleges',
+    desc: 'Placement information for your own campus',
+    href: '/colleges',
+  },
+  {
     icon: 'building',
     label: 'Companies',
     desc: 'Explore companies, roles & interview experiences',
@@ -30,7 +36,12 @@ const SECTIONS = [
     desc: 'Verified student reviews, tips & difficulty',
     href: '/experiences',
   },
-  { icon: 'star', label: 'Talent', desc: 'Discover students by skill', href: '/talent' },
+  {
+    icon: 'mic',
+    label: 'Live Rooms',
+    desc: 'Study, read and quiz each other in a voice room',
+    href: '/live-voice-chat',
+  },
   { icon: 'zap', label: 'Compete', desc: 'Daily DSA challenges & Aura rankings', href: '/compete' },
   { icon: 'trophy', label: 'Leaderboard', desc: 'Top contributors on your campus', href: '/leaderboard' },
   { icon: 'sparkles', label: 'AI Coach', desc: 'Interview & placement prep with AI', href: '/brain' },

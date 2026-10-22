@@ -14,7 +14,6 @@ interface CmdItem {
 
 const COMMANDS: CmdItem[] = [
   // Quick actions — every one lands on a real, kept (hiring-plane) page.
-  { icon: 'star', label: 'Find students by skill', hint: 'Talent', href: '/talent', group: 'Ask Connect My Campus' },
   {
     icon: 'sparkles',
     label: 'Practice with the AI Coach',

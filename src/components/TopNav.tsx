@@ -38,13 +38,14 @@ const NAV: NavEntry[] = [
     href: '/companies',
     icon: 'briefcase',
     items: [
+      { label: 'Colleges', href: '/colleges', icon: 'school' },
       { label: 'Companies', href: '/companies', icon: 'building' },
       { label: 'Applications', href: '/applications', icon: 'bookmark' },
       { label: 'Experiences', href: '/experiences', icon: 'pencil' },
     ],
   },
   { label: 'Jobs', href: '/jobs', icon: 'building' },
-  { label: 'Talent', href: '/talent', icon: 'star' },
+  { label: 'Rooms', href: '/live-voice-chat', icon: 'mic' },
   { label: 'Compete', href: '/compete', icon: 'zap' },
   {
     label: 'Skills',

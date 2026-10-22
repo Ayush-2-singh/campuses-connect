@@ -65,7 +65,7 @@ describe('the free4talk-style board on /global', () => {
   })
 })
 
-describe('Live Voice is retired (V4 pivot to campus hiring)', () => {
+describe('Live Voice is a kept route (re-enabled after the V4 pivot)', () => {
   const community = read('src/app/community/page.tsx')
   const layout = read('src/components/Layout.tsx')
   const mobileNav = read('src/components/mobileNav.ts')
@@ -75,13 +75,25 @@ describe('Live Voice is retired (V4 pivot to campus hiring)', () => {
     expect(community).not.toMatch(/title: 'Live Voice'/)
   })
 
-  it('is absent from the desktop sidebar and mobile menu', () => {
-    expect(layout).not.toContain('/live-voice-chat')
-    expect(mobileNav).not.toContain('/live-voice-chat')
+  it('is reachable from the mobile bar and the ☰ menu', () => {
+    // Re-enabled: the rooms are a primary destination again.
+    expect(mobileNav).toContain("'/live-voice-chat'")
+    expect(layout).toContain('/live-voice-chat')
   })
 
-  it('is gated in the shared feature-gate config', () => {
-    expect(read('src/lib/featureGates.ts')).toContain("'/live-voice-chat'")
+  it('no longer surfaces the student talent browser in the mobile shell', () => {
+    expect(mobileNav).not.toContain("'/talent'")
+  })
+
+  it('is no longer gated in the shared feature-gate config', () => {
+    // Re-enabled: the LiveKit rooms are study rooms, so they are not part of
+    // the retired social plane any more. The config must say so explicitly.
+    const gates = read('src/lib/featureGates.ts')
+    // Not in the retired list any more…
+    expect(gates).not.toMatch(/'\/live-voice-chat'\s*,?/)
+    // …and the config states the re-enable explicitly, so the next reader
+    // knows the removal was deliberate rather than an oversight.
+    expect(gates).toMatch(/was on this list and has been RE-ENABLED/)
   })
 
   it('/global page still ships on disk (gated, not deleted)', () => {

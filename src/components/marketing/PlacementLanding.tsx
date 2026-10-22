@@ -1,0 +1,457 @@
+'use client'
+
+import { useEffect, useState } from 'react'
+import Link from 'next/link'
+import BrandName from '@/components/BrandName'
+import ThemeToggle from '@/components/ThemeToggle'
+import { getLogoSrc } from '@/components/LogoToggle'
+import { Icon } from '@/components/icons'
+
+/**
+ * PlacementLanding — the public landing for the student-facing product.
+ *
+ * Replaces the recruiter sales page (`HireLanding`) on `/` while
+ * `RECRUITER_SALES_HIDDEN` is true — see src/lib/featureGates.ts. The old
+ * landing sold a recruiter console that was never built; this one sells the
+ * thing that actually ships: interview write-ups and the company rounds behind
+ * them.
+ *
+ * ── Honesty rules (same contract as the page it replaces) ───────────────────
+ * Every band that looks like real data is read from the live database and is
+ * passed in by the server (src/app/page.tsx). A band whose query returns
+ * nothing hides itself or states that plainly — there are no invented
+ * candidates, quotes, employers or outcome statistics on this page.
+ *
+ * ── Copy rule ───────────────────────────────────────────────────────────────
+ * Nothing here promises a page that does not exist. College-scoped placement
+ * pages are still being built, so the copy describes them as the direction of
+ * travel ("one campus at a time") instead of linking to them.
+ */
+
+type Stats = { students: number; campuses: number; companies: number } | null
+type Company = { name: string; slug: string; logo_url: string | null }
+type Problem = { title: string; slug: string; difficulty: string | null; topics: string[] | null }
+type Win = {
+  id: string
+  title: string
+  role: string | null
+  result: string | null
+  difficulty: string | null
+  upvotes: number | null
+  excerpt: string
+  company: string
+  initials: string
+}
+
+const NAV = [
+  { label: 'Colleges', href: '/colleges', icon: 'school' },
+  { label: 'Experiences', href: '/experiences', icon: 'pencil' },
+  { label: 'Companies', href: '/companies', icon: 'building' },
+  { label: 'Blog', href: '/blog', icon: 'book' },
+  { label: 'Rooms', href: '/live-voice-chat', icon: 'mic' },
+  { label: 'Practice', href: '/compete', icon: 'zap' },
+]
+
+const DIFF_TAG: Record<string, string> = {
+  easy: 'hl-tag hl-tag--easy',
+  medium: 'hl-tag hl-tag--medium',
+  hard: 'hl-tag hl-tag--hard',
+}
+
+const tagFor = (difficulty?: string | null) =>
+  (difficulty && DIFF_TAG[difficulty.toLowerCase()]) || 'hl-tag hl-tag--type'
+
+export default function PlacementLanding({
+  stats,
+  companies,
+  problems,
+  wins,
+}: {
+  stats?: Stats
+  companies?: Company[]
+  problems?: Problem[]
+  wins?: Win[]
+}) {
+  const [logoSrc, setLogoSrc] = useState('/connect-to-campus-logo-dark.png')
+  const [menuOpen, setMenuOpen] = useState(false)
+
+  useEffect(() => {
+    setLogoSrc(getLogoSrc())
+    const sync = () => setLogoSrc(getLogoSrc())
+    window.addEventListener('cc-theme-change', sync)
+    return () => window.removeEventListener('cc-theme-change', sync)
+  }, [])
+
+  const companyList = companies ?? []
+  const problemList = problems ?? []
+  const winList = wins ?? []
+
+  return (
+    <div className="hl-page">
+      <div className="hl-bg" aria-hidden="true" />
+
+      {/* ── Nav ── */}
+      <header className="hl-nav">
+        <div className="hl-wrap hl-nav-inner">
+          <Link className="hl-brand" href="/" aria-label="ConnectToCampus home">
+            <img className="hl-brand-logo" src={logoSrc} alt="" width={30} height={30} />
+            <BrandName className="hl-brand-name" />
+          </Link>
+
+          <nav className="hl-nav-links" aria-label="Primary">
+            {NAV.map((item) => (
+              <Link className="hl-nav-link" href={item.href} key={item.href}>
+                <Icon name={item.icon} size={18} className="hl-nav-ic" />
+                {item.label}
+              </Link>
+            ))}
+          </nav>
+
+          <div className="hl-nav-right">
+            <ThemeToggle mode="plain" />
+            <Link className="hl-nav-signin" href="/auth/login">
+              Sign in
+            </Link>
+            <Link className="hl-btn hl-btn--brand hl-btn--sm" href="/auth/signup">
+              Get started
+            </Link>
+            <button
+              className="hl-nav-burger"
+              onClick={() => setMenuOpen((v) => !v)}
+              aria-expanded={menuOpen}
+              aria-controls="pl-nav-sheet"
+              aria-label="Menu"
+            >
+              <Icon name={menuOpen ? 'x' : 'menu'} size={20} />
+            </button>
+          </div>
+        </div>
+
+        {menuOpen && (
+          <div className="hl-nav-sheet" id="pl-nav-sheet">
+            <div className="hl-wrap">
+              {NAV.map((item) => (
+                <Link className="hl-nav-sheet-link" href={item.href} key={item.href} onClick={() => setMenuOpen(false)}>
+                  <Icon name={item.icon} size={18} />
+                  {item.label}
+                </Link>
+              ))}
+              <div className="hl-nav-sheet-cta">
+                <Link className="hl-btn hl-btn--ghost" href="/auth/login" onClick={() => setMenuOpen(false)}>
+                  Sign in
+                </Link>
+                <Link className="hl-btn hl-btn--brand" href="/auth/signup" onClick={() => setMenuOpen(false)}>
+                  Get started
+                </Link>
+              </div>
+            </div>
+          </div>
+        )}
+      </header>
+
+      {/* ── Hero ── */}
+      <section className="hl-hero hl-wrap">
+        <div className="hl-hero-copy">
+          <p className="hl-eyebrow hl-rise hl-rise-1">Placement intelligence, written by students</p>
+          <h1 className="hl-h1 hl-rise hl-rise-2">
+            Every round, every company.{' '}
+            <span className="hl-h1-accent">Written down by the ones who sat through it.</span>
+          </h1>
+          <p className="hl-sub hl-rise hl-rise-3">
+            Real placement write-ups from Indian campuses — which companies visited, what each round actually asked, and
+            who got selected. Read it before your drive instead of guessing from a Tier-1 blog that has nothing to do
+            with your college.
+          </p>
+
+          <div className="hl-pill-row hl-rise hl-rise-4">
+            {['Round-by-round', 'Company-wise', 'Free to read'].map((p) => (
+              <span className="hl-pill" key={p}>
+                <span className="hl-pill-ic">
+                  <Icon name="check" size={14} />
+                </span>
+                {p}
+              </span>
+            ))}
+          </div>
+
+          <div className="hl-cta-row hl-rise hl-rise-4">
+            <Link className="hl-btn hl-btn--brand hl-btn--lg hl-btn--shine" href="/experiences">
+              Read experiences
+            </Link>
+            <Link className="hl-btn hl-btn--ghost hl-btn--lg" href="/companies">
+              Browse companies
+            </Link>
+          </div>
+
+          <p className="hl-micro">No account needed to read. Sign in only to write yours.</p>
+        </div>
+      </section>
+
+      {/* ── Real counts (hidden entirely when the query fails) ── */}
+      {stats && (
+        <section className="hl-metrics-band">
+          <div className="hl-wrap hl-metrics">
+            <div>
+              <p className="hl-metric-v">{stats.campuses}</p>
+              <p className="hl-metric-l">Campuses</p>
+            </div>
+            <div>
+              <p className="hl-metric-v">{stats.companies}</p>
+              <p className="hl-metric-l">Companies on record</p>
+            </div>
+            <div>
+              <p className="hl-metric-v">{stats.students}</p>
+              <p className="hl-metric-l">Students</p>
+            </div>
+          </div>
+        </section>
+      )}
+
+      {/* ── Companies strip — live rows only ── */}
+      {companyList.length > 0 && (
+        <section className="hl-strip">
+          <div className="hl-wrap">
+            <p className="hl-strip-eyebrow">Companies students have written about</p>
+            <div className="hl-strip-row">
+              {companyList.slice(0, 10).map((c) => (
+                <Link className="hl-strip-item" href={`/companies/${c.slug}`} key={c.slug}>
+                  {c.logo_url ? (
+                    <img className="hl-strip-logo" src={c.logo_url} alt={c.name} height={34} />
+                  ) : (
+                    <span className="hl-strip-word">{c.name}</span>
+                  )}
+                </Link>
+              ))}
+            </div>
+          </div>
+        </section>
+      )}
+
+      {/* ── Write-ups ── */}
+      <section className="hl-section hl-wrap">
+        <p className="hl-eyebrow">From the students</p>
+        <h2 className="hl-h2">What the round actually asked</h2>
+        <p className="hl-lead hl-measure">
+          Each write-up below is a real post from a student on ConnectToCampus: the company, the role, how hard it felt,
+          and how it ended.
+        </p>
+
+        {winList.length > 0 ? (
+          <div className="hl-list-rows">
+            {winList.map((w) => (
+              <div className="hl-list-row" key={w.id}>
+                <span className="hl-list-mark" aria-hidden="true">
+                  {w.initials}
+                </span>
+                <span className="hl-list-main">
+                  <span className="hl-list-title">{w.title}</span>
+                  <span className="hl-list-sub">
+                    {w.company}
+                    {w.role ? ` · ${w.role}` : ''} — {w.excerpt}
+                  </span>
+                </span>
+                <span className={tagFor(w.difficulty)}>{w.difficulty || w.result || 'Write-up'}</span>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <p className="hl-empty">
+            No write-ups published yet. If you have sat through a drive, yours would be the first one here —{' '}
+            <Link className="hl-nav-link" href="/experiences">
+              write it in two minutes
+            </Link>
+            .
+          </p>
+        )}
+
+        <div className="hl-band-cta">
+          <Link className="hl-btn hl-btn--brand" href="/experiences">
+            All experiences
+          </Link>
+        </div>
+      </section>
+
+      {/* ── Practice ── */}
+      {problemList.length > 0 && (
+        <section className="hl-section hl-wrap">
+          <p className="hl-eyebrow">Then practise it</p>
+          <h2 className="hl-h2">The questions that keep coming back</h2>
+          <p className="hl-lead hl-measure">
+            Reading a round is half the job. These are live practice problems on the platform, so the thing you just
+            read about is the thing you can attempt tonight.
+          </p>
+
+          <div className="hl-list-rows">
+            {problemList.map((p, i) => (
+              <div className="hl-list-row" key={p.slug}>
+                <span className="hl-list-mark" aria-hidden="true">
+                  {i + 1}
+                </span>
+                <span className="hl-list-main">
+                  <span className="hl-list-title">{p.title}</span>
+                  <span className="hl-list-sub">
+                    {p.topics?.length ? p.topics.slice(0, 3).join(' · ') : 'Practice problem'}
+                  </span>
+                </span>
+                <span className={tagFor(p.difficulty)}>{p.difficulty || 'Practice'}</span>
+              </div>
+            ))}
+          </div>
+
+          <div className="hl-band-cta">
+            <Link className="hl-btn hl-btn--brand" href="/compete">
+              Open the arena
+            </Link>
+          </div>
+        </section>
+      )}
+
+      {/* ── Live rooms (LiveKit) ── */}
+      <section className="hl-section hl-wrap">
+        <p className="hl-eyebrow">Not alone at 1am</p>
+        <h2 className="hl-h2">Study together, in the same room</h2>
+        <p className="hl-lead hl-measure">
+          Reading a round on your own only gets you so far. Open a live room, share what you are studying, and let the
+          batch quiz you until you actually know it — voice, not a thread nobody replies to.
+        </p>
+
+        <div className="hl-list-rows">
+          {[
+            {
+              n: '1',
+              title: 'Open or join a room',
+              sub: 'Filed by topic — DSA, web dev, a language, or just the subject you are stuck on.',
+            },
+            {
+              n: '2',
+              title: 'Read and explain out loud',
+              sub: 'The fastest way to find out whether you know something is to say it to someone.',
+            },
+            {
+              n: '3',
+              title: 'Verify yourself before the drive',
+              sub: 'Quiz each other on the rounds you just read. Free to use, no add-on.',
+            },
+          ].map((s) => (
+            <div className="hl-list-row" key={s.n}>
+              <span className="hl-list-mark" aria-hidden="true">
+                {s.n}
+              </span>
+              <span className="hl-list-main">
+                <span className="hl-list-title">{s.title}</span>
+                <span className="hl-list-sub">{s.sub}</span>
+              </span>
+            </div>
+          ))}
+        </div>
+
+        <div className="hl-band-cta">
+          <Link className="hl-btn hl-btn--brand" href="/live-voice-chat">
+            Open live rooms
+          </Link>
+        </div>
+      </section>
+
+      {/* ── How the product is built ── */}
+      <section className="hl-section hl-wrap">
+        <p className="hl-eyebrow">College first</p>
+        <h2 className="hl-h2">One campus at a time, on purpose</h2>
+        <p className="hl-lead hl-measure">
+          Placement advice is only useful if it comes from the campus it happened at — the same company runs a different
+          process at a different college. So this platform grows campus by campus instead of pretending one national
+          average fits everyone.
+        </p>
+
+        <div className="hl-band-cta">
+          <Link className="hl-btn hl-btn--brand" href="/colleges">
+            Find your college
+          </Link>
+        </div>
+
+        <div className="hl-list-rows">
+          {[
+            {
+              n: '1',
+              title: 'Students write what happened',
+              sub: 'The rounds, the questions, the result — first-hand, not aggregated from other sites.',
+            },
+            {
+              n: '2',
+              title: 'Companies and rounds stay linked',
+              sub: 'Every write-up sits against the company it belongs to, so the next batch sees the pattern.',
+            },
+            {
+              n: '3',
+              title: 'Practice sits next to the reading',
+              sub: 'The problem you just read about is on the platform, ready to attempt.',
+            },
+          ].map((s) => (
+            <div className="hl-list-row" key={s.n}>
+              <span className="hl-list-mark" aria-hidden="true">
+                {s.n}
+              </span>
+              <span className="hl-list-main">
+                <span className="hl-list-title">{s.title}</span>
+                <span className="hl-list-sub">{s.sub}</span>
+              </span>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* ── Final CTA ── */}
+      <section className="hl-section hl-wrap">
+        <p className="hl-eyebrow">Add your campus</p>
+        <h2 className="hl-h2 hl-h2--tight">Your juniors will read this next year</h2>
+        <p className="hl-lead hl-measure">
+          Five minutes of writing saves the next batch months of guessing. Sign in, pick your company, describe the
+          rounds.
+        </p>
+        <div className="hl-cta-row">
+          <Link className="hl-btn hl-btn--brand hl-btn--lg hl-btn--shine" href="/auth/signup">
+            Write your experience
+          </Link>
+          <Link className="hl-btn hl-btn--ghost hl-btn--lg" href="/blog">
+            Read the blog
+          </Link>
+        </div>
+      </section>
+
+      {/* ── Footer ── */}
+      <footer className="hl-footer">
+        <div className="hl-wrap hl-footer-grid">
+          <div className="hl-footer-brand">
+            <img className="hl-brand-logo" src={logoSrc} alt="" width={26} height={26} />
+            <BrandName className="hl-brand-name" />
+            <p className="hl-footer-tag">Placement information, written by the students who went through it.</p>
+          </div>
+
+          <div className="hl-footer-cols">
+            <div className="hl-footer-col">
+              <p className="hl-footer-col-title">Read</p>
+              <Link href="/experiences">Experiences</Link>
+              <Link href="/companies">Companies</Link>
+              <Link href="/blog">Blog</Link>
+            </div>
+            <div className="hl-footer-col">
+              <p className="hl-footer-col-title">Practise</p>
+              <Link href="/compete">Arena</Link>
+              <Link href="/leaderboard">Leaderboard</Link>
+              <Link href="/brain">AI Coach</Link>
+            </div>
+            <div className="hl-footer-col">
+              <p className="hl-footer-col-title">Platform</p>
+              <Link href="/about">About</Link>
+              <Link href="/privacy">Privacy</Link>
+              <Link href="/terms">Terms</Link>
+            </div>
+          </div>
+        </div>
+
+        <div className="hl-wrap hl-footer-bottom">
+          <p className="hl-footer-legal">© {new Date().getFullYear()} ConnectToCampus</p>
+        </div>
+      </footer>
+    </div>
+  )
+}

@@ -1,15 +1,20 @@
 import { createClient, type SupabaseClient } from '@supabase/supabase-js'
-import HireLanding from '@/components/marketing/HireLanding'
+import PlacementLanding from '@/components/marketing/PlacementLanding'
 
 /**
- * `/` — the public landing.
+ * `/` — the public student landing.
  *
- * Server component so the two proof bands can show GENUINE rows read from the
- * database rather than invented ones: the trust metrics, and the row of
- * companies that are actually hiring here. It uses a service-role client
- * (never exposed to the browser) and is cached for an hour, so the page stays
- * static and fast. If either read fails for any reason, that band is simply
- * omitted — the landing never falls back to fabricated numbers, logos or names.
+ * Server component so every proof band can show GENUINE rows read from the
+ * database rather than invented ones: the counts, the companies on record, the
+ * published interview write-ups, and the live practice problems. It uses a
+ * service-role client (never exposed to the browser) and is cached for an hour,
+ * so the page stays static and fast. If a read fails for any reason that band
+ * is simply omitted — the landing never falls back to fabricated numbers,
+ * logos or names.
+ *
+ * The recruiter storefront (`HireLanding`, still on disk at `/hire`) is hidden
+ * while the product is student-facing — see RECRUITER_SALES_HIDDEN in
+ * src/lib/featureGates.ts.
  *
  * The retired social "room discovery" home still ships on disk but is gated
  * off (see src/lib/featureGates.ts).
@@ -139,46 +144,7 @@ async function getWins(): Promise<Win[]> {
     return []
   }
 }
-
-/**
- * Recommended reading. A post with a title is the proxy for "someone wrote
- * something" until the blog feeds the landing directly. When nothing qualifies
- * the band says so itself, rather than dressing up invented sources — the same
- * rule the wins band follows.
- */
-type Reading = { tag: string; title: string; body: string; source: string }
-
-async function getReading(): Promise<Reading[]> {
-  const db = getAdmin()
-  if (!db) return []
-  try {
-    const { data } = await db
-      .from('posts')
-      .select('title, body, post_type, company_org, created_at')
-      .not('title', 'is', null)
-      .eq('is_archived', false)
-      .order('created_at', { ascending: false })
-      .limit(3)
-    return (data ?? [])
-      .filter((p: any) => p?.title && p?.body)
-      .map((p: any) => ({
-        tag: p.company_org ? String(p.company_org) : 'From the community',
-        title: String(p.title),
-        body: String(p.body).replace(/\s+/g, ' ').trim().slice(0, 150),
-        source: p.company_org ? String(p.company_org) : 'Posted on ConnectToCampus',
-      }))
-  } catch {
-    return []
-  }
-}
-
 export default async function Home() {
-  const [stats, companies, problems, wins, reading] = await Promise.all([
-    getStats(),
-    getCompanies(),
-    getProblems(),
-    getWins(),
-    getReading(),
-  ])
-  return <HireLanding stats={stats} companies={companies} problems={problems} wins={wins} reading={reading} />
+  const [stats, companies, problems, wins] = await Promise.all([getStats(), getCompanies(), getProblems(), getWins()])
+  return <PlacementLanding stats={stats} companies={companies} problems={problems} wins={wins} />
 }

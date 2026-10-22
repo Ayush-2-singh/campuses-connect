@@ -8,24 +8,28 @@
 // nothing here may point at them.
 //
 // Bottom bar (four primary destinations):
-//   Jobs | Talent | Compete | Profile
+//   Jobs | Rooms | Compete | Profile
 // ☰ menu = the full kept-feature index.
+//
+// `/live-voice-chat` is a KEPT route: the LiveKit study rooms were retired
+// with the social plane and then re-enabled, so they appear here.
 
 export const MOBILE_NAV = [
   { label: 'Jobs', href: '/jobs', icon: 'building' },
-  { label: 'Talent', href: '/talent', icon: 'star' },
+  { label: 'Rooms', href: '/live-voice-chat', icon: 'mic' },
   { label: 'Compete', href: '/compete', icon: 'zap' },
   { label: 'Profile', href: '/profile', icon: 'user' },
 ]
 
 export const MOBILE_MENU_NAV = [
   // ── Hiring loop ─────────────────────────────────────────────
+  { label: 'Colleges', href: '/colleges', icon: 'school' },
   { label: 'Jobs', href: '/jobs', icon: 'building' },
   { label: 'Companies', href: '/companies', icon: 'building' },
   { label: 'Applications', href: '/applications', icon: 'bookmark' },
   { label: 'Interview Experiences', href: '/experiences', icon: 'pencil' },
-  { label: 'Talent', href: '/talent', icon: 'star' },
   // ── Skill & readiness ───────────────────────────────────────
+  { label: 'Live Rooms', href: '/live-voice-chat', icon: 'mic' },
   { label: 'Compete', href: '/compete', icon: 'zap' },
   { label: 'Leaderboard', href: '/leaderboard', icon: 'trophy' },
   { label: 'AI Coach', href: '/brain', icon: 'sparkles' },
