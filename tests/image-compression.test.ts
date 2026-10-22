@@ -53,15 +53,9 @@ describe('compressImage is fail-safe — it always settles with a usable File', 
 })
 
 describe('the call sites compress up front', () => {
-  const campus = read('src/app/campus-change/page.tsx')
+  // The campus-change / ID-card screen was removed with the page trim, so only
+  // the call site that still ships is guarded here.
   const profile = read('src/app/profile/page.tsx')
-
-  it('ID-card screen compresses at selection and shows the saving', () => {
-    expect(campus).toContain("await import('@/lib/compressImage')")
-    // compression moved out of submitRequest into handleFileChange
-    expect(campus).toContain('(compressed)')
-    expect(campus).toContain('Compressing photo')
-  })
 
   it('profile avatar still compresses before upload', () => {
     expect(profile).toContain("await import('@/lib/compressImage')")

@@ -232,7 +232,7 @@ export default function LiveRoomBrowser({ userId }: { userId: string | null }) {
   const open = useCallback(
     (g: VoiceGroup) => {
       if (!userId) {
-        router.push('/auth/login?redirect=' + encodeURIComponent('/colleges'))
+        router.push('/auth/login?redirect=' + encodeURIComponent('/live-voice-chat'))
         return
       }
       // The room page owns the join (and the private-room password prompt).

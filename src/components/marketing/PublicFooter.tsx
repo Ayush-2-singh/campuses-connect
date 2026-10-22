@@ -21,7 +21,7 @@ export default function PublicFooter() {
         <div className="hl-footer-cols">
           <div className="hl-footer-col">
             <p className="hl-footer-col-title">Read</p>
-            <Link href="/colleges">Colleges</Link>
+            <Link href="/companies">Companies</Link>
             <Link href="/experiences">Experiences</Link>
             <Link href="/companies">Companies</Link>
             <Link href="/blog">Blog</Link>

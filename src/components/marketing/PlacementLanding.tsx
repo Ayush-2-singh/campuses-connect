@@ -286,8 +286,8 @@ export default function PlacementLanding({
         </p>
 
         <div className="hl-band-cta">
-          <Link className="hl-btn hl-btn--brand" href="/colleges">
-            Find your college
+          <Link className="hl-btn hl-btn--brand" href="/experiences">
+            Read the experiences
           </Link>
         </div>
 

@@ -45,7 +45,7 @@ describe('the Events feature is gone', () => {
     expect(read('src/components/mobileNav.ts')).not.toMatch(/\/events/)
     expect(read('src/app/sitemap.ts')).not.toMatch(/\/events/)
     expect(read('src/components/LivePulseFeed.tsx')).not.toMatch(/\/events/)
-    expect(read('src/app/more/page.tsx')).not.toMatch(/\/events/)
+    expect(read('src/components/TopNav.tsx')).not.toMatch(/\/events/)
   })
 
   it('does not strand an old notification tap', () => {

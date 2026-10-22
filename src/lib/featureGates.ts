@@ -30,7 +30,7 @@
 export const SOCIAL_LAYER_RETIRED = true
 
 /** Where retired routes send the user — a kept, on-brand hub. */
-export const FALLBACK_ROUTE = '/colleges'
+export const FALLBACK_ROUTE = '/experiences'
 
 /** Page-route prefixes that are part of the retired social plane. */
 export const RETIRED_ROUTES = [
@@ -105,7 +105,7 @@ export function isHiddenSalesPath(pathname: string): boolean {
 export const JOBS_BOARD_HIDDEN = true
 
 /** Where a hidden job route sends the visitor — the campus directory. */
-export const JOBS_FALLBACK_ROUTE = '/colleges'
+export const JOBS_FALLBACK_ROUTE = '/experiences'
 
 export function isHiddenJobsPath(pathname: string): boolean {
   if (!JOBS_BOARD_HIDDEN) return false

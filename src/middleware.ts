@@ -21,7 +21,7 @@ import {
  */
 
 // Routes that REQUIRE authentication — unauthenticated users get redirected.
-const PROTECTED_ROUTES = ['/admin', '/onboarding']
+const PROTECTED_ROUTES = ['/admin']
 
 // Routes that should redirect AWAY if already authenticated (login, signup).
 const AUTH_REDIRECT_ROUTES = ['/auth']
@@ -136,9 +136,6 @@ export async function middleware(request: NextRequest) {
   if (user && isAuthPage) {
     return NextResponse.redirect(new URL(JOBS_FALLBACK_ROUTE, request.url))
   }
-
-  // /onboarding: authenticated users only
-  if (!user && path.startsWith('/onboarding')) return loginRedirect(request)
 
   return supabaseResponse
 }

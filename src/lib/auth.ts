@@ -7,7 +7,7 @@ import { createClient, type SupabaseClient } from '@supabase/supabase-js'
 
 const RESET_PASSWORD_PATH = '/auth/reset-password'
 
-export function getSafeRedirect(value: string | null | undefined, fallback = '/jobs'): string {
+export function getSafeRedirect(value: string | null | undefined, fallback = '/experiences'): string {
   if (!value) return fallback
   let candidate = value.trim()
   if (!candidate) return fallback

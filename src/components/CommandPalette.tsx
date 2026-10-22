@@ -42,7 +42,7 @@ const COMMANDS: CmdItem[] = [
   { icon: 'link', label: 'Integrations — GitHub & LeetCode', href: '/integrations', group: 'Navigate' },
   { icon: 'bell', label: 'Notifications', href: '/notifications', group: 'Navigate' },
   { icon: 'user', label: 'Profile', href: '/profile', group: 'Navigate' },
-  { icon: 'more', label: 'More', href: '/more', group: 'Navigate' },
+  { icon: 'pencil', label: 'Experiences', href: '/experiences', group: 'Navigate' },
 ]
 
 export default function CommandPalette({ open, onClose }: { open: boolean; onClose: () => void }) {

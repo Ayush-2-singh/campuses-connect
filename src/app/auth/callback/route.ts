@@ -19,7 +19,7 @@ import { getSafeRedirect } from '@/lib/auth'
 export async function GET(request: NextRequest) {
   const requestUrl = new URL(request.url)
   const code = requestUrl.searchParams.get('code')
-  const next = getSafeRedirect(requestUrl.searchParams.get('next'), '/colleges')
+  const next = getSafeRedirect(requestUrl.searchParams.get('next'), '/experiences')
 
   // Supabase forwards the provider's failure reason on the callback URL
   // (e.g. ?error=redirect_url_mismatch&error_description=...). Surface it on
@@ -115,7 +115,7 @@ export async function GET(request: NextRequest) {
       .select('username, campus_id')
       .eq('id', user.id)
       .maybeSingle()
-    target = profile?.username && profile?.campus_id ? '/colleges' : '/onboarding'
+    target = profile?.username && profile?.campus_id ? '/experiences' : '/onboarding'
   }
 
   const response = NextResponse.redirect(new URL(target, requestUrl.origin))
