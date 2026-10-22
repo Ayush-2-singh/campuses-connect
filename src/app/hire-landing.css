@@ -164,6 +164,16 @@
   border-color: var(--lq-line-strong);
   color: var(--lq-text);
 }
+
+/* `.hl-page a { color: inherit }` is class+element (0,2,0), which outranks the
+   single-class `.hl-btn--brand` rule — so the brand button was inheriting the
+   page ink and painting near-black text on the blue gradient (about 3.5:1).
+   Win the specificity back here instead of removing the inherit rule, which
+   every plain link on this page relies on. */
+.hl-page .hl-btn--brand,
+.hl-page .hl-btn--brand:hover {
+  color: #fff;
+}
 .hl-btn--ghost:hover {
   background: var(--lq-hover-surface);
   border-color: color-mix(in srgb, var(--lq-brand) 45%, transparent);

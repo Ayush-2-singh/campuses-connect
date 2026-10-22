@@ -24,8 +24,10 @@
   --accent-blue: #5b9dff;
   --accent-red: #e0553e;
 
-  /* Text on accent-filled surfaces — accents are light, so dark text wins. */
-  --on-accent: #1d1503;
+  /* Text on accent-filled surfaces — the accents are light, so dark ink wins.
+     Neutral-blue ink (not the old warm brown) so it reads correctly on both the
+     blue brand fill and any gold section accent. */
+  --on-accent: #0b1220;
 }
 
 /* ───────────────────────── 2. DARK FOUNDATION (default) ───────────────────────── */
@@ -54,10 +56,14 @@
   --text-secondary: #99a2b1;
   --text-muted: #6f7887;
 
-  /* Brand — gold by default; sections override via [data-accent] */
-  --accent: var(--accent-gold);
+  /* Brand — BLUE in both themes. Dark used to keep the old gold while light
+     had already moved to blue, so the same button was two different colours
+     depending on the theme and the product had no single identity. Gold stays
+     available as a section accent (`[data-accent='gold']`) and for warning
+     tints, but it is no longer the brand colour. */
+  --accent: #5b9dff;
   --accent-light: color-mix(in srgb, var(--accent) 14%, transparent);
-  --accent-text: #ffab47;
+  --accent-text: #90bdff;
   --accent-border: color-mix(in srgb, var(--accent) 42%, transparent);
   --accent-glow: 0 0 22px color-mix(in srgb, var(--accent) 22%, transparent);
 

@@ -1,5 +1,5 @@
 import type { Metadata } from 'next'
-import HireLanding from '@/components/marketing/HireLanding'
+import HireLanding from '@/_archive/components/marketing/HireLanding'
 
 export const metadata: Metadata = {
   title: 'Hire pre-vetted engineers — ConnectToCampus',

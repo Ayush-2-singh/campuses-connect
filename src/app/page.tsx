@@ -12,9 +12,9 @@ import PlacementLanding from '@/components/marketing/PlacementLanding'
  * is simply omitted — the landing never falls back to fabricated numbers,
  * logos or names.
  *
- * The recruiter storefront (`HireLanding`, still on disk at `/hire`) is hidden
- * while the product is student-facing — see RECRUITER_SALES_HIDDEN in
- * src/lib/featureGates.ts.
+ * The recruiter storefront (`HireLanding`, now parked in src/_archive with the
+ * archived `/hire` route) is hidden while the product is student-facing — see
+ * RECRUITER_SALES_HIDDEN in src/lib/featureGates.ts.
  *
  * The retired social "room discovery" home still ships on disk but is gated
  * off (see src/lib/featureGates.ts).
