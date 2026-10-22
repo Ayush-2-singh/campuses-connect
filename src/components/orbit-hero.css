@@ -13,10 +13,8 @@
 
    Everything is scoped to `.orbit-hero` so it cannot leak into the app.
    ═════════════════════════════════════════════════════════════════════════ */
-
 .orbit-hero {
   --orbit-blue: #4f8ef7;
-  --orbit-text: #171717;
 
   display: grid;
   grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr);
@@ -26,8 +24,14 @@
   min-height: 650px;
   padding: 64px clamp(20px, 5vw, 76px);
   overflow: hidden;
-  color: var(--orbit-text);
-  background: radial-gradient(ellipse at 76% 48%, #eaf1ff 0%, transparent 42%), #faf9f6;
+
+  /* Theme-aware. The hero sits on the public page canvas, so it borrows the
+     same --lq-* tokens instead of hardcoding cream-and-ink — otherwise it
+     stayed bright cream under a dark page and the text disappeared. */
+  color: var(--lq-text, #171717);
+  background:
+    radial-gradient(ellipse at 76% 48%, color-mix(in srgb, var(--orbit-blue) 12%, transparent) 0%, transparent 42%),
+    var(--lq-canvas, #faf9f6);
   font-family: Inter, ui-sans-serif, system-ui, sans-serif;
 }
 
@@ -64,7 +68,7 @@
 .orbit-copy > p {
   max-width: 460px;
   margin: 24px 0;
-  color: #666;
+  color: var(--lq-muted, #666);
   font-size: 17px;
   line-height: 1.8;
 }
@@ -101,9 +105,9 @@
 }
 
 .orbit-secondary {
-  color: #242424;
-  border: 1px solid #e4e5eb;
-  background: white;
+  color: var(--lq-text, #242424);
+  border: 1px solid var(--lq-line-strong, #e4e5eb);
+  background: var(--lq-surface, #fff);
 }
 
 /* Orbit stage */
@@ -115,23 +119,30 @@
   aspect-ratio: 1;
   margin-inline: auto;
   border-radius: 50%;
-  background: radial-gradient(circle, #ffffff 0%, #f5f8ff 36%, transparent 69%);
-  /* Radius tokens are cqw, so the stage must be the size container. */
-  container-type: size;
+  background: radial-gradient(
+    circle,
+    var(--lq-surface, #fff) 0%,
+    color-mix(in srgb, var(--orbit-blue) 8%, var(--lq-canvas, #f5f8ff)) 36%,
+    transparent 69%
+  );
+  /* `inline-size`, not `size`: cqw only needs the inline axis, and size
+     containment made the square stage collapse in some layouts, which is what
+     broke the ring geometry. */
+  container-type: inline-size;
 }
 
 /* Each ring rotates independently */
 .orbit-ring {
   position: absolute;
   inset: 4%;
-  border: 1px dashed #c9ced7;
+  border: 1px dashed var(--lq-line-strong, #c9ced7);
   border-radius: 50%;
   pointer-events: none;
 }
 
 .orbit-ring:nth-of-type(2) {
   inset: 21%;
-  border-color: #b8cdf4;
+  border-color: color-mix(in srgb, var(--orbit-blue) 45%, transparent);
 }
 
 /* Position badges around the ellipse */
@@ -164,9 +175,9 @@
   height: 28px;
   padding: 13px;
   color: var(--item-color);
-  border: 1px solid #ffffff;
+  border: 1px solid var(--lq-surface, #fff);
   border-radius: 19px;
-  background: rgba(255, 255, 255, 0.97);
+  background: var(--lq-surface, #fff);
   box-shadow: 0 6px 22px #1c2f5015;
   transition:
     box-shadow 200ms ease,
@@ -180,11 +191,11 @@
 
 .orbit-label {
   padding: 5px 9px;
-  border: 1px solid #eceef3;
+  border: 1px solid var(--lq-line, #eceef3);
   border-radius: 8px;
-  background: rgba(255, 255, 255, 0.96);
+  background: var(--lq-surface, #fff);
   box-shadow: 0 4px 12px #1c2f500c;
-  color: #292929;
+  color: var(--lq-text, #292929);
   font-size: 10px;
   font-weight: 750;
   white-space: nowrap;
@@ -201,9 +212,9 @@
   align-items: center;
   width: 190px;
   padding: 15px 12px 17px;
-  border: 1px solid #ffffff;
+  border: 1px solid var(--lq-line, #ffffff);
   border-radius: 24px;
-  background: rgba(255, 255, 255, 0.88);
+  background: color-mix(in srgb, var(--lq-surface, #fff) 90%, transparent);
   box-shadow: 0 12px 40px #2d5b9f16;
   text-align: center;
   transform: translate(-50%, -50%);
@@ -221,7 +232,7 @@
   display: block;
   width: 100%;
   height: 100%;
-  border: 5px solid white;
+  border: 5px solid var(--lq-surface, #fff);
   border-radius: 50%;
   object-fit: cover;
   box-shadow:
@@ -235,7 +246,7 @@
   bottom: 5px;
   width: 14px;
   height: 14px;
-  border: 3px solid white;
+  border: 3px solid var(--lq-surface, #fff);
   border-radius: 50%;
   background: #22c55e;
 }
@@ -244,7 +255,7 @@
   max-width: 170px;
   margin: 0;
   overflow: hidden;
-  color: #191919;
+  color: var(--lq-text, #191919);
   font-size: 16px;
   font-weight: 800;
   text-overflow: ellipsis;
@@ -253,7 +264,7 @@
 
 .orbit-profile p {
   margin: 5px 0 0;
-  color: #747474;
+  color: var(--lq-muted, #747474);
   font-size: 12px;
   font-weight: 600;
 }
@@ -264,6 +275,9 @@
     grid-template-columns: 1fr;
     gap: 25px;
     padding-block: 50px;
+    /* 650px was a desktop stage height; on a phone it pushed the orbit below
+       the fold and left half a screen of empty cream. */
+    min-height: 0;
   }
 
   .orbit-copy {
@@ -290,6 +304,13 @@
   .orbit-hero {
     padding: 40px 12px;
     gap: 24px;
+    min-height: 0;
+  }
+
+  /* Pull the rings in: at full width the 46cqw radius pushed the badges past
+     the rounded stage, where `overflow: hidden` cut them in half. */
+  .orbit-item {
+    transform: rotate(var(--angle)) translateX(calc(var(--orbit-radius) * 0.8)) rotate(calc(-1 * var(--angle)));
   }
 
   .orbit-copy h1 {
