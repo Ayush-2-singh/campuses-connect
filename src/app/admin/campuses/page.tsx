@@ -99,7 +99,7 @@ export default function AdminCampusesPage() {
       const { data } = await supabase.rpc('my_admin_grants')
       const isAdmin = (data as any[])?.some((g: any) => g.admin_type === 'platform_admin')
       if (!isAdmin) {
-        router.push('/jobs')
+        router.push('/experiences')
         return
       }
       setUser(user)

@@ -49,7 +49,7 @@ export default function NotFound() {
         </p>
         <div style={{ display: 'flex', gap: 10, justifyContent: 'center', flexWrap: 'wrap' }}>
           <Link
-            href="/jobs"
+            href="/experiences"
             style={{
               background: 'var(--accent)',
               color: 'var(--on-accent)',
@@ -60,10 +60,10 @@ export default function NotFound() {
               borderRadius: 10,
             }}
           >
-            Go to Global Feed
+            Browse experiences
           </Link>
           <Link
-            href="/more"
+            href="/"
             style={{
               background: 'var(--bg)',
               color: 'var(--text-primary)',
@@ -75,7 +75,7 @@ export default function NotFound() {
               borderRadius: 10,
             }}
           >
-            Explore More
+            Go home
           </Link>
         </div>
       </div>

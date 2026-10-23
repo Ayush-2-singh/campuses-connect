@@ -94,25 +94,18 @@ export default function NotificationsPage() {
     setNotifications((ns) => ns.map((n) => ({ ...n, is_read: true })))
   }
 
-  /** Where does this notification point? null = no destination. */
+  /**
+   * Where does this notification point? `null` = nowhere, and the row is not
+   * clickable. Only destinations that exist are returned: the feed, posts,
+   * teams, opportunities and communities were retired, so mapping them to a
+   * path (even the old `/more` index, which no longer exists) sent people to a
+   * redirect or a 404 from their own inbox.
+   */
   const targetFor = (n: any): string | null => {
-    if (n.ref_type === 'post' && n.ref_id) return `/post/${n.ref_id}`
-    if (n.ref_type === 'team_request') return '/teams'
     switch (n.type) {
-      case 'answer':
-        return '/more'
-      case 'new_opportunity':
-        return '/opportunities'
-      case 'discovery_interest':
-      case 'discovery_match':
-        return '/communities'
-      case 'new_note':
-        return null
       case 'connection_request':
       case 'connection_accepted':
         return n.profiles?.username ? `/profile/${n.profiles.username}` : '/profile'
-      case 'moderation':
-        return n.ref_type === 'post' && n.ref_id ? `/post/${n.ref_id}` : '/more'
       default:
         return null
     }
@@ -144,7 +137,7 @@ export default function NotificationsPage() {
     <Layout user={user} profile={profile}>
       <div className="page-wrap">
         <div className="hc-page-head">
-          <button className="hc-back" onClick={() => router.push('/more')} aria-label="Back">
+          <button className="hc-back" onClick={() => router.back()} aria-label="Back">
             ←
           </button>
           <div style={{ minWidth: 0 }}>
@@ -173,8 +166,8 @@ export default function NotificationsPage() {
             icon="bell"
             title="No notifications yet"
             body="Deadlines, replies, connections and campus updates will show up here as they happen."
-            cta="Explore your campus"
-            onCta={() => router.push('/jobs')}
+            cta="Read an experience"
+            onCta={() => router.push('/experiences')}
           />
         ) : (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>

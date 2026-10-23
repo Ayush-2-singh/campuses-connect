@@ -12,36 +12,18 @@ interface CmdItem {
   group: 'Navigate' | 'Ask Connect My Campus'
 }
 
+/**
+ * Only the four sections (Rooms · Experiences · Compete · Profile) plus the
+ * account inbox. Leaderboard, AI coach and the integrations page were offered
+ * here too; none of them is a section of the product, and /integrations had no
+ * route at all, so the palette suggested a 404.
+ */
 const COMMANDS: CmdItem[] = [
-  // Quick actions — every one lands on a real, kept (hiring-plane) page.
-  {
-    icon: 'sparkles',
-    label: 'Practice with the AI Coach',
-    hint: 'AI Coach',
-    href: '/brain',
-    group: 'Ask Connect My Campus',
-  },
-  {
-    icon: 'zap',
-    label: 'Solve a daily DSA challenge',
-    hint: 'Compete',
-    href: '/compete',
-    group: 'Ask Connect My Campus',
-  },
-  {
-    icon: 'pencil',
-    label: 'Read interview experiences',
-    hint: 'Experiences',
-    href: '/experiences',
-    group: 'Ask Connect My Campus',
-  },
-  // Navigation
-  { icon: 'bookmark', label: 'My applications', href: '/applications', group: 'Navigate' },
-  { icon: 'trophy', label: 'Leaderboard', href: '/leaderboard', group: 'Navigate' },
-  { icon: 'link', label: 'Integrations — GitHub & LeetCode', href: '/integrations', group: 'Navigate' },
+  { icon: 'mic', label: 'Join a study room', hint: 'Rooms', href: '/live-voice-chat', group: 'Navigate' },
+  { icon: 'pencil', label: 'Read interview experiences', hint: 'Experiences', href: '/experiences', group: 'Navigate' },
+  { icon: 'zap', label: 'Solve a practice problem', hint: 'Compete', href: '/compete', group: 'Navigate' },
+  { icon: 'user', label: 'Your profile', hint: 'Profile', href: '/profile', group: 'Navigate' },
   { icon: 'bell', label: 'Notifications', href: '/notifications', group: 'Navigate' },
-  { icon: 'user', label: 'Profile', href: '/profile', group: 'Navigate' },
-  { icon: 'pencil', label: 'Experiences', href: '/experiences', group: 'Navigate' },
 ]
 
 export default function CommandPalette({ open, onClose }: { open: boolean; onClose: () => void }) {

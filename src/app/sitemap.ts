@@ -12,10 +12,10 @@ export default function sitemap(): MetadataRoute.Sitemap {
   const now = new Date()
 
   const core: { path: string; priority: number; changeFrequency: 'daily' | 'weekly' | 'monthly' | 'yearly' }[] = [
-    // NOTE: the retired social routes (/community, /communities, /global …)
-    // are deliberately absent — they 307-redirect to /jobs (see
+    // NOTE: the retired routes (/jobs, /community, /communities, /global …) are
+    // deliberately absent — they 307-redirect to /experiences (see
     // lib/featureGates.ts), and listing a redirecting URL in a sitemap is an
-    // SEO error. /jobs is listed once.
+    // SEO error. Only routes that render are listed.
     { path: '/', priority: 1, changeFrequency: 'daily' },
     { path: '/blog', priority: 0.9, changeFrequency: 'daily' },
     { path: '/compete', priority: 0.8, changeFrequency: 'daily' },

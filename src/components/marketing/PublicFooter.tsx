@@ -18,18 +18,15 @@ export default function PublicFooter() {
           <p className="hl-footer-tag">Placement information, written by the students who went through it.</p>
         </div>
 
+        {/* The four sections, then the platform pages. Leaderboard, AI coach and
+            the blog index are not offered as destinations of their own. */}
         <div className="hl-footer-cols">
           <div className="hl-footer-col">
-            <p className="hl-footer-col-title">Read</p>
+            <p className="hl-footer-col-title">Sections</p>
+            <Link href="/live-voice-chat">Rooms</Link>
             <Link href="/experiences">Experiences</Link>
-            <Link href="/blog">Blog</Link>
-          </div>
-          <div className="hl-footer-col">
-            <p className="hl-footer-col-title">Practise</p>
-            <Link href="/compete">Arena</Link>
-            <Link href="/leaderboard">Leaderboard</Link>
-            <Link href="/brain">AI Coach</Link>
-            <Link href="/live-voice-chat">Live rooms</Link>
+            <Link href="/compete">Compete</Link>
+            <Link href="/profile">Profile</Link>
           </div>
           <div className="hl-footer-col">
             <p className="hl-footer-col-title">Platform</p>

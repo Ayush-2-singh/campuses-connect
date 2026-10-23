@@ -1,218 +1,118 @@
 'use client'
 
-import { useRouter } from 'next/navigation'
 import { useEffect, useState } from 'react'
-import { createClient } from '@/lib/supabase/client'
+import Link from 'next/link'
+import PublicNav from '@/components/marketing/PublicNav'
+import PublicFooter from '@/components/marketing/PublicFooter'
 import { Icon } from '@/components/icons'
-import GuestEntry from '@/components/GuestEntry'
-import { getLogoSrc } from '@/components/LogoToggle'
-import BrandName from '@/components/BrandName'
+import { createClient } from '@/lib/supabase/client'
+
+/**
+ * `/about` — what this product is, for a visitor who has not signed up.
+ *
+ * The previous version sold the retired social platform (campus feed, notes,
+ * hackathons, Global communities) and its buttons pushed `/jobs` and
+ * `/communities`, both of which now redirect away. This page describes only
+ * what ships: interview write-ups, the companies behind them, timed practice,
+ * live study rooms and the AI coach — and every link below is a route that
+ * renders.
+ *
+ * The campus grid is a live read, not copy: it lists the colleges and campuses
+ * that actually exist in the database, and hides itself when there are none.
+ */
+
+/** The product is these four sections. Nothing else is offered in the nav. */
+const FEATURES = [
+  {
+    icon: 'mic',
+    title: 'Rooms',
+    href: '/live-voice-chat',
+    desc: 'Talk the problem through out loud with your batch, by topic, before the drive does it to you.',
+  },
+  {
+    icon: 'book',
+    title: 'Experiences',
+    href: '/experiences',
+    desc: 'A real drive, written round by round: the questions asked, the role, and how it ended.',
+  },
+  {
+    icon: 'zap',
+    title: 'Compete',
+    href: '/compete',
+    desc: 'Timed sets on the problems those rounds actually asked, graded on the test cases they pass.',
+  },
+  {
+    icon: 'user',
+    title: 'Profile',
+    href: '/profile',
+    desc: 'Your record: campus, department and batch, the skills you claim, and your GitHub and LinkedIn links.',
+  },
+] as const
+
+const STEPS = [
+  {
+    n: '1',
+    title: 'Read the round',
+    sub: 'Start from a drive that already happened at a campus like yours.',
+  },
+  {
+    n: '2',
+    title: 'Practise the problem',
+    sub: 'The question you just read about is ready to attempt, with a judge and a clock.',
+  },
+  {
+    n: '3',
+    title: 'Say it out loud',
+    sub: 'Explain it in a room until the answer is yours, not something you read once.',
+  },
+] as const
+
+/** Illustrative only — the real write-ups live on `/experiences`. */
+const SAMPLE_ROUNDS = [
+  { round: 'Round 1', kind: 'Online assessment', detail: '2 coding questions · 90 minutes' },
+  { round: 'Round 2', kind: 'DSA interview', detail: 'Arrays, hashing, one follow-up' },
+  { round: 'Round 3', kind: 'HR / culture', detail: 'Projects, relocation, notice period' },
+] as const
 
 export default function AboutPage() {
-  const [user, setUser] = useState<any>(null)
-  const [pulse, setPulse] = useState({ notes: 0, opportunities: 0, discussions: 0, hackathons: 0 })
   const [liveColleges, setLiveColleges] = useState<{ name: string; campuses: string[] }[]>([])
-  const [guestOpen, setGuestOpen] = useState(false)
-  const [logoSrc, setLogoSrc] = useState('/connect-to-campus-logo-dark.png')
-  const router = useRouter()
-
-  // Sync logo with theme
-  useEffect(() => {
-    setLogoSrc(getLogoSrc())
-    const handler = () => setLogoSrc(getLogoSrc())
-    window.addEventListener('cc-theme-change', handler)
-    return () => window.removeEventListener('cc-theme-change', handler)
-  }, [])
   const supabase = createClient()
 
-  // PROFESSIONAL PATTERN: Single useEffect, ALL queries in parallel.
-  // Before: 3 separate useEffects = 3 sequential waterfalls.
-  // After: 1 useEffect with Promise.all = all queries fire at once.
+  // One read, one effect: the campus grid is the only live data this page shows.
   useEffect(() => {
     let cancelled = false
-    const now = new Date().toISOString()
-    const week = new Date(Date.now() + 7 * 86400000).toISOString()
-
-    // Fire ALL 5 queries simultaneously — no waterfall
-    Promise.all([
-      supabase.auth.getUser(),
-      supabase
-        .from('colleges')
-        .select('id, name, campuses!inner(name)')
-        .eq('is_active', true)
-        .eq('campuses.is_active', true),
-      supabase.from('opportunities').select('id', { count: 'exact', head: true }).eq('is_active', true),
-      supabase.from('posts').select('id', { count: 'exact', head: true }).eq('status', 'published'),
-      supabase
-        .from('opportunities')
-        .select('id', { count: 'exact', head: true })
-        .eq('opp_type', 'hackathon')
-        .gte('deadline', now)
-        .lte('deadline', week),
-    ])
-      .then(([authRes, collegesRes, oppsRes, postsRes, hacksRes]) => {
+    void (async () => {
+      try {
+        const { data } = await supabase
+          .from('colleges')
+          .select('id, name, campuses!inner(name)')
+          .eq('is_active', true)
+          .eq('campuses.is_active', true)
         if (cancelled) return
-        if (authRes.data.user) setUser(authRes.data.user)
         setLiveColleges(
-          (collegesRes.data || []).map((c: any) => ({
+          (data ?? []).map((c: any) => ({
             name: c.name,
             campuses: (c.campuses || []).map((x: any) => x.name),
           }))
         )
-        setPulse({
-          notes: 0,
-          opportunities: oppsRes.count || 0,
-          discussions: postsRes.count || 0,
-          hackathons: hacksRes.count || 0,
-        })
-      })
-      .catch(() => {})
+      } catch {
+        // A missing read just leaves the campus section empty; nothing to invent.
+      }
+    })()
     return () => {
       cancelled = true
     }
   }, [supabase])
 
-  const features = [
-    { icon: 'home', title: 'Campus Feed', desc: 'Announcements, events and discussions for your campus.' },
-    { icon: 'sparkles', title: 'AI Brain', desc: 'Ask your study material anything — instant answers.' },
-    { icon: 'zap', title: 'Compete', desc: 'DSA challenges, talent discovery & leaderboard rankings.' },
-    { icon: 'briefcase', title: 'Opportunities', desc: 'Hackathons, internships, jobs & find teammates.' },
-  ]
-
   const totalCampuses = liveColleges.reduce((sum, c) => sum + c.campuses.length, 0)
 
-  const stats = [
-    { label: 'Live opportunities', value: pulse.opportunities },
-    { label: 'Discussions (all-India)', value: pulse.discussions },
-    { label: 'Hackathons this week', value: pulse.hackathons },
-  ]
-
   return (
-    <div
-      data-accent="gold"
-      style={{
-        minHeight: 'var(--app-vh)',
-        fontFamily: '-apple-system, BlinkMacSystemFont, Segoe UI, sans-serif',
-      }}
-    >
-      {/* Nav */}
-      <nav
-        className="landing-nav"
-        style={{
-          position: 'sticky',
-          top: 0,
-          background: 'var(--bg)',
-          borderBottom: '1px solid var(--border)',
-          zIndex: 10,
-        }}
-      >
-        <div
-          style={{
-            // The app's shared frame, so this page starts on the same x as the
-            // landing and every section page instead of its own 1040px column.
-            // The gutter lives INSIDE this box, so the brand lines up with the
-            // hero copy below it rather than 24px to its left.
-            maxWidth: 'var(--page-max)',
-            margin: '0 auto',
-            padding: '14px var(--page-pad)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-          }}
-        >
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-            <img src={logoSrc} alt="CTC" width={32} height={32} style={{ borderRadius: 9 }} />
-            <h1 style={{ fontSize: 19, fontWeight: 800, margin: 0, color: 'var(--text-primary)' }}>
-              <BrandName />
-            </h1>
-          </div>
-          <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
-            <button
-              onClick={() => router.push('/jobs')}
-              style={{
-                background: 'none',
-                color: 'var(--text-secondary)',
-                border: '1px solid var(--border)',
-                padding: '8px 14px',
-                borderRadius: 10,
-                fontSize: 14,
-                fontWeight: 600,
-                cursor: 'pointer',
-              }}
-            >
-              🌐 Global
-            </button>
-            {user ? (
-              <button
-                onClick={() => router.push('/jobs')}
-                style={{
-                  background: 'var(--accent)',
-                  color: 'var(--on-accent)',
-                  border: 'none',
-                  padding: '9px 18px',
-                  borderRadius: 10,
-                  fontSize: 14,
-                  fontWeight: 700,
-                  cursor: 'pointer',
-                }}
-              >
-                Go to Feed →
-              </button>
-            ) : (
-              <>
-                <button
-                  onClick={() => setGuestOpen(true)}
-                  style={{
-                    background: 'none',
-                    color: 'var(--accent)',
-                    border: 'none',
-                    padding: '8px 14px',
-                    fontSize: 14,
-                    fontWeight: 700,
-                    cursor: 'pointer',
-                  }}
-                >
-                  Enter as Guest
-                </button>
-                <button
-                  onClick={() => router.push('/auth/login')}
-                  style={{
-                    background: 'none',
-                    color: 'var(--text-secondary)',
-                    border: 'none',
-                    padding: '8px 14px',
-                    fontSize: 14,
-                    cursor: 'pointer',
-                  }}
-                >
-                  Sign in
-                </button>
-                <button
-                  onClick={() => router.push('/auth/signup')}
-                  style={{
-                    background: 'var(--accent)',
-                    color: 'var(--on-accent)',
-                    border: 'none',
-                    padding: '9px 18px',
-                    borderRadius: 10,
-                    fontSize: 14,
-                    fontWeight: 700,
-                    cursor: 'pointer',
-                  }}
-                >
-                  Join Free
-                </button>
-              </>
-            )}
-          </div>
-        </div>
-      </nav>
+    <div className="hl-page">
+      <div className="hl-bg" aria-hidden="true" />
+      <PublicNav />
 
       {/* Hero */}
-      <div
-        className="ambient"
-        style={{ maxWidth: 'var(--page-max)', margin: '0 auto', padding: '72px var(--page-pad) 64px' }}
-      >
+      <section className="hl-wrap" style={{ padding: '72px 0 56px' }}>
         <div className="landing-hero-grid">
           <div>
             <div
@@ -225,211 +125,195 @@ export default function AboutPage() {
                 borderRadius: 20,
                 padding: '5px 14px',
                 fontSize: 12,
-                color: 'var(--accent)',
+                color: 'var(--accent-text)',
                 fontWeight: 600,
                 marginBottom: 22,
               }}
             >
-              🌐 Join from any college — or connect globally
+              About ConnectToCampus
             </div>
-            <h2
-              className="landing-hero"
+            <h1
               style={{
-                fontSize: 54,
+                fontSize: 52,
                 fontWeight: 800,
-                lineHeight: 1.12,
+                lineHeight: 1.1,
                 color: 'var(--text-primary)',
                 margin: '0 0 18px',
                 letterSpacing: '-0.03em',
               }}
             >
-              Every college.
+              Placement, written by
               <br />
-              <span style={{ color: 'var(--accent)' }}>One community.</span>
-            </h2>
+              <span style={{ color: 'var(--accent)' }}>the people who sat it.</span>
+            </h1>
             <p
               style={{
                 fontSize: 17,
                 color: 'var(--text-secondary)',
-                lineHeight: 1.6,
+                lineHeight: 1.65,
                 margin: '0 0 30px',
-                maxWidth: 480,
+                maxWidth: 520,
               }}
             >
-              The community platform for Computer Science students across India — hackathons, opportunities, notes and a
-              nationwide community. No campus required: your college isn&apos;t listed yet? Connect globally.
+              Most placement advice is written by people selling a course. This is the other version: students posting
+              what a drive actually asked, round by round, and the practice that goes with it. Free, and no account
+              needed to read.
             </p>
-            <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', marginBottom: 34 }}>
-              <button
-                onClick={() => router.push('/auth/signup')}
+            <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', marginBottom: 18 }}>
+              <Link
+                href="/experiences"
                 style={{
                   background: 'var(--accent)',
                   color: 'var(--on-accent)',
                   border: 'none',
-                  padding: '14px 28px',
+                  padding: '14px 26px',
                   borderRadius: 12,
                   fontSize: 16,
                   fontWeight: 700,
-                  cursor: 'pointer',
+                  textDecoration: 'none',
                   boxShadow: 'var(--accent-glow)',
                 }}
               >
-                Join free — from any college →
-              </button>
-              <button
-                onClick={() => router.push('/jobs')}
+                Read experiences →
+              </Link>
+              <Link
+                href="/compete"
                 style={{
                   background: 'var(--bg)',
                   color: 'var(--text-primary)',
                   border: '1px solid var(--border-strong)',
-                  padding: '14px 28px',
+                  padding: '14px 26px',
                   borderRadius: 12,
                   fontSize: 16,
                   fontWeight: 600,
-                  cursor: 'pointer',
+                  textDecoration: 'none',
                 }}
               >
-                🌐 Explore the Global feed
-              </button>
+                Try a problem
+              </Link>
             </div>
-            {/* Stats — real numbers from the database */}
-            <div className="landing-stats">
-              {stats.map((s) => (
-                <div
-                  key={s.label}
-                  style={{
-                    background: 'var(--bg)',
-                    border: '1px solid var(--border)',
-                    borderRadius: 12,
-                    padding: '10px 12px',
-                    textAlign: 'center',
-                  }}
-                >
-                  <p style={{ fontSize: 20, fontWeight: 800, color: 'var(--accent)', margin: '0 0 2px' }}>{s.value}</p>
-                  <p style={{ fontSize: 10.5, color: 'var(--text-muted)', margin: 0, lineHeight: 1.3 }}>{s.label}</p>
-                </div>
-              ))}
-            </div>
+            <p style={{ fontSize: 13, color: 'var(--text-muted)', margin: 0 }}>
+              Want to post your own drive?{' '}
+              <Link href="/auth/signup" style={{ color: 'var(--accent)', fontWeight: 600, textDecoration: 'none' }}>
+                Create a free account
+              </Link>
+            </p>
           </div>
 
-          {/* Phone mockup */}
-          <div style={{ position: 'relative', width: 290, margin: '0 auto' }}>
+          {/* What a write-up looks like — clearly labelled as an illustration. */}
+          <div style={{ position: 'relative', width: '100%', maxWidth: 340, margin: '0 auto' }}>
             <div
               style={{
-                position: 'absolute',
-                inset: -50,
-                background: 'radial-gradient(circle, var(--accent-light), transparent 70%)',
-                filter: 'blur(10px)',
-              }}
-              aria-hidden="true"
-            />
-            <div
-              style={{
-                position: 'relative',
-                border: '1px solid var(--border-strong)',
-                borderRadius: 38,
                 background: 'var(--bg)',
-                padding: '12px 12px 18px',
+                border: '1px solid var(--border-strong)',
+                borderRadius: 20,
+                padding: '20px 22px',
                 boxShadow: 'var(--shadow-lg)',
               }}
             >
-              {/* phone header */}
               <div
                 style={{
                   display: 'flex',
                   alignItems: 'center',
-                  gap: 9,
-                  padding: '2px 6px 12px',
-                  borderBottom: '1px solid var(--border)',
+                  justifyContent: 'space-between',
+                  gap: 10,
+                  marginBottom: 16,
                 }}
               >
-                <div
+                <p style={{ fontSize: 13.5, fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>
+                  A write-up, round by round
+                </p>
+                <span
                   style={{
-                    width: 30,
-                    height: 30,
-                    borderRadius: '50%',
-                    background: 'var(--accent)',
-                    color: 'var(--on-accent)',
-                    fontSize: 12,
+                    fontSize: 10,
                     fontWeight: 700,
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                  }}
-                >
-                  A
-                </div>
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--text-primary)' }}>Global Pulse</div>
-                  <div style={{ fontSize: 10, color: 'var(--text-muted)' }}>Just now · All of India</div>
-                </div>
-                <Icon name="bell" size={14} />
-              </div>
-              {/* fake feed cards */}
-              {[
-                {
-                  badge: '📢 Announcement',
-                  title: 'Hackathon registrations open — 48 hours left!',
-                  bg: 'var(--orange-light)',
-                  text: 'var(--orange-text)',
-                },
-                {
-                  badge: '📚 Resource',
-                  title: 'DBMS PYQs (2022–2025) uploaded by a senior.',
-                  bg: 'var(--accent-light)',
-                  text: 'var(--accent-text)',
-                },
-                {
-                  badge: '⚡ DSA',
-                  title: 'Weekly contest #12 — solve 3 problems, win aura.',
-                  bg: 'var(--purple-light)',
-                  text: 'var(--purple-text)',
-                },
-              ].map((c, i) => (
-                <div
-                  key={i}
-                  style={{
-                    marginTop: 12,
+                    letterSpacing: '0.04em',
+                    textTransform: 'uppercase',
                     background: 'var(--bg-secondary)',
+                    color: 'var(--text-muted)',
                     border: '1px solid var(--border)',
-                    borderRadius: 14,
-                    padding: '12px 14px',
+                    padding: '3px 8px',
+                    borderRadius: 20,
                   }}
                 >
-                  <span
+                  Sample
+                </span>
+              </div>
+              {SAMPLE_ROUNDS.map((r, i) => (
+                <div
+                  key={r.round}
+                  style={{
+                    display: 'flex',
+                    gap: 12,
+                    paddingBottom: i < SAMPLE_ROUNDS.length - 1 ? 14 : 0,
+                    marginBottom: i < SAMPLE_ROUNDS.length - 1 ? 14 : 0,
+                    borderBottom: i < SAMPLE_ROUNDS.length - 1 ? '1px solid var(--border)' : 'none',
+                  }}
+                >
+                  <div
                     style={{
-                      display: 'inline-block',
-                      fontSize: 9.5,
-                      fontWeight: 700,
-                      background: c.bg,
-                      color: c.text,
-                      padding: '2px 8px',
-                      borderRadius: 20,
-                      marginBottom: 8,
+                      width: 26,
+                      height: 26,
+                      borderRadius: '50%',
+                      background: 'var(--accent-light)',
+                      color: 'var(--accent-text)',
+                      fontSize: 11,
+                      fontWeight: 800,
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      flexShrink: 0,
                     }}
                   >
-                    {c.badge}
-                  </span>
-                  <p
-                    style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-primary)', margin: 0, lineHeight: 1.45 }}
-                  >
-                    {c.title}
-                  </p>
-                  <div style={{ display: 'flex', gap: 14, marginTop: 10, fontSize: 11, color: 'var(--text-muted)' }}>
-                    <span>👍 12</span>
-                    <span>💬 4</span>
-                    <span>🔖 Save</span>
+                    {i + 1}
+                  </div>
+                  <div>
+                    <p style={{ fontSize: 12.5, fontWeight: 700, color: 'var(--text-primary)', margin: '0 0 2px' }}>
+                      {r.kind}
+                    </p>
+                    <p style={{ fontSize: 11.5, color: 'var(--text-muted)', margin: 0, lineHeight: 1.45 }}>
+                      {r.detail}
+                    </p>
                   </div>
                 </div>
               ))}
             </div>
+            <p style={{ fontSize: 11, color: 'var(--text-muted)', textAlign: 'center', margin: '10px 0 0' }}>
+              An illustration of the format — not a real write-up.
+            </p>
           </div>
         </div>
-      </div>
+      </section>
 
-      {/* Features */}
-      <div style={{ maxWidth: 'var(--page-max)', margin: '0 auto', padding: '0 var(--page-pad) 80px' }}>
-        <h3
+      {/* Live campus counts — omitted rather than faked when there is nothing yet */}
+      {totalCampuses > 0 && (
+        <section style={{ borderTop: '1px solid var(--border)', borderBottom: '1px solid var(--border)' }}>
+          <div
+            style={{
+              maxWidth: 'var(--page-max)',
+              margin: '0 auto',
+              padding: '28px var(--page-pad)',
+              display: 'flex',
+              gap: 48,
+              flexWrap: 'wrap',
+              justifyContent: 'center',
+            }}
+          >
+            <div style={{ textAlign: 'center' }}>
+              <p style={{ fontSize: 28, fontWeight: 800, color: 'var(--accent)', margin: 0 }}>{totalCampuses}</p>
+              <p style={{ fontSize: 12, color: 'var(--text-muted)', margin: 0 }}>Campuses live</p>
+            </div>
+            <div style={{ textAlign: 'center' }}>
+              <p style={{ fontSize: 28, fontWeight: 800, color: 'var(--accent)', margin: 0 }}>{liveColleges.length}</p>
+              <p style={{ fontSize: 12, color: 'var(--text-muted)', margin: 0 }}>Colleges</p>
+            </div>
+          </div>
+        </section>
+      )}
+
+      {/* What ships */}
+      <section style={{ maxWidth: 'var(--page-max)', margin: '0 auto', padding: '64px var(--page-pad)' }}>
+        <h2
           style={{
             fontSize: 28,
             fontWeight: 800,
@@ -439,21 +323,23 @@ export default function AboutPage() {
             letterSpacing: '-0.02em',
           }}
         >
-          Everything your campus needs
-        </h3>
+          Four things, done properly
+        </h2>
         <p style={{ fontSize: 14, color: 'var(--text-muted)', margin: '0 0 32px', textAlign: 'center' }}>
-          One platform for notes, news, competitions and connections.
+          No feed, no points for logging in. Each one has a job in a placement season.
         </p>
-        <div className="h-scroll-grid">
-          {features.map((f) => (
-            <div
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: 16 }}>
+          {FEATURES.map((f) => (
+            <Link
               key={f.title}
+              href={f.href}
               className="card-hover"
               style={{
                 background: 'var(--bg)',
                 border: '1px solid var(--border)',
                 borderRadius: 16,
                 padding: '22px 24px',
+                textDecoration: 'none',
               }}
             >
               <div
@@ -475,137 +361,91 @@ export default function AboutPage() {
                 {f.title}
               </h3>
               <p style={{ fontSize: 13, color: 'var(--text-secondary)', margin: 0, lineHeight: 1.55 }}>{f.desc}</p>
-            </div>
+            </Link>
           ))}
         </div>
-      </div>
+      </section>
 
-      {/* Global — a separate community for everyone */}
-      <div
-        style={{
-          background: 'var(--cyan-light)',
-          borderTop: '1px solid var(--cyan-border)',
-          padding: '64px 20px',
-          textAlign: 'center',
-        }}
-      >
-        <div style={{ maxWidth: 640, margin: '0 auto' }}>
-          <div
+      {/* How it fits together */}
+      <section style={{ background: 'var(--bg-secondary)', borderTop: '1px solid var(--border)' }}>
+        <div style={{ maxWidth: 'var(--page-max)', margin: '0 auto', padding: '56px var(--page-pad)' }}>
+          <h2
             style={{
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: 6,
-              background: 'var(--cyan)',
-              color: 'var(--on-accent)',
-              borderRadius: 20,
-              padding: '5px 14px',
-              fontSize: 12,
-              fontWeight: 700,
-              marginBottom: 18,
-            }}
-          >
-            🌐 Global
-          </div>
-          <h3
-            style={{
-              fontSize: 28,
+              fontSize: 26,
               fontWeight: 800,
               color: 'var(--text-primary)',
-              margin: '0 0 10px',
+              margin: '0 0 28px',
               letterSpacing: '-0.02em',
+              textAlign: 'center',
             }}
           >
-            The Global Campus — a home for everyone
-          </h3>
-          <p
-            style={{
-              fontSize: 14.5,
-              color: 'var(--text-secondary)',
-              margin: '0 auto 28px',
-              lineHeight: 1.65,
-              maxWidth: 540,
-            }}
-          >
-            Open to every student in India. Join the Global Campus today — hackathons, opportunities, notes and
-            teammates from everywhere — and move to your own college campus the moment it goes live.
-          </p>
-          <div style={{ display: 'flex', gap: 10, justifyContent: 'center', flexWrap: 'wrap' }}>
-            <button
-              onClick={() => router.push('/jobs')}
-              style={{
-                background: 'var(--cyan)',
-                color: 'var(--on-accent)',
-                border: 'none',
-                padding: '12px 24px',
-                borderRadius: 12,
-                fontSize: 14.5,
-                fontWeight: 700,
-                cursor: 'pointer',
-              }}
-            >
-              🌐 Open the Global feed
-            </button>
-            <button
-              onClick={() => router.push('/communities')}
-              style={{
-                background: 'var(--bg)',
-                color: 'var(--text-primary)',
-                border: '1px solid var(--border-strong)',
-                padding: '12px 24px',
-                borderRadius: 12,
-                fontSize: 14.5,
-                fontWeight: 600,
-                cursor: 'pointer',
-              }}
-            >
-              Browse Global Communities
-            </button>
+            Read, practise, explain
+          </h2>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 16 }}>
+            {STEPS.map((s) => (
+              <div
+                key={s.n}
+                style={{
+                  background: 'var(--bg)',
+                  border: '1px solid var(--border)',
+                  borderRadius: 16,
+                  padding: '20px 22px',
+                }}
+              >
+                <span
+                  style={{
+                    display: 'inline-block',
+                    fontSize: 11,
+                    fontWeight: 800,
+                    color: 'var(--accent-text)',
+                    background: 'var(--accent-light)',
+                    borderRadius: 20,
+                    padding: '3px 10px',
+                    marginBottom: 12,
+                  }}
+                >
+                  Step {s.n}
+                </span>
+                <h3 style={{ fontSize: 15, fontWeight: 700, color: 'var(--text-primary)', margin: '0 0 6px' }}>
+                  {s.title}
+                </h3>
+                <p style={{ fontSize: 13, color: 'var(--text-secondary)', margin: 0, lineHeight: 1.55 }}>{s.sub}</p>
+              </div>
+            ))}
           </div>
         </div>
-      </div>
+      </section>
 
-      {/* Colleges — campus cards */}
-      <div style={{ background: 'var(--bg-secondary)', padding: '60px 20px', textAlign: 'center' }}>
-        <h3
+      {/* Where the write-ups come from — real rows only */}
+      <section
+        style={{ maxWidth: 'var(--page-max)', margin: '0 auto', padding: '60px var(--page-pad)', textAlign: 'center' }}
+      >
+        <h2
           style={{
-            fontSize: 28,
-            fontWeight: 700,
+            fontSize: 26,
+            fontWeight: 800,
             color: 'var(--text-primary)',
             margin: '0 0 8px',
             letterSpacing: '-0.02em',
           }}
         >
-          Built for every Indian college
-        </h3>
-        <p style={{ fontSize: 14, color: 'var(--text-muted)', margin: '0 0 32px' }}>
+          Where the write-ups come from
+        </h2>
+        <p style={{ fontSize: 14, color: 'var(--text-muted)', margin: '0 0 30px' }}>
           {totalCampuses > 0
-            ? `${totalCampuses} campus${totalCampuses !== 1 ? 'es' : ''} live across ${liveColleges.length} college${liveColleges.length !== 1 ? 's' : ''} — more join every week.`
-            : 'Campuses go live every week — stay tuned for yours.'}
+            ? `${totalCampuses} campus${totalCampuses !== 1 ? 'es' : ''} across ${liveColleges.length} college${
+                liveColleges.length !== 1 ? 's' : ''
+              } are on record.`
+            : 'Campuses go live as students post their drives — yours could be the first.'}
         </p>
 
-        {liveColleges.length === 0 ? (
-          <div
-            style={{
-              display: 'flex',
-              flexWrap: 'wrap',
-              gap: 14,
-              justifyContent: 'center',
-              maxWidth: 800,
-              margin: '0 auto',
-            }}
-          >
-            {[1, 2, 3].map((i) => (
-              <div key={i} className="skeleton" style={{ width: 240, height: 140, borderRadius: 16 }} />
-            ))}
-          </div>
-        ) : (
+        {liveColleges.length > 0 && (
           <div
             style={{
               display: 'grid',
               gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))',
               gap: 16,
-              maxWidth: 800,
-              margin: '0 auto 32px',
+              margin: '0 auto 28px',
               textAlign: 'left',
             }}
           >
@@ -616,197 +456,67 @@ export default function AboutPage() {
                   background: 'var(--bg)',
                   border: '1px solid var(--border)',
                   borderRadius: 16,
-                  overflow: 'hidden',
-                  transition: 'box-shadow 0.2s, transform 0.2s',
-                  cursor: 'pointer',
+                  padding: '16px 18px',
                 }}
-                className="card-hover"
-                onClick={() => router.push('/auth/signup')}
               >
-                {/* College header */}
-                <div
-                  style={{
-                    padding: '16px 18px 14px',
-                    borderBottom: col.campuses.length > 1 ? '1px solid var(--border)' : 'none',
-                    background:
-                      idx % 3 === 0
-                        ? 'var(--accent-light)'
-                        : idx % 3 === 1
-                          ? 'var(--purple-light)'
-                          : 'var(--cyan-light)',
-                  }}
-                >
-                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                      <div
-                        style={{
-                          width: 36,
-                          height: 36,
-                          borderRadius: 10,
-                          background: idx % 3 === 0 ? 'var(--accent)' : idx % 3 === 1 ? 'var(--purple)' : 'var(--cyan)',
-                          color: 'var(--on-accent)',
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          fontSize: 16,
-                          fontWeight: 800,
-                          flexShrink: 0,
-                        }}
-                      >
-                        {col.name.charAt(0)}
-                      </div>
-                      <div>
-                        <h4
-                          style={{
-                            fontSize: 15,
-                            fontWeight: 700,
-                            color: 'var(--text-primary)',
-                            margin: 0,
-                            lineHeight: 1.3,
-                          }}
-                        >
-                          {col.name}
-                        </h4>
-                        <p style={{ fontSize: 11.5, color: 'var(--text-muted)', margin: '2px 0 0' }}>
-                          {col.campuses.length} campus{col.campuses.length !== 1 ? 'es' : ''}
-                        </p>
-                      </div>
-                    </div>
-                    <span
-                      style={{
-                        fontSize: 10,
-                        fontWeight: 700,
-                        background: 'rgba(16,185,129,0.12)',
-                        color: '#10b981',
-                        padding: '3px 8px',
-                        borderRadius: 10,
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: 4,
-                      }}
-                    >
-                      <span style={{ width: 5, height: 5, borderRadius: '50%', background: '#10b981' }} />
-                      Live
-                    </span>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                  <div
+                    style={{
+                      width: 32,
+                      height: 32,
+                      borderRadius: 9,
+                      background: idx % 2 === 0 ? 'var(--accent)' : 'var(--accent-deep, var(--accent))',
+                      color: 'var(--on-accent)',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      fontSize: 14,
+                      fontWeight: 800,
+                      flexShrink: 0,
+                    }}
+                  >
+                    {col.name.charAt(0)}
+                  </div>
+                  <div style={{ minWidth: 0 }}>
+                    <h3 style={{ fontSize: 14, fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>
+                      {col.name}
+                    </h3>
+                    <p style={{ fontSize: 11.5, color: 'var(--text-muted)', margin: '2px 0 0' }}>
+                      {col.campuses.length} campus{col.campuses.length !== 1 ? 'es' : ''}
+                    </p>
                   </div>
                 </div>
-
-                {/* Campus list */}
                 {col.campuses.length > 0 && (
-                  <div style={{ padding: '10px 18px 14px' }}>
-                    {col.campuses.map((campus, ci) => (
-                      <div
-                        key={campus}
-                        style={{
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: 8,
-                          padding: '7px 0',
-                          borderBottom: ci < col.campuses.length - 1 ? '1px solid var(--border)' : 'none',
-                        }}
-                      >
-                        <div
-                          style={{
-                            width: 6,
-                            height: 6,
-                            borderRadius: '50%',
-                            background:
-                              idx % 3 === 0 ? 'var(--accent)' : idx % 3 === 1 ? 'var(--purple)' : 'var(--cyan)',
-                            flexShrink: 0,
-                          }}
-                        />
-                        <span style={{ fontSize: 13, fontWeight: 500, color: 'var(--text-secondary)' }}>{campus}</span>
-                      </div>
-                    ))}
-                  </div>
+                  <p style={{ fontSize: 12.5, color: 'var(--text-secondary)', margin: '10px 0 0', lineHeight: 1.6 }}>
+                    {col.campuses.join(' · ')}
+                  </p>
                 )}
               </div>
             ))}
           </div>
         )}
 
-        <p style={{ fontSize: 13, color: 'var(--text-muted)', margin: 0 }}>
-          Your college missing?{' '}
-          <span
-            style={{ color: 'var(--accent)', fontWeight: 600, cursor: 'pointer' }}
-            onClick={() => router.push('/auth/signup')}
-          >
-            Request it
-          </span>{' '}
-          — we&apos;ll bring it live for your campus.
-        </p>
-      </div>
-
-      {/* CTA */}
-      <div style={{ maxWidth: 640, margin: '0 auto', padding: '60px 20px' }}>
-        <div
-          className="landing-cta"
+        <Link
+          href="/experiences"
           style={{
+            display: 'inline-block',
             background: 'var(--accent)',
-            borderRadius: 24,
-            padding: '48px 40px',
-            textAlign: 'center',
+            color: 'var(--on-accent)',
+            padding: '13px 26px',
+            borderRadius: 12,
+            fontSize: 15,
+            fontWeight: 700,
+            textDecoration: 'none',
             boxShadow: 'var(--accent-glow)',
           }}
         >
-          <h3
-            style={{
-              fontSize: 28,
-              fontWeight: 700,
-              color: 'var(--on-accent)',
-              margin: '0 0 8px',
-              letterSpacing: '-0.02em',
-            }}
-          >
-            Ready to join?
-          </h3>
-          <p style={{ fontSize: 14, color: 'rgba(29,21,3,0.72)', margin: '0 0 24px' }}>
-            Free forever for students. No credit card needed.
-          </p>
-          <button
-            onClick={() => router.push('/auth/signup')}
-            style={{
-              background: 'var(--bg)',
-              color: 'var(--accent)',
-              border: 'none',
-              padding: '13px 28px',
-              borderRadius: 12,
-              fontSize: 15,
-              fontWeight: 700,
-              cursor: 'pointer',
-            }}
-          >
-            Create your account →
-          </button>
-          <button
-            onClick={() => setGuestOpen(true)}
-            style={{
-              display: 'block',
-              margin: '14px auto 0',
-              background: 'none',
-              color: 'rgba(29,21,3,0.72)',
-              border: 'none',
-              fontSize: 13,
-              fontWeight: 600,
-              cursor: 'pointer',
-              textDecoration: 'underline',
-            }}
-          >
-            or just enter with your name — no signup →
-          </button>
-        </div>
-      </div>
+          Browse all experiences
+        </Link>
+      </section>
 
       {/* Why we request data — transparency for OAuth consent screen */}
-      <div style={{ maxWidth: 640, margin: '0 auto', padding: '40px 20px 60px', textAlign: 'center' }}>
-        <h3
-          style={{
-            fontSize: 20,
-            fontWeight: 700,
-            color: 'var(--text-primary)',
-            margin: '0 0 12px',
-          }}
-        >
+      <section style={{ maxWidth: 640, margin: '0 auto', padding: '20px 20px 60px', textAlign: 'center' }}>
+        <h3 style={{ fontSize: 20, fontWeight: 700, color: 'var(--text-primary)', margin: '0 0 12px' }}>
           Why we use Google Sign-In
         </h3>
         <p
@@ -821,80 +531,27 @@ export default function AboutPage() {
           When you sign in with Google, we only access your <strong>name</strong>, <strong>email address</strong>, and{' '}
           <strong>profile picture</strong> to create and verify your ConnectToCampus account. We do not access your
           Google Drive, Gmail, contacts, or any other Google data. This information is used solely for authentication
-          and to personalize your campus profile.
+          and to personalize your profile.
         </p>
         <div style={{ display: 'flex', gap: 16, justifyContent: 'center', flexWrap: 'wrap' }}>
-          <a
-            href="/privacy"
-            style={{
-              fontSize: 14,
-              fontWeight: 600,
-              color: 'var(--accent)',
-              textDecoration: 'none',
-            }}
-          >
-            Privacy Policy
-          </a>
-          <a
-            href="/terms"
-            style={{
-              fontSize: 14,
-              fontWeight: 600,
-              color: 'var(--accent)',
-              textDecoration: 'none',
-            }}
-          >
-            Terms of Service
-          </a>
-          <a
-            href="/cookies"
-            style={{
-              fontSize: 14,
-              fontWeight: 600,
-              color: 'var(--accent)',
-              textDecoration: 'none',
-            }}
-          >
-            Cookie Policy
-          </a>
-          <a
-            href="/refund"
-            style={{
-              fontSize: 14,
-              fontWeight: 600,
-              color: 'var(--accent)',
-              textDecoration: 'none',
-            }}
-          >
-            Refund &amp; Cancellation
-          </a>
+          {[
+            { href: '/privacy', label: 'Privacy Policy' },
+            { href: '/terms', label: 'Terms of Service' },
+            { href: '/cookies', label: 'Cookie Policy' },
+            { href: '/refund', label: 'Refund & Cancellation' },
+          ].map((l) => (
+            <Link
+              key={l.href}
+              href={l.href}
+              style={{ fontSize: 14, fontWeight: 600, color: 'var(--accent)', textDecoration: 'none' }}
+            >
+              {l.label}
+            </Link>
+          ))}
         </div>
-      </div>
+      </section>
 
-      {/* Footer */}
-      <div style={{ borderTop: '1px solid var(--border)', padding: '20px', textAlign: 'center' }}>
-        <p style={{ fontSize: 12, color: 'var(--text-muted)', margin: 0 }}>
-          ConnectToCampus is an independent platform connecting campuses and companies. Not affiliated with or endorsed
-          by any educational institution.{' '}
-          <a href="/privacy" style={{ color: 'var(--text-muted)', textDecoration: 'underline' }}>
-            Privacy
-          </a>
-          {' · '}
-          <a href="/terms" style={{ color: 'var(--text-muted)', textDecoration: 'underline' }}>
-            Terms
-          </a>
-          {' · '}
-          <a href="/cookies" style={{ color: 'var(--text-muted)', textDecoration: 'underline' }}>
-            Cookies
-          </a>
-          {' · '}
-          <a href="/refund" style={{ color: 'var(--text-muted)', textDecoration: 'underline' }}>
-            Refunds
-          </a>
-        </p>
-      </div>
-
-      {guestOpen && <GuestEntry onClose={() => setGuestOpen(false)} />}
+      <PublicFooter />
     </div>
   )
 }

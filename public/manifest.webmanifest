@@ -1,7 +1,7 @@
 {
-  "name": "ConnectToCampus — Campus Hiring Platform",
+  "name": "ConnectToCampus — Campus placement, round by round",
   "short_name": "ConnectToCampus",
-  "description": "Verified student profiles, assessments and jobs for Indian colleges — connect companies to campuses.",
+  "description": "Interview experiences from Indian campuses, the companies behind them, and timed practice on the problems those rounds actually asked.",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",

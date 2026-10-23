@@ -75,7 +75,7 @@ export default function UserProfilePage() {
         .single()
 
       if (!prof) {
-        router.push('/talent')
+        router.push('/')
         return
       }
       setProfile(prof)
@@ -204,7 +204,7 @@ export default function UserProfilePage() {
           <p style={{ fontSize: 48, marginBottom: 12 }}>🔍</p>
           <p style={{ fontSize: 16, fontWeight: 600, color: 'var(--text-primary)' }}>User not found</p>
           <button
-            onClick={() => router.push('/talent')}
+            onClick={() => router.push('/')}
             style={{
               marginTop: 16,
               color: 'var(--accent)',

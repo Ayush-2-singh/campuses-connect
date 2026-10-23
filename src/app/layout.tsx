@@ -63,32 +63,30 @@ export const viewport: Viewport = {
 export const metadata: Metadata = {
   metadataBase: new URL(APP_URL),
   title: {
-    default: "ConnectToCampus — India's #1 Campus Community for CS Students",
+    default: 'ConnectToCampus — Campus placement, round by round',
     template: '%s · ConnectToCampus',
   },
+  // Describes the product that ships (see docs/ARCHITECTURE-V4.md): interview
+  // write-ups, the companies behind them, and the practice that goes with them.
+  // The retired social pitch (notes, PYQs, hackathons, campus feed) is gone from
+  // this string because none of those routes render any more.
   description:
-    'ConnectToCampus is the ultimate platform for Computer Science students across Indian colleges. Access notes, PYQs, hackathons, internships, DSA contests, AI-powered study tools, and connect with your campus community — all for free.',
+    'Round-by-round interview experiences from Indian campuses, the companies behind them, and timed practice on the problems those rounds actually asked.',
   keywords: [
     'ConnectToCampus',
-    'campus community India',
-    'college students platform',
-    'CS students India',
-    'computer science community',
-    'engineering college notes',
-    'PYQ papers',
-    'hackathons India',
-    'internship opportunities',
+    'interview experiences',
+    'campus placement India',
+    'placement rounds',
+    'fresher interview questions',
+    'company interview questions',
+    'engineering college placements',
+    'tier 2 tier 3 colleges',
+    'campus hiring',
     'DSA practice',
-    'college events',
-    'campus feed',
-    'student networking',
-    'free college platform',
-    'IIT NIT college',
-    'PW IOI',
-    'BBD University',
-    'study resources',
-    'AI study assistant',
     'coding challenges',
+    'AI interview coach',
+    'live study rooms',
+    'placement preparation',
   ],
   authors: [{ name: 'ConnectToCampus' }],
   creator: 'ConnectToCampus',
@@ -102,24 +100,25 @@ export const metadata: Metadata = {
     type: 'website',
     locale: 'en_IN',
     siteName: 'ConnectToCampus',
-    title: "ConnectToCampus — India's #1 Campus Community for CS Students",
+    title: 'ConnectToCampus — Campus placement, round by round',
     description:
-      'Access notes, PYQs, hackathons, internships, DSA contests, and AI-powered study tools — all free for Indian CS students.',
+      'Read how a drive actually went, then practise the problems it asked. Free for Indian engineering students.',
     url: APP_URL,
     images: [
       {
         url: '/og.png',
         width: 1200,
         height: 630,
-        alt: "ConnectToCampus — India's #1 Campus Community for CS Students",
+        alt: 'ConnectToCampus — Campus placement, round by round',
         type: 'image/png',
       },
     ],
   },
   twitter: {
     card: 'summary_large_image',
-    title: "ConnectToCampus — India's #1 Campus Community for CS Students",
-    description: 'Notes, PYQs, hackathons, internships, DSA contests & AI study tools — free for Indian CS students.',
+    title: 'ConnectToCampus — Campus placement, round by round',
+    description:
+      'Interview experiences from Indian campuses, round by round, plus timed practice on the problems those rounds asked.',
     images: ['/og.png'],
     creator: '@connecttocampus',
   },
@@ -160,16 +159,12 @@ const jsonLd = {
   alternateName: 'ConnectToCampus India',
   url: APP_URL,
   description:
-    "India's largest campus community platform for Computer Science students — notes, hackathons, internships, DSA contests, and AI-powered study tools.",
+    'Placement information for Indian engineering students — interview experiences written round by round, company data, and practice on the problems those rounds actually asked.',
   inLanguage: 'en-IN',
-  potentialAction: {
-    '@type': 'SearchAction',
-    target: {
-      '@type': 'EntryPoint',
-      urlTemplate: `${APP_URL}/jobs?q={search_term_string}`,
-    },
-    'query-input': 'required name=search_term_string',
-  },
+  // No `potentialAction` / SearchAction: it pointed at `/jobs?q=`, a route that
+  // no longer exists (the board was retired to /experiences, which has no query
+  // parameter). Advertising a search endpoint that 404s is worse for crawlers
+  // than advertising none.
   publisher: {
     '@type': 'Organization',
     name: 'ConnectToCampus',
@@ -184,15 +179,25 @@ const jsonLd = {
   },
 }
 
-const organizationJsonLd = {
+/**
+ * The second block describes what ships TODAY.
+ *
+ * It used to call ConnectToCampus a `CollegeOrUniversity` — this is a website,
+ * not a degree-granting institution — and its `featureList` advertised the
+ * retired social layer (campus feed, notes, hackathon board, global community).
+ * Structured data that misdescribes the page is what earns a manual action, so
+ * the type is now `WebApplication` and every listed feature is a route that
+ * renders: /experiences, /compete, /live-voice-chat, /brain.
+ */
+const appJsonLd = {
   '@context': 'https://schema.org',
-  '@type': 'CollegeOrUniversity',
+  '@type': 'WebApplication',
   name: 'ConnectToCampus',
   url: APP_URL,
-  description:
-    'A community platform connecting Computer Science students across Indian colleges with notes, hackathons, internships, and AI-powered study tools.',
+  description: 'Interview experiences and company rounds from Indian campuses, plus the practice to go with them.',
   applicationCategory: 'EducationalApplication',
   operatingSystem: 'Web',
+  isAccessibleForFree: true,
   offers: {
     '@type': 'Offer',
     price: '0',
@@ -200,13 +205,11 @@ const organizationJsonLd = {
     description: 'Free for all students',
   },
   featureList: [
-    'Campus Feed & Announcements',
-    'Notes & PYQ Library',
-    'AI-Powered Study Assistant',
-    'DSA Practice & Contests',
-    'Hackathon & Internship Board',
-    'Student Networking',
-    'Global Community',
+    'Interview experiences, round by round',
+    'Company and campus data',
+    'Timed practice on real interview problems',
+    'Live study rooms',
+    'AI coach',
   ],
 }
 
@@ -244,7 +247,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
 
         {/* JSON-LD Structured Data */}
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
-        <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(organizationJsonLd) }} />
+        <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(appJsonLd) }} />
 
         {/* Favicons & App Icons */}
         <link rel="shortcut icon" href="/favicon.ico" />

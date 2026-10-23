@@ -69,25 +69,28 @@ export function isRetiredPath(pathname: string): boolean {
  * (`/hire`, which asked recruiters to request a demo batch) advertised a
  * console that was never built, so it is hidden until that console exists.
  *
- * ── What is hidden vs what stays ───────────────────────────────────────────
- *   HIDDEN : `/hire` only — the lead-capture landing.
- *   STAYS  : `/companies`, `/jobs`, `/applications` — the *data* plane.
- *            Interview experiences and blog posts reference companies, so
- *            removing those tables would break the student product.
- *   STAYS  : `/hire/b/[token]` — an already-delivered shortlist link. It is a
- *            shared deliverable, not a storefront, and must keep working.
+ * ── What is hidden ─────────────────────────────────────────────────────────
+ *   HIDDEN : `/hire` — the lead-capture landing.
+ *   HIDDEN : `/hire/b/[token]` — the delivered-shortlist link. There is no
+ *            hiring product right now, so the page is archived and there is
+ *            nothing to deliver; old shortlist URLs redirect home instead of
+ *            404ing. This file used to promise that link would keep working —
+ *            that promise is withdrawn until hiring ships again.
+ *   STAYS  : `/companies` — only as data. Interview experiences and blog posts
+ *            reference companies, so the table must not be removed.
  *
- * Set `RECRUITER_SALES_HIDDEN = false` to restore the landing and its links.
+ * Set `RECRUITER_SALES_HIDDEN = false` (and restore the archived pages) to
+ * bring the hiring surface back.
  */
 export const RECRUITER_SALES_HIDDEN = true
 
 /** Where a hidden sales page sends the visitor — the student landing. */
 export const SALES_FALLBACK_ROUTE = '/'
 
-/** True only for the storefront itself — exact match, so `/hire/b/…` survives. */
+/** True for the storefront and any delivered-batch link under it. */
 export function isHiddenSalesPath(pathname: string): boolean {
   if (!RECRUITER_SALES_HIDDEN) return false
-  return pathname === '/hire'
+  return pathname === '/hire' || pathname.startsWith('/hire/')
 }
 
 /**

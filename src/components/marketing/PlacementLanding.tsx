@@ -86,12 +86,12 @@ const BENTO = [
     body: 'Every round of a real drive, as it happened.',
   },
   {
-    title: 'AI Coach',
-    href: '/brain',
-    icon: 'sparkles',
+    title: 'Profile',
+    href: '/profile',
+    icon: 'user',
     tone: 'lilac',
     span: 'wide',
-    body: 'Ask about the problem in front of you: the approach, the pitfalls, and the follow-up a mentor would ask.',
+    body: 'Your record: campus, batch, the skills you claim, and the links that back them up.',
   },
 ] as const
 
@@ -130,6 +130,17 @@ const COLLEGE_STEPS = [
     sub: 'The problem you just read about is ready to attempt.',
   },
 ]
+
+/** `blog_posts.category` key → the label the rail prints. */
+const CATEGORY_LABEL: Record<string, string> = {
+  interview_experience: 'Interview experience',
+  tech_blog: 'Tech',
+  campus_life: 'Campus life',
+  how_to: 'How-to',
+  project: 'Project',
+  review: 'Review',
+  general: 'Blog',
+}
 
 /** Shown only while nothing is published — and labelled as a preview there. */
 const READING_PREVIEW: Post[] = [
@@ -216,7 +227,13 @@ export default function PlacementLanding({
     },
   ]
 
-  const railCards = postList.length > 0 ? postList : READING_PREVIEW
+  // `blog_posts.category` stores a machine key (`how_to`); the rail is copy, so
+  // it shows the reader's name for it. Unknown keys fall through unchanged
+  // rather than being hidden.
+  const railCards =
+    postList.length > 0
+      ? postList.map((p) => ({ ...p, category: CATEGORY_LABEL[p.category] ?? p.category }))
+      : READING_PREVIEW
 
   return (
     <div className="hl-page">

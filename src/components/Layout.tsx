@@ -336,7 +336,7 @@ export default function Layout({ children, user, profile }: { children: React.Re
                   </p>
                 </div>
                 <button
-                  onClick={() => router.push('/campus-change')}
+                  onClick={() => router.push('/profile')}
                   style={{
                     padding: '8px 16px',
                     borderRadius: 8,

@@ -105,6 +105,12 @@ export default function ExperiencesPage() {
   }
 
   const vote = async (expId: string, voteVal: number) => {
+    // The vote endpoint requires a session. Signed-out readers used to click
+    // "Helpful", get a silent 401, and see the count stay at zero.
+    if (!user) {
+      router.push('/auth/login?redirect=/experiences')
+      return
+    }
     await fetch('/api/experiences', {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json', credentials: 'include' },

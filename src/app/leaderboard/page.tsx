@@ -238,13 +238,11 @@ export default function LeaderboardPage() {
         accent="leading."
         subtitle="Karma, GitHub and LeetCode signals combined into one ranking of the students shipping real work."
         stats={leaders.length ? [{ value: leaders.length, label: 'Ranked' }] : undefined}
-        actions={[
-          { label: 'Connect accounts', icon: 'link', primary: true, onClick: () => router.push('/integrations') },
-        ]}
+        actions={[{ label: 'Add your profiles', icon: 'link', primary: true, onClick: () => router.push('/profile') }]}
       >
         {/* ── Connect CTA ─────────────────────────────── */}
         <button
-          onClick={() => router.push('/integrations')}
+          onClick={() => router.push('/profile')}
           className="hc-card hc-card--link hc-reveal"
           style={{ flexDirection: 'row', alignItems: 'center', gap: 12, marginBottom: 16, width: '100%' }}
         >
@@ -1017,8 +1015,8 @@ export default function LeaderboardPage() {
         >
           <p className="hc-title">Want to rank higher?</p>
           <p className="hc-sub">Connect your coding profiles and stay active.</p>
-          <button className="hc-btn hc-btn--primary" onClick={() => router.push('/integrations')}>
-            <Icon name="link" size={13} /> Connect profiles
+          <button className="hc-btn hc-btn--primary" onClick={() => router.push('/profile')}>
+            <Icon name="link" size={13} /> Add profiles
           </button>
         </div>
       </SectionShell>

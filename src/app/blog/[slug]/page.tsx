@@ -525,9 +525,16 @@ export default function BlogPostPage() {
 
   const triggerReload = () => setReloadKey((k) => k + 1)
 
+  /**
+   * Signed-out readers are sent to sign in and then straight back here: the
+   * bare `/auth/login` hop used to drop them on `/experiences`, losing the post
+   * they were reading.
+   */
+  const goToLogin = () => router.push(`/auth/login?redirect=${encodeURIComponent(`/blog/${slug}`)}`)
+
   const toggleLike = async () => {
     if (!user || !post) {
-      router.push('/auth/login')
+      goToLogin()
       return
     }
     haptic.medium()
@@ -538,7 +545,7 @@ export default function BlogPostPage() {
 
   const toggleCommentLike = async (commentId: string) => {
     if (!user) {
-      router.push('/auth/login')
+      goToLogin()
       return
     }
     haptic.tap()
@@ -826,37 +833,6 @@ export default function BlogPostPage() {
                 {post.like_count}
               </span>
             )}
-          </button>
-
-          {/* Dislike — bare icon, no border, no background (YouTube exact) */}
-          <button
-            style={{
-              display: 'inline-flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              width: 36,
-              height: 36,
-              borderRadius: '50%',
-              border: 'none',
-              background: 'transparent',
-              color: 'var(--text-muted)',
-              cursor: 'pointer',
-              transition: 'all 0.15s ease',
-              flexShrink: 0,
-            }}
-          >
-            <svg
-              width="18"
-              height="18"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            >
-              <path d="M10 15v4a3 3 0 0 0 3 3l4-9V2H5.72a2 2 0 0 0-2 1.7l-1.38 9a2 2 0 0 0 2 2.3zm7-13h2.67A2.31 2.31 0 0 1 22 4v7a2.31 2.31 0 0 1-2.33 2H17" />
-            </svg>
           </button>
 
           {/* Share — pill chip with border */}
