@@ -14,6 +14,12 @@ const TABLE_BY_TYPE: Record<string, string> = {
   comments: 'post_comments',
   events: 'events',
   polls: 'polls',
+  // The content the product actually ships. Rooms are included because a
+  // platform admin has to be able to take down a group without being its
+  // creator; experiences and blog posts are the text surfaces people read.
+  rooms: 'live_voice_chat_groups',
+  experiences: 'interview_experiences',
+  blog: 'blog_posts',
 }
 
 let _supabaseAdmin: SupabaseClient | null = null
@@ -115,14 +121,57 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ items: data || [], total: count || 0, type: 'polls' })
   }
 
+  // Study rooms. `created_by` references auth.users, not profiles, so there is
+  // no relationship to embed — the row is returned as-is.
+  if (type === 'rooms') {
+    let query = getSupabaseAdmin().from('live_voice_chat_groups').select('*').order('created_at', { ascending: false })
+
+    if (search) query = query.or(`name.ilike.%${search}%,description.ilike.%${search}%`)
+
+    const { data, error } = await query.range(offset, offset + limit - 1)
+    const { count } = await getSupabaseAdmin()
+      .from('live_voice_chat_groups')
+      .select('*', { count: 'exact', head: true })
+    if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+    return NextResponse.json({ items: data || [], total: count || 0, type: 'rooms' })
+  }
+
+  if (type === 'experiences') {
+    let query = getSupabaseAdmin().from('interview_experiences').select('*').order('created_at', { ascending: false })
+
+    if (search) query = query.or(`title.ilike.%${search}%,experience.ilike.%${search}%`)
+
+    const { data, error } = await query.range(offset, offset + limit - 1)
+    const { count } = await getSupabaseAdmin().from('interview_experiences').select('*', { count: 'exact', head: true })
+    if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+    return NextResponse.json({ items: data || [], total: count || 0, type: 'experiences' })
+  }
+
+  if (type === 'blog') {
+    let query = getSupabaseAdmin()
+      .from('blog_posts')
+      .select('*, profiles!blog_posts_author_id_fkey(full_name, username)')
+      .order('created_at', { ascending: false })
+
+    if (search) query = query.or(`title.ilike.%${search}%,excerpt.ilike.%${search}%`)
+
+    const { data, error } = await query.range(offset, offset + limit - 1)
+    const { count } = await getSupabaseAdmin().from('blog_posts').select('*', { count: 'exact', head: true })
+    if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+    return NextResponse.json({ items: data || [], total: count || 0, type: 'blog' })
+  }
+
   // ── Summary counts for all types ──────────────────────────
   if (type === 'summary') {
-    const [notes, posts, comments, events, polls] = await Promise.all([
+    const [notes, posts, comments, events, polls, rooms, experiences, blog] = await Promise.all([
       getSupabaseAdmin().from('notes').select('*', { count: 'exact', head: true }),
       getSupabaseAdmin().from('posts').select('*', { count: 'exact', head: true }),
       getSupabaseAdmin().from('post_comments').select('*', { count: 'exact', head: true }),
       getSupabaseAdmin().from('events').select('*', { count: 'exact', head: true }),
       getSupabaseAdmin().from('polls').select('*', { count: 'exact', head: true }),
+      getSupabaseAdmin().from('live_voice_chat_groups').select('*', { count: 'exact', head: true }),
+      getSupabaseAdmin().from('interview_experiences').select('*', { count: 'exact', head: true }),
+      getSupabaseAdmin().from('blog_posts').select('*', { count: 'exact', head: true }),
     ])
     return NextResponse.json({
       summary: {
@@ -131,6 +180,9 @@ export async function GET(request: NextRequest) {
         comments: comments.count || 0,
         events: events.count || 0,
         polls: polls.count || 0,
+        rooms: rooms.count || 0,
+        experiences: experiences.count || 0,
+        blog: blog.count || 0,
       },
     })
   }
@@ -160,7 +212,7 @@ export async function DELETE(request: NextRequest) {
     return NextResponse.json({ error: 'type and ids[] required' }, { status: 400 })
   }
 
-  const validTypes = ['notes', 'posts', 'comments', 'events', 'polls']
+  const validTypes = ['notes', 'posts', 'comments', 'events', 'polls', 'rooms', 'experiences', 'blog']
   if (!validTypes.includes(type)) {
     return NextResponse.json({ error: `Invalid type. Must be one of: ${validTypes.join(', ')}` }, { status: 400 })
   }
@@ -190,6 +242,26 @@ export async function DELETE(request: NextRequest) {
 
     const allowedPosts = new Set((postRows || []).filter(canModerateRow).map((p: any) => p.id))
     allowedIds = (commentRows || []).filter((c: any) => allowedPosts.has(c.post_id)).map((c: any) => c.id)
+  } else if (type === 'rooms') {
+    // A room is campus-scoped through `campus_id`; global rooms have none, so
+    // only a platform admin can take those down.
+    const { data, error } = await getSupabaseAdmin()
+      .from('live_voice_chat_groups')
+      .select('id, campus_id')
+      .in('id', ids)
+    if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+    allowedIds = (data || [])
+      .filter((r: any) => canModerateRow({ campus_id: r.campus_id, college_id: null, community_id: null }))
+      .map((r: any) => r.id)
+  } else if (type === 'experiences' || type === 'blog') {
+    // Neither table carries campus/college scope, so a campus admin has no
+    // ownership boundary to check against — only a platform admin may delete.
+    if (!isPlatform) {
+      return NextResponse.json(
+        { error: 'Forbidden. Only a platform admin may delete this content type.' },
+        { status: 403 }
+      )
+    }
   } else if (!isPlatform && !admin.adminTypes.includes('campus_admin')) {
     return NextResponse.json(
       { error: 'Forbidden. Only platform or campus admins may delete this content type.' },

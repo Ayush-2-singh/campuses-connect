@@ -77,6 +77,8 @@ export default function LiveVoiceChatPage() {
   // Two-level browsing: a top-level category, then the exact topic inside it.
   const [category, setCategory] = useState<RoomCategoryId | 'all'>('all')
   const [sectionFilter, setSectionFilter] = useState<string>('all')
+  const [query, setQuery] = useState('')
+  const [liveOnly, setLiveOnly] = useState(false)
   const [form, setForm] = useState({
     name: '',
     description: '',
@@ -273,11 +275,34 @@ export default function LiveVoiceChatPage() {
   }
 
   // Filter: an exact topic wins; otherwise the whole category; otherwise all.
+  // The text search and "live now" filter stack on top of that, and live rooms
+  // sort first — a silent room from last week should never outrank one where
+  // people are talking right now.
   const visible = useMemo(() => {
-    if (sectionFilter !== 'all') return groups.filter((g) => g.section === sectionFilter)
-    if (category !== 'all') return groups.filter((g) => CATEGORY_SECTIONS[category].includes(g.section))
-    return groups
-  }, [groups, sectionFilter, category])
+    let rows = groups
+    if (sectionFilter !== 'all') rows = rows.filter((g) => g.section === sectionFilter)
+    else if (category !== 'all') rows = rows.filter((g) => CATEGORY_SECTIONS[category].includes(g.section))
+
+    const q = query.trim().toLowerCase()
+    if (q) {
+      rows = rows.filter(
+        (g) =>
+          String(g.name || '')
+            .toLowerCase()
+            .includes(q) ||
+          String(g.description || '')
+            .toLowerCase()
+            .includes(q)
+      )
+    }
+    if (liveOnly) rows = rows.filter((g) => (liveByGroup[g.id] || 0) > 0)
+
+    return [...rows].sort((a, b) => {
+      const byLive = (liveByGroup[b.id] || 0) - (liveByGroup[a.id] || 0)
+      if (byLive !== 0) return byLive
+      return new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+    })
+  }, [groups, sectionFilter, category, query, liveOnly, liveByGroup])
 
   // The topics offered for the current category (every topic under 'All').
   const browsableSections = category === 'all' ? ROOM_SECTIONS : sectionsForCategory(category)
@@ -428,6 +453,88 @@ export default function LiveVoiceChatPage() {
               {s.label}
             </button>
           ))}
+        </div>
+
+        {/* Search + live-only: with 100 rooms loaded, a topic chip alone is not
+            discovery. Rooms with people in them lead the list (see `visible`). */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 16 }}>
+          <div
+            style={{
+              flex: 1,
+              minWidth: 0,
+              display: 'flex',
+              alignItems: 'center',
+              gap: 8,
+              background: 'var(--bg)',
+              border: '1px solid var(--border)',
+              borderRadius: 10,
+              padding: '8px 12px',
+            }}
+          >
+            <Icon name="search" size={14} strokeWidth={2.2} style={{ color: 'var(--text-muted)', flexShrink: 0 }} />
+            <input
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              placeholder="Search rooms by name or topic"
+              aria-label="Search rooms"
+              style={{
+                flex: 1,
+                minWidth: 0,
+                border: 'none',
+                outline: 'none',
+                background: 'transparent',
+                fontSize: 13,
+                color: 'var(--text-primary)',
+                fontFamily: 'inherit',
+              }}
+            />
+            {query && (
+              <button
+                onClick={() => setQuery('')}
+                aria-label="Clear search"
+                style={{
+                  background: 'none',
+                  border: 'none',
+                  color: 'var(--text-muted)',
+                  cursor: 'pointer',
+                  display: 'inline-flex',
+                  padding: 0,
+                }}
+              >
+                <Icon name="x" size={13} />
+              </button>
+            )}
+          </div>
+          <button
+            onClick={() => setLiveOnly((v) => !v)}
+            aria-pressed={liveOnly}
+            style={{
+              flexShrink: 0,
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: 6,
+              padding: '8px 12px',
+              borderRadius: 10,
+              border: liveOnly ? 'none' : '1px solid var(--border)',
+              background: liveOnly ? 'var(--accent)' : 'var(--bg)',
+              color: liveOnly ? 'var(--on-accent)' : 'var(--text-secondary)',
+              fontSize: 12.5,
+              fontWeight: 600,
+              cursor: 'pointer',
+              fontFamily: 'inherit',
+            }}
+          >
+            <span
+              aria-hidden="true"
+              style={{
+                width: 7,
+                height: 7,
+                borderRadius: '50%',
+                background: liveOnly ? 'var(--on-accent)' : 'var(--success-text)',
+              }}
+            />
+            Live now
+          </button>
         </div>
 
         {showCreate && (
@@ -592,7 +699,9 @@ export default function LiveVoiceChatPage() {
         <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
           {visible.length === 0 ? (
             <div style={{ textAlign: 'center', padding: '40px 0' }}>
-              <p style={{ color: 'var(--text-muted)', margin: '0 0 14px' }}>No rooms in {activeFilterLabel} yet</p>
+              <p style={{ color: 'var(--text-muted)', margin: '0 0 14px' }}>
+                {query || liveOnly ? 'No rooms match those filters.' : `No rooms in ${activeFilterLabel} yet`}
+              </p>
               {/* Empty state carries the action: the student is already on the
                   topic they want, so creating one is a single click away. */}
               <button

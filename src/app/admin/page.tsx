@@ -90,7 +90,9 @@ export default function AdminPage() {
   const [colleges, setColleges] = useState<any[]>([])
 
   // ── Content Manager (NEW) ──────────────────────────────
-  const [contentMgrType, setContentMgrType] = useState<'notes' | 'posts' | 'comments' | 'events' | 'polls'>('notes')
+  const [contentMgrType, setContentMgrType] = useState<
+    'notes' | 'posts' | 'comments' | 'events' | 'polls' | 'rooms' | 'experiences' | 'blog'
+  >('rooms')
   const [contentMgrItems, setContentMgrItems] = useState<any[]>([])
   const [contentMgrTotal, setContentMgrTotal] = useState(0)
   const [contentMgrLoading, setContentMgrLoading] = useState(false)
@@ -183,7 +185,7 @@ export default function AdminPage() {
       const grantsArr = (grantData as any[]) || []
       const isAdmin = grantsArr.some((g: any) => g.admin_type === 'platform_admin' || g.admin_type === 'campus_admin')
       if (!isAdmin) {
-        router.push('/jobs')
+        router.push('/experiences')
         return
       }
       setGrants(grantsArr)
@@ -1002,7 +1004,7 @@ export default function AdminPage() {
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
             <button
-              onClick={() => router.push('/jobs')}
+              onClick={() => router.push('/experiences')}
               style={{
                 background: 'none',
                 border: '1px solid var(--border)',
@@ -1014,7 +1016,7 @@ export default function AdminPage() {
                 fontFamily: 'inherit',
               }}
             >
-              ← Back to Feed
+              ← Back to site
             </button>
           </div>
         </div>
@@ -3443,7 +3445,8 @@ export default function AdminPage() {
                 🗑️ Content Manager
               </h3>
               <p style={{ fontSize: 13, color: 'var(--text-muted)', margin: 0 }}>
-                View & delete any content on the platform — notes, posts, comments, events, polls
+                View & delete any content on the platform — study rooms, experiences, blog posts and the older content
+                types
               </p>
             </div>
 
@@ -3458,6 +3461,9 @@ export default function AdminPage() {
             >
               {(
                 [
+                  { key: 'rooms', label: 'Rooms', emoji: '🎙️' },
+                  { key: 'experiences', label: 'Experiences', emoji: '📖' },
+                  { key: 'blog', label: 'Blog', emoji: '✍️' },
                   { key: 'notes', label: 'Notes', emoji: '📝' },
                   { key: 'posts', label: 'Posts', emoji: '💬' },
                   { key: 'comments', label: 'Comments', emoji: '💭' },
@@ -3622,8 +3628,17 @@ export default function AdminPage() {
                   const isSelected = contentMgrSelected.has(item.id)
                   const author = item.profiles
                   // Render based on type
-                  const title = item.title || item.body || item.question || ''
-                  const preview = (item.description || item.body || item.content || '').slice(0, 120)
+                  // Rooms store `name`, experiences store `title` + `experience`,
+                  // blog posts store `title` + `excerpt`.
+                  const title = item.title || item.name || item.body || item.question || ''
+                  const preview = (
+                    item.excerpt ||
+                    item.description ||
+                    item.experience ||
+                    item.body ||
+                    item.content ||
+                    ''
+                  ).slice(0, 120)
                   return (
                     <div
                       key={item.id}

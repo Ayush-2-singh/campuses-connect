@@ -41,6 +41,9 @@ export default function LiveVoiceChatRoomPage() {
   const [pwError, setPwError] = useState('')
   // Invite link copy feedback (locked rooms are invite-only).
   const [inviteCopied, setInviteCopied] = useState(false)
+  // Last session's attendance — computed from the participants table.
+  const [lastSession, setLastSession] = useState<{ minutes: number; people: number; live: boolean } | null>(null)
+  const [reported, setReported] = useState(false)
 
   // ── Load bookkeeping ───────────────────────────────────────────────────────
   // Realtime, the focus refetch and the 15s fallback all call load() and they
@@ -314,6 +317,32 @@ export default function LiveVoiceChatRoomPage() {
     router.push('/live-voice-chat')
   }
 
+  /**
+   * Remove the room entirely. Offered to the creator and to a member whose
+   * role is `admin`; the API also accepts a platform admin, who can do the same
+   * from /admin → Content → Rooms. Members, calls and participants cascade.
+   */
+  const deleteRoom = async () => {
+    if (!window.confirm(`Delete "${group?.name}" for everyone? This cannot be undone.`)) return
+    setBusy(true)
+    try {
+      const res = await fetch(`/api/live-voice-chat/groups/${groupId}`, {
+        method: 'DELETE',
+        credentials: 'include',
+      })
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}))
+        setError(data.error || 'Could not delete the room.')
+        setBusy(false)
+        return
+      }
+      router.push('/live-voice-chat')
+    } catch {
+      setError('Could not delete the room.')
+      setBusy(false)
+    }
+  }
+
   /** Start a room, or join the one already running, then open the call UI. */
   const enterCall = async () => {
     if (!user) return requireLogin()
@@ -344,7 +373,76 @@ export default function LiveVoiceChatRoomPage() {
 
   // LIVE ⇔ a call exists AND at least one participant is actually in it.
   // An 'active' call row full of crashed ghosts is NOT live.
+  // Attendance for the latest session, once we are allowed to see it. RLS only
+  // exposes participants of a room to its members; a non-member simply sees
+  // nothing rather than a broken card.
+  useEffect(() => {
+    if (!group?.id || !isMember) return
+    let cancelled = false
+    void (async () => {
+      try {
+        const { data: lastCall } = await supabase
+          .from('live_voice_chat_calls')
+          .select('id, started_at, ended_at')
+          .eq('group_id', group.id)
+          .order('started_at', { ascending: false })
+          .limit(1)
+          .maybeSingle()
+        if (!lastCall || cancelled) return
+
+        const { data: rows } = await supabase
+          .from('live_voice_chat_participants')
+          .select('user_id, joined_at, left_at')
+          .eq('call_id', lastCall.id)
+        if (cancelled || !rows?.length) return
+
+        const end = lastCall.ended_at ? new Date(lastCall.ended_at).getTime() : Date.now()
+        const people = new Set(rows.map((r: any) => r.user_id)).size
+        const ms = rows.reduce((sum: number, r: any) => {
+          const from = new Date(r.joined_at).getTime()
+          const to = r.left_at ? new Date(r.left_at).getTime() : end
+          return sum + Math.max(0, to - from)
+        }, 0)
+        setLastSession({
+          minutes: Math.max(1, Math.round(ms / 60000)),
+          people,
+          live: !lastCall.ended_at,
+        })
+      } catch {
+        // Quiet: attendance is context, not a blocker.
+      }
+    })()
+    return () => {
+      cancelled = true
+    }
+  }, [group?.id, isMember, supabase])
+
+  /** File a report against this room. Admins read these; members never see them. */
+  const reportRoom = async () => {
+    const reason = window.prompt('What is wrong with this room? This goes to the admins only.')
+    if (!reason || reason.trim().length < 3) return
+    try {
+      const res = await fetch(`/api/live-voice-chat/groups/${groupId}/report`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ reason: reason.trim() }),
+      })
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}))
+        setError(data.error || 'Could not send the report.')
+        return
+      }
+      setReported(true)
+    } catch {
+      setError('Could not send the report.')
+    }
+  }
+
   const isLive = !!call && participants.length > 0
+  /* The creator and the room's own admins may remove the room. */
+  const canDeleteRoom =
+    !!user && (group?.created_by === user.id || members.some((m: any) => m.user_id === user.id && m.role === 'admin'))
 
   if (loading) {
     return (
@@ -446,6 +544,12 @@ export default function LiveVoiceChatRoomPage() {
                       </span>
                     )}
                   </p>
+                  {lastSession && (
+                    <p style={{ fontSize: 11.5, color: 'var(--text-muted)', margin: '4px 0 0' }}>
+                      {lastSession.live ? 'This session' : 'Last session'} · {lastSession.minutes} min ·{' '}
+                      {lastSession.people} {lastSession.people === 1 ? 'student' : 'students'}
+                    </p>
+                  )}
                 </div>
                 {isLive && (
                   <span
@@ -547,6 +651,54 @@ export default function LiveVoiceChatRoomPage() {
                   >
                     Leave
                   </button>
+                  <button
+                    onClick={reportRoom}
+                    disabled={reported}
+                    title="Report this room to the admins"
+                    style={{
+                      background: 'none',
+                      color: reported ? 'var(--success-text)' : 'var(--text-muted)',
+                      border: 'none',
+                      borderRadius: 10,
+                      padding: '12px 8px',
+                      fontSize: 13,
+                      fontWeight: 600,
+                      cursor: reported ? 'default' : 'pointer',
+                      fontFamily: 'inherit',
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: 5,
+                      flexShrink: 0,
+                    }}
+                  >
+                    <Icon name={reported ? 'check' : 'shield'} size={14} strokeWidth={2.2} />
+                    {reported ? 'Reported' : 'Report'}
+                  </button>
+                  {canDeleteRoom && (
+                    <button
+                      onClick={deleteRoom}
+                      disabled={busy}
+                      title="Delete this room for everyone"
+                      style={{
+                        background: 'var(--bg)',
+                        color: 'var(--danger)',
+                        border: '1px solid var(--danger)',
+                        borderRadius: 10,
+                        padding: '12px 16px',
+                        fontSize: 14,
+                        fontWeight: 600,
+                        cursor: 'pointer',
+                        fontFamily: 'inherit',
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: 6,
+                        flexShrink: 0,
+                      }}
+                    >
+                      <Icon name="trash" size={15} strokeWidth={2.2} />
+                      Delete room
+                    </button>
+                  )}
                 </div>
               ) : pwPrompt ? (
                 /* Password prompt for private rooms — the admin shared this

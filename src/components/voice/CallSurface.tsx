@@ -9,9 +9,16 @@ import { createClient } from '@/lib/supabase/client'
 import { Icon } from '@/components/icons'
 import CallGamePanel, { CALL_GAME_LABELS, type CallGame, type CallGameInvite } from '@/components/games/CallGamePanel'
 import CallChatPanel from '@/components/voice/CallChatPanel'
+import CallCodePad from '@/components/voice/CallCodePad'
 import CallMusicPanel from '@/components/voice/CallMusicPanel'
 import { callScreenPath, useCall } from '@/components/voice/callContext'
-import { appendChatMessage, cleanChatText, unreadCount, type CallChatMessage } from '@/lib/callChat'
+import {
+  appendChatMessage,
+  cleanChatText,
+  unreadCount,
+  CALL_CHAT_MAX_THREAD,
+  type CallChatMessage,
+} from '@/lib/callChat'
 import { DEFAULT_MUSIC_KEY, isMusicKey, musicCollection } from '@/lib/music'
 
 const supabase = createClient()
@@ -70,7 +77,13 @@ export default function CallSurface() {
   const { emojiEvents, sendReaction } = useReactions(localParticipant?.identity)
 
   // ── IN-CALL MESSAGES ───────────────────────────────────────────────────
-  const { messages, sendChat } = useCallChat(localParticipant?.identity, localParticipant?.name)
+  const { messages, sendChat } = useCallChat(localParticipant?.identity, localParticipant?.name, callId, groupId)
+  const { hands, myHandUp, toggleHand } = useHandRaise(localParticipant?.identity, localParticipant?.name)
+  const [codeOpen, setCodeOpen] = useState(false)
+  const { pad, updateCode, updateLanguage } = useSharedPad(localParticipant?.identity)
+  // A raised hand disappears from the rail when its owner leaves: the data
+  // channel has no "leave" event for it.
+  const presentHands = hands.filter((h) => participants.some((p) => p.identity === h.id))
   const [chatOpen, setChatOpen] = useState(false)
   // Read cursor = the key of the newest line the panel has shown. Anything
   // newer, written by somebody ELSE, feeds the control's unread badge.
@@ -255,6 +268,7 @@ export default function CallSurface() {
     <div className="lvc-layer-full">
       <div className="lvc-screen">
         <Header connected={connected} count={participants.length} onBack={minimize} />
+        {presentHands.length > 0 && <HandRail hands={presentHands} />}
 
         {/* The stage takes the full width; the messages panel FLOATS above the
           call so the user can drag it wherever the video is not. It clamps
@@ -270,6 +284,15 @@ export default function CallSurface() {
               participantCount={participants.length}
               onShare={shareMusic}
               onClose={() => setMusicOpen(false)}
+            />
+          ) : codeOpen ? (
+            <CallCodePad
+              value={pad.code}
+              language={pad.language}
+              connected={participants.length}
+              onCode={updateCode}
+              onLanguage={updateLanguage}
+              onClose={() => setCodeOpen(false)}
             />
           ) : gamesOpen ? (
             <CallGamePanel
@@ -473,17 +496,27 @@ export default function CallSurface() {
           gamesOpen={gamesOpen}
           onOpenGames={() => {
             setMusicOpen(false)
+            setCodeOpen(false)
             setGamesOpen((open) => !open)
           }}
           musicOpen={musicOpen}
           onOpenMusic={() => {
             setGamesOpen(false)
+            setCodeOpen(false)
             setMusicAuto(false)
             setMusicOpen((open) => !open)
+          }}
+          codeOpen={codeOpen}
+          onOpenCode={() => {
+            setMusicOpen(false)
+            setGamesOpen(false)
+            setCodeOpen((open) => !open)
           }}
           chatOpen={chatOpen}
           unread={unread}
           onOpenChat={() => setChatOpen((open) => !open)}
+          handUp={myHandUp}
+          onToggleHand={toggleHand}
         />
       </div>
     </div>
@@ -1122,15 +1155,17 @@ function useReactions(myIdentity: string | undefined) {
 }
 
 /**
- * IN-CALL MESSAGES — Meet's chat, carried by the call's own data channel.
+ * IN-CALL MESSAGES — Meet's chat, carried by the call's own data channel and
+ * backed by the database.
  *
  * Topic 'chat' next to 'reaction' and 'game': the payload is just { text }.
- * No DB row and no realtime subscription, for the same reasons the reactions
- * skip them — the thread belongs to the call, so it arrives in sync with the
- * LiveKit room and disappears when the call ends (late joiners see nothing
- * that was said before them, which is the honest behaviour for a live room).
+ * Live delivery is still the data channel, so lines appear instantly and in
+ * sync with the room. On top of that, every line is written to
+ * `live_voice_chat_messages` and the thread is loaded when the panel mounts:
+ * without that, a late joiner read an empty chat and every link shared before
+ * they arrived was gone.
  */
-function useCallChat(myIdentity: string | undefined, myName: string | undefined) {
+function useCallChat(myIdentity: string | undefined, myName: string | undefined, callId: string, groupId: string) {
   const [messages, setMessages] = useState<CallChatMessage[]>([])
   const seq = useRef(0)
 
@@ -1140,6 +1175,41 @@ function useCallChat(myIdentity: string | undefined, myName: string | undefined)
     // all-night call must not hold thousands of them in state.
     setMessages((prev) => appendChatMessage(prev, msg, key))
   }, [])
+
+  // History for this call, merged UNDER anything already on screen. Keys are
+  // assigned outside the state updater so a React strict-mode double invoke
+  // cannot hand out the same key twice.
+  useEffect(() => {
+    if (!callId || !groupId) return
+    let cancelled = false
+    void (async () => {
+      try {
+        const res = await fetch(`/api/live-voice-chat/chat?callId=${encodeURIComponent(callId)}`, {
+          credentials: 'include',
+        })
+        if (!res.ok) return
+        const data = await res.json()
+        if (cancelled || !Array.isArray(data?.messages)) return
+        const base = seq.current
+        const history: CallChatMessage[] = data.messages.map((m: any, i: number) => ({
+          key: base + i + 1,
+          id: m.user_id,
+          name: m.user_id === myIdentity ? myName?.trim() || 'You' : 'Earlier in this room',
+          text: String(m.body ?? ''),
+          at: new Date(m.created_at).getTime(),
+          mine: m.user_id === myIdentity,
+        }))
+        if (history.length === 0) return
+        seq.current = base + history.length
+        setMessages((prev) => [...history, ...prev].slice(-CALL_CHAT_MAX_THREAD))
+      } catch {
+        // History is an enhancement: a failed read leaves the live thread alone.
+      }
+    })()
+    return () => {
+      cancelled = true
+    }
+  }, [callId, groupId, myIdentity, myName])
 
   const { send } = useDataChannel('chat', (msg) => {
     let parsed: { text?: unknown } | null = null
@@ -1173,11 +1243,216 @@ function useCallChat(myIdentity: string | undefined, myName: string | undefined)
       // is required — same reason the reaction burst is shown instantly, and
       // it must carry MY identity so the line is grouped as mine.
       push({ id: myIdentity ?? 'local', name: myName?.trim() || 'You', text: body, at: Date.now(), mine: true })
+      // Persist for late joiners. Fire-and-forget: the line is already on
+      // screen, and a failed write must never interrupt the conversation.
+      if (callId && groupId) {
+        void fetch('/api/live-voice-chat/chat', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify({ callId, groupId, body }),
+        }).catch(() => {})
+      }
     },
-    [send, push, myIdentity, myName]
+    [send, push, myIdentity, myName, callId, groupId]
   )
 
   return { messages, sendChat }
+}
+
+/** A hand raised on the call. */
+type RaisedHand = { id: string; name: string; at: number }
+
+/**
+ * HAND RAISE — a tiny 'hand' data channel next to 'reaction' and 'chat'.
+ *
+ * In a study room someone has to go first, and talking over each other is the
+ * default failure. A raised hand is ephemeral (it dies with the call) and
+ * carries just { id, name, raised }. LiveKit never echoes data back to the
+ * sender, so the local raise is applied directly as well.
+ */
+function useHandRaise(myIdentity: string | undefined, myName: string | undefined) {
+  const [hands, setHands] = useState<RaisedHand[]>([])
+
+  const apply = useCallback((id: string, name: string, raised: boolean) => {
+    setHands((prev) => {
+      if (!raised) return prev.filter((h) => h.id !== id)
+      if (prev.some((h) => h.id === id)) return prev
+      return [...prev, { id, name, at: Date.now() }]
+    })
+  }, [])
+
+  const { send } = useDataChannel('hand', (msg) => {
+    let parsed: { id?: unknown; name?: unknown; raised?: unknown } | null = null
+    try {
+      parsed = JSON.parse(new TextDecoder().decode(msg.payload))
+    } catch {
+      return
+    }
+    const id = typeof parsed?.id === 'string' && parsed.id ? parsed.id : (msg.from?.identity ?? '')
+    if (!id) return
+    const name =
+      typeof parsed?.name === 'string' && parsed.name.trim() ? parsed.name.trim() : msg.from?.name?.trim() || 'Someone'
+    apply(id, name, !!parsed?.raised)
+  })
+
+  const myKey = myIdentity ?? 'local'
+  const myHandUp = hands.some((h) => h.id === myKey)
+
+  const toggleHand = useCallback(() => {
+    const name = myName?.trim() || 'You'
+    const raised = !hands.some((h) => h.id === myKey)
+    try {
+      send(new TextEncoder().encode(JSON.stringify({ id: myKey, name, raised })), { reliable: true })
+    } catch {
+      /* channel not ready — the local state still flips */
+    }
+    apply(myKey, name, raised)
+  }, [hands, send, apply, myKey, myName])
+
+  return { hands, myHandUp, toggleHand }
+}
+
+/** Languages the shared pad accepts — mirrors CallCodePad's picker. */
+const PAD_LANGUAGES = ['python', 'javascript', 'cpp', 'java']
+const PAD_MAX_CHARS = 20_000
+
+/**
+ * SHARED CODE PAD — one buffer, everyone's screen, no database.
+ *
+ * Topic 'pad'. Payloads are either `{ type: 'sync' }` (a newcomer asking for
+ * the current buffer) or `{ type: 'state', code, language, rev }`. `rev` is a
+ * millisecond timestamp: the highest revision wins, so two people typing at
+ * once settle on the last change instead of ping-ponging forever. Edits are
+ * broadcast on a 250 ms debounce — full buffers keep this simple and a 20k
+ * character payload is still far inside the data-channel limit.
+ */
+function useSharedPad(myIdentity: string | undefined) {
+  const [pad, setPad] = useState<{ code: string; language: string; rev: number }>({
+    code: '',
+    language: 'python',
+    rev: 0,
+  })
+  const padRef = useRef(pad)
+  padRef.current = pad
+  const debounce = useRef<number | null>(null)
+  // The data-channel sender is created after the broadcast helper (the handler
+  // below needs the helper), so it is reached through a ref.
+  const sendRef = useRef<((data: Uint8Array, opts?: any) => void | Promise<void>) | null>(null)
+
+  const broadcast = useCallback(
+    (next: { code: string; language: string; rev: number }) => {
+      try {
+        sendRef.current?.(
+          new TextEncoder().encode(
+            JSON.stringify({ type: 'state', code: next.code, language: next.language, rev: next.rev, from: myIdentity })
+          ),
+          { reliable: true }
+        )
+      } catch {
+        /* channel not ready — the local buffer is still correct */
+      }
+    },
+    [myIdentity]
+  )
+
+  const { send } = useDataChannel('pad', (msg) => {
+    let parsed: { type?: unknown; code?: unknown; language?: unknown; rev?: unknown; from?: unknown } | null = null
+    try {
+      parsed = JSON.parse(new TextDecoder().decode(msg.payload))
+    } catch {
+      return
+    }
+
+    if (parsed?.type === 'sync') {
+      // Only answer when there is something to share, so a silent room stays
+      // silent instead of trading empty buffers.
+      if (padRef.current.code) broadcast(padRef.current)
+      return
+    }
+
+    if (parsed?.type !== 'state' || typeof parsed.code !== 'string') return
+    const rev = typeof parsed.rev === 'number' ? parsed.rev : 0
+    if (rev <= padRef.current.rev) return
+    const language =
+      typeof parsed.language === 'string' && PAD_LANGUAGES.includes(parsed.language)
+        ? parsed.language
+        : padRef.current.language
+    setPad({ code: parsed.code.slice(0, PAD_MAX_CHARS), language, rev })
+  })
+
+  sendRef.current = send
+
+  // Ask whoever is already here for the buffer; retry once for peers still
+  // finishing their own handshake.
+  useEffect(() => {
+    const ask = () => {
+      try {
+        send(new TextEncoder().encode(JSON.stringify({ type: 'sync' })), { reliable: true })
+      } catch {
+        /* not connected yet */
+      }
+    }
+    ask()
+    const retry = window.setTimeout(ask, 1500)
+    return () => window.clearTimeout(retry)
+  }, [send])
+
+  const updateCode = useCallback(
+    (code: string) => {
+      const next = { code: code.slice(0, PAD_MAX_CHARS), language: padRef.current.language, rev: Date.now() }
+      setPad(next)
+      if (debounce.current) window.clearTimeout(debounce.current)
+      debounce.current = window.setTimeout(() => broadcast(next), 250)
+    },
+    [broadcast]
+  )
+
+  const updateLanguage = useCallback(
+    (language: string) => {
+      if (!PAD_LANGUAGES.includes(language)) return
+      const next = { ...padRef.current, language, rev: Date.now() }
+      setPad(next)
+      broadcast(next)
+    },
+    [broadcast]
+  )
+
+  return { pad, updateCode, updateLanguage }
+}
+
+/** The strip that names whose hand is up, in the order they raised it. */
+function HandRail({ hands }: { hands: RaisedHand[] }) {
+  return (
+    <div
+      role="status"
+      aria-live="polite"
+      style={{
+        display: 'flex',
+        alignItems: 'center',
+        gap: 8,
+        flexWrap: 'wrap',
+        margin: '8px auto 0',
+        maxWidth: 720,
+        padding: '7px 14px',
+        background: 'var(--bg)',
+        border: '1px solid var(--accent-border)',
+        borderRadius: 999,
+        fontSize: 12.5,
+        color: 'var(--text-secondary)',
+      }}
+    >
+      <span style={{ display: 'inline-flex', color: 'var(--accent-text)', flexShrink: 0 }} aria-hidden="true">
+        <Icon name="hand" size={14} strokeWidth={2.2} />
+      </span>
+      <span style={{ fontWeight: 600, color: 'var(--text-primary)' }}>
+        {hands.length === 1 ? '1 hand up' : `${hands.length} hands up`}
+      </span>
+      <span style={{ minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+        {hands.map((h) => h.name).join(' · ')}
+      </span>
+    </div>
+  )
 }
 
 /**
@@ -1200,6 +1475,10 @@ function Controls({
   chatOpen,
   unread,
   onOpenChat,
+  handUp,
+  onToggleHand,
+  codeOpen,
+  onOpenCode,
 }: {
   callId: string
   onLeave: () => void
@@ -1211,6 +1490,10 @@ function Controls({
   chatOpen: boolean
   unread: number
   onOpenChat: () => void
+  handUp: boolean
+  onToggleHand: () => void
+  codeOpen: boolean
+  onOpenCode: () => void
 }) {
   const { localParticipant, isMicrophoneEnabled, isCameraEnabled, isScreenShareEnabled } = useLocalParticipant()
   const [emojiOpen, setEmojiOpen] = useState(false)
@@ -1325,6 +1608,17 @@ function Controls({
         </button>
       </div>
 
+      {/* Raise / lower hand — the one control that survives everyone talking. */}
+      <button
+        onClick={onToggleHand}
+        aria-label={handUp ? 'Lower your hand' : 'Raise your hand'}
+        aria-pressed={handUp}
+        className="lvc-ctrl"
+        style={handUp ? { background: 'var(--accent)', color: 'var(--on-accent)' } : ON}
+      >
+        <Icon name="hand" size={23} />
+      </button>
+
       {/* Meet-style mic — red slashed SVG glyph while muted */}
       <button
         onClick={toggleMic}
@@ -1378,6 +1672,17 @@ function Controls({
             {unread > 9 ? '9+' : unread}
           </span>
         )}
+      </button>
+
+      {/* Shared code pad — look at the same problem, not just talk about it. */}
+      <button
+        onClick={onOpenCode}
+        aria-label={codeOpen ? 'Close the shared code pad' : 'Open the shared code pad'}
+        aria-expanded={codeOpen}
+        className="lvc-ctrl"
+        style={codeOpen ? { background: 'var(--accent)', color: 'var(--on-accent)' } : ON}
+      >
+        <Icon name="code" size={23} />
       </button>
 
       {/* Games — opens the in-call panel: play together without hanging up. */}

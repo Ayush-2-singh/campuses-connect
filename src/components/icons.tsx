@@ -326,6 +326,15 @@ const ICON_PATHS: Record<string, React.ReactNode> = {
   pencil: <path d="M17 3a2.83 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3Z" />,
   /* Shield — moderation / reports. */
   shield: <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10Z" />,
+  /* Open hand — raise your hand in a live room. */
+  hand: (
+    <>
+      <path d="M18 11V6a2 2 0 0 0-4 0v5" />
+      <path d="M14 10V4a2 2 0 0 0-4 0v6" />
+      <path d="M10 10.5V6a2 2 0 0 0-4 0v8" />
+      <path d="M18 8a2 2 0 1 1 4 0v6a8 8 0 0 1-8 8h-2a8 8 0 0 1-8-8 2 2 0 1 1 4 0" />
+    </>
+  ),
   /* Picture frame — image attachments. */
   image: (
     <>
