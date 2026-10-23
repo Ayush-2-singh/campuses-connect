@@ -53,9 +53,10 @@ const nextConfig: NextConfig = {
           // Control referrer information
           { key: 'Referrer-Policy', value: 'strict-origin-when-cross-origin' },
           // Permissions policy — disable unnecessary browser features.
-          // microphone=(self): Live Voice Chat needs getUserMedia on the same origin;
-          // blocking it makes every voice-room join fail as a network error.
-          { key: 'Permissions-Policy', value: 'camera=(), microphone=(self), geolocation=(), interest-cohort=()' },
+          // microphone/camera=(self): a live room uses getUserMedia for both, and
+          // the call screen has a working camera button. The old camera=() blocked
+          // it on every origin, so "Turn camera on" was guaranteed to fail.
+          { key: 'Permissions-Policy', value: 'camera=(self), microphone=(self), geolocation=(), interest-cohort=()' },
         ],
       },
     ]
