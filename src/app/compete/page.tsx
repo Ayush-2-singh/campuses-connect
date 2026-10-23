@@ -10,6 +10,7 @@ import { Icon } from '@/components/icons'
 import RankingsTab from './RankingsTab'
 import ChallengeTab from './ChallengeTab'
 import ClashTab from './ClashTab'
+import GamesTab from './GamesTab'
 import type { Tab, Problem, Submission, SeasonInfo } from './types'
 
 const TABS: { key: Tab; label: string; icon: string; d: string }[] = [
@@ -21,6 +22,9 @@ const TABS: { key: Tab; label: string; icon: string; d: string }[] = [
     icon: 'gamepad',
     d: 'M6 12h4M8 10v4M15 11h.01M18 13h.01M17.32 5H6.68a4 4 0 0 0-3.978 3.59c-.006.052-.01.101-.017.152C2.604 9.416 2 14.456 2 16a3 3 0 0 0 3 3c1 0 1.5-.5 2-1l1.414-1.414A2 2 0 0 1 9.828 16h4.344a2 2 0 0 1 1.414.586L17 18c.5.5 1 1 2 1a3 3 0 0 0 3-3c0-1.544-.604-6.584-.685-7.258a4 4 0 0 0-3.995-3.742Z',
   },
+  // Typing Battle and Quick Math, played here rather than on the retired
+  // /games routes. Same components the voice rooms use for in-call games.
+  { key: 'games', label: 'Games', icon: 'gamepad', d: 'M6 12h4M8 10v4M15 11h.01M18 13h.01' },
 ]
 
 const TAB_FROM_URL: Record<string, Tab> = {
@@ -29,9 +33,10 @@ const TAB_FROM_URL: Record<string, Tab> = {
   'daily-challenge': 'challenge',
   clash: 'clash',
   'campus-clash': 'clash',
+  games: 'games',
 }
 
-const TAB_URL: Record<Tab, string> = { rankings: 'rankings', challenge: 'daily', clash: 'clash' }
+const TAB_URL: Record<Tab, string> = { rankings: 'rankings', challenge: 'daily', clash: 'clash', games: 'games' }
 
 function CompetePageInner() {
   const supabase = createClient()
@@ -256,14 +261,6 @@ function CompetePageInner() {
                 )}
               </div>
             )}
-            {user && (
-              <div className="ss-actions">
-                <button className="ss-btn ss-btn--primary" onClick={() => router.push('/games')}>
-                  <Icon name="gamepad" size={15} />
-                  Play Games
-                </button>
-              </div>
-            )}
           </div>
 
           {/* The four metrics, kept separate: Rating / Aura / XP / Karma.
@@ -342,6 +339,7 @@ function CompetePageInner() {
               {tab === 'clash' && (
                 <ClashTab contest={contest} registered={registered} now={now} onRegister={register} />
               )}
+              {tab === 'games' && <GamesTab />}
             </>
           )}
         </div>
