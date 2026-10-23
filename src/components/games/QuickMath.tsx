@@ -281,9 +281,10 @@ export default function QuickMath({
       p_answer_time_ms: timeMs,
     })
     if (rpcError) throw rpcError
-    const result = data as unknown as { correct: boolean; points: number }
+    const result = data as unknown as { correct: boolean; points: number; correct_answer?: number }
 
-    // If correct answer, auto-advance immediately (host only)
+    // If correct answer, auto-advance immediately (host only). A wrong answer
+    // waits for the round clock, which GamePlay closes out.
     if (result.correct && myPlayerId === room?.host_id) {
       setTimeout(async () => {
         await supabase.rpc('advance_round', {
@@ -293,7 +294,11 @@ export default function QuickMath({
       }, 1200) // Brief delay so player sees "Correct!"
     }
 
-    return result
+    return {
+      correct: !!result.correct,
+      points: Number(result.points) || 0,
+      correctAnswer: result.correct_answer ?? null,
+    }
   }
 
   const handleRoundComplete = async () => {

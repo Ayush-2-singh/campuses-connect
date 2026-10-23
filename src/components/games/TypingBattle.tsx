@@ -996,6 +996,7 @@ export default function TypingBattle({
           }))}
           onWordCompleted={mode === 'daily' ? () => {} : handleWordCompleted}
           onFinished={mode === 'daily' ? handleDailyFinished : handleFinished}
+          allowRestart={mode === 'daily'}
         />
       )}
 

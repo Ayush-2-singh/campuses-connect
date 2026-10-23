@@ -40,6 +40,11 @@ interface Props {
   onFinished: (result: { words: string[]; durationMs: number; correctChars: number; totalTyped: number }) => void
   /** Render prop fallback so parents can reach the tracker if needed. */
   trackerRef?: React.MutableRefObject<TypingTracker | null>
+  /**
+   * Allow restarting the run (Esc or the button). Only meaningful when the run
+   * is solo — restarting a live race would desync the other players.
+   */
+  allowRestart?: boolean
 }
 
 /** One racer's live row: name, completed/total count and a progress bar. */
@@ -220,6 +225,7 @@ export default function TypingArena({
   onWordCompleted,
   onFinished,
   trackerRef: externalTrackerRef,
+  allowRestart = false,
 }: Props) {
   const inputRef = useRef<HTMLInputElement>(null)
   const internalTrackerRef = useRef<TypingTracker | null>(null)
@@ -323,8 +329,26 @@ export default function TypingArena({
    * keystrokes as key === 'Unidentified' (keyCode 229). Those MUST fall through
    * to onChange — that is the only event that carries the actual character.
    */
+  /** Start the same words again — Monkeytype's restart, solo runs only. */
+  const restart = useCallback(() => {
+    if (!allowRestart) return
+    trackerRef.current = new TypingTracker(words, Date.now())
+    setCompleted(0)
+    setCurrent('')
+    setLive({ wpm: 0, accuracy: 100 })
+    setElapsed(0)
+    inputRef.current?.focus({ preventScroll: true })
+    // trackerRef is stable — see the ref assignment above.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [allowRestart, words])
+
   const handleKeyDown = useCallback(
     (e: React.KeyboardEvent<HTMLInputElement>) => {
+      if (e.key === 'Escape' && allowRestart) {
+        e.preventDefault()
+        restart()
+        return
+      }
       const tr = trackerRef.current
       if (!tr || tr.isFinished) return
       if (e.nativeEvent.isComposing || e.key === 'Unidentified') return
@@ -349,7 +373,7 @@ export default function TypingArena({
     },
     // trackerRef is stable across renders — see the ref assignment above.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [applyKey]
+    [applyKey, allowRestart, restart]
   )
 
   /**
@@ -447,6 +471,25 @@ export default function TypingArena({
         <span style={{ marginLeft: 'auto', fontVariantNumeric: 'tabular-nums' }}>
           Time: {(elapsed / 1000).toFixed(2)}s
         </span>
+        {allowRestart && (
+          <button
+            onClick={restart}
+            title="Restart this run (Esc)"
+            style={{
+              background: 'none',
+              border: '1px solid var(--border)',
+              borderRadius: 8,
+              color: 'var(--text-secondary)',
+              padding: '3px 9px',
+              fontSize: 11.5,
+              fontWeight: 600,
+              cursor: 'pointer',
+              fontFamily: 'inherit',
+            }}
+          >
+            Restart (Esc)
+          </button>
+        )}
       </div>
 
       <WordRow words={words} completed={completed} current={current} />

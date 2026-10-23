@@ -20,12 +20,21 @@ export default function GamePlay({
   room: GameRoom
   players: GamePlayer[]
   myPlayerId: string
-  onSubmitAnswer: (answer: string, timeMs: number) => Promise<{ correct: boolean; points: number }>
+  onSubmitAnswer: (
+    answer: string,
+    timeMs: number
+  ) => Promise<{ correct: boolean; points: number; correctAnswer?: string | number | null }>
   onRoundComplete: () => void
 }) {
   const [answer, setAnswer] = useState('')
   const [submitted, setSubmitted] = useState(false)
-  const [lastResult, setLastResult] = useState<{ correct: boolean; points: number } | null>(null)
+  const [lastResult, setLastResult] = useState<{
+    correct: boolean
+    points: number
+    correctAnswer?: string | number | null
+  } | null>(null)
+  /** Consecutive correct answers — the duel's momentum. */
+  const [streak, setStreak] = useState(0)
   const [timeLeft, setTimeLeft] = useState(0)
   const [roundAnswered, setRoundAnswered] = useState<Record<string, boolean>>({})
   const inputRef = useRef<HTMLInputElement>(null)
@@ -59,16 +68,16 @@ export default function GamePlay({
     return () => clearInterval(interval)
   }, [room.round_started_at, room.current_round, submitted, question])
 
-  // Watch for other players answering (advance round)
+  // A wrong answer used to stall the round until the server's own timer: every
+  // client now asks to advance once the clock runs out. Only the host's call
+  // does anything (handleRoundComplete checks), and the correct-answer path is
+  // excluded because it already schedules its own advance.
   useEffect(() => {
-    if (!room.round_started_at || !question) return
-    const remaining = timeRemaining(room.round_started_at, question.time_limit_ms)
-    if (remaining <= 0) {
-      // Round over — trigger advance after delay
-      const timer = setTimeout(onRoundComplete, 500)
-      return () => clearTimeout(timer)
-    }
-  }, [room.round_started_at, room.current_round, question, onRoundComplete])
+    if (!question || !submitted || timeLeft > 0) return
+    if (lastResult?.correct !== false) return
+    const timer = setTimeout(onRoundComplete, 900)
+    return () => clearTimeout(timer)
+  }, [question, submitted, timeLeft, lastResult, onRoundComplete])
 
   const handleSubmit = useCallback(
     async (timedOut = false) => {
@@ -79,15 +88,24 @@ export default function GamePlay({
       try {
         const result = await onSubmitAnswer(timedOut ? '' : answer, timeMs)
         setLastResult(result)
+        setStreak((n) => (result.correct ? n + 1 : 0))
         setRoundAnswered((prev) => ({ ...prev, [myPlayerId]: true }))
       } catch {
         setLastResult({ correct: false, points: 0 })
+        setStreak(0)
       }
     },
     [submitted, answer, myPlayerId, onSubmitAnswer]
   )
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
+    // A number input still accepts 'e', '+', '-' and '.' — none of which is a
+    // valid answer to an arithmetic question. Swallow them before they land in
+    // the box, so nobody loses a round to "2e3".
+    if (['e', 'E', '+', '-', '.', ','].includes(e.key)) {
+      e.preventDefault()
+      return
+    }
     if (e.key === 'Enter' && !submitted && answer.trim()) {
       handleSubmit(false)
     }
@@ -112,6 +130,54 @@ export default function GamePlay({
           Round {room.current_round}/{room.total_rounds}
         </span>
       </div>
+
+      {/* Clock + streak — the two things a duel is actually about. The timer
+          was computed before but never rendered, so a round simply ended. */}
+      {question && (
+        <div>
+          <div
+            style={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              fontSize: 12.5,
+              fontWeight: 700,
+              marginBottom: 5,
+            }}
+          >
+            <span style={{ color: timerColor, fontVariantNumeric: 'tabular-nums' }}>
+              {Math.max(0, Math.ceil(timeLeft / 1000))}s
+            </span>
+            <span
+              aria-live="polite"
+              style={{
+                color: streak >= 2 ? 'var(--accent-text)' : 'var(--text-muted)',
+                fontVariantNumeric: 'tabular-nums',
+              }}
+            >
+              {streak >= 2 ? `🔥 ${streak} in a row` : streak === 1 ? '1 in a row' : '—'}
+            </span>
+          </div>
+          <div
+            role="progressbar"
+            aria-label="Time left this round"
+            aria-valuenow={Math.round(timerPercent)}
+            aria-valuemin={0}
+            aria-valuemax={100}
+            style={{ height: 6, borderRadius: 6, background: 'var(--border)', overflow: 'hidden' }}
+          >
+            <div
+              style={{
+                width: `${timerPercent}%`,
+                height: '100%',
+                borderRadius: 6,
+                background: timerColor,
+                transition: 'width 0.1s linear',
+              }}
+            />
+          </div>
+        </div>
+      )}
 
       {/* Question */}
       <div
@@ -240,7 +306,11 @@ export default function GamePlay({
               color: lastResult.correct ? 'var(--success-text)' : 'var(--danger-text)',
             }}
           >
-            {lastResult.correct ? `✓ Correct! +${lastResult.points} points` : `✗ Wrong!`}
+            {lastResult.correct
+              ? `✓ Correct! +${lastResult.points} points`
+              : lastResult.correctAnswer !== undefined && lastResult.correctAnswer !== null
+                ? `✗ Wrong — answer was ${lastResult.correctAnswer}`
+                : '✗ Wrong!'}
           </span>
         </div>
       )}
