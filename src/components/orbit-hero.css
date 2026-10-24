@@ -60,10 +60,14 @@
   /* Explicit so the first line follows the theme instead of inheriting a
      baked-in ink colour and vanishing on the dark canvas. */
   color: var(--lq-text, #171717);
-  font-size: clamp(40px, 5.2vw, 76px);
+  /* Sized for the theme's longer first line: the old "Become the / Top 1% SDE"
+     fitted at 76px, but "Campus placement," measured past the 560px copy
+     column at that size and wrapped into a third line. 62px with -2px tracking
+     holds it on two lines down to 1024. */
+  font-size: clamp(36px, 4.6vw, 62px);
   font-weight: 850;
   line-height: 1.04;
-  letter-spacing: -3.5px;
+  letter-spacing: -2px;
 }
 
 .orbit-copy h1 span {
@@ -235,13 +239,13 @@
   white-space: nowrap;
 }
 
-/* Center profile — a CIRCLE, so it reads as the hub the rings turn around
-   instead of a card that happens to sit in the middle.
+/* The hub — a CIRCLE, so it reads as the centre the rings turn around, but its
+   content is STRUCTURED: the four rounds a drive is read in. No photograph and
+   no invented person sits at the middle of this page any more.
    A circle must be square, so the box is fixed at 190×190 and the radius does
-   all the shaping. Text is capped well under the full diameter (see max-width
-   below): a chord shrinks fast off-centre, and a long name would otherwise
-   touch the curve. */
-.orbit-profile {
+   all the shaping; the ladder is capped well under the diameter, because a
+   chord shrinks fast off-centre. */
+.orbit-hub {
   position: absolute;
   z-index: 3;
   top: 50%;
@@ -250,13 +254,12 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 3px;
+  gap: 10px;
   width: 190px;
   height: 190px;
-  padding: 0;
   border: 1px solid var(--lq-line, #ffffff);
   border-radius: 50%;
-  background: color-mix(in srgb, var(--lq-surface, #fff) 92%, transparent);
+  background: color-mix(in srgb, var(--lq-surface, #fff) 94%, transparent);
   box-shadow:
     0 12px 40px #2d5b9f16,
     inset 0 0 0 6px color-mix(in srgb, var(--orbit-blue) 6%, transparent);
@@ -265,56 +268,35 @@
   backdrop-filter: blur(12px);
 }
 
-.orbit-avatar-wrap {
-  position: relative;
-  width: 78px;
-  height: 78px;
-  margin-bottom: 6px;
-}
-
-.orbit-avatar {
-  display: block;
-  width: 100%;
-  height: 100%;
-  border: 4px solid var(--lq-surface, #fff);
-  border-radius: 50%;
-  object-fit: cover;
-  box-shadow:
-    0 0 0 2px #a9c8ff,
-    0 8px 22px #3478f62a;
-}
-
-.orbit-online {
-  position: absolute;
-  right: 1px;
-  bottom: 2px;
-  width: 13px;
-  height: 13px;
-  border: 3px solid var(--lq-surface, #fff);
-  border-radius: 50%;
-  background: #22c55e;
-}
-
-.orbit-profile h2 {
-  max-width: 132px;
-  margin: 0;
-  overflow: hidden;
-  color: var(--lq-text, #191919);
-  font-size: 14px;
-  font-weight: 800;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.orbit-profile p {
-  max-width: 118px;
-  margin: 0;
-  overflow: hidden;
+.orbit-hub-label,
+.orbit-hub-sub {
   color: var(--lq-muted, #747474);
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+
+/* The ladder itself: four chips joined by a hairline, R1 → R4. */
+.orbit-hub-rounds {
+  position: relative;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 7px;
+  width: 138px;
+}
+.orbit-hub-round {
+  display: grid;
+  place-items: center;
+  height: 30px;
+  border-radius: 9px;
+  border: 1px solid color-mix(in srgb, var(--orbit-blue) 28%, transparent);
+  background: color-mix(in srgb, var(--orbit-blue) 9%, var(--lq-surface, #fff));
+  color: color-mix(in srgb, var(--orbit-blue) 82%, var(--lq-text, #191919));
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
   font-size: 11px;
-  font-weight: 600;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  font-weight: 700;
+  letter-spacing: 0.04em;
 }
 
 /* Tablet */
@@ -393,41 +375,30 @@
     font-size: 8px;
   }
 
-  .orbit-profile {
-    width: 132px;
-    height: 132px;
-    gap: 2px;
-    padding: 0;
-    border-radius: 50%;
+  .orbit-hub {
+    width: 140px;
+    height: 140px;
+    gap: 7px;
     box-shadow:
       0 8px 26px #2d5b9f14,
       inset 0 0 0 4px color-mix(in srgb, var(--orbit-blue) 6%, transparent);
   }
 
-  .orbit-avatar-wrap {
-    width: 54px;
-    height: 54px;
-    margin-bottom: 4px;
+  .orbit-hub-rounds {
+    width: 100px;
+    gap: 5px;
   }
 
-  .orbit-avatar {
-    border-width: 3px;
+  .orbit-hub-round {
+    height: 24px;
+    border-radius: 7px;
+    font-size: 9.5px;
   }
 
-  .orbit-online {
-    width: 11px;
-    height: 11px;
-    border-width: 2px;
-  }
-
-  .orbit-profile h2 {
-    max-width: 92px;
-    font-size: 11px;
-  }
-
-  .orbit-profile p {
-    max-width: 86px;
-    font-size: 9px;
+  .orbit-hub-label,
+  .orbit-hub-sub {
+    font-size: 8px;
+    letter-spacing: 0.12em;
   }
 }
 

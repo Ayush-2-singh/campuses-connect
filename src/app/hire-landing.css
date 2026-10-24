@@ -872,13 +872,25 @@
   font-size: 13px;
   color: var(--lq-muted);
 }
+.hl-metrics-note {
+  margin: 22px 0 0;
+  padding-inline: var(--page-pad, 20px);
+  text-align: center;
+  font-size: 11.5px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  color: var(--lq-faint);
+}
 
-/* ── Sections ───────────────────────────────────────────────────────────── */
+/* ── Sections ─────────────────────────────────────────────────────────────
+   The vertical rhythm is deliberately tighter than the reference's: at
+   clamp(56px, 7vw, 104px) two neighbouring sections stacked 208px of blank
+   canvas between their content, which is what made the page read as sparse. */
 .hl-section {
   position: relative;
   z-index: 1;
   /* `.hl-wrap` (same element) owns the gutter — see above. */
-  padding: clamp(56px, 7vw, 104px) 0;
+  padding: clamp(44px, 4.6vw, 74px) 0;
 }
 .hl-eyebrow {
   margin: 0 0 14px;
@@ -1426,7 +1438,7 @@
   z-index: 1;
   /* Vertical rhythm only: the gutter belongs to the inner `.hl-wrap`, so the
      band lines up with the nav and with the sections above it. */
-  padding: clamp(56px, 7vw, 104px) 0;
+  padding: clamp(48px, 5.2vw, 84px) 0;
   border-top: 1px solid var(--lq-line);
 }
 .hl-band--platform {
@@ -1475,123 +1487,242 @@
   justify-content: center;
   margin-top: 40px;
 }
+/* Inside a two-column section the CTA follows the copy, so it lines up with it
+   instead of floating in the middle of the column. */
+.hl-band-cta--start {
+  justify-content: flex-start;
+  margin-top: 24px;
+}
 
-/* ── Bento grid — the reference's pastel tiles, wide/narrow then narrow/wide ── */
+/* ── Bento grid — wide/narrow then narrow/wide ────────────────────────────
+   The tiles no longer carry dotted-paper art and an oversized ghost icon.
+   Each one holds a STRUCTURED miniature of the surface it links to (see
+   SurfaceMock in LandingPanels), and the four tone tints are mixed into the
+   page surface at ~9% so the grid still reads as four different places
+   without turning into a pastel palette of its own. */
 .hl-bento {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: clamp(16px, 1.8vw, 24px);
-  margin-top: 44px;
+  margin-top: 36px;
 }
 .hl-tile {
+  --tile-tint: var(--lq-brand);
   position: relative;
   display: flex;
   flex-direction: column;
-  min-height: 268px;
-  padding: 26px 28px 22px;
-  border-radius: 24px;
+  min-height: 0;
+  padding: 24px 26px 22px;
+  border-radius: 22px;
   overflow: hidden;
-  border: 1px solid color-mix(in srgb, var(--lq-text) 9%, transparent);
+  background: color-mix(in srgb, var(--tile-tint) 9%, var(--lq-surface));
+  border: 1px solid color-mix(in srgb, var(--tile-tint) 22%, var(--lq-line));
   transition:
     transform 0.25s ease,
-    box-shadow 0.25s ease;
+    box-shadow 0.25s ease,
+    border-color 0.25s ease;
 }
 .hl-tile:hover {
   transform: translateY(-3px);
+  border-color: color-mix(in srgb, var(--tile-tint) 45%, transparent);
   box-shadow: var(--lq-shadow-float);
 }
 .hl-tile--wide {
   grid-column: span 2;
 }
-/* The four pastel tones, light and dark, from the reference's palette. Each
-   tile keeps one ink colour for its title, motif and dotted paper. */
+/* One tint per surface, drawn from the product's own semantics: Compete is the
+   warm one, the rooms are green, write-ups blue, the profile violet. */
 .hl-tile--peach {
-  background: #f7e2c8;
-  --tile-ink: #6b3f10;
+  --tile-tint: #c97a1f;
 }
 .hl-tile--mint {
-  background: #cfe0cb;
-  --tile-ink: #2c5134;
+  --tile-tint: #3f7a47;
 }
 .hl-tile--blue {
-  background: #cfe2f8;
-  --tile-ink: #1b4877;
+  --tile-tint: #2b6ef6;
 }
 .hl-tile--lilac {
-  background: #dcd6ee;
-  --tile-ink: #3d3270;
+  --tile-tint: #6d5cc4;
 }
 [data-theme='dark'] .hl-tile--peach {
-  background: color-mix(in srgb, #f0a04b 17%, var(--lq-canvas));
-  --tile-ink: #f0c58e;
+  --tile-tint: #f0b063;
 }
 [data-theme='dark'] .hl-tile--mint {
-  background: color-mix(in srgb, #6aa86f 17%, var(--lq-canvas));
-  --tile-ink: #a9d3ac;
+  --tile-tint: #8cc592;
 }
 [data-theme='dark'] .hl-tile--blue {
-  background: color-mix(in srgb, #4f8ce0 17%, var(--lq-canvas));
-  --tile-ink: #a8c8f3;
+  --tile-tint: #7ba7f9;
 }
 [data-theme='dark'] .hl-tile--lilac {
-  background: color-mix(in srgb, #8b7fd6 19%, var(--lq-canvas));
-  --tile-ink: #c3baf0;
+  --tile-tint: #b3a6f0;
 }
-/* Dotted paper, plus the reference's faint line motif in the corner. */
-.hl-tile-art {
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-  color: var(--tile-ink);
-  opacity: 0.16;
-  background-image: radial-gradient(currentColor 1px, transparent 1.4px);
-  background-size: 18px 18px;
-}
-.hl-tile-gl {
-  position: absolute;
-  right: -18px;
-  bottom: -26px;
-  color: var(--tile-ink);
-  opacity: 0.18;
-  pointer-events: none;
+.hl-tile-head {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 12px;
 }
 .hl-tile-ic {
-  position: relative;
-  width: 46px;
-  height: 46px;
+  width: 42px;
+  height: 42px;
+  flex-shrink: 0;
   display: grid;
   place-items: center;
-  border-radius: 15px;
-  background: color-mix(in srgb, var(--lq-surface) 88%, transparent);
-  border: 1px solid color-mix(in srgb, var(--tile-ink) 18%, transparent);
-  color: var(--tile-ink);
+  border-radius: 13px;
+  background: color-mix(in srgb, var(--tile-tint) 16%, var(--lq-surface));
+  border: 1px solid color-mix(in srgb, var(--tile-tint) 32%, transparent);
+  color: color-mix(in srgb, var(--tile-tint) 90%, var(--lq-text));
 }
 .hl-tile h3 {
-  position: relative;
-  margin: 20px 0 10px;
+  margin: 0;
   font-family: var(--font-space-grotesk), system-ui, sans-serif;
   font-size: clamp(19px, 1.5vw, 23px);
   font-weight: 700;
   letter-spacing: -0.025em;
-  color: var(--tile-ink);
+  color: var(--lq-text);
 }
 .hl-tile p {
-  position: relative;
-  margin: 0 0 22px;
+  margin: 0 0 18px;
   max-width: 46ch;
   font-size: 14.5px;
   line-height: 1.62;
-  color: color-mix(in srgb, var(--tile-ink) 82%, var(--lq-text));
+  color: var(--lq-text-soft);
 }
 .hl-tile-go {
   position: relative;
-  margin-top: auto;
+  margin-top: 18px;
   display: inline-flex;
   align-items: center;
   gap: 7px;
   font-size: 13.5px;
   font-weight: 700;
-  color: var(--tile-ink);
+  color: color-mix(in srgb, var(--tile-tint) 92%, var(--lq-text));
+}
+
+/* ── The miniatures inside those tiles ────────────────────────────────────
+   Real surface furniture at tile scale: rank bars, seat tiles, round ticks, a
+   profile header. They sit on their own card so the tile reads as a cropped
+   screenshot of the product rather than as a coloured box. */
+.hl-mock {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 14px;
+  border-radius: 14px;
+  background: color-mix(in srgb, var(--lq-surface) 82%, transparent);
+  border: 1px solid color-mix(in srgb, var(--tile-tint) 20%, var(--lq-line));
+}
+.hl-mock-row {
+  display: grid;
+  grid-template-columns: 22px minmax(0, 1fr);
+  align-items: center;
+  gap: 10px;
+}
+.hl-mock-rank {
+  display: grid;
+  place-items: center;
+  height: 20px;
+  border-radius: 6px;
+  background: color-mix(in srgb, var(--tile-tint) 16%, transparent);
+  color: color-mix(in srgb, var(--tile-tint) 90%, var(--lq-text));
+  font-size: 10px;
+  font-weight: 800;
+}
+.hl-mock-bar {
+  display: block;
+  height: 8px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--lq-text) 8%, transparent);
+  overflow: hidden;
+}
+.hl-mock-bar i {
+  display: block;
+  height: 100%;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--tile-tint) 75%, transparent);
+}
+.hl-mock-seats {
+  display: flex;
+  gap: 8px;
+}
+.hl-mock-seat {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--tile-tint) 30%, transparent);
+}
+.hl-mock-seat--mut {
+  background: transparent;
+  border: 1px dashed color-mix(in srgb, var(--tile-tint) 45%, transparent);
+}
+.hl-mock-meta {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 11px;
+  font-weight: 700;
+  color: color-mix(in srgb, var(--tile-tint) 90%, var(--lq-text));
+}
+.hl-mock-line {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 11.5px;
+  font-weight: 600;
+  color: var(--lq-muted);
+}
+.hl-mock-tick {
+  width: 13px;
+  height: 13px;
+  border-radius: 50%;
+  border: 1.5px solid color-mix(in srgb, var(--tile-tint) 45%, transparent);
+  flex-shrink: 0;
+}
+.hl-mock-tick[data-on='yes'] {
+  background: color-mix(in srgb, var(--tile-tint) 65%, transparent);
+  border-color: transparent;
+}
+.hl-mock-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.hl-mock-ava {
+  width: 32px;
+  height: 32px;
+  flex-shrink: 0;
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--tile-tint) 32%, transparent);
+}
+.hl-mock-lines {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  flex: 1;
+}
+.hl-mock-lines i {
+  display: block;
+  height: 7px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--lq-text) 10%, transparent);
+}
+.hl-mock-lines i:last-child {
+  width: 55%;
+}
+.hl-mock-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.hl-mock-chips i {
+  padding: 3px 9px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--tile-tint) 12%, transparent);
+  border: 1px solid color-mix(in srgb, var(--tile-tint) 26%, transparent);
+  font-size: 10.5px;
+  font-style: normal;
+  font-weight: 700;
+  color: color-mix(in srgb, var(--tile-tint) 90%, var(--lq-text));
 }
 
 /* ── Roadmap — numbered modules, live counts, one honest lock ─────────────── */
@@ -2774,5 +2905,347 @@
   }
   .hl-btn--shine::after {
     display: none;
+  }
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   STRUCTURED PANELS — the landing's imagery.
+
+   The page shows the product, not pictures of it: a drive's rounds, a scored
+   set, a live room. All three reuse the panel chrome above (.hl-panel,
+   .hl-panel-head, .hl-demo), so a landing panel and an inner-page card share
+   one border, one radius and one type scale.
+   ══════════════════════════════════════════════════════════════════════════ */
+figure.hl-panel {
+  margin: 0;
+  align-self: start;
+}
+.hl-panel-foot {
+  margin: 0;
+  padding: 13px 18px;
+  border-top: 1px solid var(--lq-line);
+  background: var(--lq-sunken);
+  font-size: 12px;
+  line-height: 1.55;
+  color: var(--lq-muted);
+}
+
+/* ── A drive, round by round ─────────────────────────────────────────────── */
+.hl-anatomy-list {
+  list-style: none;
+  margin: 0;
+  padding: 4px 18px 10px;
+}
+.hl-anatomy-row {
+  display: grid;
+  grid-template-columns: 34px minmax(0, 1fr);
+  align-items: center;
+  gap: 12px;
+  padding: 13px 0;
+  border-bottom: 1px dashed var(--lq-line);
+}
+.hl-anatomy-row:last-child {
+  border-bottom: none;
+}
+.hl-anatomy-n {
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 28px;
+  border-radius: 9px;
+  background: var(--lq-brand-soft);
+  color: var(--lq-brand-strong);
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 11px;
+  font-weight: 700;
+}
+.hl-anatomy-main {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+.hl-anatomy-main b {
+  font-size: 13.5px;
+  font-weight: 700;
+  color: var(--lq-text);
+}
+.hl-anatomy-main em {
+  font-style: normal;
+  font-size: 11.5px;
+  color: var(--lq-muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* ── A scored set ────────────────────────────────────────────────────────── */
+.hl-arena-clock {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 11px 18px;
+  border-bottom: 1px solid var(--lq-line);
+  background: color-mix(in srgb, var(--lq-brand) 6%, var(--lq-surface));
+}
+.hl-arena-clock-l {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 10.5px;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--lq-muted);
+}
+.hl-arena-clock b {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 15px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: var(--lq-brand-strong);
+}
+.hl-arena-rows {
+  padding: 4px 18px;
+}
+.hl-arena-row {
+  display: grid;
+  grid-template-columns: 14px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 10px;
+  padding: 11px 0;
+  border-bottom: 1px solid var(--lq-line);
+}
+.hl-arena-row:last-child {
+  border-bottom: none;
+}
+.hl-arena-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  border: 1.5px solid var(--lq-line-strong);
+}
+.hl-arena-dot[data-pass='yes'] {
+  background: #17754a;
+  border-color: transparent;
+}
+.hl-arena-name {
+  font-size: 12.5px;
+  font-weight: 650;
+  color: var(--lq-text);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.hl-arena-foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 18px 14px;
+  font-size: 11.5px;
+  color: var(--lq-muted);
+}
+.hl-arena-rank {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-weight: 800;
+  color: var(--lq-brand-strong);
+}
+
+/* ── Inside a live room ──────────────────────────────────────────────────── */
+.hl-room-live {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 10.5px;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: #17754a;
+}
+.hl-room-seats {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+  padding: 16px 18px;
+}
+.hl-room-seat {
+  display: grid;
+  place-items: center;
+  aspect-ratio: 1;
+  border-radius: 14px;
+  background: var(--lq-sunken);
+  border: 1px solid var(--lq-line);
+  color: var(--lq-muted);
+  font-size: 11px;
+  font-weight: 800;
+}
+.hl-room-seat--on {
+  color: var(--lq-brand-strong);
+  background: var(--lq-brand-soft);
+  border-color: transparent;
+}
+.hl-room-seat.is-you {
+  color: var(--lq-brand-strong);
+  background: color-mix(in srgb, var(--lq-brand) 16%, var(--lq-surface));
+  border-color: transparent;
+}
+.hl-room-seat--empty {
+  background: transparent;
+  border-style: dashed;
+}
+.hl-room-hand {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0 18px;
+  padding: 9px 12px;
+  border-radius: 10px;
+  background: color-mix(in srgb, #e8b93f 18%, var(--lq-surface));
+  color: color-mix(in srgb, #8a6415 85%, var(--lq-text));
+  font-size: 12px;
+  font-weight: 700;
+}
+.hl-room-pad {
+  margin: 12px 18px 16px;
+  border-radius: 12px;
+  border: 1px solid var(--lq-line);
+  background: var(--lq-sunken);
+  overflow: hidden;
+}
+.hl-room-pad-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--lq-line);
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--lq-muted);
+}
+.hl-room-pad-code {
+  margin: 0;
+  padding: 12px;
+  overflow-x: auto;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 11.5px;
+  line-height: 1.75;
+  color: var(--lq-text-soft);
+}
+
+/* ── College-first flow (three cards, not three full-width rows) ──────────── */
+.hl-flow--3 {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  /* The lead above already carries its own bottom margin. */
+  margin-top: 12px;
+}
+.hl-step-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 14px;
+}
+.hl-step-ic {
+  display: grid;
+  place-items: center;
+  width: 38px;
+  height: 38px;
+  border-radius: 12px;
+  background: var(--lq-brand-soft);
+  color: var(--lq-brand-strong);
+}
+.hl-step-kicker {
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--lq-faint);
+}
+
+/* ── Panel + flow, stacked ──────────────────────────────────────────────── */
+@media (max-width: 1023px) {
+  /* Stacked sections: the panel sits under the copy at full column width, so
+     it cannot shrink to a stamp beside a wide paragraph. */
+  figure.hl-panel {
+    max-width: 560px;
+  }
+}
+@media (max-width: 1023px) {
+  /* Three cards need the full width sooner than the generic four-column flow:
+     at 900px each would be under 240px and the step labels wrap. */
+  .hl-flow--3 {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+/* ── Closing card + the write-up form diagram ────────────────────────────── */
+.hl-cta-card {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 0.82fr);
+  gap: clamp(26px, 3.4vw, 56px);
+  align-items: center;
+  padding: clamp(26px, 3.6vw, 50px);
+  border-radius: 28px;
+  background: var(--lq-surface);
+  border: 1px solid var(--lq-line-strong);
+  box-shadow: var(--lq-shadow-panel);
+}
+.hl-cta-card .hl-cta-row {
+  margin-top: 22px;
+  margin-bottom: 0;
+}
+.hl-form-rows {
+  display: grid;
+  gap: 10px;
+  padding: 14px 18px 16px;
+}
+.hl-form-field {
+  display: grid;
+  gap: 3px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  border: 1px solid var(--lq-line);
+  background: var(--lq-surface);
+}
+.hl-form-field span {
+  font-size: 9.5px;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--lq-faint);
+}
+.hl-form-field b {
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--lq-muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.hl-form-publish {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  height: 38px;
+  margin-top: 2px;
+  border-radius: 10px;
+  background: var(--lq-brand);
+  color: #ffffff;
+  font-size: 12.5px;
+  font-weight: 700;
+}
+
+@media (max-width: 900px) {
+  .hl-cta-card {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .hl-cta-card .hl-form {
+    order: 2;
   }
 }

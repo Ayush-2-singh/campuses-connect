@@ -1,10 +1,8 @@
 'use client'
 
-import { useEffect, useState } from 'react'
 import type { CSSProperties } from 'react'
 import Link from 'next/link'
 import { motion } from 'framer-motion'
-import { createClient } from '@/lib/supabase/client'
 import {
   SiGoogle,
   SiMeta,
@@ -35,9 +33,21 @@ import { FaAmazon, FaMicrosoft, FaJava } from 'react-icons/fa6'
 import './orbit-hero.css'
 
 /**
- * OrbitHero — two counter-rotating rings of logos around the student's card.
+ * OrbitHero — two counter-rotating rings around the HUB that names what the
+ * product is: a drive, round by round.
  *
- * ── Notes on the port ───────────────────────────────────────────────────────
+ * ── What changed, and why ──────────────────────────────────────────────────
+ *  • The hub used to be a stranger's photograph (i.pravatar.cc) captioned
+ *    "Full-Stack Developer", and the copy promised to make you a "Top 1% SDE".
+ *    That is a bootcamp claim, not this product: the site is round-by-round
+ *    interview write-ups, the companies behind them, and the practice that goes
+ *    with them. The hub is now a STRUCTURED diagram of a drive's rounds — the
+ *    thing the rest of the page is about — and no avatar, stock photo or
+ *    third-party image host is loaded on the landing at all.
+ *  • Copy now matches the page's own metadata ("Campus placement, round by
+ *    round"), so a visitor is told the same thing by the hero and the <title>.
+ *
+ * ── Notes on the orbit (unchanged) ─────────────────────────────────────────
  *  • Radius is expressed in `cqw`, and `.orbit-visual` is an inline-size
  *    container (`container-type: inline-size`). With `%` the translate resolved
  *    against the 1px anchor each badge sits on, so all badges piled into the
@@ -45,16 +55,11 @@ import './orbit-hero.css'
  *  • Badges are centred with `translate`, not `transform`: framer-motion writes
  *    `transform: rotate()` inline on the counter-rotated badge and would wipe a
  *    `translate(-50%,-50%)` transform.
- *  • The demo profile is picked AFTER mount. Picking it during render gives the
- *    server and the browser different names and React reports a hydration
- *    mismatch, so the first paint shows a fixed profile and randomises on the
- *    next tick.
- *  • Company and tech lists are props, so the landing can pass its own data.
+ *  • No state, no effects, no hydration-sensitive content: the same markup is
+ *    painted on the server and in the browser.
  */
 
 type OrbitItem = { name: string; Icon: React.ComponentType<{ className?: string }>; color: string }
-
-type OrbitProfile = { name: string; image?: string | null; role?: string | null }
 
 const companies: OrbitItem[] = [
   { name: 'Google', Icon: SiGoogle, color: '#4285F4' },
@@ -86,16 +91,8 @@ const technologies: OrbitItem[] = [
   { name: 'Firebase', Icon: SiFirebase, color: '#FFCA28' },
 ]
 
-const demoProfiles = [
-  { name: 'Aarav Sharma', img: 12 },
-  { name: 'Priya Verma', img: 47 },
-  { name: 'Rahul Singh', img: 13 },
-  { name: 'Ananya Gupta', img: 44 },
-  { name: 'Arjun Patel', img: 14 },
-  { name: 'Aisha Khan', img: 49 },
-  { name: 'Rohan Mehta', img: 15 },
-  { name: 'Sneha Das', img: 45 },
-]
+/** The hub's ladder — the same four-round shape the panels below describe. */
+const HUB_ROUNDS = ['R1', 'R2', 'R3', 'R4']
 
 function OrbitRing({
   items,
@@ -142,78 +139,24 @@ function OrbitRing({
   )
 }
 
-export default function OrbitHero({
-  user = null,
-  technologies: customTechnologies,
-  companies: customCompanies,
-}: {
-  user?: OrbitProfile | null
-  technologies?: OrbitItem[]
-  companies?: OrbitItem[]
-}) {
-  // Deterministic first paint, randomised once the component is on the client.
-  const [demo, setDemo] = useState(demoProfiles[0])
-  const [me, setMe] = useState<OrbitProfile | null>(user)
-
-  useEffect(() => {
-    setDemo(demoProfiles[Math.floor(Math.random() * demoProfiles.length)])
-  }, [])
-
-  // Signed-in visitor: show THEIR card, fetched on the client so the landing
-  // stays a static page (a server-side session read would make it dynamic for
-  // everybody, including the guests it mostly serves).
-  useEffect(() => {
-    if (user) return
-    let cancelled = false
-    const load = async () => {
-      try {
-        const sb = createClient()
-        const {
-          data: { user: authUser },
-        } = await sb.auth.getUser()
-        if (!authUser || cancelled) return
-        const { data } = await sb
-          .from('profiles')
-          .select('full_name, username, avatar_url, headline')
-          .eq('id', authUser.id)
-          .maybeSingle()
-        if (cancelled) return
-        setMe({
-          name: data?.full_name || data?.username || authUser.email?.split('@')[0] || 'Student',
-          image: data?.avatar_url ?? null,
-          role: data?.headline ?? null,
-        })
-      } catch {
-        /* a guest keeps the demo card */
-      }
-    }
-    load()
-    return () => {
-      cancelled = true
-    }
-  }, [user])
-
-  const profileName = me?.name || demo.name
-  const profileImage = me?.image || `https://i.pravatar.cc/180?img=${demo.img}`
-
-  const techItems = customTechnologies || technologies
-  const companyItems = customCompanies || companies
-
+export default function OrbitHero() {
   return (
     <section className="orbit-hero">
       <div className="orbit-copy">
-        <span className="orbit-eyebrow">BUILD • LEARN • GROW</span>
+        <span className="orbit-eyebrow">READ · PRACTISE · WRITE</span>
         <h1>
-          Become the
+          Campus placement,
           <br />
-          <span>Top 1% SDE</span>
+          <span>round by round.</span>
         </h1>
         <p>
-          Master the technologies, build real-world projects, and prepare for opportunities at leading tech companies.
+          Read how a drive actually went at your campus, then practise the problems that round asked. Free for Indian
+          engineering students.
         </p>
         <div className="orbit-actions">
           <Link href="/experiences" className="orbit-primary">
-            Read experiences ↗
+            Read experiences
+            <span aria-hidden="true">↗</span>
           </Link>
           <Link href="/live-voice-chat" className="orbit-secondary">
             Join a room
@@ -221,33 +164,26 @@ export default function OrbitHero({
         </div>
       </div>
 
-      <div className="orbit-visual" aria-label="Rotating technology and company orbits">
+      <div className="orbit-visual" aria-label="Rotating technology and company orbits around a drive's rounds">
         {/* Outer orbit: the tech stack (15 marks, so it gets the long
             circumference — crowding them onto the inner ring overlapped the
             labels). */}
-        <OrbitRing items={techItems} radius={46} duration={45} />
+        <OrbitRing items={technologies} radius={46} duration={45} />
 
         {/* Inner orbit: companies (9 marks) stay legible on the short ring. */}
-        <OrbitRing items={companyItems} radius={29} duration={32} reverse />
+        <OrbitRing items={companies} radius={29} duration={32} reverse />
 
-        {/* Static center profile */}
-        <div className="orbit-profile">
-          <div className="orbit-avatar-wrap">
-            <img
-              src={profileImage}
-              alt={`${profileName}'s profile`}
-              className="orbit-avatar"
-              referrerPolicy="no-referrer"
-              onError={(event) => {
-                event.currentTarget.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(
-                  profileName
-                )}&background=e8efff&color=245bdb&size=180`
-              }}
-            />
-            <span className="orbit-online" />
+        {/* Structured hub: the four rounds a drive is read in. */}
+        <div className="orbit-hub">
+          <span className="orbit-hub-label">A drive</span>
+          <div className="orbit-hub-rounds" aria-hidden="true">
+            {HUB_ROUNDS.map((r) => (
+              <span className="orbit-hub-round" key={r}>
+                {r}
+              </span>
+            ))}
           </div>
-          <h2>{profileName}</h2>
-          <p>{me?.role || 'Full-Stack Developer'}</p>
+          <span className="orbit-hub-sub">round by round</span>
         </div>
       </div>
     </section>

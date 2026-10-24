@@ -6,6 +6,7 @@ import OrbitHero from '@/components/OrbitHero'
 import PublicFooter from '@/components/marketing/PublicFooter'
 import BrandName from '@/components/BrandName'
 import { Icon } from '@/components/icons'
+import { ArenaPanel, RoomPanel, RoundAnatomy, SurfaceMock, WriteUpForm } from '@/components/marketing/LandingPanels'
 
 /**
  * PlacementLanding — the public landing for the student-facing product.
@@ -23,6 +24,14 @@ import { Icon } from '@/components/icons'
  *
  * ── Copy rule ───────────────────────────────────────────────────────────────
  * Leads are one sentence. The page is scanned, not read.
+ *
+ * ── Visuals rule ────────────────────────────────────────────────────────────
+ * Nothing on this page is a stock photo, an illustration or a borrowed
+ * screenshot. The imagery is the product itself: structured panels drawn from
+ * the same rows, tags and window chrome as the signed-in app (see
+ * LandingPanels), each labelled Structure/Schematic so it cannot be mistaken
+ * for live data. Reading sections are two-column so a list of three short rows
+ * never stretches across 1180px of empty canvas.
  */
 
 type Stats = { students: number; campuses: number; companies: number } | null
@@ -65,14 +74,16 @@ const BENTO = [
     title: 'Compete',
     href: '/compete',
     icon: 'zap',
+    mock: 'compete',
     tone: 'peach',
     span: 'wide',
-    body: 'Timed contests on real interview problems, ranked against the batch that sat the same paper.',
+    body: 'Timed sets on real interview problems, ranked against the batch that sat the same paper.',
   },
   {
     title: 'Live rooms',
     href: '/live-voice-chat',
     icon: 'mic',
+    mock: 'rooms',
     tone: 'mint',
     span: 'narrow',
     body: 'Study out loud with your batch, by topic.',
@@ -81,6 +92,7 @@ const BENTO = [
     title: 'Experiences',
     href: '/experiences',
     icon: 'pencil',
+    mock: 'experiences',
     tone: 'blue',
     span: 'narrow',
     body: 'Every round of a real drive, as it happened.',
@@ -89,6 +101,7 @@ const BENTO = [
     title: 'Profile',
     href: '/profile',
     icon: 'user',
+    mock: 'profile',
     tone: 'lilac',
     span: 'wide',
     body: 'Your record: campus, batch, the skills you claim, and the links that back them up.',
@@ -116,20 +129,23 @@ const ROOMS_STEPS = [
 const COLLEGE_STEPS = [
   {
     n: '1',
+    icon: 'pencil',
     title: 'Students write what happened',
     sub: 'The rounds, the questions, the result — first-hand.',
   },
   {
     n: '2',
+    icon: 'building',
     title: 'Companies stay linked',
     sub: 'Every write-up sits against the company it belongs to.',
   },
   {
     n: '3',
+    icon: 'zap',
     title: 'Practice sits next to the reading',
     sub: 'The problem you just read about is ready to attempt.',
   },
-]
+] as const
 
 /** `blog_posts.category` key → the label the rail prints. */
 const CATEGORY_LABEL: Record<string, string> = {
@@ -262,6 +278,7 @@ export default function PlacementLanding({
               <p className="hl-metric-l">Students</p>
             </div>
           </div>
+          <p className="hl-metrics-note">Counted live from the database — no estimates, no rounded-up numbers.</p>
         </section>
       )}
 
@@ -287,75 +304,92 @@ export default function PlacementLanding({
         </section>
       )}
 
-      {/* ── Write-ups ── */}
+      {/* ── Write-ups ──
+          Two columns: the real write-ups on the left, the shape they follow on
+          the right. A three-row list spread across the full width was the
+          emptiest block on the page. */}
       <section className="hl-section hl-wrap">
-        <p className="hl-eyebrow">From the students</p>
-        <h2 className="hl-h2">The rounds</h2>
-        <p className="hl-lead hl-measure">Real rounds, real results.</p>
+        <div className="hl-split">
+          <div className="hl-split-copy">
+            <p className="hl-eyebrow">From the students</p>
+            <h2 className="hl-h2">The rounds</h2>
+            <p className="hl-lead hl-measure">Real rounds, real results.</p>
 
-        {winList.length > 0 ? (
-          <div className="hl-list-rows">
-            {winList.map((w) => (
-              <div className="hl-list-row" key={w.id}>
-                <span className="hl-list-mark" aria-hidden="true">
-                  {w.initials}
-                </span>
-                <span className="hl-list-main">
-                  <span className="hl-list-title">{w.title}</span>
-                  <span className="hl-list-sub">
-                    {w.company}
-                    {w.role ? ` · ${w.role}` : ''} — {w.excerpt}
-                  </span>
-                </span>
-                <span className={tagFor(w.difficulty)}>{w.difficulty || w.result || 'Write-up'}</span>
+            {winList.length > 0 ? (
+              <div className="hl-list-rows">
+                {winList.map((w) => (
+                  <div className="hl-list-row" key={w.id}>
+                    <span className="hl-list-mark" aria-hidden="true">
+                      {w.initials}
+                    </span>
+                    <span className="hl-list-main">
+                      <span className="hl-list-title">{w.title}</span>
+                      <span className="hl-list-sub">
+                        {w.company}
+                        {w.role ? ` · ${w.role}` : ''} — {w.excerpt}
+                      </span>
+                    </span>
+                    <span className={tagFor(w.difficulty)}>{w.difficulty || w.result || 'Write-up'}</span>
+                  </div>
+                ))}
               </div>
-            ))}
-          </div>
-        ) : (
-          <p className="hl-empty">
-            No write-ups published yet. If you have sat through a drive, yours would be the first one here —{' '}
-            <Link className="hl-nav-link" href="/experiences">
-              write it in two minutes
-            </Link>
-            .
-          </p>
-        )}
+            ) : (
+              <p className="hl-empty">
+                No write-ups published yet. If you have sat through a drive, yours would be the first one here —{' '}
+                <Link className="hl-nav-link" href="/experiences">
+                  write it in two minutes
+                </Link>
+                .
+              </p>
+            )}
 
-        <div className="hl-band-cta">
-          <Link className="hl-btn hl-btn--brand" href="/experiences">
-            All experiences
-          </Link>
+            <div className="hl-band-cta hl-band-cta--start">
+              <Link className="hl-btn hl-btn--brand" href="/experiences">
+                All experiences
+              </Link>
+            </div>
+          </div>
+
+          <RoundAnatomy />
         </div>
       </section>
 
-      {/* ── Practice ── */}
+      {/* ── Practice ──
+          Mirrored: the set on the left, the copy on the right, so the two
+          reading sections do not stack as identical columns. */}
       {problemList.length > 0 && (
         <section className="hl-section hl-wrap">
-          <p className="hl-eyebrow">Then practise it</p>
-          <h2 className="hl-h2">Practise them</h2>
-          <p className="hl-lead hl-measure">Practise what they asked.</p>
+          <div className="hl-split hl-split--reverse">
+            <div className="hl-split-copy">
+              <p className="hl-eyebrow">Then practise it</p>
+              <h2 className="hl-h2">Practise them</h2>
+              <p className="hl-lead hl-measure">Practise what they asked.</p>
 
-          <div className="hl-list-rows">
-            {problemList.map((p, i) => (
-              <div className="hl-list-row" key={p.slug}>
-                <span className="hl-list-mark" aria-hidden="true">
-                  {i + 1}
-                </span>
-                <span className="hl-list-main">
-                  <span className="hl-list-title">{p.title}</span>
-                  <span className="hl-list-sub">
-                    {p.topics?.length ? p.topics.slice(0, 3).join(' · ') : 'Practice problem'}
-                  </span>
-                </span>
-                <span className={tagFor(p.difficulty)}>{p.difficulty || 'Practice'}</span>
+              <div className="hl-list-rows">
+                {problemList.map((p, i) => (
+                  <div className="hl-list-row" key={p.slug}>
+                    <span className="hl-list-mark" aria-hidden="true">
+                      {i + 1}
+                    </span>
+                    <span className="hl-list-main">
+                      <span className="hl-list-title">{p.title}</span>
+                      <span className="hl-list-sub">
+                        {p.topics?.length ? p.topics.slice(0, 3).join(' · ') : 'Practice problem'}
+                      </span>
+                    </span>
+                    <span className={tagFor(p.difficulty)}>{p.difficulty || 'Practice'}</span>
+                  </div>
+                ))}
               </div>
-            ))}
-          </div>
 
-          <div className="hl-band-cta">
-            <Link className="hl-btn hl-btn--brand" href="/compete">
-              Open the arena
-            </Link>
+              <div className="hl-band-cta hl-band-cta--start">
+                <Link className="hl-btn hl-btn--brand" href="/compete">
+                  Open the arena
+                </Link>
+              </div>
+            </div>
+
+            <ArenaPanel problems={problemList} />
           </div>
         </section>
       )}
@@ -372,13 +406,14 @@ export default function PlacementLanding({
           <div className="hl-bento">
             {BENTO.map((t) => (
               <Link className={`hl-tile hl-tile--${t.tone} hl-tile--${t.span}`} href={t.href} key={t.title}>
-                <span className="hl-tile-art" aria-hidden="true" />
-                <Icon name={t.icon} size={150} className="hl-tile-gl" />
-                <span className="hl-tile-ic">
-                  <Icon name={t.icon} size={19} />
+                <span className="hl-tile-head">
+                  <span className="hl-tile-ic">
+                    <Icon name={t.icon} size={19} />
+                  </span>
+                  <h3>{t.title}</h3>
                 </span>
-                <h3>{t.title}</h3>
                 <p>{t.body}</p>
+                <SurfaceMock kind={t.mock} />
                 <span className="hl-tile-go">
                   Explore
                   <Icon name="chevron" size={15} className="hl-arrow" />
@@ -438,28 +473,34 @@ export default function PlacementLanding({
 
       {/* ── Live rooms ── */}
       <section className="hl-section hl-wrap">
-        <p className="hl-eyebrow">Study together</p>
-        <h2 className="hl-h2">Don&apos;t read alone</h2>
-        <p className="hl-lead hl-measure">Open a room, quiz each other out loud.</p>
+        <div className="hl-split">
+          <div className="hl-split-copy">
+            <p className="hl-eyebrow">Study together</p>
+            <h2 className="hl-h2">Don&apos;t read alone</h2>
+            <p className="hl-lead hl-measure">Open a room, quiz each other out loud.</p>
 
-        <div className="hl-list-rows">
-          {ROOMS_STEPS.map((s) => (
-            <div className="hl-list-row" key={s.n}>
-              <span className="hl-list-mark" aria-hidden="true">
-                {s.n}
-              </span>
-              <span className="hl-list-main">
-                <span className="hl-list-title">{s.title}</span>
-                <span className="hl-list-sub">{s.sub}</span>
-              </span>
+            <div className="hl-list-rows">
+              {ROOMS_STEPS.map((s) => (
+                <div className="hl-list-row" key={s.n}>
+                  <span className="hl-list-mark" aria-hidden="true">
+                    {s.n}
+                  </span>
+                  <span className="hl-list-main">
+                    <span className="hl-list-title">{s.title}</span>
+                    <span className="hl-list-sub">{s.sub}</span>
+                  </span>
+                </div>
+              ))}
             </div>
-          ))}
-        </div>
 
-        <div className="hl-band-cta">
-          <Link className="hl-btn hl-btn--brand" href="/live-voice-chat">
-            Open live rooms
-          </Link>
+            <div className="hl-band-cta hl-band-cta--start">
+              <Link className="hl-btn hl-btn--brand" href="/live-voice-chat">
+                Open live rooms
+              </Link>
+            </div>
+          </div>
+
+          <RoomPanel />
         </div>
       </section>
 
@@ -523,33 +564,44 @@ export default function PlacementLanding({
           The same company runs a different process at a different college, so the write-ups stay campus-specific.
         </p>
 
-        <div className="hl-list-rows">
+        <div className="hl-flow hl-flow--3">
           {COLLEGE_STEPS.map((s) => (
-            <div className="hl-list-row" key={s.n}>
-              <span className="hl-list-mark" aria-hidden="true">
-                {s.n}
-              </span>
-              <span className="hl-list-main">
-                <span className="hl-list-title">{s.title}</span>
-                <span className="hl-list-sub">{s.sub}</span>
-              </span>
-            </div>
+            <article className="hl-step" key={s.n}>
+              <div className="hl-step-top">
+                <span className="hl-step-ic">
+                  <Icon name={s.icon} size={18} />
+                </span>
+                <span className="hl-step-kicker">Step {s.n}</span>
+              </div>
+              <h3>{s.title}</h3>
+              <p>{s.sub}</p>
+            </article>
           ))}
         </div>
       </section>
 
-      {/* ── Final CTA ── */}
+      {/* ── Final CTA ──
+          A bordered card rather than a bare left-aligned block: the closing
+          section was the widest stretch of empty canvas on the page. */}
       <section className="hl-section hl-wrap">
-        <p className="hl-eyebrow">Add your campus</p>
-        <h2 className="hl-h2 hl-h2--tight">Write yours in two minutes</h2>
-        <p className="hl-lead hl-measure">Two minutes. Helps the next batch.</p>
-        <div className="hl-cta-row">
-          <Link className="hl-btn hl-btn--brand hl-btn--lg hl-btn--shine" href="/auth/signup">
-            Write your experience
-          </Link>
-          <Link className="hl-btn hl-btn--ghost hl-btn--lg" href="/blog">
-            Read the blog
-          </Link>
+        <div className="hl-cta-card">
+          <div>
+            <p className="hl-eyebrow">Add your campus</p>
+            <h2 className="hl-h2 hl-h2--tight">Write yours in two minutes</h2>
+            <p className="hl-lead hl-measure hl-lead--flush">
+              One form: the round, what was asked, and how it went. Your campus and batch come from your profile.
+            </p>
+            <div className="hl-cta-row">
+              <Link className="hl-btn hl-btn--brand hl-btn--lg hl-btn--shine" href="/auth/signup">
+                Write your experience
+              </Link>
+              <Link className="hl-btn hl-btn--ghost hl-btn--lg" href="/blog">
+                Read the blog
+              </Link>
+            </div>
+          </div>
+
+          <WriteUpForm />
         </div>
       </section>
 
