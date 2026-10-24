@@ -816,7 +816,9 @@
 .hl-strip-item {
   display: inline-flex;
   align-items: center;
-  opacity: 0.62;
+  /* 0.62 dropped the wordmarks to 3.94:1 on white; 0.9 keeps them secondary
+     while clearing AA. */
+  opacity: 0.9;
   transition:
     opacity 0.2s ease,
     transform 0.2s ease;
@@ -1408,7 +1410,8 @@
 }
 .hl-tag--easy {
   background: color-mix(in srgb, #17754a 14%, transparent);
-  color: #17754a;
+  /* #17754a on its own 14% tint measured 4.1:1. */
+  color: #0d5733;
 }
 .hl-tag--medium {
   background: color-mix(in srgb, #8a5a00 16%, transparent);

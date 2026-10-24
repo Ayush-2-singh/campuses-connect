@@ -258,352 +258,354 @@ export default function PlacementLanding({
       {/* Shared public header — the same one every public page renders. */}
       <PublicNav />
 
-      {/* ── Hero (orbit stage) ── */}
-      <OrbitHero />
+      <main>
+        {/* ── Hero (orbit stage) ── */}
+        <OrbitHero />
 
-      {/* ── Real counts (hidden entirely when the query fails) ── */}
-      {stats && (
-        <section className="hl-metrics-band">
-          <div className="hl-wrap hl-metrics">
-            <div>
-              <p className="hl-metric-v">{stats.campuses}</p>
-              <p className="hl-metric-l">Campuses</p>
+        {/* ── Real counts (hidden entirely when the query fails) ── */}
+        {stats && (
+          <section className="hl-metrics-band">
+            <div className="hl-wrap hl-metrics">
+              <div>
+                <p className="hl-metric-v">{stats.campuses}</p>
+                <p className="hl-metric-l">Campuses</p>
+              </div>
+              <div>
+                <p className="hl-metric-v">{stats.companies}</p>
+                <p className="hl-metric-l">Companies on record</p>
+              </div>
+              <div>
+                <p className="hl-metric-v">{stats.students}</p>
+                <p className="hl-metric-l">Students</p>
+              </div>
             </div>
-            <div>
-              <p className="hl-metric-v">{stats.companies}</p>
-              <p className="hl-metric-l">Companies on record</p>
-            </div>
-            <div>
-              <p className="hl-metric-v">{stats.students}</p>
-              <p className="hl-metric-l">Students</p>
-            </div>
-          </div>
-          <p className="hl-metrics-note">Counted live from the database — no estimates, no rounded-up numbers.</p>
-        </section>
-      )}
+            <p className="hl-metrics-note">Counted live from the database — no estimates, no rounded-up numbers.</p>
+          </section>
+        )}
 
-      {/* ── Companies strip — live rows only ──
+        {/* ── Companies strip — live rows only ──
           Links point at /experiences: the per-company pages are archived, and a
           strip of brand logos that leads to a 404 is worse than no strip. */}
-      {companyList.length > 0 && (
-        <section className="hl-strip">
+        {companyList.length > 0 && (
+          <section className="hl-strip">
+            <div className="hl-wrap">
+              <p className="hl-strip-eyebrow">Companies students have written about</p>
+              <div className="hl-strip-row">
+                {companyList.slice(0, 10).map((c) => (
+                  <Link className="hl-strip-item" href="/experiences" key={c.slug}>
+                    {c.logo_url ? (
+                      <img className="hl-strip-logo" src={c.logo_url} alt={c.name} height={34} />
+                    ) : (
+                      <span className="hl-strip-word">{c.name}</span>
+                    )}
+                  </Link>
+                ))}
+              </div>
+            </div>
+          </section>
+        )}
+
+        {/* ── Write-ups ──
+          Two columns: the real write-ups on the left, the shape they follow on
+          the right. A three-row list spread across the full width was the
+          emptiest block on the page. */}
+        <section className="hl-section hl-wrap">
+          <div className="hl-split">
+            <div className="hl-split-copy">
+              <p className="hl-eyebrow">From the students</p>
+              <h2 className="hl-h2">The rounds</h2>
+              <p className="hl-lead hl-measure">Real rounds, real results.</p>
+
+              {winList.length > 0 ? (
+                <div className="hl-list-rows">
+                  {winList.map((w) => (
+                    <div className="hl-list-row" key={w.id}>
+                      <span className="hl-list-mark" aria-hidden="true">
+                        {w.initials}
+                      </span>
+                      <span className="hl-list-main">
+                        <span className="hl-list-title">{w.title}</span>
+                        <span className="hl-list-sub">
+                          {w.company}
+                          {w.role ? ` · ${w.role}` : ''} — {w.excerpt}
+                        </span>
+                      </span>
+                      <span className={tagFor(w.difficulty)}>{w.difficulty || w.result || 'Write-up'}</span>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="hl-empty">
+                  No write-ups published yet. If you have sat through a drive, yours would be the first one here —{' '}
+                  <Link className="hl-nav-link" href="/experiences">
+                    write it in two minutes
+                  </Link>
+                  .
+                </p>
+              )}
+
+              <div className="hl-band-cta hl-band-cta--start">
+                <Link className="hl-btn hl-btn--brand" href="/experiences">
+                  All experiences
+                </Link>
+              </div>
+            </div>
+
+            <RoundAnatomy />
+          </div>
+        </section>
+
+        {/* ── Practice ──
+          Mirrored: the set on the left, the copy on the right, so the two
+          reading sections do not stack as identical columns. */}
+        {problemList.length > 0 && (
+          <section className="hl-section hl-wrap">
+            <div className="hl-split hl-split--reverse">
+              <div className="hl-split-copy">
+                <p className="hl-eyebrow">Then practise it</p>
+                <h2 className="hl-h2">Practise them</h2>
+                <p className="hl-lead hl-measure">Practise what they asked.</p>
+
+                <div className="hl-list-rows">
+                  {problemList.map((p, i) => (
+                    <div className="hl-list-row" key={p.slug}>
+                      <span className="hl-list-mark" aria-hidden="true">
+                        {i + 1}
+                      </span>
+                      <span className="hl-list-main">
+                        <span className="hl-list-title">{p.title}</span>
+                        <span className="hl-list-sub">
+                          {p.topics?.length ? p.topics.slice(0, 3).join(' · ') : 'Practice problem'}
+                        </span>
+                      </span>
+                      <span className={tagFor(p.difficulty)}>{p.difficulty || 'Practice'}</span>
+                    </div>
+                  ))}
+                </div>
+
+                <div className="hl-band-cta hl-band-cta--start">
+                  <Link className="hl-btn hl-btn--brand" href="/compete">
+                    Open the arena
+                  </Link>
+                </div>
+              </div>
+
+              <ArenaPanel problems={problemList} />
+            </div>
+          </section>
+        )}
+
+        {/* ── Bento grid (reference's pastel tiles) ── */}
+        <section className="hl-band hl-band--platform">
           <div className="hl-wrap">
-            <p className="hl-strip-eyebrow">Companies students have written about</p>
-            <div className="hl-strip-row">
-              {companyList.slice(0, 10).map((c) => (
-                <Link className="hl-strip-item" href="/experiences" key={c.slug}>
-                  {c.logo_url ? (
-                    <img className="hl-strip-logo" src={c.logo_url} alt={c.name} height={34} />
-                  ) : (
-                    <span className="hl-strip-word">{c.name}</span>
-                  )}
+            <p className="hl-eyebrow hl-eyebrow--center">What is inside</p>
+            <h2 className="hl-band-title hl-band-title--center">
+              One platform for the <em className="hl-em">whole placement year.</em>
+            </h2>
+            <p className="hl-band-sub hl-band-sub--center">Four surfaces, one login.</p>
+
+            <div className="hl-bento">
+              {BENTO.map((t) => (
+                <Link className={`hl-tile hl-tile--${t.tone} hl-tile--${t.span}`} href={t.href} key={t.title}>
+                  <span className="hl-tile-head">
+                    <span className="hl-tile-ic">
+                      <Icon name={t.icon} size={19} />
+                    </span>
+                    <h3>{t.title}</h3>
+                  </span>
+                  <p>{t.body}</p>
+                  <SurfaceMock kind={t.mock} />
+                  <span className="hl-tile-go">
+                    Explore
+                    <Icon name="chevron" size={15} className="hl-arrow" />
+                  </span>
                 </Link>
               ))}
             </div>
           </div>
         </section>
-      )}
 
-      {/* ── Write-ups ──
-          Two columns: the real write-ups on the left, the shape they follow on
-          the right. A three-row list spread across the full width was the
-          emptiest block on the page. */}
-      <section className="hl-section hl-wrap">
-        <div className="hl-split">
-          <div className="hl-split-copy">
-            <p className="hl-eyebrow">From the students</p>
-            <h2 className="hl-h2">The rounds</h2>
-            <p className="hl-lead hl-measure">Real rounds, real results.</p>
+        {/* ── Roadmap — numbered modules, live counts ── */}
+        <section className="hl-band">
+          <div className="hl-wrap">
+            <p className="hl-eyebrow hl-eyebrow--center">The path</p>
+            <h2 className="hl-band-title hl-band-title--center">
+              Practise, read, then <em className="hl-em">write it down.</em>
+            </h2>
+            <p className="hl-band-sub hl-band-sub--center">
+              Three steps, every one of them open today. The counts are read live.
+            </p>
 
-            {winList.length > 0 ? (
-              <div className="hl-list-rows">
-                {winList.map((w) => (
-                  <div className="hl-list-row" key={w.id}>
-                    <span className="hl-list-mark" aria-hidden="true">
-                      {w.initials}
-                    </span>
-                    <span className="hl-list-main">
-                      <span className="hl-list-title">{w.title}</span>
-                      <span className="hl-list-sub">
-                        {w.company}
-                        {w.role ? ` · ${w.role}` : ''} — {w.excerpt}
+            <div className="hl-mods">
+              {modules.map((m) => (
+                <article className="hl-mod" key={m.n}>
+                  <span className="hl-mod-n" aria-hidden="true">
+                    {m.n}
+                  </span>
+                  <div className="hl-mod-card">
+                    <div className="hl-mod-top">
+                      <span className="hl-mod-ic">
+                        <Icon name={m.icon} size={20} />
                       </span>
-                    </span>
-                    <span className={tagFor(w.difficulty)}>{w.difficulty || w.result || 'Write-up'}</span>
+                      <h3>{m.title}</h3>
+                    </div>
+                    <span className="hl-mod-tag">{m.tag}</span>
+                    <p className="hl-mod-body">{m.body}</p>
+                    <div className="hl-mod-stats">
+                      <div className="hl-mod-stat">
+                        <p className="hl-mod-stat-l">{m.statLabel}</p>
+                        <p className="hl-mod-stat-v">{m.statValue}</p>
+                      </div>
+                      <div className="hl-mod-stat hl-mod-stat--cov">
+                        <p className="hl-mod-stat-l">{m.covLabel}</p>
+                        <p className="hl-mod-cov">{m.covValue}</p>
+                      </div>
+                    </div>
+                    <Link className="hl-mod-cta" href={m.href}>
+                      {m.cta}
+                      <Icon name="chevron" size={15} className="hl-arrow" />
+                    </Link>
                   </div>
-                ))}
-              </div>
-            ) : (
-              <p className="hl-empty">
-                No write-ups published yet. If you have sat through a drive, yours would be the first one here —{' '}
-                <Link className="hl-nav-link" href="/experiences">
-                  write it in two minutes
-                </Link>
-                .
-              </p>
-            )}
-
-            <div className="hl-band-cta hl-band-cta--start">
-              <Link className="hl-btn hl-btn--brand" href="/experiences">
-                All experiences
-              </Link>
+                </article>
+              ))}
             </div>
           </div>
+        </section>
 
-          <RoundAnatomy />
-        </div>
-      </section>
-
-      {/* ── Practice ──
-          Mirrored: the set on the left, the copy on the right, so the two
-          reading sections do not stack as identical columns. */}
-      {problemList.length > 0 && (
+        {/* ── Live rooms ── */}
         <section className="hl-section hl-wrap">
-          <div className="hl-split hl-split--reverse">
+          <div className="hl-split">
             <div className="hl-split-copy">
-              <p className="hl-eyebrow">Then practise it</p>
-              <h2 className="hl-h2">Practise them</h2>
-              <p className="hl-lead hl-measure">Practise what they asked.</p>
+              <p className="hl-eyebrow">Study together</p>
+              <h2 className="hl-h2">Don&apos;t read alone</h2>
+              <p className="hl-lead hl-measure">Open a room, quiz each other out loud.</p>
 
               <div className="hl-list-rows">
-                {problemList.map((p, i) => (
-                  <div className="hl-list-row" key={p.slug}>
+                {ROOMS_STEPS.map((s) => (
+                  <div className="hl-list-row" key={s.n}>
                     <span className="hl-list-mark" aria-hidden="true">
-                      {i + 1}
+                      {s.n}
                     </span>
                     <span className="hl-list-main">
-                      <span className="hl-list-title">{p.title}</span>
-                      <span className="hl-list-sub">
-                        {p.topics?.length ? p.topics.slice(0, 3).join(' · ') : 'Practice problem'}
-                      </span>
+                      <span className="hl-list-title">{s.title}</span>
+                      <span className="hl-list-sub">{s.sub}</span>
                     </span>
-                    <span className={tagFor(p.difficulty)}>{p.difficulty || 'Practice'}</span>
                   </div>
                 ))}
               </div>
 
               <div className="hl-band-cta hl-band-cta--start">
-                <Link className="hl-btn hl-btn--brand" href="/compete">
-                  Open the arena
+                <Link className="hl-btn hl-btn--brand" href="/live-voice-chat">
+                  Open live rooms
                 </Link>
               </div>
             </div>
 
-            <ArenaPanel problems={problemList} />
+            <RoomPanel />
           </div>
         </section>
-      )}
 
-      {/* ── Bento grid (reference's pastel tiles) ── */}
-      <section className="hl-band hl-band--platform">
-        <div className="hl-wrap">
-          <p className="hl-eyebrow hl-eyebrow--center">What is inside</p>
-          <h2 className="hl-band-title hl-band-title--center">
-            One platform for the <em className="hl-em">whole placement year.</em>
-          </h2>
-          <p className="hl-band-sub hl-band-sub--center">Four surfaces, one login.</p>
-
-          <div className="hl-bento">
-            {BENTO.map((t) => (
-              <Link className={`hl-tile hl-tile--${t.tone} hl-tile--${t.span}`} href={t.href} key={t.title}>
-                <span className="hl-tile-head">
-                  <span className="hl-tile-ic">
-                    <Icon name={t.icon} size={19} />
-                  </span>
-                  <h3>{t.title}</h3>
-                </span>
-                <p>{t.body}</p>
-                <SurfaceMock kind={t.mock} />
-                <span className="hl-tile-go">
-                  Explore
-                  <Icon name="chevron" size={15} className="hl-arrow" />
-                </span>
-              </Link>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* ── Roadmap — numbered modules, live counts ── */}
-      <section className="hl-band">
-        <div className="hl-wrap">
-          <p className="hl-eyebrow hl-eyebrow--center">The path</p>
-          <h2 className="hl-band-title hl-band-title--center">
-            Practise, read, then <em className="hl-em">write it down.</em>
-          </h2>
-          <p className="hl-band-sub hl-band-sub--center">
-            Three steps, every one of them open today. The counts are read live.
-          </p>
-
-          <div className="hl-mods">
-            {modules.map((m) => (
-              <article className="hl-mod" key={m.n}>
-                <span className="hl-mod-n" aria-hidden="true">
-                  {m.n}
-                </span>
-                <div className="hl-mod-card">
-                  <div className="hl-mod-top">
-                    <span className="hl-mod-ic">
-                      <Icon name={m.icon} size={20} />
-                    </span>
-                    <h3>{m.title}</h3>
-                  </div>
-                  <span className="hl-mod-tag">{m.tag}</span>
-                  <p className="hl-mod-body">{m.body}</p>
-                  <div className="hl-mod-stats">
-                    <div className="hl-mod-stat">
-                      <p className="hl-mod-stat-l">{m.statLabel}</p>
-                      <p className="hl-mod-stat-v">{m.statValue}</p>
-                    </div>
-                    <div className="hl-mod-stat hl-mod-stat--cov">
-                      <p className="hl-mod-stat-l">{m.covLabel}</p>
-                      <p className="hl-mod-cov">{m.covValue}</p>
-                    </div>
-                  </div>
-                  <Link className="hl-mod-cta" href={m.href}>
-                    {m.cta}
-                    <Icon name="chevron" size={15} className="hl-arrow" />
-                  </Link>
-                </div>
-              </article>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* ── Live rooms ── */}
-      <section className="hl-section hl-wrap">
-        <div className="hl-split">
-          <div className="hl-split-copy">
-            <p className="hl-eyebrow">Study together</p>
-            <h2 className="hl-h2">Don&apos;t read alone</h2>
-            <p className="hl-lead hl-measure">Open a room, quiz each other out loud.</p>
-
-            <div className="hl-list-rows">
-              {ROOMS_STEPS.map((s) => (
-                <div className="hl-list-row" key={s.n}>
-                  <span className="hl-list-mark" aria-hidden="true">
-                    {s.n}
-                  </span>
-                  <span className="hl-list-main">
-                    <span className="hl-list-title">{s.title}</span>
-                    <span className="hl-list-sub">{s.sub}</span>
-                  </span>
-                </div>
-              ))}
-            </div>
-
-            <div className="hl-band-cta hl-band-cta--start">
-              <Link className="hl-btn hl-btn--brand" href="/live-voice-chat">
-                Open live rooms
-              </Link>
-            </div>
-          </div>
-
-          <RoomPanel />
-        </div>
-      </section>
-
-      {/* ── Reading rail (reference's looping cards) ── */}
-      <section className="hl-band">
-        <div className="hl-wrap">
-          <p className="hl-eyebrow hl-eyebrow--center">{postList.length > 0 ? 'Latest writing' : 'Preview'}</p>
-          <h2 className="hl-band-title hl-band-title--center">
-            Worth <em className="hl-em">reading</em> next.
-          </h2>
-          <p className="hl-band-sub hl-band-sub--center">
-            {postList.length > 0
-              ? 'Published on ConnectToCampus, newest first.'
-              : 'Nothing published yet — these cards fill in with real posts the moment one lands.'}
-          </p>
-
-          <div className="hl-rail">
-            <div className="hl-rail-track">
-              {[...railCards, ...railCards].map((r, i) => {
-                const repeat = i >= railCards.length
-                return (
-                  <article
-                    className={`hl-read${repeat ? ' hl-rail-dup' : ''}`}
-                    key={`${r.title}-${i}`}
-                    aria-hidden={repeat || undefined}
-                  >
-                    <div className="hl-read-head">
-                      <span className="hl-read-ic">
-                        <Icon name={i % 3 === 0 ? 'pencil' : i % 3 === 1 ? 'layers' : 'book'} size={17} />
-                      </span>
-                      <div>
-                        <p className="hl-read-tag">{r.category}</p>
-                        <p className="hl-read-src">{r.author || 'ConnectToCampus'}</p>
-                      </div>
-                    </div>
-                    <h3>{r.title}</h3>
-                    <p className="hl-read-quote">&ldquo;{r.excerpt || 'A short read from the community.'}&rdquo;</p>
-                    <div className="hl-read-foot">
-                      <BrandName className="hl-read-mark" />
-                      <span>{postList.length > 0 ? 'Published' : 'Preview — not published'}</span>
-                    </div>
-                  </article>
-                )
-              })}
-            </div>
-          </div>
-
-          <div className="hl-band-cta">
-            <Link className="hl-btn hl-btn--ghost" href="/blog">
-              Read the blog
-            </Link>
-          </div>
-        </div>
-      </section>
-
-      {/* ── College first ── */}
-      <section className="hl-section hl-wrap">
-        <p className="hl-eyebrow">College first</p>
-        <h2 className="hl-h2">One campus at a time</h2>
-        <p className="hl-lead hl-measure">
-          The same company runs a different process at a different college, so the write-ups stay campus-specific.
-        </p>
-
-        <div className="hl-flow hl-flow--3">
-          {COLLEGE_STEPS.map((s) => (
-            <article className="hl-step" key={s.n}>
-              <div className="hl-step-top">
-                <span className="hl-step-ic">
-                  <Icon name={s.icon} size={18} />
-                </span>
-                <span className="hl-step-kicker">Step {s.n}</span>
-              </div>
-              <h3>{s.title}</h3>
-              <p>{s.sub}</p>
-            </article>
-          ))}
-        </div>
-      </section>
-
-      {/* ── Final CTA ──
-          A bordered card rather than a bare left-aligned block: the closing
-          section was the widest stretch of empty canvas on the page. */}
-      <section className="hl-section hl-wrap">
-        <div className="hl-cta-card">
-          <div>
-            <p className="hl-eyebrow">Add your campus</p>
-            <h2 className="hl-h2 hl-h2--tight">Write yours in two minutes</h2>
-            <p className="hl-lead hl-measure hl-lead--flush">
-              One form: the round, what was asked, and how it went. Your campus and batch come from your profile.
+        {/* ── Reading rail (reference's looping cards) ── */}
+        <section className="hl-band">
+          <div className="hl-wrap">
+            <p className="hl-eyebrow hl-eyebrow--center">{postList.length > 0 ? 'Latest writing' : 'Preview'}</p>
+            <h2 className="hl-band-title hl-band-title--center">
+              Worth <em className="hl-em">reading</em> next.
+            </h2>
+            <p className="hl-band-sub hl-band-sub--center">
+              {postList.length > 0
+                ? 'Published on ConnectToCampus, newest first.'
+                : 'Nothing published yet — these cards fill in with real posts the moment one lands.'}
             </p>
-            <div className="hl-cta-row">
-              <Link className="hl-btn hl-btn--brand hl-btn--lg hl-btn--shine" href="/auth/signup">
-                Write your experience
-              </Link>
-              <Link className="hl-btn hl-btn--ghost hl-btn--lg" href="/blog">
+
+            <div className="hl-rail">
+              <div className="hl-rail-track">
+                {[...railCards, ...railCards].map((r, i) => {
+                  const repeat = i >= railCards.length
+                  return (
+                    <article
+                      className={`hl-read${repeat ? ' hl-rail-dup' : ''}`}
+                      key={`${r.title}-${i}`}
+                      aria-hidden={repeat || undefined}
+                    >
+                      <div className="hl-read-head">
+                        <span className="hl-read-ic">
+                          <Icon name={i % 3 === 0 ? 'pencil' : i % 3 === 1 ? 'layers' : 'book'} size={17} />
+                        </span>
+                        <div>
+                          <p className="hl-read-tag">{r.category}</p>
+                          <p className="hl-read-src">{r.author || 'ConnectToCampus'}</p>
+                        </div>
+                      </div>
+                      <h3>{r.title}</h3>
+                      <p className="hl-read-quote">&ldquo;{r.excerpt || 'A short read from the community.'}&rdquo;</p>
+                      <div className="hl-read-foot">
+                        <BrandName className="hl-read-mark" />
+                        <span>{postList.length > 0 ? 'Published' : 'Preview — not published'}</span>
+                      </div>
+                    </article>
+                  )
+                })}
+              </div>
+            </div>
+
+            <div className="hl-band-cta">
+              <Link className="hl-btn hl-btn--ghost" href="/blog">
                 Read the blog
               </Link>
             </div>
           </div>
+        </section>
 
-          <WriteUpForm />
-        </div>
-      </section>
+        {/* ── College first ── */}
+        <section className="hl-section hl-wrap">
+          <p className="hl-eyebrow">College first</p>
+          <h2 className="hl-h2">One campus at a time</h2>
+          <p className="hl-lead hl-measure">
+            The same company runs a different process at a different college, so the write-ups stay campus-specific.
+          </p>
+
+          <div className="hl-flow hl-flow--3">
+            {COLLEGE_STEPS.map((s) => (
+              <article className="hl-step" key={s.n}>
+                <div className="hl-step-top">
+                  <span className="hl-step-ic">
+                    <Icon name={s.icon} size={18} />
+                  </span>
+                  <span className="hl-step-kicker">Step {s.n}</span>
+                </div>
+                <h3>{s.title}</h3>
+                <p>{s.sub}</p>
+              </article>
+            ))}
+          </div>
+        </section>
+
+        {/* ── Final CTA ──
+          A bordered card rather than a bare left-aligned block: the closing
+          section was the widest stretch of empty canvas on the page. */}
+        <section className="hl-section hl-wrap">
+          <div className="hl-cta-card">
+            <div>
+              <p className="hl-eyebrow">Add your campus</p>
+              <h2 className="hl-h2 hl-h2--tight">Write yours in two minutes</h2>
+              <p className="hl-lead hl-measure hl-lead--flush">
+                One form: the round, what was asked, and how it went. Your campus and batch come from your profile.
+              </p>
+              <div className="hl-cta-row">
+                <Link className="hl-btn hl-btn--brand hl-btn--lg hl-btn--shine" href="/auth/signup">
+                  Write your experience
+                </Link>
+                <Link className="hl-btn hl-btn--ghost hl-btn--lg" href="/blog">
+                  Read the blog
+                </Link>
+              </div>
+            </div>
+
+            <WriteUpForm />
+          </div>
+        </section>
+      </main>
 
       {/* Shared public footer — same component as every public page. */}
       <PublicFooter />

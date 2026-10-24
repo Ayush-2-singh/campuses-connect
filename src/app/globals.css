@@ -187,7 +187,8 @@
 
   --accent: var(--accent-gold);
   --accent-light: color-mix(in srgb, var(--accent) 14%, white);
-  --accent-text: #b35c00;
+  /* Was #b35c00: 4.18:1 on the accent-tinted surface, under AA. */
+  --accent-text: #8f4a00;
   --accent-border: color-mix(in srgb, var(--accent) 46%, white);
   --accent-glow: 0 0 18px color-mix(in srgb, var(--accent) 18%, transparent);
 
@@ -3654,7 +3655,8 @@ html.nav-hidden .fab-wrap {
   border-radius: 9px;
   border: 1px solid var(--border);
   background: var(--bg-secondary);
-  color: var(--text-muted);
+  /* --text-muted read 3.32:1 on this pill; secondary clears AA. */
+  color: var(--text-secondary);
   font-family: inherit;
   font-size: 12.5px;
   font-weight: 600;

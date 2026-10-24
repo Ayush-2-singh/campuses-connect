@@ -121,7 +121,7 @@ export default function TopNav({
         </nav>
 
         <div className="topnav-right">
-          <button className="topnav-search" onClick={onOpenSearch} aria-label="Open search" title="Search (⌘K)">
+          <button className="topnav-search" onClick={onOpenSearch} title="Search (⌘K)">
             <Icon name="search" size={15} />
             <span className="topnav-search-t">Search</span>
             <kbd className="topnav-search-k">⌘K</kbd>

@@ -112,7 +112,7 @@ export default function CookieConsent() {
         >
           Essential cookies keep you signed in — they are always on. Non-essential cookies are analytics only, and
           nothing loads without your consent. Read the{' '}
-          <Link href="/cookies" style={{ color: 'var(--accent)', textDecoration: 'underline' }}>
+          <Link href="/cookies" style={{ color: 'var(--accent-text)', textDecoration: 'underline' }}>
             Cookie Policy
           </Link>
           .

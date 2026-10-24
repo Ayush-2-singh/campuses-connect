@@ -278,6 +278,8 @@ function CompetePageInner() {
               overflowX: 'auto',
             }}
             className="compete-tabs chip-scroll"
+            role="tablist"
+            aria-label="Compete sections"
           >
             {TABS.map((t) => (
               <button

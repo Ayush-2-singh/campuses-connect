@@ -292,7 +292,8 @@
   border-radius: 9px;
   border: 1px solid color-mix(in srgb, var(--orbit-blue) 28%, transparent);
   background: color-mix(in srgb, var(--orbit-blue) 9%, var(--lq-surface, #fff));
-  color: color-mix(in srgb, var(--orbit-blue) 82%, var(--lq-text, #191919));
+  /* 82% blue on the tinted chip measured 3.91:1 — under AA for 11px text. */
+  color: color-mix(in srgb, var(--orbit-blue) 52%, #0b1b33);
   font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
   font-size: 11px;
   font-weight: 700;

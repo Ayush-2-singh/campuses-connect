@@ -129,7 +129,10 @@ function OrbitRing({
               transition={{ duration, repeat: Infinity, ease: 'linear' }}
               title={name}
             >
-              <Icon className="orbit-icon" />
+              {/* Decorative: the badge already carries an accessible label
+                  in <span class="orbit-label">. react-icons sets role="img",
+                  which axe reports as an image without a name. */}
+              <Icon className="orbit-icon" aria-hidden="true" />
               <span className="orbit-label">{name}</span>
             </motion.div>
           </div>
