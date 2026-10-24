@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { isAdzunaConfigured, missingAdzunaEnv, searchAdzuna } from '@/lib/jobs/adzuna'
 import { searchRemoteJobs } from '@/lib/jobs/remote'
 import type { ExternalJob, JobSource } from '@/lib/jobs/types'
+import { checkRateLimitByIp } from '@/lib/rateLimit'
 
 /**
  * GET /api/jobs/external?what=&where=&page=
@@ -35,6 +36,13 @@ const dedupe = (jobs: ExternalJob[]): ExternalJob[] => {
 }
 
 export async function GET(request: Request) {
+  // Public endpoint with no session: the bucket is the caller's IP. This feed
+  // spends a third-party quota (Adzuna is paid per call), so an unthrottled
+  // scrape is a bill, not just load.
+  if (!(await checkRateLimitByIp(request.headers, 'jobs:external', 30, 60))) {
+    return NextResponse.json({ error: 'Too many requests — try again in a few minutes.' }, { status: 429 })
+  }
+
   const { searchParams } = new URL(request.url)
   const parsed = Number.parseInt(searchParams.get('page') ?? '1', 10)
   const page = Number.isFinite(parsed) ? parsed : 1

@@ -152,23 +152,11 @@ export default function UserProfilePage() {
     }
     if (accept) {
       setConnState('accepted')
-      toast('Connected! You can now message each other', { tone: 'success' })
+      toast('Connected!', { tone: 'success' })
     } else {
       setConnState('none')
       setConnId(null)
     }
-  }
-
-  const handleMessage = async () => {
-    if (!user || !profile || connBusy) return
-    setConnBusy(true)
-    const { data: convId, error } = await supabase.rpc('start_or_get_conversation', { p_peer_id: profile.id })
-    setConnBusy(false)
-    if (error || !convId) {
-      toast('You can only message people you are connected with', { tone: 'danger' })
-      return
-    }
-    router.push(`/messages/${convId}`)
   }
 
   const timeAgo = (date: string) => {
@@ -215,7 +203,7 @@ export default function UserProfilePage() {
               fontFamily: 'inherit',
             }}
           >
-            ← Back to Talent
+            ← Back
           </button>
         </div>
       </div>
@@ -336,23 +324,6 @@ export default function UserProfilePage() {
 
               {!isOwnProfile && user && connState === 'accepted' && (
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                  <button
-                    onClick={handleMessage}
-                    disabled={connBusy}
-                    style={{
-                      padding: '8px 18px',
-                      borderRadius: 8,
-                      border: 'none',
-                      background: 'var(--accent)',
-                      color: 'var(--on-accent)',
-                      fontSize: 13,
-                      fontWeight: 600,
-                      cursor: connBusy ? 'default' : 'pointer',
-                      fontFamily: 'inherit',
-                    }}
-                  >
-                    <Icon name="message" size={14} style={{ verticalAlign: '-2px', marginRight: 5 }} /> Message
-                  </button>
                   <span
                     style={{
                       fontSize: 12.5,

@@ -1,3 +1,4 @@
+import { createHash } from 'node:crypto'
 import { createClient } from '@/lib/supabase/server'
 
 /**
@@ -27,4 +28,41 @@ export async function checkRateLimit(
     return true
   }
   return data !== false
+}
+
+/**
+ * ipToKey — a stable UUID for an IP address.
+ *
+ * `check_rate_limit` is keyed by uuid (migration 043), which is right for a
+ * signed-in caller. Anonymous endpoints still need a bucket, and they have no
+ * user id, so the IP is hashed into a deterministic UUID: same address, same
+ * bucket, no PII stored (the raw IP never reaches the database).
+ */
+export function ipToKey(ip: string): string {
+  const h = createHash('sha256')
+    .update(ip || 'unknown')
+    .digest('hex')
+  return `${h.slice(0, 8)}-${h.slice(8, 12)}-${h.slice(12, 16)}-${h.slice(16, 20)}-${h.slice(20, 32)}`
+}
+
+/** Best-effort client IP behind Vercel's proxy. */
+export function clientIpFrom(headers: Headers): string {
+  const fwd = headers.get('x-forwarded-for') || ''
+  const first = fwd.split(',')[0]?.trim()
+  return first || headers.get('x-real-ip') || headers.get('cf-connecting-ip') || 'unknown'
+}
+
+/**
+ * checkRateLimitByIp — the anonymous counterpart of checkRateLimit.
+ *
+ * Used by public read endpoints that spend a third-party quota (the external
+ * job feed). Same Postgres-backed limiter, same fail-open behaviour.
+ */
+export async function checkRateLimitByIp(
+  headers: Headers,
+  endpoint: string,
+  limit: number,
+  windowMinutes: number = 60
+): Promise<boolean> {
+  return checkRateLimit(ipToKey(clientIpFrom(headers)), endpoint, limit, windowMinutes)
 }

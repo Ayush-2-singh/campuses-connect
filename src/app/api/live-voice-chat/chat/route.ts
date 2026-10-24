@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createServerClient } from '@supabase/ssr'
 import { cleanChatText, CALL_CHAT_MAX_THREAD } from '@/lib/callChat'
+import { checkRateLimit } from '@/lib/rateLimit'
+import { serverError } from '@/lib/api/errors'
 
 /**
  * In-call chat history.
@@ -50,7 +52,7 @@ export async function GET(request: NextRequest) {
     .order('created_at', { ascending: false })
     .limit(CALL_CHAT_MAX_THREAD)
 
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+  if (error) return serverError('live-voice-chat/chat', error)
 
   return NextResponse.json({
     // Newest-first in SQL (so LIMIT keeps the latest), oldest-first on the wire.
@@ -65,6 +67,12 @@ export async function POST(request: NextRequest) {
     data: { user },
   } = await supabase.auth.getUser()
   if (!user) return NextResponse.json({ error: 'Unauthorized.' }, { status: 401 })
+
+  // A data-channel line can be replayed as fast as a browser can POST; one
+  // room's chat must not be able to fill the table or spam the panel.
+  if (!(await checkRateLimit(user.id, 'room-chat:post', 60, 1))) {
+    return NextResponse.json({ error: 'Slow down — too many messages.' }, { status: 429 })
+  }
 
   const body = await request.json().catch(() => null)
   const callId = typeof body?.callId === 'string' ? body.callId : ''
@@ -81,6 +89,6 @@ export async function POST(request: NextRequest) {
     body: text,
   })
 
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+  if (error) return serverError('live-voice-chat/chat', error)
   return NextResponse.json({ success: true })
 }

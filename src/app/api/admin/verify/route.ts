@@ -1,10 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
+import { serverError } from '@/lib/api/errors'
 
 /** GET /api/admin/verify — search users + get their verifications */
 export async function GET(req: NextRequest) {
   const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
   // Verify admin (platform or campus)
@@ -32,7 +35,7 @@ export async function GET(req: NextRequest) {
     p_search: search,
     p_limit: 30,
   })
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+  if (error) return serverError('admin/verify', error)
 
   // Get all campuses for campus change dropdown
   const { data: campuses } = await supabase
@@ -47,7 +50,9 @@ export async function GET(req: NextRequest) {
 /** POST /api/admin/verify — perform verification action */
 export async function POST(req: NextRequest) {
   const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
   // Verify admin (platform or campus)
@@ -152,14 +157,16 @@ export async function POST(req: NextRequest) {
     }
   } catch (err: any) {
     console.error('Verify error:', err)
-    return NextResponse.json({ error: err.message || 'Failed' }, { status: 500 })
+    return serverError('admin/verify', err, 500)
   }
 }
 
 /** PATCH /api/admin/verify — revoke a verification */
 export async function PATCH(req: NextRequest) {
   const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
   // Verify admin (platform or campus)
@@ -180,7 +187,7 @@ export async function PATCH(req: NextRequest) {
     p_admin_id: user.id,
     p_notes: notes || null,
   })
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+  if (error) return serverError('admin/verify', error)
 
   return NextResponse.json({ ok: true, message: 'Verification revoked' })
 }

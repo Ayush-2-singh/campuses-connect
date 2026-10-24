@@ -1,10 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
+import { serverError } from '@/lib/api/errors'
 
 /** GET /api/jobs?company=google&type=internship&search=frontend */
 export async function GET(req: NextRequest) {
   const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
   const { searchParams } = new URL(req.url)
@@ -27,7 +30,7 @@ export async function GET(req: NextRequest) {
   if (search) query = query.or(`title.ilike.%${search}%,description.ilike.%${search}%`)
 
   const { data, error } = await query.limit(limit)
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+  if (error) return serverError('jobs', error)
 
   return NextResponse.json({ jobs: data || [] })
 }
@@ -35,21 +38,46 @@ export async function GET(req: NextRequest) {
 /** POST /api/jobs — create a job posting (admin or company creator) */
 export async function POST(req: NextRequest) {
   const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
   const body = await req.json()
-  const { company_id, title, description, job_type, location, location_type, stipend, salary_range, skills_required, apply_link, deadline } = body
+  const {
+    company_id,
+    title,
+    description,
+    job_type,
+    location,
+    location_type,
+    stipend,
+    salary_range,
+    skills_required,
+    apply_link,
+    deadline,
+  } = body
   if (!company_id || !title) return NextResponse.json({ error: 'company_id and title required' }, { status: 400 })
 
-  const { data, error } = await supabase.from('job_postings').insert({
-    company_id, title, description, job_type: job_type || 'internship',
-    location, location_type, stipend, salary_range,
-    skills_required: skills_required || [],
-    apply_link, deadline: deadline || null,
-    posted_by: user.id,
-  }).select('*, companies(name, slug, logo_url)').single()
+  const { data, error } = await supabase
+    .from('job_postings')
+    .insert({
+      company_id,
+      title,
+      description,
+      job_type: job_type || 'internship',
+      location,
+      location_type,
+      stipend,
+      salary_range,
+      skills_required: skills_required || [],
+      apply_link,
+      deadline: deadline || null,
+      posted_by: user.id,
+    })
+    .select('*, companies(name, slug, logo_url)')
+    .single()
 
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+  if (error) return serverError('jobs', error)
   return NextResponse.json({ job: data }, { status: 201 })
 }

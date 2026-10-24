@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createServerClient } from '@supabase/ssr'
+import { serverError } from '@/lib/api/errors'
+import { checkRateLimit } from '@/lib/rateLimit'
 
 /**
  * POST /api/live-voice-chat/groups/[id]/report — flag a room.
@@ -28,6 +30,11 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
   } = await supabase.auth.getUser()
   if (!user) return NextResponse.json({ error: 'Unauthorized.' }, { status: 401 })
 
+  // Reporting is a deliberate act, once per problem — not a button to mash.
+  if (!(await checkRateLimit(user.id, 'room-report:post', 5, 60))) {
+    return NextResponse.json({ error: 'You have filed too many reports. Try again later.' }, { status: 429 })
+  }
+
   const { id } = await params
   if (!id) return NextResponse.json({ error: 'Room id required.' }, { status: 400 })
 
@@ -43,6 +50,6 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     reason,
   })
 
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+  if (error) return serverError('live-voice-chat/groups/[id]/report', error)
   return NextResponse.json({ success: true })
 }

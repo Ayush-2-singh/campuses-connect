@@ -1,8 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
+import { serverError } from '@/lib/api/errors'
 
 async function checkAdmin(supabase: any) {
-  const { data: { user } } = await supabase.auth.getUser()
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
   if (!user) return { error: 'Unauthorized', status: 401 }
   const { data: grants } = await supabase.rpc('my_admin_grants')
   const isAdmin = (grants as any[])?.some((g: any) => g.admin_type === 'platform_admin')
@@ -55,6 +58,6 @@ export async function GET(req: NextRequest) {
         return NextResponse.json({ error: 'Invalid section' }, { status: 400 })
     }
   } catch (err: any) {
-    return NextResponse.json({ error: err.message }, { status: 500 })
+    return serverError('admin/analytics', err, 500)
   }
 }

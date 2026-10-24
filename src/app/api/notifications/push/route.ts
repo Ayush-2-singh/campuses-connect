@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { checkRateLimit } from '@/lib/rateLimit'
+import { serverError } from '@/lib/api/errors'
 
 /** POST /api/notifications/push — subscribe to push notifications */
 export async function POST(req: NextRequest) {
@@ -33,7 +34,7 @@ export async function POST(req: NextRequest) {
     { onConflict: 'user_id,endpoint' }
   )
 
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+  if (error) return serverError('notifications/push', error)
   return NextResponse.json({ ok: true })
 }
 

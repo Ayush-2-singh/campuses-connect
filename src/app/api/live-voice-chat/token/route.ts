@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { AccessToken } from 'livekit-server-sdk'
 import { createClient } from '@supabase/supabase-js'
+import { serverError } from '@/lib/api/errors'
 
 /**
  * Voice server URL: prefer the build-time public var, fall back to the
@@ -98,6 +99,6 @@ export async function POST(req: NextRequest) {
       url,
     })
   } catch (e: any) {
-    return NextResponse.json({ error: e.message ?? 'Server error' }, { status: 500 })
+    return serverError('live-voice-chat/token', e)
   }
 }

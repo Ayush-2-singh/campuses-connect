@@ -1,10 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
+import { serverError } from '@/lib/api/errors'
 
 /** GET /api/admin/campus-change — list all campus change requests */
 export async function GET(req: NextRequest) {
   const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
   // Verify platform admin
@@ -19,7 +22,9 @@ export async function GET(req: NextRequest) {
 
   let query = supabase
     .from('campus_change_requests')
-    .select('*, profiles:user_id(full_name, username, avatar_url, email), campuses!current_campus_id(name, slug), campuses!requested_campus_id(name, slug)')
+    .select(
+      '*, profiles:user_id(full_name, username, avatar_url, email), campuses!current_campus_id(name, slug), campuses!requested_campus_id(name, slug)'
+    )
     .order('created_at', { ascending: false })
     .limit(50)
 
@@ -28,7 +33,7 @@ export async function GET(req: NextRequest) {
   }
 
   const { data: requests, error } = await query
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+  if (error) return serverError('admin/campus-change', error)
 
   return NextResponse.json({ requests: requests || [] })
 }
@@ -36,7 +41,9 @@ export async function GET(req: NextRequest) {
 /** POST /api/admin/campus-change — approve or reject a request */
 export async function POST(req: NextRequest) {
   const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
   // Verify platform admin
@@ -58,7 +65,7 @@ export async function POST(req: NextRequest) {
       p_request_id: request_id,
       p_admin_id: user.id,
     })
-    if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+    if (error) return serverError('admin/campus-change', error)
     return NextResponse.json({ ok: true })
   }
 
@@ -68,7 +75,7 @@ export async function POST(req: NextRequest) {
       p_admin_id: user.id,
       p_reason: reason || null,
     })
-    if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+    if (error) return serverError('admin/campus-change', error)
     return NextResponse.json({ ok: true })
   }
 

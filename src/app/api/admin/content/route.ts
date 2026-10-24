@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient, type SupabaseClient } from '@supabase/supabase-js'
 import { requireAdmin, requireAuth, scopeFilterFor, MODERATOR_ROLES } from '@/lib/api/middleware'
+import { serverError } from '@/lib/api/errors'
 
 /**
  * API `type` → real table name.
@@ -57,7 +58,7 @@ export async function GET(request: NextRequest) {
     }
     const { data, error } = await query.range(offset, offset + limit - 1)
     const { count } = await getSupabaseAdmin().from('notes').select('*', { count: 'exact', head: true })
-    if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+    if (error) return serverError('admin/content', error)
     return NextResponse.json({ items: data || [], total: count || 0, type: 'notes' })
   }
 
@@ -72,7 +73,7 @@ export async function GET(request: NextRequest) {
     }
     const { data, error } = await query.range(offset, offset + limit - 1)
     const { count } = await getSupabaseAdmin().from('posts').select('*', { count: 'exact', head: true })
-    if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+    if (error) return serverError('admin/content', error)
     return NextResponse.json({ items: data || [], total: count || 0, type: 'posts' })
   }
 
@@ -87,7 +88,7 @@ export async function GET(request: NextRequest) {
     }
     const { data, error } = await query.range(offset, offset + limit - 1)
     const { count } = await getSupabaseAdmin().from('post_comments').select('*', { count: 'exact', head: true })
-    if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+    if (error) return serverError('admin/content', error)
     return NextResponse.json({ items: data || [], total: count || 0, type: 'comments' })
   }
 
@@ -102,7 +103,7 @@ export async function GET(request: NextRequest) {
     }
     const { data, error } = await query.range(offset, offset + limit - 1)
     const { count } = await getSupabaseAdmin().from('events').select('*', { count: 'exact', head: true })
-    if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+    if (error) return serverError('admin/content', error)
     return NextResponse.json({ items: data || [], total: count || 0, type: 'events' })
   }
 
@@ -117,7 +118,7 @@ export async function GET(request: NextRequest) {
     }
     const { data, error } = await query.range(offset, offset + limit - 1)
     const { count } = await getSupabaseAdmin().from('polls').select('*', { count: 'exact', head: true })
-    if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+    if (error) return serverError('admin/content', error)
     return NextResponse.json({ items: data || [], total: count || 0, type: 'polls' })
   }
 
@@ -132,7 +133,7 @@ export async function GET(request: NextRequest) {
     const { count } = await getSupabaseAdmin()
       .from('live_voice_chat_groups')
       .select('*', { count: 'exact', head: true })
-    if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+    if (error) return serverError('admin/content', error)
     return NextResponse.json({ items: data || [], total: count || 0, type: 'rooms' })
   }
 
@@ -143,7 +144,7 @@ export async function GET(request: NextRequest) {
 
     const { data, error } = await query.range(offset, offset + limit - 1)
     const { count } = await getSupabaseAdmin().from('interview_experiences').select('*', { count: 'exact', head: true })
-    if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+    if (error) return serverError('admin/content', error)
     return NextResponse.json({ items: data || [], total: count || 0, type: 'experiences' })
   }
 
@@ -157,7 +158,7 @@ export async function GET(request: NextRequest) {
 
     const { data, error } = await query.range(offset, offset + limit - 1)
     const { count } = await getSupabaseAdmin().from('blog_posts').select('*', { count: 'exact', head: true })
-    if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+    if (error) return serverError('admin/content', error)
     return NextResponse.json({ items: data || [], total: count || 0, type: 'blog' })
   }
 
@@ -224,7 +225,7 @@ export async function DELETE(request: NextRequest) {
 
   if (type === 'posts') {
     const { data, error } = await getSupabaseAdmin().from('posts').select(selectScope).in('id', ids)
-    if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+    if (error) return serverError('admin/content', error)
     allowedIds = (data || []).filter(canModerateRow).map((r: any) => r.id)
   } else if (type === 'comments') {
     // A comment inherits the scope of the post it lives on.
@@ -232,13 +233,13 @@ export async function DELETE(request: NextRequest) {
       .from('post_comments')
       .select('id, post_id')
       .in('id', ids)
-    if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+    if (error) return serverError('admin/content', error)
 
     const postIds = [...new Set((commentRows || []).map((c: any) => c.post_id))]
     const { data: postRows, error: postError } = postIds.length
       ? await getSupabaseAdmin().from('posts').select(selectScope).in('id', postIds)
       : { data: [] as any[], error: null }
-    if (postError) return NextResponse.json({ error: postError.message }, { status: 500 })
+    if (postError) return serverError('admin/content POST', postError)
 
     const allowedPosts = new Set((postRows || []).filter(canModerateRow).map((p: any) => p.id))
     allowedIds = (commentRows || []).filter((c: any) => allowedPosts.has(c.post_id)).map((c: any) => c.id)
@@ -249,7 +250,7 @@ export async function DELETE(request: NextRequest) {
       .from('live_voice_chat_groups')
       .select('id, campus_id')
       .in('id', ids)
-    if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+    if (error) return serverError('admin/content', error)
     allowedIds = (data || [])
       .filter((r: any) => canModerateRow({ campus_id: r.campus_id, college_id: null, community_id: null }))
       .map((r: any) => r.id)
@@ -277,7 +278,7 @@ export async function DELETE(request: NextRequest) {
   }
 
   const { error } = await getSupabaseAdmin().from(table).delete().in('id', allowedIds)
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+  if (error) return serverError('admin/content', error)
 
   // Log (best-effort — don't fail the delete if audit_log insert fails)
   try {

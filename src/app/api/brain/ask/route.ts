@@ -4,6 +4,7 @@ import { requireAuthLite } from '@/lib/api/middleware'
 import { buildBrainPrompt, embedGemini, streamCompleteText } from '@/lib/brain'
 import { brainCacheGet, brainCacheKey, brainCacheSet } from '@/lib/brainCache'
 import { checkRateLimit } from '@/lib/rateLimit'
+import { serverError } from '@/lib/api/errors'
 
 export const runtime = 'nodejs'
 export const maxDuration = 60
@@ -56,7 +57,7 @@ export async function POST(request: NextRequest) {
   try {
     queryEmbedding = await embedGemini(question, 'RETRIEVAL_QUERY')
   } catch (e: any) {
-    return NextResponse.json({ error: `Embedding failed: ${e.message}` }, { status: 502 })
+    return serverError('brain/ask', e, 502)
   }
 
   // 2. Semantic search over the student's own brain

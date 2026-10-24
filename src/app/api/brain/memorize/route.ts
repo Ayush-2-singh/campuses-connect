@@ -4,6 +4,7 @@ import { requireAuthLite } from '@/lib/api/middleware'
 import { embedGemini, extractMemory } from '@/lib/brain'
 import { clearUserBrainCache } from '@/lib/brainCache'
 import { checkRateLimit } from '@/lib/rateLimit'
+import { serverError } from '@/lib/api/errors'
 
 export const runtime = 'nodejs'
 
@@ -46,7 +47,7 @@ export async function POST(request: NextRequest) {
   try {
     embedding = await embedGemini(combined, 'RETRIEVAL_DOCUMENT')
   } catch (e: any) {
-    return NextResponse.json({ error: `Embedding failed: ${e.message}` }, { status: 502 })
+    return serverError('brain/memorize', e, 502)
   }
 
   const supabase = await createClient()

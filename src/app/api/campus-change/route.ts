@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { checkRateLimit } from '@/lib/rateLimit'
+import { serverError } from '@/lib/api/errors'
 
 const ID_CARD_BUCKET = 'id-cards'
 
@@ -129,7 +130,7 @@ export async function POST(req: NextRequest) {
 
     if (uploadErr) {
       console.error('Upload error:', uploadErr)
-      return NextResponse.json({ error: `Failed to upload ID card: ${uploadErr.message}` }, { status: 500 })
+      return serverError('campus-change upload', uploadErr)
     }
 
     // The bucket is PRIVATE (student IDs are sensitive documents), so a
@@ -222,7 +223,7 @@ export async function POST(req: NextRequest) {
 
   if (insertErr) {
     console.error('Insert error:', insertErr)
-    return NextResponse.json({ error: `Database error: ${insertErr.message}` }, { status: 500 })
+    return serverError('campus-change insert', insertErr)
   }
 
   return NextResponse.json({ ok: true, request })
@@ -251,7 +252,7 @@ export async function PATCH(req: NextRequest) {
       .eq('user_id', user.id)
       .eq('status', 'pending')
 
-    if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+    if (error) return serverError('campus-change', error)
     return NextResponse.json({ ok: true })
   }
 

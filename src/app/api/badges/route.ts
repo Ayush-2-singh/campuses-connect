@@ -1,17 +1,20 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
+import { serverError } from '@/lib/api/errors'
 
 /** GET /api/badges — get all badges with user's progress */
 export async function GET(req: NextRequest) {
   const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
   const { searchParams } = new URL(req.url)
   const userId = searchParams.get('user_id') || user.id
 
   const { data: badges, error } = await supabase.rpc('get_badge_progress', { p_user_id: userId })
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+  if (error) return serverError('badges', error)
 
   // Get user's earned badges
   const { data: userBadges } = await supabase.rpc('get_user_badges', { p_user_id: userId })
@@ -43,7 +46,9 @@ export async function GET(req: NextRequest) {
 /** POST /api/badges — record daily activity */
 export async function POST(req: NextRequest) {
   const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
   const body = await req.json()

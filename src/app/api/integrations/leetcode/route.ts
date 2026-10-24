@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
+import { serverError } from '@/lib/api/errors'
 
 // ── Fetch LeetCode stats (shared helper) ────────────────────
 async function fetchLeetCodeStats(username: string) {
@@ -44,8 +45,8 @@ async function fetchLeetCodeStats(username: string) {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      'Referer': 'https://leetcode.com',
-      'Origin': 'https://leetcode.com',
+      Referer: 'https://leetcode.com',
+      Origin: 'https://leetcode.com',
       'User-Agent': 'ConnectToCampus/1.0',
     },
     body: JSON.stringify(profileQuery),
@@ -69,8 +70,7 @@ async function fetchLeetCodeStats(username: string) {
 
   // Parse submission stats
   const submitStats = matchedUser.submitStatsGlobal?.acSubmissionNum || []
-  const getStat = (difficulty: string) =>
-    submitStats.find((s: any) => s.difficulty === difficulty)?.count || 0
+  const getStat = (difficulty: string) => submitStats.find((s: any) => s.difficulty === difficulty)?.count || 0
 
   const totalSolved = getStat('All')
   const easySolved = getStat('Easy')
@@ -96,8 +96,8 @@ async function fetchLeetCodeStats(username: string) {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Referer': 'https://leetcode.com',
-        'Origin': 'https://leetcode.com',
+        Referer: 'https://leetcode.com',
+        Origin: 'https://leetcode.com',
         'User-Agent': 'ConnectToCampus/1.0',
       },
       body: JSON.stringify(contestQuery),
@@ -107,7 +107,9 @@ async function fetchLeetCodeStats(username: string) {
       contestRating = Math.round(contestData?.data?.userContestRanking?.rating || 0)
       contestTotal = contestData?.data?.userContestRanking?.attendedContestsCount || 0
     }
-  } catch { /* fallback */ }
+  } catch {
+    /* fallback */
+  }
 
   const profile = matchedUser.profile || {}
   const badges = matchedUser.badges || []
@@ -142,7 +144,9 @@ async function fetchLeetCodeStats(username: string) {
 /** GET /api/integrations/leetcode?username=xxx — fetch LeetCode stats */
 export async function GET(req: NextRequest) {
   const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
   const { searchParams } = new URL(req.url)
@@ -170,14 +174,16 @@ export async function GET(req: NextRequest) {
     const data = await fetchLeetCodeStats(username)
     return NextResponse.json(data)
   } catch (err: any) {
-    return NextResponse.json({ error: err.message || 'Failed to fetch LeetCode data' }, { status: 500 })
+    return serverError('integrations/leetcode', err, 500)
   }
 }
 
 /** POST /api/integrations/leetcode — connect LeetCode account */
 export async function POST(req: NextRequest) {
   const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
   let body: any
@@ -216,29 +222,34 @@ export async function POST(req: NextRequest) {
     })
     if (insertErr) {
       console.error('Insert error:', insertErr)
-      return NextResponse.json({ error: `Database error: ${insertErr.message}` }, { status: 500 })
+      return serverError('integrations/leetcode', insertErr, 500)
     }
 
     // Cache stats directly (no self-call needed)
-    const { error: statsErr } = await supabase.from('integration_stats').upsert({
-      user_id: user.id,
-      platform: 'leetcode',
-      stats: lcData.stats,
-      synced_at: new Date().toISOString(),
-    }, { onConflict: 'user_id,platform' })
+    const { error: statsErr } = await supabase.from('integration_stats').upsert(
+      {
+        user_id: user.id,
+        platform: 'leetcode',
+        stats: lcData.stats,
+        synced_at: new Date().toISOString(),
+      },
+      { onConflict: 'user_id,platform' }
+    )
     if (statsErr) console.error('Stats cache error:', statsErr)
 
     return NextResponse.json({ ok: true, username: lcData.username })
   } catch (err: any) {
     console.error('LeetCode connect error:', err)
-    return NextResponse.json({ error: err.message || 'Failed to connect LeetCode' }, { status: 500 })
+    return serverError('integrations/leetcode', err, 500)
   }
 }
 
 /** DELETE /api/integrations/leetcode — disconnect LeetCode */
 export async function DELETE(req: NextRequest) {
   const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
   await supabase.from('user_integrations').delete().eq('user_id', user.id).eq('platform', 'leetcode')

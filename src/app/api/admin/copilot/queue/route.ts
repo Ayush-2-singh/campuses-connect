@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { requireAuth } from '@/lib/api/middleware'
 import { checkRateLimit } from '@/lib/rateLimit'
+import { serverError } from '@/lib/api/errors'
 
 export const runtime = 'nodejs'
 
@@ -35,7 +36,7 @@ export async function GET(request: NextRequest) {
 
   const { data, error } = await supabase.rpc('get_moderation_queue', { p_limit: 100 })
   if (error) {
-    return NextResponse.json({ error: `Failed to load queue: ${error.message}` }, { status: 500 })
+    return serverError('admin/copilot/queue — Failed to load queue', error)
   }
   return NextResponse.json({ items: data || [] })
 }

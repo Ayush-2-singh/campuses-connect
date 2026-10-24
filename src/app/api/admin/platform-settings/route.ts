@@ -1,8 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
+import { serverError } from '@/lib/api/errors'
 
 async function checkAdmin(supabase: Awaited<ReturnType<typeof createClient>>) {
-  const { data: { user } } = await supabase.auth.getUser()
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
   if (!user) return { user: null, isAdmin: false }
   const { data: grants } = await supabase.rpc('my_admin_grants')
   const isAdmin = ((grants as any[]) || []).length > 0
@@ -18,7 +21,7 @@ export async function GET() {
 
   const { data, error } = await supabase.from('platform_settings').select('*').order('key')
 
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+  if (error) return serverError('admin/platform-settings', error)
 
   // Normalize jsonb values to strings for the frontend
   const normalized = (data || []).map((s: any) => ({
@@ -51,7 +54,7 @@ export async function PATCH(req: NextRequest) {
     .update({ value: jsonbValue, updated_by: user.id })
     .eq('key', key)
 
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+  if (error) return serverError('admin/platform-settings', error)
 
   await supabase.rpc('log_admin_action', {
     p_action: 'platform_setting.update',
@@ -77,7 +80,7 @@ export async function DELETE(req: NextRequest) {
 
   const { error } = await supabase.from('platform_settings').delete().eq('key', key)
 
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+  if (error) return serverError('admin/platform-settings', error)
 
   await supabase.rpc('log_admin_action', {
     p_action: 'platform_setting.delete',

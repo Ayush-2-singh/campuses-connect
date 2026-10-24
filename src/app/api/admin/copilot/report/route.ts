@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { requireAuth } from '@/lib/api/middleware'
 import { checkRateLimit } from '@/lib/rateLimit'
+import { serverError } from '@/lib/api/errors'
 
 export const runtime = 'nodejs'
 
@@ -40,7 +41,7 @@ export async function POST(request: NextRequest) {
   })
 
   if (error) {
-    return NextResponse.json({ error: `Could not submit report: ${error.message}` }, { status: 500 })
+    return serverError('admin/copilot/report — Could not submit report', error)
   }
   return NextResponse.json({ ok: true }, { status: 201 })
 }

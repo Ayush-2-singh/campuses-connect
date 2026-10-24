@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
+import { serverError } from '@/lib/api/errors'
 
 interface GitHubUser {
   login: string
@@ -25,8 +26,12 @@ async function fetchGitHubStats(username: string) {
   const ghToken = process.env.GITHUB_TOKEN
   // Fetch GitHub user profile
   const userRes = await fetch(`https://api.github.com/users/${encodeURIComponent(username)}`, {
-      headers: { 'Accept': 'application/vnd.github.v3+json', 'User-Agent': 'ConnectToCampus/1.0', ...(ghToken ? { 'Authorization': `token ${ghToken}` } : {}) },
-    })
+    headers: {
+      Accept: 'application/vnd.github.v3+json',
+      'User-Agent': 'ConnectToCampus/1.0',
+      ...(ghToken ? { Authorization: `token ${ghToken}` } : {}),
+    },
+  })
   if (!userRes.ok) {
     throw new Error('GitHub user not found. Please check your username.')
   }
@@ -34,26 +39,40 @@ async function fetchGitHubStats(username: string) {
 
   // Fetch top repos (sorted by stars)
   const reposRes = await fetch(
-      `https://api.github.com/users/${encodeURIComponent(username)}/repos?sort=stars&per_page=10`,
-      { headers: { 'Accept': 'application/vnd.github.v3+json', 'User-Agent': 'ConnectToCampus/1.0', ...(ghToken ? { 'Authorization': `token ${ghToken}` } : {}) } }
-    )
-  const repos: GitHubRepo[] = reposRes.ok ? await reposRes.json() : []  // Fetch contribution count from public events
+    `https://api.github.com/users/${encodeURIComponent(username)}/repos?sort=stars&per_page=10`,
+    {
+      headers: {
+        Accept: 'application/vnd.github.v3+json',
+        'User-Agent': 'ConnectToCampus/1.0',
+        ...(ghToken ? { Authorization: `token ${ghToken}` } : {}),
+      },
+    }
+  )
+  const repos: GitHubRepo[] = reposRes.ok ? await reposRes.json() : [] // Fetch contribution count from public events
   let totalContributions = 0
   try {
-      const calRes = await fetch(
-        `https://api.github.com/users/${encodeURIComponent(username)}/events/public?per_page=100`,
-        { headers: { 'Accept': 'application/vnd.github.v3+json', 'User-Agent': 'ConnectToCampus/1.0', ...(ghToken ? { 'Authorization': `token ${ghToken}` } : {}) } }
-      )
-      if (calRes.ok) {
+    const calRes = await fetch(
+      `https://api.github.com/users/${encodeURIComponent(username)}/events/public?per_page=100`,
+      {
+        headers: {
+          Accept: 'application/vnd.github.v3+json',
+          'User-Agent': 'ConnectToCampus/1.0',
+          ...(ghToken ? { Authorization: `token ${ghToken}` } : {}),
+        },
+      }
+    )
+    if (calRes.ok) {
       const events = await calRes.json()
-      totalContributions = events.filter((e: any) =>
-        e.type === 'PushEvent' || e.type === 'CreateEvent'
-      ).reduce((sum: number, e: any) => {
-        if (e.type === 'PushEvent') return sum + (e.payload?.size || 1)
-        return sum + 1
-      }, 0)
+      totalContributions = events
+        .filter((e: any) => e.type === 'PushEvent' || e.type === 'CreateEvent')
+        .reduce((sum: number, e: any) => {
+          if (e.type === 'PushEvent') return sum + (e.payload?.size || 1)
+          return sum + 1
+        }, 0)
     }
-  } catch { /* fallback */ }
+  } catch {
+    /* fallback */
+  }
 
   // Compute languages from repos
   const languages: Record<string, number> = {}
@@ -73,7 +92,7 @@ async function fetchGitHubStats(username: string) {
     followers: ghUser.followers,
     following: ghUser.following,
     total_contributions: totalContributions,
-    top_repos: repos.slice(0, 5).map(r => ({
+    top_repos: repos.slice(0, 5).map((r) => ({
       name: r.name,
       description: r.description,
       language: r.language,
@@ -96,7 +115,9 @@ async function fetchGitHubStats(username: string) {
 /** GET /api/integrations/github?username=xxx — fetch GitHub profile + stats */
 export async function GET(req: NextRequest) {
   const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
   const { searchParams } = new URL(req.url)
@@ -125,14 +146,16 @@ export async function GET(req: NextRequest) {
     const data = await fetchGitHubStats(username)
     return NextResponse.json(data)
   } catch (err: any) {
-    return NextResponse.json({ error: err.message || 'Failed to fetch GitHub data' }, { status: 500 })
+    return serverError('integrations/github', err, 500)
   }
 }
 
 /** POST /api/integrations/github — connect GitHub account */
 export async function POST(req: NextRequest) {
   const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
   let body: any
@@ -171,29 +194,34 @@ export async function POST(req: NextRequest) {
     })
     if (insertErr) {
       console.error('Insert error:', insertErr)
-      return NextResponse.json({ error: `Database error: ${insertErr.message}` }, { status: 500 })
+      return serverError('integrations/github', insertErr, 500)
     }
 
     // Cache stats directly (no self-call needed)
-    const { error: statsErr } = await supabase.from('integration_stats').upsert({
-      user_id: user.id,
-      platform: 'github',
-      stats: ghData.stats,
-      synced_at: new Date().toISOString(),
-    }, { onConflict: 'user_id,platform' })
+    const { error: statsErr } = await supabase.from('integration_stats').upsert(
+      {
+        user_id: user.id,
+        platform: 'github',
+        stats: ghData.stats,
+        synced_at: new Date().toISOString(),
+      },
+      { onConflict: 'user_id,platform' }
+    )
     if (statsErr) console.error('Stats cache error:', statsErr)
 
     return NextResponse.json({ ok: true, username: ghData.username })
   } catch (err: any) {
     console.error('GitHub connect error:', err)
-    return NextResponse.json({ error: err.message || 'Failed to connect GitHub' }, { status: 500 })
+    return serverError('integrations/github', err, 500)
   }
 }
 
 /** DELETE /api/integrations/github — disconnect GitHub */
 export async function DELETE(req: NextRequest) {
   const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
   await supabase.from('user_integrations').delete().eq('user_id', user.id).eq('platform', 'github')

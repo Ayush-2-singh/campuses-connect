@@ -3,6 +3,7 @@ import { createClient } from '@/lib/supabase/server'
 import { requireAuth } from '@/lib/api/middleware'
 import { checkRateLimit } from '@/lib/rateLimit'
 import type { AiVerdict } from '@/lib/copilot'
+import { serverError } from '@/lib/api/errors'
 
 export const runtime = 'nodejs'
 
@@ -43,7 +44,7 @@ export async function POST(request: NextRequest) {
   })
 
   if (error) {
-    return NextResponse.json({ error: `Could not flag content: ${error.message}` }, { status: 500 })
+    return serverError('admin/copilot/flag — Could not flag content', error)
   }
   // RPC returns NULL when the caller doesn't own the content (non-moderator)
   if (!data) {

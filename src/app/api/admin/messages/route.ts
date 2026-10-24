@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient, type SupabaseClient } from '@supabase/supabase-js'
 import { requireAdmin } from '@/lib/api/middleware'
+import { serverError } from '@/lib/api/errors'
 
 let _supabaseAdmin: SupabaseClient | null = null
 /** Lazy, request-time init — module-scope createClient() throws at build when
@@ -37,7 +38,7 @@ export async function GET(request: NextRequest) {
       .range(offset, offset + limit - 1)
 
     if (error) {
-      return NextResponse.json({ error: error.message }, { status: 500 })
+      return serverError('admin/messages', error)
     }
 
     // Get participants
@@ -78,7 +79,7 @@ export async function GET(request: NextRequest) {
   const { data: conversations, error } = await query.range(offset, offset + limit - 1)
 
   if (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 })
+    return serverError('admin/messages', error)
   }
 
   // Get last message for each conversation
@@ -172,7 +173,7 @@ export async function DELETE(request: NextRequest) {
       .in('id', message_ids)
 
     if (error) {
-      return NextResponse.json({ error: error.message }, { status: 500 })
+      return serverError('admin/messages', error)
     }
 
     // Log the action
@@ -202,7 +203,7 @@ export async function DELETE(request: NextRequest) {
       .eq('conversation_id', conversation_id)
 
     if (error) {
-      return NextResponse.json({ error: error.message }, { status: 500 })
+      return serverError('admin/messages', error)
     }
 
     // Also delete conversation participants

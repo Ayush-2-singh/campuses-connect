@@ -252,16 +252,7 @@ export default function ProfilePage() {
       return
     }
     setConnRequests((prev) => prev.filter((r) => r.id !== id))
-    if (accept) toast('Connected! You can now message each other', { tone: 'success' })
-  }
-
-  const openConversation = async (peerId: string) => {
-    const { data: convId, error } = await supabase.rpc('start_or_get_conversation', { p_peer_id: peerId })
-    if (error || !convId) {
-      toast('You can only message people you are connected with', { tone: 'danger' })
-      return
-    }
-    router.push(`/messages/${convId}`)
+    if (accept) toast('Connected!', { tone: 'success' })
   }
 
   const handleSave = async () => {
@@ -816,8 +807,7 @@ export default function ProfilePage() {
           </p>
           {connections.length === 0 ? (
             <p style={{ fontSize: 13, color: 'var(--text-muted)', margin: 0, lineHeight: 1.5 }}>
-              No connections yet. Connect with people from the Talent directory — only connected people can message each
-              other.
+              No connections yet. Requests appear here once someone connects with you.
             </p>
           ) : (
             connections.map((c) => (
@@ -843,22 +833,24 @@ export default function ProfilePage() {
                   </p>
                   <p style={{ fontSize: 12, color: 'var(--text-muted)', margin: 0 }}>@{c.profile?.username}</p>
                 </div>
-                <button
-                  onClick={() => c.profile?.id && openConversation(c.profile.id)}
-                  style={{
-                    padding: '7px 14px',
-                    borderRadius: 8,
-                    border: 'none',
-                    background: 'var(--accent)',
-                    color: 'var(--on-accent)',
-                    fontSize: 12.5,
-                    fontWeight: 600,
-                    cursor: 'pointer',
-                    fontFamily: 'inherit',
-                  }}
-                >
-                  💬 Message
-                </button>
+                {c.profile?.username && (
+                  <button
+                    onClick={() => router.push(`/profile/${c.profile.username}`)}
+                    style={{
+                      padding: '7px 14px',
+                      borderRadius: 8,
+                      border: '1px solid var(--border)',
+                      background: 'var(--bg-secondary)',
+                      color: 'var(--text-secondary)',
+                      fontSize: 12.5,
+                      fontWeight: 600,
+                      cursor: 'pointer',
+                      fontFamily: 'inherit',
+                    }}
+                  >
+                    View profile
+                  </button>
+                )}
               </div>
             ))
           )}

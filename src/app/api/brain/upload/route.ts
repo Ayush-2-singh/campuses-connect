@@ -5,6 +5,7 @@ import { requireAuthLite } from '@/lib/api/middleware'
 import { chunkText, embedGemini, ocrImageViaGemini } from '@/lib/brain'
 import { clearUserBrainCache } from '@/lib/brainCache'
 import { checkRateLimit } from '@/lib/rateLimit'
+import { serverError } from '@/lib/api/errors'
 
 export const runtime = 'nodejs'
 const MAX_BYTES = 12 * 1024 * 1024 // 12 MB
@@ -84,7 +85,7 @@ export async function POST(request: NextRequest) {
       text = await ocrImageViaGemini(bytes, mime)
     }
   } catch (e: any) {
-    return NextResponse.json({ error: `Could not read the file: ${e.message}` }, { status: 422 })
+    return serverError('brain/upload', e, 422)
   }
 
   text = text.trim()
@@ -150,7 +151,7 @@ export async function POST(request: NextRequest) {
   } catch (e: any) {
     clearUserBrainCache(userId)
     await supabase.from('brain_documents').delete().eq('id', doc.id)
-    return NextResponse.json({ error: `Embedding failed: ${e.message}` }, { status: 502 })
+    return serverError('brain/upload', e, 502)
   }
 
   return NextResponse.json(

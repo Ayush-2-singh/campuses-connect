@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { requireAuth, scopeFilterFor } from '@/lib/api/middleware'
 import { getSupabaseAdmin } from '@/lib/auth'
+import { serverError } from '@/lib/api/errors'
 
 /**
  * DELETE /api/live-voice-chat/groups/[id] — remove a room.
@@ -33,7 +34,7 @@ export async function DELETE(request: NextRequest, { params }: { params: Promise
     .eq('id', id)
     .maybeSingle()
 
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+  if (error) return serverError('live-voice-chat/groups/[id]', error)
   if (!group) return NextResponse.json({ error: 'Room not found.' }, { status: 404 })
 
   let allowed = group.created_by === userId
@@ -71,7 +72,7 @@ export async function DELETE(request: NextRequest, { params }: { params: Promise
   }
 
   const { error: deleteError } = await admin.from('live_voice_chat_groups').delete().eq('id', id)
-  if (deleteError) return NextResponse.json({ error: deleteError.message }, { status: 500 })
+  if (deleteError) return serverError('live-voice-chat/groups DELETE', deleteError)
 
   try {
     await admin.from('audit_log').insert({

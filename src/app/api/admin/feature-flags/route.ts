@@ -1,8 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
+import { serverError } from '@/lib/api/errors'
 
 async function checkAdmin(supabase: Awaited<ReturnType<typeof createClient>>) {
-  const { data: { user } } = await supabase.auth.getUser()
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
   if (!user) return { user: null, isAdmin: false }
   const { data: grants } = await supabase.rpc('my_admin_grants')
   const isAdmin = ((grants as any[]) || []).length > 0
@@ -16,12 +19,9 @@ export async function GET() {
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   if (!isAdmin) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
 
-  const { data, error } = await supabase
-    .from('feature_flags')
-    .select('*')
-    .order('sort_order')
+  const { data, error } = await supabase.from('feature_flags').select('*').order('sort_order')
 
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+  if (error) return serverError('admin/feature-flags', error)
   return NextResponse.json({ flags: data })
 }
 
@@ -38,12 +38,9 @@ export async function PATCH(req: NextRequest) {
     return NextResponse.json({ error: 'key and enabled (boolean) required' }, { status: 400 })
   }
 
-  const { error } = await supabase
-    .from('feature_flags')
-    .update({ enabled })
-    .eq('key', key)
+  const { error } = await supabase.from('feature_flags').update({ enabled }).eq('key', key)
 
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+  if (error) return serverError('admin/feature-flags', error)
 
   await supabase.rpc('log_admin_action', {
     p_action: `feature_flag.${enabled ? 'enable' : 'disable'}`,
@@ -67,22 +64,20 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'key and label required' }, { status: 400 })
   }
 
-  const { error } = await supabase
-    .from('feature_flags')
-    .insert({
-      key,
-      label,
-      description: description || null,
-      category: category || 'custom',
-      enabled: enabled !== false,
-      sort_order: sort_order || 100,
-    })
+  const { error } = await supabase.from('feature_flags').insert({
+    key,
+    label,
+    description: description || null,
+    category: category || 'custom',
+    enabled: enabled !== false,
+    sort_order: sort_order || 100,
+  })
 
   if (error) {
     if (error.code === '23505') {
       return NextResponse.json({ error: 'A feature with this key already exists' }, { status: 409 })
     }
-    return NextResponse.json({ error: error.message }, { status: 500 })
+    return serverError('admin/feature-flags', error)
   }
 
   await supabase.rpc('log_admin_action', {
@@ -105,12 +100,9 @@ export async function DELETE(req: NextRequest) {
   const key = searchParams.get('key')
   if (!key) return NextResponse.json({ error: 'key required' }, { status: 400 })
 
-  const { error } = await supabase
-    .from('feature_flags')
-    .delete()
-    .eq('key', key)
+  const { error } = await supabase.from('feature_flags').delete().eq('key', key)
 
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+  if (error) return serverError('admin/feature-flags', error)
 
   await supabase.rpc('log_admin_action', {
     p_action: 'feature_flag.delete',
