@@ -75,7 +75,14 @@ describe('three people hold the stage at once', () => {
   })
 
   it('spotlight always has a hero, even with nothing pinned', () => {
-    expect(surface).toMatch(/layout === 'spotlight' \? presentPins\[0\] \?\? fallbackId : presentPins\[0\]/)
+    // Parsed out of the source rather than regex-matched on one line, so a
+    // formatter re-wrapping the expression cannot break the test.
+    const heroLine = surface.slice(surface.indexOf('const heroId'), surface.indexOf('const stagePeople'))
+    expect(heroLine).toMatch(/layout === 'spotlight'/)
+    expect(heroLine).toMatch(/presentPins\[0\]/)
+    expect(heroLine).toMatch(/fallbackId/)
+    // The fallback is the first remote person, else me — never nobody.
     expect(surface).toMatch(/participants\.find\(\(p\) => !p\.isLocal\)\?\.identity/)
+    expect(surface).toMatch(/localParticipant\?\.identity \?\? null/)
   })
 })
