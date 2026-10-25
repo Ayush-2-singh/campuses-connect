@@ -200,7 +200,8 @@ export default function OrbitHero({ faces = [] }: { faces?: Face[] }) {
         </h1>
         <p>
           Read real interview experiences from Indian campuses — round by round, written by students who cleared them —
-          then practise exactly what those rounds asked. Free for CSE &amp; ECE students.
+          then practise exactly what those rounds asked. Make your own study group and grow together. Free for CSE &amp;
+          ECE students.
         </p>
         <div className="orbit-actions">
           <Link href="/experiences" className="orbit-primary">
@@ -208,7 +209,7 @@ export default function OrbitHero({ faces = [] }: { faces?: Face[] }) {
             <span aria-hidden="true">↗</span>
           </Link>
           <Link href="/live-voice-chat" className="orbit-secondary">
-            Join a room
+            Create a group
           </Link>
         </div>
       </div>

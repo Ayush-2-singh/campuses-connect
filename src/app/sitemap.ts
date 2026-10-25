@@ -21,6 +21,11 @@ export default function sitemap(): MetadataRoute.Sitemap {
     { path: '/compete', priority: 0.8, changeFrequency: 'daily' },
     { path: '/leaderboard', priority: 0.7, changeFrequency: 'daily' },
     { path: '/experiences', priority: 0.7, changeFrequency: 'weekly' },
+    // The group feature — "anyone can create a group" — is a public, listing
+    // page with real search demand ("create a study group online", "group
+    // study room"), so it belongs in the sitemap next to the write-ups.
+    { path: '/live-voice-chat', priority: 0.8, changeFrequency: 'daily' },
+    { path: '/premium', priority: 0.5, changeFrequency: 'monthly' },
     { path: '/about', priority: 0.6, changeFrequency: 'monthly' },
     { path: '/privacy', priority: 0.3, changeFrequency: 'yearly' },
     { path: '/terms', priority: 0.3, changeFrequency: 'yearly' },

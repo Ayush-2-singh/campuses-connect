@@ -3,16 +3,17 @@ import type { Metadata } from 'next'
 /**
  * STUDENT GROUPS — the route where a student CREATES their own group: a live
  * voice room filed under a topic (DSA, Web Dev, English practice, …), campus
- * or global, optionally locked, and classmates join it.
+ * or global, optionally locked, and classmates join it. "Anyone can create a
+ * group" is the whole pitch, so it is the phrasing the title leads with.
  *
  * The page itself is a client component, so it cannot export `metadata` —
  * without this layout the whole branch inherited the root title and a crawler
  * could not tell the groups route from the experiences one.
  */
 export const metadata: Metadata = {
-  title: 'Create or Join a Student Group — Live Voice Chat',
+  title: 'Create Your Own Student Group — Live Voice Chat Rooms',
   description:
-    'Create your own student group — a live voice room for DSA doubts, Web Dev, English practice or your whole campus — and let classmates join. Peer learning for CSE & SDE aspirants, grow together.',
+    'Anyone can create a group in seconds: a free study room for DSA doubts, Web Dev, English practice or your whole campus — lock it if you want it private, classmates join in one tap. Grow together.',
   alternates: { canonical: '/live-voice-chat' },
 }
 

@@ -1,7 +1,7 @@
 {
-  "name": "ConnectToCampus — Campus placement, round by round",
+  "name": "ConnectToCampus — Interview Experiences for CSE & SDE Aspirants",
   "short_name": "ConnectToCampus",
-  "description": "Interview experiences from Indian campuses, the companies behind them, and timed practice on the problems those rounds actually asked.",
+  "description": "Read and share round-by-round interview experiences from Indian campuses, create your own study group, and practise the questions those rounds actually asked.",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",
