@@ -238,7 +238,34 @@ export default function CallSurface() {
       return 'auto'
     }
   })
-  const [pinnedId, setPinnedId] = useState<string | null>(null)
+  // UP TO THREE PEOPLE hold the stage at once: the first pin is the hero (the
+  // big tile), the next two ride beside it as small tiles, and everyone else
+  // stays in the compact strip below. Pins survive layout switches and a page
+  // reload, stored per session.
+  const [pinnedIds, setPinnedIds] = useState<string[]>(() => {
+    try {
+      const raw = window.sessionStorage.getItem('cc-voice-pins')
+      const list = JSON.parse(raw ?? '[]') as unknown
+      return Array.isArray(list) ? list.filter((p): p is string => typeof p === 'string').slice(0, 3) : []
+    } catch {
+      return []
+    }
+  })
+
+  const togglePin = useCallback((identity: string) => {
+    setPinnedIds((cur) => {
+      // Toggle off if already pinned; otherwise push to the end and keep the
+      // newest THREE, so a fourth pin replaces the oldest companion first and
+      // the hero is only dropped once everything else is.
+      const next = cur.includes(identity) ? cur.filter((p) => p !== identity) : [...cur, identity].slice(-3)
+      try {
+        window.sessionStorage.setItem('cc-voice-pins', JSON.stringify(next))
+      } catch {
+        /* private browsing — pins just won't persist */
+      }
+      return next
+    })
+  }, [])
 
   const changeLayout = useCallback((next: 'auto' | 'grid' | 'spotlight') => {
     setLayout(next)
@@ -254,9 +281,15 @@ export default function CallSurface() {
 
   const screenShareRef = useTracks([Track.Source.ScreenShare])[0]
 
-  // Spotlight target: the pinned person, else the first remote participant,
-  // else me — there is always someone on stage in spotlight mode.
-  const spotlightId = pinnedId ?? participants.find((p) => !p.isLocal)?.identity ?? localParticipant?.identity ?? null
+  // Stage roster: pins first (oldest pin = hero), then the first remote
+  // person, then me. Spotlight always stages somebody; Auto stages only what
+  // the user pinned; Grid stages nobody — every tile is equal there.
+  const presentPins = pinnedIds.filter((id) => participants.some((p) => p.identity === id))
+  const fallbackId = participants.find((p) => !p.isLocal)?.identity ?? localParticipant?.identity ?? null
+  const heroId = (layout === 'spotlight' ? (presentPins[0] ?? fallbackId) : presentPins[0]) ?? null
+  // Grid stages NOBODY by definition — every tile is equal there — so a pin
+  // never silently removes somebody from the grid.
+  const stagePeople = layout === 'grid' || !heroId ? [] : [heroId, ...presentPins.filter((id) => id !== heroId)]
 
   // Off the call route: the same LiveKit room, shrunk to a bar that follows the
   // user around the app. Every hook above has already run, and nothing mounts
@@ -322,18 +355,16 @@ export default function CallSurface() {
                   mode={layout === 'spotlight' ? 'spotlight' : 'share'}
                   participants={participants}
                   shareRef={screenShareRef}
-                  spotlightId={spotlightId}
-                  pinnedId={pinnedId}
-                  onUnpin={() => setPinnedId(null)}
+                  stagePeople={stagePeople}
+                  onUnpin={togglePin}
                 />
               )}
 
               <Participants
                 participants={participants}
-                layout={layout}
-                pinnedId={pinnedId}
-                spotlightId={spotlightId}
-                onPin={(identity) => setPinnedId((cur) => (cur === identity ? null : identity))}
+                stagedIds={stagePeople}
+                pinnedIds={presentPins}
+                onPin={togglePin}
               />
             </>
           )}
@@ -590,25 +621,26 @@ function LayoutSwitcher({
 }
 
 /**
- * STAGE — the big tile above the strip.
- *   share mode     → whoever is sharing their screen (Meet-style)
- *   spotlight mode → the pinned/loudest person's camera, or their avatar
- * Renders nothing when there is nothing to show (e.g. auto with no share).
+ * STAGE — the band above the strip.
+ *   share mode     → whoever is sharing their screen (Meet-style, full width)
+ *   otherwise      → up to THREE people: the first pin is the hero (the big
+ *                    tile) and the next two ride in the corner as small tiles,
+ *                    so one stays special while two still get real attention.
+ * Renders nothing when there is nothing to stage (auto with no pins).
  */
 function Stage({
   mode,
   participants,
   shareRef,
-  spotlightId,
-  pinnedId,
+  stagePeople,
   onUnpin,
 }: {
   mode: 'share' | 'spotlight'
   participants: ReturnType<typeof useParticipants>
   shareRef?: TrackReferenceOrPlaceholder
-  spotlightId: string | null
-  pinnedId: string | null
-  onUnpin: () => void
+  /** Ids of the people on stage, hero first (max three — see CallSurface). */
+  stagePeople: string[]
+  onUnpin: (identity: string) => void
 }) {
   const camRefs = useTracks([Track.Source.Camera])
 
@@ -616,10 +648,14 @@ function Stage({
   // treat it exactly like "nothing is being shared".
   const share = mode === 'share' && shareRef && shareRef.publication ? (shareRef as TrackReference) : undefined
 
-  if (mode === 'share' && !share) return null
+  const heroId = stagePeople[0] ?? null
+  const companions = stagePeople.slice(1, 3)
 
-  const person = participants.find((p) => p.identity === spotlightId)
-  const camRef = camRefs.find((r) => r.participant.identity === spotlightId)
+  // Nothing shared and nobody staged (auto, no pins) → no stage at all.
+  if (!share && !heroId) return null
+
+  const person = participants.find((p) => p.identity === heroId)
+  const camRef = camRefs.find((r) => r.participant.identity === heroId)
   const name = person?.name || person?.identity || 'Student'
 
   return (
@@ -687,6 +723,17 @@ function Stage({
         </div>
       )}
 
+      {/* THE OTHER TWO ON STAGE — small tiles in the corner, so one person
+          stays special while two more still get real attention instead of
+          shrinking into the strip. Each one can be unpinned from here. */}
+      {companions.length > 0 && (
+        <div style={{ position: 'absolute', top: 10, left: 10, display: 'grid', gap: 8, zIndex: 2 }}>
+          {companions.map((id) => (
+            <StagePip key={id} identity={id} participants={participants} onUnpin={onUnpin} />
+          ))}
+        </div>
+      )}
+
       {/* name chip */}
       <span
         style={{
@@ -719,10 +766,10 @@ function Stage({
       </span>
 
       {/* pinned chip — click to release, like Meet */}
-      {pinnedId && (
+      {heroId && (
         <button
-          onClick={onUnpin}
-          aria-label="Unpin from stage"
+          onClick={() => onUnpin(heroId)}
+          aria-label={`Unpin ${name} from the stage`}
           style={{
             position: 'absolute',
             top: 10,
@@ -745,6 +792,114 @@ function Stage({
           Pinned
         </button>
       )}
+    </div>
+  )
+}
+
+/**
+ * ONE COMPANION ON THE STAGE — the small tile that rides the hero's corner.
+ * Same anatomy as the big one (camera, else avatar; name; unpin), only the
+ * size changes — that difference IS the layout: one special, two close, the
+ * rest compact in the strip.
+ */
+function StagePip({
+  identity,
+  participants,
+  onUnpin,
+}: {
+  identity: string
+  participants: ReturnType<typeof useParticipants>
+  onUnpin: (identity: string) => void
+}) {
+  const camRefs = useTracks([Track.Source.Camera])
+  const person = participants.find((p) => p.identity === identity)
+  const camRef = camRefs.find((r) => r.participant.identity === identity)
+  const name = person?.name || person?.identity || 'Student'
+
+  return (
+    <div
+      style={{
+        position: 'relative',
+        width: 'clamp(116px, 16vw, 190px)',
+        aspectRatio: '16 / 9',
+        borderRadius: 10,
+        overflow: 'hidden',
+        border: '1px solid var(--border)',
+        background: '#000',
+        boxShadow: '0 6px 20px rgba(0,0,0,0.35)',
+      }}
+    >
+      {camRef ? (
+        <VideoTrack
+          trackRef={camRef}
+          muted
+          style={{
+            width: '100%',
+            height: '100%',
+            objectFit: 'cover',
+            ...(person?.isLocal ? { transform: 'scaleX(-1)' } : null),
+          }}
+        />
+      ) : (
+        <div
+          style={{
+            width: '100%',
+            height: '100%',
+            display: 'grid',
+            placeItems: 'center',
+            background: 'linear-gradient(160deg, var(--bg-secondary), var(--bg-page))',
+            fontSize: 22,
+            fontWeight: 800,
+            color: 'var(--accent-text)',
+          }}
+        >
+          {name.charAt(0).toUpperCase()}
+        </div>
+      )}
+
+      <span
+        style={{
+          position: 'absolute',
+          left: 6,
+          bottom: 5,
+          maxWidth: '72%',
+          overflow: 'hidden',
+          textOverflow: 'ellipsis',
+          whiteSpace: 'nowrap',
+          fontSize: 10.5,
+          fontWeight: 700,
+          color: '#fff',
+          background: 'rgba(0,0,0,0.55)',
+          padding: '2px 7px',
+          borderRadius: 6,
+        }}
+      >
+        {name}
+        {person?.isLocal ? ' (You)' : ''}
+      </span>
+
+      <button
+        onClick={() => onUnpin(identity)}
+        aria-label={`Unpin ${name} from the stage`}
+        title="Unpin"
+        style={{
+          position: 'absolute',
+          top: 4,
+          right: 4,
+          width: 22,
+          height: 22,
+          borderRadius: 7,
+          border: 'none',
+          background: 'rgba(0,0,0,0.55)',
+          color: '#fff',
+          display: 'inline-flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          cursor: 'pointer',
+        }}
+      >
+        <Icon name="pin" size={11} strokeWidth={2.4} />
+      </button>
     </div>
   )
 }
@@ -946,38 +1101,37 @@ function ScreenStage() {
  */
 function Participants({
   participants,
-  layout,
-  pinnedId,
-  spotlightId,
+  stagedIds,
+  pinnedIds,
   onPin,
 }: {
   participants: ReturnType<typeof useParticipants>
-  layout: 'auto' | 'grid' | 'spotlight'
-  pinnedId: string | null
-  spotlightId: string | null
+  /** Everyone holding the stage right now — they never repeat in the strip. */
+  stagedIds: string[]
+  /** Pinned identities (max three) — the pin control lights for these. */
+  pinnedIds: string[]
   onPin: (identity: string) => void
 }) {
   const camRefs = useTracks([Track.Source.Camera])
-  // In auto mode everyone stays in the strip; grid/spotlight lift the staged
-  // person out so they aren't shown twice.
-  const strip = participants.filter((p) => {
-    if (layout === 'auto') return true
-    return p.identity !== spotlightId
-  })
+  // Anyone on the stage is lifted out of the strip so nobody shows twice. In
+  // grid mode nothing is staged, so the strip IS the room — equal small tiles.
+  const strip = participants.filter((p) => !stagedIds.includes(p.identity))
 
   return (
     <div
       style={{
         display: 'grid',
-        gridTemplateColumns: 'repeat(auto-fill, minmax(160px, 1fr))',
-        gap: 14,
+        // Compact by design: this is the "everyone else" row that sits under a
+        // stage which may already be showing three people.
+        gridTemplateColumns: 'repeat(auto-fill, minmax(128px, 1fr))',
+        gap: 10,
         width: '100%',
       }}
     >
       {strip.map((p) => {
         const muted = !p.isMicrophoneEnabled
         const camRef = camRefs.find((r) => r.participant.identity === p.identity)
-        const isPinned = pinnedId === p.identity
+        const isPinned = pinnedIds.includes(p.identity)
         return (
           <div
             key={p.identity}
