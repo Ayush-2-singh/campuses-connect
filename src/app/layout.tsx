@@ -63,7 +63,9 @@ export const viewport: Viewport = {
 export const metadata: Metadata = {
   metadataBase: new URL(APP_URL),
   title: {
-    default: 'ConnectToCampus — Campus placement, round by round',
+    // Keyword first: what this site IS is interview experiences; the "Top 1%
+    // SDE" pitch lives in the hero, not in the one line Google actually shows.
+    default: 'ConnectToCampus — Interview Experiences for CSE & SDE Aspirants',
     template: '%s · ConnectToCampus',
   },
   // Describes the product that ships (see docs/ARCHITECTURE-V4.md): interview
@@ -71,7 +73,7 @@ export const metadata: Metadata = {
   // The retired social pitch (notes, PYQs, hackathons, campus feed) is gone from
   // this string because none of those routes render any more.
   description:
-    'Round-by-round interview experiences from Indian campuses, the companies behind them, and timed practice on the problems those rounds actually asked.',
+    'Read real, round-by-round interview experiences from Indian campuses, share your own, join student study groups, and practise the questions those rounds actually asked. Free for CSE & ECE students.',
   keywords: [
     'ConnectToCampus',
     'interview experiences',
@@ -87,6 +89,15 @@ export const metadata: Metadata = {
     'AI interview coach',
     'live study rooms',
     'placement preparation',
+    // The pitch this site is actually optimised for: students sharing interview
+    // experiences with each other, not a job board.
+    'interview experience sharing',
+    'CSE students',
+    'SDE preparation',
+    'student study groups',
+    'peer learning India',
+    'top 1 percent developer',
+    'campus groups',
   ],
   authors: [{ name: 'ConnectToCampus' }],
   creator: 'ConnectToCampus',
@@ -100,25 +111,25 @@ export const metadata: Metadata = {
     type: 'website',
     locale: 'en_IN',
     siteName: 'ConnectToCampus',
-    title: 'ConnectToCampus — Campus placement, round by round',
+    title: 'ConnectToCampus — Interview Experiences for CSE & SDE Aspirants',
     description:
-      'Read how a drive actually went, then practise the problems it asked. Free for Indian engineering students.',
+      'Read how a drive actually went, round by round, then practise exactly what it asked — and share your own. Free for CSE & ECE students.',
     url: APP_URL,
     images: [
       {
         url: '/og.png',
         width: 1200,
         height: 630,
-        alt: 'ConnectToCampus — Campus placement, round by round',
+        alt: 'ConnectToCampus — interview experiences from Indian campuses, round by round',
         type: 'image/png',
       },
     ],
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'ConnectToCampus — Campus placement, round by round',
+    title: 'ConnectToCampus — Interview Experiences for CSE & SDE Aspirants',
     description:
-      'Interview experiences from Indian campuses, round by round, plus timed practice on the problems those rounds asked.',
+      'Interview experiences from Indian campuses, round by round, plus practice on the problems those rounds asked. Share yours, grow together.',
     images: ['/og.png'],
     creator: '@connecttocampus',
   },
@@ -159,7 +170,8 @@ const jsonLd = {
   alternateName: 'ConnectToCampus India',
   url: APP_URL,
   description:
-    'Placement information for Indian engineering students — interview experiences written round by round, company data, and practice on the problems those rounds actually asked.',
+    "India's platform for CSE and SDE aspirants: interview experiences written round by round by students who cleared them, student study groups, and practice on the problems those rounds actually asked.",
+  slogan: 'Become the Top 1% SDE — grow together',
   inLanguage: 'en-IN',
   // No `potentialAction` / SearchAction: it pointed at `/jobs?q=`, a route that
   // no longer exists (the board was retired to /experiences, which has no query

@@ -60,11 +60,10 @@
   /* Explicit so the first line follows the theme instead of inheriting a
      baked-in ink colour and vanishing on the dark canvas. */
   color: var(--lq-text, #171717);
-  /* Sized for the theme's longer first line: the old "Become the / Top 1% SDE"
-     fitted at 76px, but "Campus placement," measured past the 560px copy
-     column at that size and wrapped into a third line. 62px with -2px tracking
-     holds it on two lines down to 1024. */
-  font-size: clamp(36px, 4.6vw, 62px);
+  /* Sized for the theme's headline: "Become the / Top 1% SDE" fits two lines
+     at 76px down to 1024 — the drop was only ever needed for the longer
+     "Campus placement," line this replaces. */
+  font-size: clamp(40px, 5.2vw, 76px);
   font-weight: 850;
   line-height: 1.04;
   letter-spacing: -2px;
@@ -162,9 +161,22 @@
   pointer-events: none;
 }
 
-.orbit-ring:nth-of-type(2) {
+/* The inner (companies) ring used to be targeted with :nth-of-type(2). The
+   faces ring sits between the outer and inner rings in the DOM, which would
+   shift that index and restyle the wrong ring — so each ring now carries an
+   explicit modifier class instead of relying on DOM position. */
+.orbit-ring--inner {
   inset: 21%;
   border-color: color-mix(in srgb, var(--orbit-blue) 45%, transparent);
+}
+
+/* The faces ring: the middle orbit of real member photos. Its radius (37cqw)
+   sits between the outer (46) and inner (29) rings, so the guide circle is
+   inset to match. It only renders when at least one member has uploaded a
+   photo — never as an empty or placeholder ring. */
+.orbit-ring--faces {
+  inset: 25%;
+  border-color: color-mix(in srgb, var(--orbit-blue) 30%, transparent);
 }
 
 /* Position badges around the ellipse */
@@ -237,6 +249,29 @@
   font-size: 10px;
   font-weight: 750;
   white-space: nowrap;
+}
+
+/* A real member's photo on the faces ring. Round, bordered to lift it off the
+   canvas, and sized to sit comfortably between the icon badges without
+   crowding the hub. Only members who uploaded a photo reach here — there is no
+   initials or placeholder fallback in the ring. */
+.orbit-face {
+  box-sizing: border-box;
+  width: 46px;
+  height: 46px;
+  border: 2px solid var(--lq-surface, #fff);
+  border-radius: 50%;
+  object-fit: cover;
+  background: var(--lq-surface, #fff);
+  box-shadow: 0 6px 20px #1c2f5026;
+  transition:
+    box-shadow 200ms ease,
+    scale 200ms ease;
+}
+
+.orbit-badge:hover .orbit-face {
+  scale: 1.12;
+  box-shadow: 0 10px 30px #3478f638;
 }
 
 /* The hub — a CIRCLE, so it reads as the centre the rings turn around, but its

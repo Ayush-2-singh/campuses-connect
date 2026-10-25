@@ -42,6 +42,8 @@ type Post = {
   category: string
   author: string | null
 }
+/** A member who has actually uploaded a profile photo — nothing else qualifies. */
+type StudentFace = { name: string; avatar_url: string }
 
 let _admin: SupabaseClient | null = null
 function getAdmin(): SupabaseClient | null {
@@ -152,6 +154,35 @@ async function getWins(): Promise<Win[]> {
   }
 }
 /**
+ * The orbit's member faces. Only students who have UPLOADED a photo qualify:
+ * `avatar_url IS NOT NULL` and the profile is public. There is no fallback, so
+ * a member who has not set a photo simply never appears here — no initials, no
+ * stock face, no third-party placeholder. The hero hides the face ring entirely
+ * when this returns nothing.
+ */
+async function getStudentFaces(): Promise<StudentFace[]> {
+  const db = getAdmin()
+  if (!db) return []
+  try {
+    const { data } = await db
+      .from('profiles')
+      .select('full_name, username, avatar_url')
+      .eq('is_public', true)
+      .not('avatar_url', 'is', null)
+      .order('updated_at', { ascending: false })
+      .limit(12)
+    return (data ?? [])
+      .filter((p: any) => Boolean(p?.avatar_url))
+      .map((p: any) => ({
+        name: String(p.full_name || p.username || '').trim() || 'Student',
+        avatar_url: String(p.avatar_url),
+      }))
+  } catch {
+    return []
+  }
+}
+
+/**
  * Published blog posts for the landing's reading rail. Same honesty rule as
  * every other band: only `status = 'published'` rows, and the rail falls back to
  * cards that say "preview — not published" when this returns nothing.
@@ -181,12 +212,15 @@ async function getPosts(): Promise<Post[]> {
 }
 
 export default async function Home() {
-  const [stats, companies, problems, wins, posts] = await Promise.all([
+  const [stats, companies, problems, wins, posts, faces] = await Promise.all([
     getStats(),
     getCompanies(),
     getProblems(),
     getWins(),
     getPosts(),
+    getStudentFaces(),
   ])
-  return <PlacementLanding stats={stats} companies={companies} problems={problems} wins={wins} posts={posts} />
+  return (
+    <PlacementLanding stats={stats} companies={companies} problems={problems} wins={wins} posts={posts} faces={faces} />
+  )
 }

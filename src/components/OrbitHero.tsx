@@ -94,20 +94,66 @@ const technologies: OrbitItem[] = [
 /** The hub's ladder — the same four-round shape the panels below describe. */
 const HUB_ROUNDS = ['R1', 'R2', 'R3', 'R4']
 
+/** A member face — pre-filtered server-side to only those who uploaded a photo. */
+type Face = { name: string; avatar_url: string }
+
+/**
+ * Middle ring of REAL member photos. Deliberately NOT the OrbitRing: an icon
+ * badge and a photo badge size differently, and mixing them on one component
+ * would grow a props union that only this page uses. When `faces` is empty the
+ * parent does not render this at all, so there is never an empty or
+ * placeholder ring.
+ */
+function FaceRing({ faces, radius, duration }: { faces: Face[]; radius: number; duration: number }) {
+  if (faces.length === 0) return null
+  return (
+    <motion.div
+      className="orbit-ring orbit-ring--faces"
+      style={{ '--orbit-radius': `${radius}cqw` } as CSSProperties}
+      animate={{ rotate: 360 }}
+      transition={{ duration, repeat: Infinity, ease: 'linear' }}
+    >
+      {faces.map((face, index) => {
+        const angle = (index / faces.length) * 360
+        return (
+          <div
+            className="orbit-item"
+            key={`${face.name}-${index}`}
+            style={{ '--angle': `${angle}deg` } as CSSProperties}
+          >
+            <motion.div
+              className="orbit-badge"
+              // Counter-rotate so the face stays upright while the ring turns.
+              animate={{ rotate: -360 }}
+              transition={{ duration, repeat: Infinity, ease: 'linear' }}
+              title={face.name}
+            >
+              <img className="orbit-face" src={face.avatar_url} alt={face.name} loading="lazy" decoding="async" />
+              <span className="orbit-label">{face.name.split(' ')[0]}</span>
+            </motion.div>
+          </div>
+        )
+      })}
+    </motion.div>
+  )
+}
+
 function OrbitRing({
   items,
   radius,
   duration,
   reverse = false,
+  className = '',
 }: {
   items: OrbitItem[]
   radius: number
   duration: number
   reverse?: boolean
+  className?: string
 }) {
   return (
     <motion.div
-      className="orbit-ring"
+      className={`orbit-ring${className ? ` ${className}` : ''}`}
       // cqw, not %: the radius must resolve against the STAGE, not the 1px anchor.
       style={{ '--orbit-radius': `${radius}cqw` } as CSSProperties}
       animate={{ rotate: reverse ? -360 : 360 }}
@@ -142,19 +188,19 @@ function OrbitRing({
   )
 }
 
-export default function OrbitHero() {
+export default function OrbitHero({ faces = [] }: { faces?: Face[] }) {
   return (
     <section className="orbit-hero">
       <div className="orbit-copy">
-        <span className="orbit-eyebrow">READ · PRACTISE · WRITE</span>
+        <span className="orbit-eyebrow">TOP 1% SDE · GROW TOGETHER</span>
         <h1>
-          Campus placement,
+          Become the
           <br />
-          <span>round by round.</span>
+          <span>Top 1% SDE</span>
         </h1>
         <p>
-          Read how a drive actually went at your campus, then practise the problems that round asked. Free for Indian
-          engineering students.
+          Read real interview experiences from Indian campuses — round by round, written by students who cleared them —
+          then practise exactly what those rounds asked. Free for CSE &amp; ECE students.
         </p>
         <div className="orbit-actions">
           <Link href="/experiences" className="orbit-primary">
@@ -173,8 +219,13 @@ export default function OrbitHero() {
             labels). */}
         <OrbitRing items={technologies} radius={46} duration={45} />
 
+        {/* Middle orbit: REAL member faces — only students who uploaded a photo.
+            Sits between the tech ring (46) and the company ring (29). Renders
+            nothing when the list is empty — no placeholder, no initials. */}
+        <FaceRing faces={faces} radius={37} duration={38} />
+
         {/* Inner orbit: companies (9 marks) stay legible on the short ring. */}
-        <OrbitRing items={companies} radius={29} duration={32} reverse />
+        <OrbitRing items={companies} radius={29} duration={32} reverse className="orbit-ring--inner" />
 
         {/* Structured hub: the four rounds a drive is read in. */}
         <div className="orbit-hub">
