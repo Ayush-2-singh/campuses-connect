@@ -11,6 +11,7 @@ import CallGamePanel, { CALL_GAME_LABELS, type CallGame, type CallGameInvite } f
 import CallChatPanel from '@/components/voice/CallChatPanel'
 import CallCodePad from '@/components/voice/CallCodePad'
 import CallMusicPanel from '@/components/voice/CallMusicPanel'
+import EmojiPicker, { useDismiss } from '@/components/voice/EmojiPicker'
 import { callScreenPath, useCall } from '@/components/voice/callContext'
 import {
   appendChatMessage,
@@ -1456,13 +1457,14 @@ function HandRail({ hands }: { hands: RaisedHand[] }) {
 }
 
 /**
- * GMeet-style bottom control bar: emoji picker (3s float for everyone), mic,
- * camera, screen share, chat, games, music, leave — every control an SVG
- * button like Meet. Mic and camera turn Meet-red while OFF; an active screen
- * share lights up in the accent. Mic state syncs to the DB via RPC; camera,
- * screen share, games and shared music are pure LiveKit / component state
- * (the share button hides itself in browsers without getDisplayMedia, e.g.
- * older mobile Safari).
+ * GMeet-style bottom control bar, kept deliberately SHORT: the whole emoji
+ * sheet, mic, camera, messages, a "More" menu (hand, screen share, games,
+ * compiler, music) and Leave — one row on a phone instead of two.
+ *
+ * Mic and camera turn Meet-red while OFF; an active screen share lights up in
+ * the accent. Mic state syncs to the DB via RPC; camera, screen share, games
+ * and shared music are pure LiveKit / component state (screen share hides
+ * itself in browsers without getDisplayMedia, e.g. older mobile Safari).
  */
 function Controls({
   callId,
@@ -1497,6 +1499,19 @@ function Controls({
 }) {
   const { localParticipant, isMicrophoneEnabled, isCameraEnabled, isScreenShareEnabled } = useLocalParticipant()
   const [emojiOpen, setEmojiOpen] = useState(false)
+  /** Everything too rare for the bar — hand, share, games, compiler, music. */
+  const [moreOpen, setMoreOpen] = useState(false)
+
+  // Each floating panel keeps its own refs: the sheet, and the button that
+  // opened it, so tapping that button again toggles instead of bouncing.
+  const emojiRef = useRef<HTMLDivElement>(null)
+  const emojiButtonRef = useRef<HTMLDivElement>(null)
+  const moreRef = useRef<HTMLDivElement>(null)
+  const moreButtonRef = useRef<HTMLDivElement>(null)
+  const closeEmoji = useCallback(() => setEmojiOpen(false), [])
+  const closeMore = useCallback(() => setMoreOpen(false), [])
+  useDismiss(emojiOpen, closeEmoji, [emojiRef, emojiButtonRef])
+  useDismiss(moreOpen, closeMore, [moreRef, moreButtonRef])
 
   // Screen capture does not exist on every browser — decide AFTER mount so
   // SSR and the first client render agree (no hydration mismatch).
@@ -1504,8 +1519,6 @@ function Controls({
   useEffect(() => {
     setCanScreenShare(!!(typeof navigator !== 'undefined' && navigator.mediaDevices?.getDisplayMedia))
   }, [])
-
-  const REACTIONS = ['👏', '🔥', '❤️', '😂', '🎉', '👍', '🤯', '🙏']
 
   /** Meet palette for the round controls: neutral = on, red = off. */
   const ON = { background: 'var(--bg-tertiary)', color: 'var(--text-primary)' } as const
@@ -1544,47 +1557,17 @@ function Controls({
 
   return (
     <div className="lvc-controls">
-      {/* emoji picker — reactions float up for ~3s, visible to everyone */}
-      <div style={{ position: 'relative' }}>
+      {/* EMOJI — the whole set, WhatsApp-style. A tap fires a reaction at
+          everyone (it floats over their tile for ~3s) and the sheet STAYS
+          OPEN, because the point is sending several in a row quickly; ✕,
+          Escape or a tap outside is what closes it. */}
+      <div ref={emojiButtonRef} style={{ position: 'relative' }}>
         {emojiOpen && (
           <div
-            style={{
-              position: 'absolute',
-              bottom: 64,
-              left: '50%',
-              transform: 'translateX(-50%)',
-              background: 'var(--bg)',
-              border: '1px solid var(--border)',
-              borderRadius: 16,
-              padding: 10,
-              display: 'grid',
-              gridTemplateColumns: 'repeat(4, 1fr)',
-              gap: 6,
-              boxShadow: '0 10px 40px rgba(0,0,0,0.45)',
-              animation: 'ccCardUp 0.15s ease',
-              zIndex: 5,
-            }}
+            ref={emojiRef}
+            style={{ position: 'absolute', bottom: 64, left: '50%', transform: 'translateX(-50%)', zIndex: 6 }}
           >
-            {REACTIONS.map((emoji) => (
-              <button
-                key={emoji}
-                onClick={() => {
-                  sendReaction(emoji)
-                  setEmojiOpen(false)
-                }}
-                aria-label={`Send ${emoji}`}
-                style={{
-                  fontSize: 24,
-                  background: 'transparent',
-                  border: 'none',
-                  borderRadius: 10,
-                  padding: '6px 8px',
-                  cursor: 'pointer',
-                }}
-              >
-                {emoji}
-              </button>
-            ))}
+            <EmojiPicker label="Send an emoji reaction" onPick={sendReaction} onClose={closeEmoji} />
           </div>
         )}
         <button
@@ -1608,17 +1591,6 @@ function Controls({
         </button>
       </div>
 
-      {/* Raise / lower hand — the one control that survives everyone talking. */}
-      <button
-        onClick={onToggleHand}
-        aria-label={handUp ? 'Lower your hand' : 'Raise your hand'}
-        aria-pressed={handUp}
-        className="lvc-ctrl"
-        style={handUp ? { background: 'var(--accent)', color: 'var(--on-accent)' } : ON}
-      >
-        <Icon name="hand" size={23} />
-      </button>
-
       {/* Meet-style mic — red slashed SVG glyph while muted */}
       <button
         onClick={toggleMic}
@@ -1641,22 +1613,6 @@ function Controls({
         <Icon name={isCameraEnabled ? 'video' : 'video-off'} size={23} />
       </button>
 
-      {/* Screen share — accent while presenting; hidden where unsupported */}
-      {canScreenShare && (
-        <button
-          onClick={toggleScreenShare}
-          aria-label={isScreenShareEnabled ? 'Stop sharing your screen' : 'Share your screen'}
-          aria-pressed={isScreenShareEnabled}
-          className="lvc-ctrl"
-          style={{
-            background: isScreenShareEnabled ? 'var(--accent)' : 'var(--bg-tertiary)',
-            color: isScreenShareEnabled ? 'var(--on-accent)' : 'var(--text-primary)',
-          }}
-        >
-          <Icon name="screen-share" size={23} />
-        </button>
-      )}
-
       {/* Messages — Meet's chat. The badge counts only lines written by other
           people that the panel has not shown yet. */}
       <button
@@ -1674,43 +1630,147 @@ function Controls({
         )}
       </button>
 
-      {/* Shared code pad — look at the same problem, not just talk about it. */}
-      <button
-        onClick={onOpenCode}
-        aria-label={codeOpen ? 'Close the shared code pad' : 'Open the shared code pad'}
-        aria-expanded={codeOpen}
-        className="lvc-ctrl"
-        style={codeOpen ? { background: 'var(--accent)', color: 'var(--on-accent)' } : ON}
-      >
-        <Icon name="code" size={23} />
-      </button>
-
-      {/* Games — opens the in-call panel: play together without hanging up. */}
-      <button
-        onClick={onOpenGames}
-        aria-label={gamesOpen ? 'Close the games panel' : 'Play a game with the call'}
-        aria-expanded={gamesOpen}
-        className="lvc-ctrl"
-        style={gamesOpen ? { background: 'var(--accent)', color: 'var(--on-accent)' } : ON}
-      >
-        <Icon name="gamepad" size={23} />
-      </button>
-
-      {/* Music — the in-call "listen together" panel: a Top 50 list for the
-          whole room, played from each person's own YouTube player. */}
-      <button
-        onClick={onOpenMusic}
-        aria-label={musicOpen ? 'Close the music panel' : 'Listen to music with the call'}
-        aria-expanded={musicOpen}
-        className="lvc-ctrl"
-        style={musicOpen ? { background: 'var(--accent)', color: 'var(--on-accent)' } : ON}
-      >
-        <Icon name="music" size={23} />
-      </button>
+      {/* MORE — everything that is real but not constant: raise hand, screen
+          share, games, the shared compiler and listen-together music. The bar
+          keeps only what a call is about (emoji, mic, camera, messages) plus
+          Leave, so a phone shows one row instead of two. */}
+      <div ref={moreButtonRef} style={{ position: 'relative' }}>
+        {moreOpen && (
+          <div
+            ref={moreRef}
+            role="menu"
+            aria-label="More call options"
+            style={{
+              position: 'absolute',
+              bottom: 68,
+              right: 0,
+              minWidth: 232,
+              background: 'var(--bg)',
+              border: '1px solid var(--border)',
+              borderRadius: 14,
+              padding: 6,
+              display: 'flex',
+              flexDirection: 'column',
+              gap: 2,
+              boxShadow: '0 10px 40px rgba(0,0,0,0.45)',
+              animation: 'ccCardUp 0.15s ease',
+              zIndex: 6,
+            }}
+          >
+            <MoreItem
+              icon="hand"
+              label={handUp ? 'Lower your hand' : 'Raise your hand'}
+              active={handUp}
+              onClick={() => {
+                onToggleHand()
+                closeMore()
+              }}
+            />
+            {canScreenShare && (
+              <MoreItem
+                icon="screen-share"
+                label={isScreenShareEnabled ? 'Stop sharing your screen' : 'Share your screen'}
+                active={isScreenShareEnabled}
+                onClick={() => {
+                  void toggleScreenShare()
+                  closeMore()
+                }}
+              />
+            )}
+            <MoreItem
+              icon="gamepad"
+              label={gamesOpen ? 'Close the games panel' : 'Play a game with the call'}
+              active={gamesOpen}
+              onClick={() => {
+                onOpenGames()
+                closeMore()
+              }}
+            />
+            <MoreItem
+              icon="code"
+              label={codeOpen ? 'Close the shared code pad' : 'Open the shared code pad'}
+              active={codeOpen}
+              onClick={() => {
+                onOpenCode()
+                closeMore()
+              }}
+            />
+            <MoreItem
+              icon="music"
+              label={musicOpen ? 'Close the music panel' : 'Listen to music with the call'}
+              active={musicOpen}
+              onClick={() => {
+                onOpenMusic()
+                closeMore()
+              }}
+            />
+          </div>
+        )}
+        <button
+          onClick={() => setMoreOpen((open) => !open)}
+          aria-label="More call options"
+          aria-expanded={moreOpen}
+          aria-haspopup="menu"
+          className="lvc-ctrl"
+          style={
+            moreOpen || gamesOpen || codeOpen || musicOpen
+              ? { background: 'var(--accent)', color: 'var(--on-accent)' }
+              : ON
+          }
+        >
+          <Icon name="more" size={23} />
+        </button>
+      </div>
 
       <button onClick={onLeave} aria-label="Leave the call" className="lvc-leave">
         Leave
       </button>
     </div>
+  )
+}
+
+/**
+ * ONE LINE IN THE "MORE" MENU — icon, label, and a highlighted row while the
+ * panel it opens is on screen, so the menu still answers "what is running?"
+ * now that the bar no longer shows those five controls.
+ */
+function MoreItem({
+  icon,
+  label,
+  active,
+  onClick,
+}: {
+  icon: string
+  label: string
+  /** True while the panel this opens is the one mounted on the call. */
+  active?: boolean
+  onClick: () => void
+}) {
+  return (
+    <button
+      role="menuitem"
+      onClick={onClick}
+      aria-label={label}
+      data-active={active ? '1' : '0'}
+      style={{
+        display: 'flex',
+        alignItems: 'center',
+        gap: 10,
+        width: '100%',
+        border: 'none',
+        borderRadius: 10,
+        padding: '9px 10px',
+        background: active ? 'var(--accent-light)' : 'transparent',
+        color: active ? 'var(--accent-text)' : 'var(--text-primary)',
+        fontSize: 13.5,
+        fontWeight: active ? 700 : 500,
+        fontFamily: 'inherit',
+        textAlign: 'left',
+        cursor: 'pointer',
+      }}
+    >
+      <Icon name={icon} size={18} strokeWidth={2.1} />
+      <span style={{ flex: 1, minWidth: 0 }}>{label}</span>
+    </button>
   )
 }

@@ -12,7 +12,9 @@
  *
  * Leaving is therefore explicit and owned in exactly one place: the Leave
  * button, or closing the tab (`pagehide`). Backgrounding the tab deliberately
- * does NOT leave — switching apps mid-sentence must not drop the call.
+ * does NOT leave — switching apps mid-sentence must not drop the call — and on
+ * Android the room keeps playing with the screen off (see the keep-alive
+ * effect below).
  *
  * The LiveKit room itself is dynamically imported and rendered only once a
  * call has a token, so no other page pays for the LiveKit bundle.
@@ -118,6 +120,33 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
   }, [router])
 
   /**
+   * THE SCREEN MAY GO OFF — THE ROOM MAY NOT.
+   *
+   * Backgrounding deliberately does not leave (above), but on Android that is
+   * only half the story: once the app is backgrounded or the screen times out,
+   * the process becomes freezable and the CPU can sleep, so the other person's
+   * voice stops arriving even though the room never closed. While a room is
+   * live we therefore ask the native shell to hold a foreground service with a
+   * wake lock (src/lib/native/callKeepAlive → CallKeepAliveService).
+   *
+   * Imported lazily and resolved to a no-op on the web, so the deployed site
+   * neither bundles Capacitor nor gains a behaviour it cannot have. Stopping
+   * rides this effect's cleanup: it fires the moment the user leaves, and also
+   * if the page itself goes away.
+   */
+  useEffect(() => {
+    if (!connected || !session) return
+    let cancelled = false
+    void import('@/lib/native/callKeepAlive').then(({ startCallKeepAlive }) => {
+      if (!cancelled) void startCallKeepAlive()
+    })
+    return () => {
+      cancelled = true
+      void import('@/lib/native/callKeepAlive').then(({ stopCallKeepAlive }) => void stopCallKeepAlive())
+    }
+  }, [connected, session])
+
+  /**
    * CLOSING THE TAB IS THE ONLY AUTOMATIC LEAVE.
    *
    * `pagehide` is the last event the browser reliably fires on teardown — a
@@ -129,6 +158,11 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     const onPageHide = () => {
       const current = sessionRef.current
+      // The page is going away, so the keep-alive service has nothing left to
+      // protect: release the wake lock and the notification with it. (This
+      // does NOT fire when the tab is merely hidden — backgrounding keeps the
+      // call AND the service running.)
+      void import('@/lib/native/callKeepAlive').then(({ stopCallKeepAlive }) => void stopCallKeepAlive())
       if (!current || leftRef.current) return
       leftRef.current = true
       void supabase.rpc('leave_live_voice_chat_call', { p_call_id: current.callId })

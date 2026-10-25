@@ -18,6 +18,7 @@
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { Icon } from '@/components/icons'
 import { CALL_CHAT_MAX_TEXT, type CallChatMessage } from '@/lib/callChat'
+import EmojiPicker, { useDismiss } from '@/components/voice/EmojiPicker'
 import {
   defaultPanelPosition,
   movePanelByKey,
@@ -193,6 +194,23 @@ export default function CallChatPanel({
 
   const trimmed = draft.trim()
   const canSend = trimmed.length > 0
+
+  // ── Emoji ────────────────────────────────────────────────────────────
+  // The same WhatsApp-style sheet the call bar uses. Here a tap drops the
+  // emoji into the draft instead of firing a reaction, and the sheet stays
+  // open so a message can be loaded with several in one go.
+  const [emojiOpen, setEmojiOpen] = useState(false)
+  const emojiButtonRef = useRef<HTMLDivElement>(null)
+  const emojiRef = useRef<HTMLDivElement>(null)
+  const closeEmoji = useCallback(() => setEmojiOpen(false), [])
+  useDismiss(emojiOpen, closeEmoji, [emojiRef, emojiButtonRef])
+
+  const insertEmoji = useCallback((emoji: string) => {
+    // One tap = append; the composer's cap still holds, so a long emoji-laden
+    // line can never exceed what the thread accepts.
+    setDraft((current) => (current + emoji).slice(0, CALL_CHAT_MAX_TEXT))
+    composerRef.current?.focus()
+  }, [])
 
   const submit = () => {
     if (!canSend) return
@@ -409,6 +427,41 @@ export default function CallChatPanel({
             outline: 'none',
           }}
         />
+        <div ref={emojiButtonRef} style={{ position: 'relative', flexShrink: 0 }}>
+          {emojiOpen && (
+            <div
+              ref={emojiRef}
+              style={{
+                position: 'absolute',
+                bottom: 50,
+                right: 0,
+                zIndex: 8,
+              }}
+            >
+              <EmojiPicker label="Add an emoji to your message" onPick={insertEmoji} onClose={closeEmoji} />
+            </div>
+          )}
+          <button
+            onClick={() => setEmojiOpen((open) => !open)}
+            aria-label="Add an emoji"
+            aria-expanded={emojiOpen}
+            style={{
+              width: 42,
+              height: 42,
+              borderRadius: 12,
+              border: '1px solid var(--border)',
+              background: emojiOpen ? 'var(--accent-light)' : 'var(--bg-secondary, var(--bg))',
+              color: emojiOpen ? 'var(--accent-text)' : 'var(--text-secondary)',
+              display: 'inline-flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              cursor: 'pointer',
+              fontFamily: 'inherit',
+            }}
+          >
+            <Icon name="smile" size={19} strokeWidth={2} />
+          </button>
+        </div>
         <button
           onClick={submit}
           disabled={!canSend}

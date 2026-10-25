@@ -54,6 +54,23 @@
                 android:name="android.support.FILE_PROVIDER_PATHS"
                 android:resource="@xml/file_paths"></meta-data>
         </provider>
+
+        <!--
+          THE SCREEN MAY GO OFF, THE CALL MAY NOT.
+
+          While a voice room is live, CallKeepAliveService runs as a foreground
+          service: the process is exempt from the cached-app freezer, a wake
+          lock keeps the CPU encoding/decoding, and the ongoing notification
+          shows the call is still on. Without it, locking the phone freezes the
+          WebView and the other person's voice simply stops.
+
+          Types are declared for API 34+, which requires every <service> to name
+          its type(s) and requires the matching install-time permission below.
+        -->
+        <service
+            android:name=".CallKeepAliveService"
+            android:exported="false"
+            android:foregroundServiceType="microphone|mediaPlayback" />
     </application>
 
     <!-- Permissions -->
@@ -66,6 +83,20 @@
       Without it, joining any voice room fails to open audio.
     -->
     <uses-permission android:name="android.permission.RECORD_AUDIO" />
+
+    <!--
+      Background voice calls (see CallKeepAliveService above).
+
+      FOREGROUND_SERVICE is the base right to run one at all;
+      FOREGROUND_SERVICE_MICROPHONE / _MEDIA_PLAYBACK name the two types the
+      service declares and are mandatory from Android 14 (targetSdk 34+) —
+      without them the service crashes the moment it tries to start.
+      WAKE_LOCK is what actually keeps the CPU awake with the screen off.
+    -->
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MICROPHONE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK" />
+    <uses-permission android:name="android.permission.WAKE_LOCK" />
 
     <!--
       Camera / gallery access is intentionally NOT requested.
