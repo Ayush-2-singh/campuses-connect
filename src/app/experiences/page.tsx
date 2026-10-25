@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
+import Link from 'next/link'
 import Layout from '@/components/Layout'
 import { Icon } from '@/components/icons'
 
@@ -321,7 +322,14 @@ export default function ExperiencesPage() {
               <article key={exp.id} className="hc-card hc-reveal" style={{ '--hc-i': i } as React.CSSProperties}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 10 }}>
                   <div style={{ minWidth: 0 }}>
-                    <h3 className="hc-title">{exp.title}</h3>
+                    {/* The title IS the link: one write-up, one URL, so it can
+                        be shared and so Google can index it on its own terms
+                        (see /experiences/[id]). */}
+                    <h3 className="hc-title">
+                      <Link href={`/experiences/${exp.id}`} style={{ color: 'inherit', textDecoration: 'none' }}>
+                        {exp.title}
+                      </Link>
+                    </h3>
                     <p className="hc-sub">
                       {exp.companies?.name || '—'} {exp.role && `· ${exp.role}`} · by{' '}
                       {exp.profiles?.full_name || 'Anonymous'}

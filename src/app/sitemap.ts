@@ -1,4 +1,5 @@
 import type { MetadataRoute } from 'next'
+import { createClient } from '@supabase/supabase-js'
 
 /**
  * SITEMAP — every public route, submitted to Google/Bing via Search Console.
@@ -8,7 +9,30 @@ import type { MetadataRoute } from 'next'
  */
 const APP_URL = (process.env.NEXT_PUBLIC_APP_URL || 'https://www.connecttocampus.com').replace(/\/$/, '')
 
-export default function sitemap(): MetadataRoute.Sitemap {
+/**
+ * Every write-up now has its own URL (see /experiences/[id]), so the sitemap
+ * has to carry them: a detail route Google cannot discover is a detail route
+ * that cannot rank. Service-role read, capped, and never fatal — a sitemap
+ * that omits the extras is still a valid sitemap.
+ */
+async function experiencePaths(): Promise<string[]> {
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL
+  const key = process.env.SUPABASE_SERVICE_ROLE_KEY
+  if (!url || !key) return []
+  try {
+    const db = createClient(url, key, { auth: { persistSession: false } })
+    const { data } = await db
+      .from('interview_experiences')
+      .select('id')
+      .order('created_at', { ascending: false })
+      .limit(500)
+    return (data ?? []).map((row: { id: string }) => `/experiences/${row.id}`)
+  } catch {
+    return []
+  }
+}
+
+export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const now = new Date()
 
   const core: { path: string; priority: number; changeFrequency: 'daily' | 'weekly' | 'monthly' | 'yearly' }[] = [
@@ -38,7 +62,15 @@ export default function sitemap(): MetadataRoute.Sitemap {
     { path: '/auth/signup', priority: 0.5 },
   ]
 
+  const experiences = await experiencePaths()
+
   return [
+    ...experiences.map((path) => ({
+      url: `${APP_URL}${path}`,
+      lastModified: now,
+      changeFrequency: 'monthly' as const,
+      priority: 0.7,
+    })),
     ...core.map((c) => ({
       url: `${APP_URL}${c.path}`,
       lastModified: now,
