@@ -90,6 +90,18 @@ describe('the sheet opens from both emoji surfaces', () => {
     expect(surface).toMatch(/aria-label="Send a reaction"/)
   })
 
+  it('and from the compact bar, so reacting works while browsing the app', () => {
+    // Sliced rather than regexed across the file: the bar is one component,
+    // and prettier re-wraps JSX freely.
+    const bar = surface.slice(surface.indexOf('function CallBar'), surface.indexOf('function ScreenStage'))
+    expect(bar).toMatch(/<EmojiPicker label="Send an emoji reaction"/)
+    expect(bar).toMatch(/onPick=\{sendReaction\}/)
+    expect(bar).toMatch(/className="lvc-mini-btn"/)
+    // The CALL's sender, not a second hook instance — a second instance would
+    // hold the local echo in its own state and the burst would show nowhere.
+    expect(bar).toMatch(/sendReaction: \(emoji: string\) => void/)
+  })
+
   it('over the message box, where a tap lands in the draft', () => {
     expect(panel).toMatch(/<EmojiPicker label="Add an emoji to your message"/)
     expect(panel).toMatch(/onPick=\{insertEmoji\}/)

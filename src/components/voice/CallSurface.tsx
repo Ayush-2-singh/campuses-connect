@@ -303,7 +303,16 @@ export default function CallSurface() {
             recipient only ever saw reactions while sitting on the call screen,
             which read as "emoji nahi dikh rahe". */}
         <ReactionRise events={emojiEvents} participants={participants} localIdentity={localParticipant?.identity} />
-        <CallBar callId={callId} count={participants.length} onOpen={openCallScreen} onLeave={leave} />
+        <CallBar
+          callId={callId}
+          count={participants.length}
+          onOpen={openCallScreen}
+          onLeave={leave}
+          // The same sender the call screen uses, so a burst from the bar
+          // lands on the same overlay (a second hook instance would show it
+          // nowhere — its local echo would live in its own state).
+          sendReaction={sendReaction}
+        />
       </>
     )
   }
@@ -993,14 +1002,25 @@ function CallBar({
   count,
   onOpen,
   onLeave,
+  sendReaction,
 }: {
   callId: string
   count: number
   /** Bring the full call screen back (same room — nothing reconnects). */
   onOpen: () => void
   onLeave: () => void
+  /** The call's own reaction sender — see the note at the call site. */
+  sendReaction: (emoji: string) => void
 }) {
   const { localParticipant, isMicrophoneEnabled } = useLocalParticipant()
+
+  // Reactions are possible from the bar too: the recipient sees them on any
+  // page, so the sender must be able to send from any page.
+  const [emojiOpen, setEmojiOpen] = useState(false)
+  const emojiRef = useRef<HTMLDivElement>(null)
+  const emojiButtonRef = useRef<HTMLDivElement>(null)
+  const closeEmoji = useCallback(() => setEmojiOpen(false), [])
+  useDismiss(emojiOpen, closeEmoji, [emojiRef, emojiButtonRef])
 
   const ON = { background: 'var(--bg-tertiary)', color: 'var(--text-primary)' } as const
   const OFF = { background: 'var(--danger)', color: '#fff' } as const
@@ -1024,6 +1044,23 @@ function CallBar({
         <strong>Still in the call</strong>
         <span>{count} in call · you are connected</span>
       </span>
+
+      <div ref={emojiButtonRef} style={{ position: 'relative' }}>
+        {emojiOpen && (
+          <div ref={emojiRef} style={{ position: 'absolute', bottom: 48, right: 0, zIndex: 5 }}>
+            <EmojiPicker label="Send an emoji reaction" onPick={sendReaction} onClose={closeEmoji} />
+          </div>
+        )}
+        <button
+          onClick={() => setEmojiOpen((open) => !open)}
+          aria-label="Send a reaction"
+          aria-expanded={emojiOpen}
+          className="lvc-mini-btn"
+          style={ON}
+        >
+          <Icon name="smile" size={19} />
+        </button>
+      </div>
 
       <button
         onClick={toggleMic}

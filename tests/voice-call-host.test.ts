@@ -95,7 +95,13 @@ describe('the surface follows the user instead of stranding them', () => {
 
   it('otherwise renders the compact bar, over real page content', () => {
     expect(surface).toMatch(/if \(!fullScreen\) \{/)
-    expect(surface).toMatch(/<CallBar callId=\{callId\} count=\{participants\.length\}/)
+    // Sliced out of the JSX so prettier re-wrapping the props onto their own
+    // lines (it did) cannot break an intent that is really "the bar gets the
+    // ids and the count".
+    const callBar = surface.slice(surface.indexOf('<CallBar'), surface.indexOf('function CallBar'))
+    expect(callBar).toMatch(/callId=\{callId\}/)
+    expect(callBar).toMatch(/count=\{participants\.length\}/)
+    expect(callBar).toMatch(/onLeave=\{leave\}/)
   })
 
   it('the bar can bring the call screen back without reconnecting', () => {
