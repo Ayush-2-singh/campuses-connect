@@ -2357,26 +2357,31 @@ a,
   }
 }
 
-/* Voice-call emoji reactions — GMeet style: rise up, drift, fade out over 3s. */
-@keyframes ccEmojiFloat {
+/*
+ * Voice-call reactions, Meet style: the emoji (and the sender's name) starts
+ * at the bottom edge of the call screen and climbs to the top before fading,
+ * over 6s — long enough to read who sent it. Replaces the old burst, which
+ * only travelled 150px inside the sender's own tile.
+ */
+@keyframes ccReactionRise {
   0% {
     opacity: 0;
-    transform: translateY(0) scale(0.6);
+    transform: translateY(0) scale(0.7);
   }
-  12% {
+  8% {
     opacity: 1;
-    transform: translateY(-18px) scale(1.15);
+    transform: translateY(-6vh) scale(1.12);
   }
-  25% {
-    transform: translateY(-42px) scale(1) translateX(6px);
+  22% {
+    transform: translateY(-15vh) scale(1) translateX(10px);
   }
-  55% {
+  72% {
     opacity: 1;
-    transform: translateY(-96px) scale(1) translateX(-5px);
+    transform: translateY(-50vh) translateX(-8px);
   }
   100% {
     opacity: 0;
-    transform: translateY(-150px) scale(0.9) translateX(4px);
+    transform: translateY(-70vh) scale(0.92) translateX(6px);
   }
 }
 

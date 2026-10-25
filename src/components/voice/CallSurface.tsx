@@ -330,7 +330,6 @@ export default function CallSurface() {
 
               <Participants
                 participants={participants}
-                emojiEvents={emojiEvents}
                 layout={layout}
                 pinnedId={pinnedId}
                 spotlightId={spotlightId}
@@ -490,6 +489,9 @@ export default function CallSurface() {
         )}
 
         <div style={{ flex: 1 }} />
+        {/* Meet-style: every reaction rises from the bottom of the call screen
+            carrying the sender's name, instead of hiding inside one tile. */}
+        <ReactionRise events={emojiEvents} participants={participants} localIdentity={localParticipant?.identity} />
         <Controls
           callId={callId}
           onLeave={leave}
@@ -807,6 +809,9 @@ interface EmojiEvent {
   from: string
 }
 
+/** How long one reaction stays on screen — matches ccReactionRise (6s). */
+const REACTION_LIFETIME = 6_000
+
 /**
  * CALL BAR — the call, compact, on every page.
  *
@@ -941,14 +946,12 @@ function ScreenStage() {
  */
 function Participants({
   participants,
-  emojiEvents,
   layout,
   pinnedId,
   spotlightId,
   onPin,
 }: {
   participants: ReturnType<typeof useParticipants>
-  emojiEvents: EmojiEvent[]
   layout: 'auto' | 'grid' | 'spotlight'
   pinnedId: string | null
   spotlightId: string | null
@@ -973,7 +976,6 @@ function Participants({
     >
       {strip.map((p) => {
         const muted = !p.isMicrophoneEnabled
-        const mineReactions = emojiEvents.filter((e) => e.from === p.identity)
         const camRef = camRefs.find((r) => r.participant.identity === p.identity)
         const isPinned = pinnedId === p.identity
         return (
@@ -1018,23 +1020,10 @@ function Participants({
             >
               <Icon name="pin" size={14} strokeWidth={2.2} />
             </button>
-            {/* floating emoji bursts from THIS participant */}
-            {mineReactions.map((e) => (
-              <span
-                key={e.key}
-                aria-hidden
-                style={{
-                  position: 'absolute',
-                  bottom: 8,
-                  left: `${18 + ((e.key * 37) % 60)}%`,
-                  fontSize: 26,
-                  pointerEvents: 'none',
-                  animation: 'ccEmojiFloat 3s ease-out forwards',
-                }}
-              >
-                {e.emoji}
-              </span>
-            ))}
+            {/* Floating reactions now rise over the WHOLE call screen — see
+                ReactionRise. They used to live here, as a 26px glyph inside
+                this overflow:hidden tile, where the control bar and the open
+                emoji sheet sat right on top of them. */}
 
             {camRef ? (
               <div
@@ -1115,9 +1104,90 @@ function Participants({
 }
 
 /**
+ * MEET-STYLE REACTION RAIN — the emoji rises from the BOTTOM of the call
+ * screen to the top with the sender's name beside it, so a reaction can not be
+ * missed. (It used to be a small glyph clipped inside the sender's own tile,
+ * under the control bar: visible only if you were looking for it.)
+ *
+ * Fixed and pointer-transparent: it sits above the stage, below the popups,
+ * and can never swallow a click. Each burst carries its own key, so several
+ * people reacting at once simply share the screen.
+ */
+function ReactionRise({
+  events,
+  participants,
+  localIdentity,
+}: {
+  events: EmojiEvent[]
+  participants: ReturnType<typeof useParticipants>
+  localIdentity: string | undefined
+}) {
+  if (events.length === 0) return null
+
+  return (
+    <div
+      aria-live="polite"
+      aria-label="Reactions"
+      style={{
+        position: 'fixed',
+        inset: 0,
+        overflow: 'hidden',
+        pointerEvents: 'none',
+        zIndex: 5,
+      }}
+    >
+      {events.map((e) => {
+        const sender = participants.find((p) => p.identity === e.from)
+        const mine = e.from === localIdentity || e.from === 'local'
+        const name = sender?.name?.trim() || (mine ? 'You' : 'Someone')
+        return (
+          <span
+            key={e.key}
+            style={{
+              position: 'absolute',
+              bottom: 76,
+              // Spread the bursts across the width instead of piling them up.
+              left: `${6 + ((e.key * 17) % 76)}%`,
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: 8,
+              whiteSpace: 'nowrap',
+              animation: 'ccReactionRise 6s cubic-bezier(0.25, 0.6, 0.35, 1) forwards',
+            }}
+          >
+            <span
+              style={{
+                fontSize: 34,
+                lineHeight: 1,
+                filter: 'drop-shadow(0 6px 14px rgba(0,0,0,0.55))',
+              }}
+            >
+              {e.emoji}
+            </span>
+            <span
+              style={{
+                fontSize: 12,
+                fontWeight: 700,
+                color: '#fff',
+                background: 'rgba(0,0,0,0.55)',
+                padding: '4px 10px',
+                borderRadius: 999,
+              }}
+            >
+              {mine ? 'You' : name}
+            </span>
+          </span>
+        )
+      })}
+    </div>
+  )
+}
+
+/**
  * Data-channel reactions: receive everyone's emoji (and send mine).
  * Topic 'reaction' — payload is just the emoji character. No DB, no polling:
- * the burst lives 3s in component state and disappears.
+ * the burst lives 6s in component state (long enough for ccReactionRise to
+ * climb the screen) and disappears.
  */
 function useReactions(myIdentity: string | undefined) {
   const [emojiEvents, setEmojiEvents] = useState<EmojiEvent[]>([])
@@ -1128,7 +1198,7 @@ function useReactions(myIdentity: string | undefined) {
     setEmojiEvents((prev) => [...prev.slice(-14), { key, emoji, from }])
     window.setTimeout(() => {
       setEmojiEvents((prev) => prev.filter((e) => e.key !== key))
-    }, 3000)
+    }, REACTION_LIFETIME)
   }, [])
 
   const { send } = useDataChannel('reaction', (msg) => {

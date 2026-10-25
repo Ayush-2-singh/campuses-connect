@@ -25,6 +25,7 @@ const read = (rel: string) => fs.readFileSync(path.join(root, rel), 'utf8')
 const surface = read('src/components/voice/CallSurface.tsx')
 const panel = read('src/components/voice/CallChatPanel.tsx')
 const picker = read('src/components/voice/EmojiPicker.tsx')
+const css = read('src/app/globals.css')
 
 describe('the emoji sheet is the whole set, and it stays open', () => {
   it('offers every category with a glyph on the tab strip', () => {
@@ -158,5 +159,38 @@ describe('the bar shows the essentials and nothing else', () => {
   it('still hides screen share where the browser has no getDisplayMedia', () => {
     expect(surface).toMatch(/navigator\.mediaDevices\?\.getDisplayMedia/)
     expect(surface).toMatch(/canScreenShare &&/)
+  })
+})
+
+describe('a sent reaction is impossible to miss — Meet style', () => {
+  it('rises from the bottom of the call screen to the top', () => {
+    expect(surface).toMatch(/<ReactionRise events=\{emojiEvents\}/)
+    expect(surface).toMatch(/animation: 'ccReactionRise 6s/)
+    expect(css).toMatch(/@keyframes ccReactionRise \{/)
+    expect(css).toMatch(/transform: translateY\(-70vh\)/)
+  })
+
+  it('shows who sent it, and says You for your own', () => {
+    expect(surface).toMatch(/const name = sender\?\.name\?\.trim\(\)/)
+    expect(surface).toMatch(/\{mine \? 'You' : name\}/)
+    // The name rides beside the emoji, not on a second line.
+    expect(surface).toMatch(/display: 'inline-flex',[\s\S]{0,80}alignItems: 'center',\s*\n\s*gap: 8/)
+  })
+
+  it('no longer hides the emoji inside the sender\u2019s own tile', () => {
+    // The old burst was a 26px glyph at the bottom of an overflow:hidden tile,
+    // underneath the control bar — which is why it read as "not showing".
+    expect(surface).not.toMatch(/mineReactions/)
+    expect(css).not.toContain('ccEmojiFloat')
+    expect(surface).not.toContain("animation: 'ccEmojiFloat 3s")
+  })
+
+  it('stays up long enough to read the name, and cannot swallow a click', () => {
+    expect(surface).toMatch(/const REACTION_LIFETIME = 6_000/)
+    expect(surface).toMatch(/}, REACTION_LIFETIME\)/)
+    const rise = surface.slice(surface.indexOf('function ReactionRise'), surface.indexOf('Data-channel reactions'))
+    expect(rise).toMatch(/pointerEvents: 'none'/)
+    expect(rise).toMatch(/position: 'fixed'/)
+    expect(rise).toMatch(/aria-live="polite"/)
   })
 })
