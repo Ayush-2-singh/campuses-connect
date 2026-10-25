@@ -15,7 +15,13 @@ export async function GET(req: NextRequest) {
 
   let query = supabase
     .from('interview_experiences')
-    .select('*, companies(name, slug, logo_url), profiles:user_id(full_name, username, avatar_url)')
+    // NOTE: the author's profile is deliberately NOT embedded here.
+    // `interview_experiences.user_id` references auth.users(id), not
+    // public.profiles(id), so PostgREST cannot resolve `profiles:user_id(...)` —
+    // the old embedded query errored with PGRST200, this route returned 500,
+    // and the page showed "No experiences yet" no matter how many rows
+    // existed. Profiles are fetched separately below and merged in.
+    .select('*, companies(name, slug, logo_url)')
     .order('created_at', { ascending: false })
     .limit(30)
 
@@ -27,7 +33,37 @@ export async function GET(req: NextRequest) {
   const { data, error } = await query
   if (error) return serverError('experiences', error)
 
-  return NextResponse.json({ experiences: data || [] })
+  const rows = data || []
+
+  // Author profiles in one follow-up query. `campuses(name)` rides along so
+  // the page can group write-ups gang-wise (by campus) without a third call.
+  const userIds = [...new Set(rows.map((r: any) => r.user_id).filter(Boolean))] as string[]
+  const profilesById = new Map<string, any>()
+  if (userIds.length > 0) {
+    const { data: profs } = await supabase
+      .from('profiles')
+      .select('id, full_name, username, avatar_url, campus_id, campuses(name)')
+      .in('id', userIds)
+    for (const p of profs || []) profilesById.set(p.id, p)
+  }
+
+  const experiences = rows.map((r: any) => {
+    const p = profilesById.get(r.user_id) || null
+    return {
+      ...r,
+      profiles: p
+        ? {
+            full_name: p.full_name,
+            username: p.username,
+            avatar_url: p.avatar_url,
+            campus_id: p.campus_id,
+            campuses: p.campuses ?? null,
+          }
+        : null,
+    }
+  })
+
+  return NextResponse.json({ experiences })
 }
 
 /** POST /api/experiences — post an interview experience */

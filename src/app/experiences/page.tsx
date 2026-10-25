@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
 import Layout from '@/components/Layout'
@@ -43,6 +43,20 @@ export default function ExperiencesPage() {
   const [error, setError] = useState('')
   const router = useRouter()
   const supabase = createClient()
+
+  // Gang-wise contribution — campuses ranked by how many write-ups their
+  // students have posted. Grouped client-side from the loaded rows so the
+  // strip only ever shows campuses that actually contributed; a campus with
+  // zero experiences never appears here.
+  const gangBoard = useMemo(() => {
+    const byCampus = new Map<string, number>()
+    for (const exp of experiences) {
+      const campus = exp.profiles?.campuses?.name
+      if (!campus) continue
+      byCampus.set(campus, (byCampus.get(campus) || 0) + 1)
+    }
+    return [...byCampus.entries()].sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0])).slice(0, 6)
+  }, [experiences])
 
   useEffect(() => {
     const load = async () => {
@@ -151,6 +165,45 @@ export default function ExperiencesPage() {
           </button>
         </div>
 
+        {/* Every write-up is ONE student's own account — never the company's
+            official process. Marked prominently so no reader mistakes a
+            personal account for the definitive process. */}
+        <p className="hc-note hc-reveal" style={{ marginBottom: 16 } as React.CSSProperties}>
+          <strong>Personal accounts only.</strong> Every write-up below is one student&apos;s own experience of their
+          own drive — not the company&apos;s official process. The same company can run a different process at a
+          different campus, so read these as experiences, not as answer sheets.
+        </p>
+
+        {/* Gang-wise contribution — which campuses actually posted write-ups,
+            and how many. Hidden entirely when nobody has posted yet. */}
+        {gangBoard.length > 0 && (
+          <section
+            className="hc-reveal"
+            style={{ marginBottom: 16 } as React.CSSProperties}
+            aria-label="Gang-wise contribution"
+          >
+            <p
+              style={{
+                fontSize: 12,
+                fontWeight: 700,
+                letterSpacing: '0.08em',
+                textTransform: 'uppercase',
+                color: 'var(--text-muted)',
+                margin: '0 0 8px',
+              }}
+            >
+              Gang-wise contribution — who wrote the knowledge down
+            </p>
+            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+              {gangBoard.map(([campus, count], i) => (
+                <span className="hc-chip" key={campus} style={{ cursor: 'default' }}>
+                  #{i + 1} {campus} · {count} {count === 1 ? 'write-up' : 'write-ups'}
+                </span>
+              ))}
+            </div>
+          </section>
+        )}
+
         <button
           onClick={() => setShowForm(!showForm)}
           className="hc-btn hc-btn--primary hc-btn--block hc-reveal"
@@ -165,6 +218,11 @@ export default function ExperiencesPage() {
         {showForm && (
           <div className="hc-form">
             <h3 className="hc-form-title">Share your interview experience</h3>
+            <p className="hc-note" style={{ marginTop: 0 }}>
+              This is your <strong>personal account</strong> of that drive — write it as you lived it. Others from your
+              campus may have faced a different process, and that difference is exactly what makes your write-up worth
+              posting.
+            </p>
             <div className="hc-form-row">
               <select value={form.company_id} onChange={(e) => setForm({ ...form, company_id: e.target.value })}>
                 <option value="">Select company</option>
@@ -270,6 +328,14 @@ export default function ExperiencesPage() {
                     </p>
                   </div>
                   <div className="hc-tags" style={{ flexShrink: 0, justifyContent: 'flex-end' }}>
+                    {/* The experience is one person's own account — labelled on
+                        every card so it is never read as the official process. */}
+                    <span
+                      className="hc-tag hc-tag--ghost"
+                      title="One student's own account, not the company's official process"
+                    >
+                      Personal experience
+                    </span>
                     {exp.difficulty && (
                       <span className={`hc-tag ${DIFF_TONE[exp.difficulty] || ''}`}>{exp.difficulty}</span>
                     )}
