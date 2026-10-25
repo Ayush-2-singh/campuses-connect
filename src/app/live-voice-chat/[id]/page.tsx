@@ -44,6 +44,8 @@ export default function LiveVoiceChatRoomPage() {
   // Last session's attendance — computed from the participants table.
   const [lastSession, setLastSession] = useState<{ minutes: number; people: number; live: boolean } | null>(null)
   const [reported, setReported] = useState(false)
+  /** Which member's role is being handed out right now (co-admin tap). */
+  const [roleBusy, setRoleBusy] = useState<string | null>(null)
 
   // ── Load bookkeeping ───────────────────────────────────────────────────────
   // Realtime, the focus refetch and the 15s fallback all call load() and they
@@ -462,6 +464,29 @@ export default function LiveVoiceChatRoomPage() {
   /* The creator and the room's own admins may remove the room. */
   const canDeleteRoom =
     !!user && (group?.created_by === user.id || members.some((m: any) => m.user_id === user.id && m.role === 'admin'))
+  /* …and hand out co-admin power, which is what lets a co-admin run the call
+     (mute people, keep order) when the owner is away. */
+  const canPromote =
+    !!user && (group?.created_by === user.id || members.some((m: any) => m.user_id === user.id && m.role === 'admin'))
+
+  const promoteMember = async (userId: string, role: 'co-admin' | 'member') => {
+    setRoleBusy(userId)
+    try {
+      // The role check lives in SQL (set_live_voice_chat_role): owner or
+      // admin only, never the owner's own row, never yourself by accident.
+      const { error: rpcError } = await supabase.rpc('set_live_voice_chat_role', {
+        p_group_id: groupId,
+        p_user_id: userId,
+        p_role: role,
+      })
+      if (rpcError) throw new Error(rpcError.message)
+      setMembers((prev) => prev.map((m) => (m.user_id === userId ? { ...m, role } : m)))
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Could not change that role.')
+    } finally {
+      setRoleBusy(null)
+    }
+  }
 
   if (loading) {
     return (
@@ -906,6 +931,33 @@ export default function LiveVoiceChatRoomPage() {
                         </span>
                         {m.role === 'admin' && (
                           <span style={{ fontSize: 11, color: 'var(--text-muted)', flexShrink: 0 }}>Admin</span>
+                        )}
+                        {m.role === 'co-admin' && (
+                          <span style={{ fontSize: 11, color: 'var(--text-muted)', flexShrink: 0 }}>Co-admin</span>
+                        )}
+                        {canPromote && m.role !== 'admin' && m.user_id !== user?.id && (
+                          <button
+                            onClick={() => void promoteMember(m.user_id, m.role === 'co-admin' ? 'member' : 'co-admin')}
+                            disabled={roleBusy === m.user_id}
+                            aria-label={
+                              m.role === 'co-admin' ? `Remove co-admin from ${m.name}` : `Make ${m.name} a co-admin`
+                            }
+                            style={{
+                              minHeight: 30,
+                              padding: '0 10px',
+                              borderRadius: 8,
+                              border: '1px solid var(--border)',
+                              background: m.role === 'co-admin' ? 'var(--accent)' : 'var(--bg-secondary)',
+                              color: m.role === 'co-admin' ? 'var(--on-accent)' : 'var(--text-primary)',
+                              fontSize: 11.5,
+                              fontWeight: 700,
+                              fontFamily: 'inherit',
+                              cursor: roleBusy === m.user_id ? 'wait' : 'pointer',
+                              flexShrink: 0,
+                            }}
+                          >
+                            {roleBusy === m.user_id ? '…' : m.role === 'co-admin' ? 'Remove co-admin' : 'Make co-admin'}
+                          </button>
                         )}
                         {inCall && (
                           <span

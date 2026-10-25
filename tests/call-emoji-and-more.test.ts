@@ -117,12 +117,16 @@ describe('the sheet opens from both emoji surfaces', () => {
 describe('the bar shows the essentials and nothing else', () => {
   const buttons = surface.match(/className="lvc-ctrl/g) ?? []
 
-  it('keeps mic, camera, messages and More — four round controls', () => {
-    expect(buttons.length).toBe(4)
+  it('keeps mic, camera, flip, messages and More — five round controls', () => {
+    // The fifth is the camera flip, and it only exists at RUNTIME when the
+    // camera is live and the device has a second one (see below), so the bar
+    // on a one-webcam laptop is still the original four.
+    expect(buttons.length).toBe(5)
     expect(surface).toMatch(/aria-label=\{isMicrophoneEnabled \? 'Mute microphone' : 'Unmute microphone'\}/)
     expect(surface).toMatch(/aria-label=\{isCameraEnabled \? 'Turn camera off' : 'Turn camera on'\}/)
     expect(surface).toMatch(/Open in-call messages/)
     expect(surface).toMatch(/aria-label="Leave the call"/)
+    expect(surface).toMatch(/\{isCameraEnabled && cameras\.length > 1 && \(/)
   })
 
   it('no longer draws hand, share, games, compiler or music as their own button', () => {
@@ -175,6 +179,22 @@ describe('the bar shows the essentials and nothing else', () => {
 })
 
 describe('a sent reaction is impossible to miss — Meet style', () => {
+  it('reaches everybody, not only the sender', () => {
+    // Two paths for one burst: the room's own data channel, and a broadcast
+    // on the call's Supabase channel that does not depend on it at all.
+    expect(surface).toMatch(/send\(bytes, \{ reliable: true \}\)/)
+    expect(surface).toMatch(/channelRef\.current\?\.send\(\{/)
+    expect(surface).toMatch(/event: 'reaction'/)
+    expect(surface).toMatch(/supabase\.channel\(`lvc-reactions-\$\{callId\}`\)/)
+    // The sender still paints its own burst — neither path echoes back.
+    expect(surface).toMatch(/push\(emoji, myIdentity \?\? 'local'\)/)
+  })
+
+  it('shows a burst that arrives twice exactly once', () => {
+    expect(surface).toMatch(/const dupKey = `\$\{from\}\|\$\{emoji\}`/)
+    expect(surface).toMatch(/if \(Date\.now\(\) - last < 2_000\) return/)
+  })
+
   it('rises from the bottom of the call screen to the top', () => {
     expect(surface).toMatch(/<ReactionRise events=\{emojiEvents\}/)
     expect(surface).toMatch(/animation: 'ccReactionRise 6s/)

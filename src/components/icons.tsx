@@ -95,6 +95,25 @@ const ICON_PATHS: Record<string, React.ReactNode> = {
       <path d="M1 1l22 22" />
     </>
   ),
+  /* Two shutter halves with the lens between them — flip the camera
+     front ↔ back (phones have two; laptops rarely have a second one). */
+  'camera-flip': (
+    <>
+      <path d="M11 19H4a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2h5" />
+      <path d="M13 5h7a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2h-5" />
+      <circle cx="12" cy="12" r="3" />
+      <path d="m18 22-3-3 3-3" />
+      <path d="m6 2 3 3-3 3" />
+    </>
+  ),
+  /* Speaker with sound waves — per-person playback volume. */
+  volume: (
+    <>
+      <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" />
+      <path d="M15.54 8.46a5 5 0 0 1 0 7.07" />
+      <path d="M19.07 4.93a10 10 0 0 1 0 14.14" />
+    </>
+  ),
   /* Screen with an up-arrow — the GMeet "present" glyph. */
   'screen-share': (
     <>

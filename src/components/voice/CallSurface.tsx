@@ -2,9 +2,16 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { usePathname, useRouter } from 'next/navigation'
-import { useDataChannel, useLocalParticipant, useParticipants, useTracks, VideoTrack } from '@livekit/components-react'
+import {
+  useDataChannel,
+  useLocalParticipant,
+  useParticipants,
+  useRoomContext,
+  useTracks,
+  VideoTrack,
+} from '@livekit/components-react'
 import type { TrackReferenceOrPlaceholder, TrackReference } from '@livekit/components-react'
-import { Track } from 'livekit-client'
+import { RemoteParticipant, Track } from 'livekit-client'
 import { createClient } from '@/lib/supabase/client'
 import { Icon } from '@/components/icons'
 import CallGamePanel, { CALL_GAME_LABELS, type CallGame, type CallGameInvite } from '@/components/games/CallGamePanel'
@@ -74,12 +81,50 @@ export default function CallSurface() {
   }, [callUrl, router])
 
   const participants = useParticipants()
-  const { localParticipant } = useLocalParticipant()
-  const { emojiEvents, sendReaction } = useReactions(localParticipant?.identity)
+  const { localParticipant, isMicrophoneEnabled } = useLocalParticipant()
+  const { emojiEvents, sendReaction } = useReactions(localParticipant?.identity, callId)
 
   // ── IN-CALL MESSAGES ───────────────────────────────────────────────────
   const { messages, sendChat } = useCallChat(localParticipant?.identity, localParticipant?.name, callId, groupId)
   const { hands, myHandUp, toggleHand } = useHandRaise(localParticipant?.identity, localParticipant?.name)
+
+  // ── WHO RUNS THE ROOM, AND WHO HAS BEEN SILENCED ─────────────────────
+  // Owner, admin and co-admin run a room; the first two can also hand out
+  // co-admin. Muting somebody is a moderator's power, not a vote: their own
+  // client reads the same flag and keeps its microphone off (below), and the
+  // server mutes the track at LiveKit as well, so a backgrounded tab is
+  // silenced too.
+  const { canModerate, iamHostMuted, hostMutedIds, toggleHostMute } = useModeration(
+    callId,
+    groupId,
+    localParticipant?.identity
+  )
+
+  /** How loudly each person plays ON MY DEVICE — 0..1, keyed by identity.
+   *  It is only ever my own setting: nobody else's call is affected. */
+  const [volumes, setVolumes] = useState<Record<string, number>>({})
+  const setVolume = useCallback((identity: string, volume: number) => {
+    setVolumes((prev) => ({ ...prev, [identity]: volume }))
+  }, [])
+  // Applied to the running track, so the slider is heard immediately — and
+  // re-applied whenever somebody new arrives with a volume I already set.
+  useEffect(() => {
+    for (const p of participants) {
+      if (p.isLocal) continue
+      const volume = volumes[p.identity]
+      if (volume === undefined) continue
+      if (p instanceof RemoteParticipant) p.setVolume(volume)
+    }
+  }, [participants, volumes])
+
+  // A moderator's mute is not a suggestion: the microphone goes off and stays
+  // off, even if the person taps the mic button in the bar.
+  useEffect(() => {
+    if (!iamHostMuted || !localParticipant || !isMicrophoneEnabled) return
+    void localParticipant.setMicrophoneEnabled(false).catch(() => {
+      /* permission already gone — it is off either way */
+    })
+  }, [iamHostMuted, isMicrophoneEnabled, localParticipant])
   const [codeOpen, setCodeOpen] = useState(false)
   const { pad, updateCode, updateLanguage } = useSharedPad(localParticipant?.identity)
   // A raised hand disappears from the rail when its owner leaves: the data
@@ -102,6 +147,9 @@ export default function CallSurface() {
   // playlist is a live-room moment, so it stays on the wire like reactions,
   // chat and game invites.
   const [musicOpen, setMusicOpen] = useState(false)
+  /** The roster panel: per-person playback volume for everyone, host mute
+   *  for an owner/admin/co-admin. */
+  const [peopleOpen, setPeopleOpen] = useState(false)
   const [musicKey, setMusicKey] = useState(DEFAULT_MUSIC_KEY)
   const [musicAuto, setMusicAuto] = useState(false)
   /** The flavour *I* have shared with the call, or null. */
@@ -328,7 +376,17 @@ export default function CallSurface() {
           itself inside the viewport and above the control bar (see
           lib/floatingPanel.ts), so mic / leave stay reachable. */}
         <div>
-          {musicOpen ? (
+          {peopleOpen ? (
+            <CallPeoplePanel
+              participants={participants}
+              volumes={volumes}
+              onVolume={setVolume}
+              canModerate={canModerate}
+              hostMutedIds={hostMutedIds}
+              onToggleMute={toggleHostMute}
+              onClose={() => setPeopleOpen(false)}
+            />
+          ) : musicOpen ? (
             <CallMusicPanel
               key={musicKey}
               initialKey={musicKey}
@@ -570,6 +628,14 @@ export default function CallSurface() {
           onOpenChat={() => setChatOpen((open) => !open)}
           handUp={myHandUp}
           onToggleHand={toggleHand}
+          peopleOpen={peopleOpen}
+          onOpenPeople={() => {
+            setMusicOpen(false)
+            setGamesOpen(false)
+            setCodeOpen(false)
+            setPeopleOpen((open) => !open)
+          }}
+          hostMuted={iamHostMuted}
         />
       </div>
     </div>
@@ -640,8 +706,29 @@ function LayoutSwitcher({
 }
 
 /**
+ * LAPTOP-OR-WIDER — the stage has room to lay people out side by side.
+ * Phones and narrow windows keep the hero + corner pips, where three tiles at
+ * "equal size" would shrink into thumbnails. Resolves to false until mounted,
+ * so the first client render matches what SSR painted.
+ */
+function useWideStage() {
+  const [wide, setWide] = useState(false)
+  useEffect(() => {
+    if (typeof window === 'undefined' || !window.matchMedia) return
+    const mq = window.matchMedia('(min-width: 900px)')
+    const sync = () => setWide(mq.matches)
+    sync()
+    mq.addEventListener('change', sync)
+    return () => mq.removeEventListener('change', sync)
+  }, [])
+  return wide
+}
+
+/**
  * STAGE — the band above the strip.
  *   share mode     → whoever is sharing their screen (Meet-style, full width)
+ *   laptop, 2–3    → every staged person SIDE BY SIDE, all the same size
+ *                    (Meet's pinned row — no hero, no thumbnails)
  *   otherwise      → up to THREE people: the first pin is the hero (the big
  *                    tile) and the next two ride in the corner as small tiles,
  *                    so one stays special while two still get real attention.
@@ -662,6 +749,7 @@ function Stage({
   onUnpin: (identity: string) => void
 }) {
   const camRefs = useTracks([Track.Source.Camera])
+  const wide = useWideStage()
 
   // A placeholder reference (publication still undefined) can't be rendered —
   // treat it exactly like "nothing is being shared".
@@ -672,6 +760,20 @@ function Stage({
 
   // Nothing shared and nobody staged (auto, no pins) → no stage at all.
   if (!share && !heroId) return null
+
+  // LAPTOP, MEET-STYLE — "teen log equal size me dikhen": two or three staged
+  // people sit side by side at the SAME size, each a full 16:9 tile, instead
+  // of one hero with two corner pips. Narrow screens keep the pips, because
+  // three equal tiles on a phone are just thumbnails.
+  if (!share && wide && stagePeople.length > 1) {
+    return (
+      <div style={{ display: 'flex', gap: 10, width: '100%', marginBottom: 14, flexShrink: 0 }}>
+        {stagePeople.map((id) => (
+          <StagePip key={id} identity={id} participants={participants} onUnpin={onUnpin} variant="row" />
+        ))}
+      </div>
+    )
+  }
 
   const person = participants.find((p) => p.identity === heroId)
   const camRef = camRefs.find((r) => r.participant.identity === heroId)
@@ -820,32 +922,41 @@ function Stage({
  * Same anatomy as the big one (camera, else avatar; name; unpin), only the
  * size changes — that difference IS the layout: one special, two close, the
  * rest compact in the strip.
+ *
+ * `variant="row"` is the laptop rendering of the same person: flexed to an
+ * equal share of the stage, so two or three staged people all come out the
+ * same size instead of hero-plus-thumbnails.
  */
 function StagePip({
   identity,
   participants,
   onUnpin,
+  variant = 'pip',
 }: {
   identity: string
   participants: ReturnType<typeof useParticipants>
   onUnpin: (identity: string) => void
+  /** 'pip' rides the hero's corner; 'row' sits equal beside the others. */
+  variant?: 'pip' | 'row'
 }) {
   const camRefs = useTracks([Track.Source.Camera])
   const person = participants.find((p) => p.identity === identity)
   const camRef = camRefs.find((r) => r.participant.identity === identity)
   const name = person?.name || person?.identity || 'Student'
+  const row = variant === 'row'
 
   return (
     <div
       style={{
         position: 'relative',
-        width: 'clamp(116px, 16vw, 190px)',
+        ...(row
+          ? { flex: '1 1 0', minWidth: 0, borderRadius: 14 }
+          : { width: 'clamp(116px, 16vw, 190px)', borderRadius: 10 }),
         aspectRatio: '16 / 9',
-        borderRadius: 10,
         overflow: 'hidden',
         border: '1px solid var(--border)',
         background: '#000',
-        boxShadow: '0 6px 20px rgba(0,0,0,0.35)',
+        boxShadow: row ? 'none' : '0 6px 20px rgba(0,0,0,0.35)',
       }}
     >
       {camRef ? (
@@ -1169,8 +1280,11 @@ function Participants({
       style={{
         display: 'grid',
         // Compact by design: this is the "everyone else" row that sits under a
-        // stage which may already be showing three people.
-        gridTemplateColumns: 'repeat(auto-fill, minmax(128px, 1fr))',
+        // stage which may already be showing three people. auto-FIT (not
+        // auto-fill): with three people on a laptop the three tiles stretch to
+        // fill the row equally — Meet-style — instead of huddling at 128px on
+        // the left while the rest of the row stays empty.
+        gridTemplateColumns: 'repeat(auto-fit, minmax(128px, 1fr))',
         gap: 10,
         width: '100%',
       }}
@@ -1386,21 +1500,59 @@ function ReactionRise({
 
 /**
  * Data-channel reactions: receive everyone's emoji (and send mine).
- * Topic 'reaction' — payload is just the emoji character. No DB, no polling:
- * the burst lives 6s in component state (long enough for ccReactionRise to
+ *
+ * DELIVERY IS DELIBERATELY REDUNDANT — the same burst goes out over the
+ * LiveKit data channel (in sync with the room, zero latency) AND over a
+ * Supabase broadcast on the call's own channel. Reactions were arriving for
+ * the sender and for nobody else — the local echo always paints, so a failed
+ * send looked like a success — so the second path guarantees everyone in the
+ * call gets it. The receiver drops the duplicate, keyed on sender + emoji
+ * inside a short window.
+ *
+ * The burst lives 6s in component state (long enough for ccReactionRise to
  * climb the screen) and disappears.
  */
-function useReactions(myIdentity: string | undefined) {
+function useReactions(myIdentity: string | undefined, callId: string) {
   const [emojiEvents, setEmojiEvents] = useState<EmojiEvent[]>([])
   const seq = useRef(0)
+  /** When each sender last showed each emoji — the duplicate guard. */
+  const shownAt = useRef(new Map<string, number>())
+  /** The one broadcast channel for this call, so send and receive agree. */
+  const channelRef = useRef<ReturnType<typeof supabase.channel> | null>(null)
 
   const push = useCallback((emoji: string, from: string) => {
+    const dupKey = `${from}|${emoji}`
+    const last = shownAt.current.get(dupKey) ?? 0
+    // Both paths may deliver the same burst: show it once, not twice.
+    if (Date.now() - last < 2_000) return
+    shownAt.current.set(dupKey, Date.now())
+    if (shownAt.current.size > 60) shownAt.current.clear()
+
     const key = ++seq.current
     setEmojiEvents((prev) => [...prev.slice(-14), { key, emoji, from }])
     window.setTimeout(() => {
       setEmojiEvents((prev) => prev.filter((e) => e.key !== key))
     }, REACTION_LIFETIME)
   }, [])
+
+  // The second path: everyone in the call is on this channel, whoever they
+  // are and whichever page they are looking at.
+  useEffect(() => {
+    if (!callId) return
+    const channel = supabase.channel(`lvc-reactions-${callId}`)
+    channelRef.current = channel
+    channel
+      .on('broadcast', { event: 'reaction' }, (msg) => {
+        const payload = msg.payload as { emoji?: unknown; from?: unknown }
+        if (typeof payload?.emoji !== 'string' || !payload.emoji) return
+        push(payload.emoji, typeof payload.from === 'string' && payload.from ? payload.from : 'remote')
+      })
+      .subscribe()
+    return () => {
+      channelRef.current = null
+      void supabase.removeChannel(channel)
+    }
+  }, [callId, push])
 
   const { send } = useDataChannel('reaction', (msg) => {
     // ReceivedDataMessage = { topic, payload: Uint8Array, from?: Participant }
@@ -1409,17 +1561,25 @@ function useReactions(myIdentity: string | undefined) {
 
   const sendReaction = useCallback(
     (emoji: string) => {
+      const bytes = new TextEncoder().encode(emoji)
       try {
         // RELIABLE, not lossy: a dropped reaction reads as "the emoji never
         // sent" to the person who tapped it, and the payload is a few bytes.
-        send(new TextEncoder().encode(emoji), { reliable: true })
+        send(bytes, { reliable: true })
       } catch {
-        /* channel not ready yet — the local burst still shows */
+        /* channel not ready — the broadcast below still carries it */
       }
-      // Show my own reaction instantly (no round-trip wait). LiveKit does not
-      // echo data messages back to the sender, so local echo is required —
-      // and it must use MY participant identity so the burst renders on my
-      // own tile, not a phantom 'local' key no tile matches.
+      // The path that reaches everybody: a broadcast on the call's channel,
+      // independent of the peer connection (the receiver de-duplicates it
+      // against the data-channel copy above).
+      void channelRef.current?.send({
+        type: 'broadcast',
+        event: 'reaction',
+        payload: { emoji, from: myIdentity ?? 'local' },
+      })
+      // Show my own reaction instantly (no round-trip wait). Neither path
+      // echoes back to the sender — and it must carry MY identity so the
+      // burst renders as mine, not as a phantom 'local' key no tile matches.
       push(emoji, myIdentity ?? 'local')
     },
     [send, push, myIdentity]
@@ -1730,6 +1890,319 @@ function HandRail({ hands }: { hands: RaisedHand[] }) {
 }
 
 /**
+ * MODERATION — who may run the room, and who has been silenced.
+ *
+ *   canModerate    the owner (the creator), an 'admin' member or a
+ *                  'co-admin' member of THIS room. Both tables are read
+ *                  directly; the server re-checks exactly the same facts in
+ *                  SQL before anything changes, so a client can never hand
+ *                  itself power by editing a row.
+ *   hostMutedIds   people a moderator has muted this call. Their own client
+ *                  reads the same flag and keeps its microphone off — which
+ *                  is why it lives apart from is_muted, the person's OWN
+ *                  toggle for their own mic.
+ *
+ * Both tables move while a call runs (somebody is promoted, somebody is
+ * muted), so one realtime subscription re-reads them; the mute action itself
+ * goes through the API route, which also asks LiveKit to silence the track.
+ */
+function useModeration(callId: string, groupId: string, myId: string | undefined) {
+  const [canModerate, setCanModerate] = useState(false)
+  const [hostMutedIds, setHostMutedIds] = useState<string[]>([])
+
+  const refresh = useCallback(async () => {
+    if (!callId || !groupId || !myId) return
+    try {
+      const [group, me] = await Promise.all([
+        supabase.from('live_voice_chat_groups').select('created_by').eq('id', groupId).maybeSingle(),
+        supabase
+          .from('live_voice_chat_members')
+          .select('role')
+          .eq('group_id', groupId)
+          .eq('user_id', myId)
+          .maybeSingle(),
+      ])
+      const role = (me.data?.role ?? '') as string
+      setCanModerate(group.data?.created_by === myId || role === 'admin' || role === 'co-admin')
+    } catch {
+      /* before the migration lands there is simply nobody with power */
+    }
+    try {
+      const { data, error } = await supabase
+        .from('live_voice_chat_participants')
+        .select('user_id, host_muted')
+        .eq('call_id', callId)
+        .is('left_at', null)
+      // The column arrives with its migration — until then nothing is muted.
+      if (error || !Array.isArray(data)) return
+      setHostMutedIds(
+        data.filter((row: { host_muted?: boolean }) => row.host_muted).map((row: { user_id: string }) => row.user_id)
+      )
+    } catch {
+      /* ditto */
+    }
+  }, [callId, groupId, myId])
+
+  useEffect(() => {
+    void refresh()
+  }, [refresh])
+
+  // One subscription for both facts: a promotion or a mute lands here within
+  // a beat, on every screen, without polling.
+  useEffect(() => {
+    if (!callId || !groupId) return
+    const channel = supabase
+      .channel(`lvc-moderation-${callId}`)
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'live_voice_chat_participants', filter: `call_id=eq.${callId}` },
+        () => void refresh()
+      )
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'live_voice_chat_members', filter: `group_id=eq.${groupId}` },
+        () => void refresh()
+      )
+      .subscribe()
+    return () => {
+      void supabase.removeChannel(channel)
+    }
+  }, [callId, groupId, refresh])
+
+  /** Silencing somebody (or letting them speak again). The route owns the
+   *  authorisation: it runs the role-checked RPC, then LiveKit's own mute. */
+  const toggleHostMute = useCallback(
+    async (target: string, muted: boolean) => {
+      const { data } = await supabase.auth.getSession()
+      const jwt = data.session?.access_token
+      if (!jwt) throw new Error('Sign in again to moderate the room.')
+      const res = await fetch('/api/live-voice-chat/mute', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${jwt}` },
+        body: JSON.stringify({ callId, targetUserId: target, muted }),
+      })
+      const json = (await res.json().catch(() => ({}))) as { error?: string }
+      if (!res.ok) throw new Error(json.error ?? 'Could not change that')
+      setHostMutedIds((prev) => (muted ? [...new Set([...prev, target])] : prev.filter((id) => id !== target)))
+      void refresh()
+    },
+    [callId, refresh]
+  )
+
+  return {
+    canModerate,
+    iamHostMuted: !!myId && hostMutedIds.includes(myId),
+    hostMutedIds,
+    toggleHostMute,
+  }
+}
+
+/**
+ * PEOPLE — the roster, with the two controls that belong to a person rather
+ * than to the call:
+ *
+ *   • VOLUME — how loudly THEIR voice plays on MY device. Everyone gets this
+ *     slider: the one loud roommate can stay fully audible to the rest of the
+ *     room while being quiet in my ears. It never touches anyone else's call.
+ *   • MUTE — the owner's, an admin's or a co-admin's power to silence them
+ *     for real. Only the three of those see the button.
+ */
+function CallPeoplePanel({
+  participants,
+  volumes,
+  onVolume,
+  canModerate,
+  hostMutedIds,
+  onToggleMute,
+  onClose,
+}: {
+  participants: ReturnType<typeof useParticipants>
+  volumes: Record<string, number>
+  onVolume: (identity: string, volume: number) => void
+  canModerate: boolean
+  hostMutedIds: string[]
+  onToggleMute: (identity: string, muted: boolean) => Promise<void>
+  onClose: () => void
+}) {
+  const [busy, setBusy] = useState<string | null>(null)
+  const [error, setError] = useState('')
+
+  async function mute(identity: string, next: boolean) {
+    setBusy(identity)
+    setError('')
+    try {
+      await onToggleMute(identity, next)
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Could not change that')
+    } finally {
+      setBusy(null)
+    }
+  }
+
+  return (
+    <section
+      aria-label="People in this call"
+      style={{
+        border: '1px solid var(--border)',
+        borderRadius: 18,
+        background: 'var(--bg)',
+        padding: '14px 16px',
+        marginBottom: 14,
+        animation: 'ccCardUp 0.15s ease',
+      }}
+    >
+      <header style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10 }}>
+        <h2 style={{ margin: 0, fontSize: 15, fontWeight: 800, color: 'var(--text-primary)' }}>
+          People · {participants.length}
+        </h2>
+        <span style={{ flex: 1 }} />
+        <button
+          onClick={onClose}
+          aria-label="Close the people panel"
+          style={{
+            width: 32,
+            height: 32,
+            borderRadius: 10,
+            border: '1px solid var(--border)',
+            background: 'var(--bg)',
+            color: 'var(--text-secondary)',
+            display: 'inline-flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            cursor: 'pointer',
+          }}
+        >
+          <Icon name="x" size={15} />
+        </button>
+      </header>
+
+      {error && (
+        <p role="alert" style={{ margin: '0 0 10px', fontSize: 12.5, color: 'var(--danger)' }}>
+          {error}
+        </p>
+      )}
+
+      <ul style={{ listStyle: 'none', margin: 0, padding: 0, display: 'grid', gap: 8 }}>
+        {participants.map((p) => {
+          const name = p.name?.trim() || 'Student'
+          const volume = Math.round((volumes[p.identity] ?? 1) * 100)
+          const silenced = hostMutedIds.includes(p.identity)
+          return (
+            <li
+              key={p.identity}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 12,
+                padding: '8px 10px',
+                borderRadius: 12,
+                background: 'var(--bg-secondary)',
+                border: '1px solid var(--border)',
+              }}
+            >
+              <span
+                style={{
+                  width: 34,
+                  height: 34,
+                  borderRadius: '50%',
+                  flexShrink: 0,
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  fontSize: 14,
+                  fontWeight: 800,
+                  color: p.isSpeaking ? 'var(--on-accent)' : 'var(--accent-text)',
+                  background: p.isSpeaking ? 'var(--accent)' : 'var(--accent-light)',
+                }}
+              >
+                {name.charAt(0).toUpperCase()}
+              </span>
+
+              <span style={{ minWidth: 96, flexShrink: 0 }}>
+                <span
+                  style={{
+                    display: 'block',
+                    fontSize: 13,
+                    fontWeight: 700,
+                    color: 'var(--text-primary)',
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
+                    whiteSpace: 'nowrap',
+                  }}
+                >
+                  {name}
+                  {p.isLocal ? ' (You)' : ''}
+                </span>
+                <span
+                  style={{
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: 4,
+                    fontSize: 11,
+                    color: 'var(--text-muted)',
+                  }}
+                >
+                  <Icon name={!p.isMicrophoneEnabled ? 'mic-off' : 'mic'} size={11} />
+                  {silenced ? 'muted by admin' : !p.isMicrophoneEnabled ? 'muted' : 'live'}
+                </span>
+              </span>
+
+              <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8, flex: 1, minWidth: 140 }}>
+                <Icon name="volume" size={15} />
+                <input
+                  type="range"
+                  min={0}
+                  max={100}
+                  step={5}
+                  value={volume}
+                  onChange={(e) => onVolume(p.identity, Number(e.target.value) / 100)}
+                  aria-label={`Volume for ${name}`}
+                  style={{ flex: 1, minWidth: 0, accentColor: 'var(--accent)' }}
+                />
+                <span
+                  style={{
+                    fontSize: 11.5,
+                    fontWeight: 700,
+                    color: 'var(--text-secondary)',
+                    width: 34,
+                    textAlign: 'right',
+                  }}
+                >
+                  {volume}%
+                </span>
+              </span>
+
+              {canModerate && !p.isLocal && (
+                <button
+                  onClick={() => void mute(p.identity, !silenced)}
+                  disabled={busy === p.identity}
+                  aria-label={silenced ? `Let ${name} speak again` : `Mute ${name} in this call`}
+                  style={{
+                    minHeight: 32,
+                    padding: '0 12px',
+                    borderRadius: 9,
+                    border: 'none',
+                    background: silenced ? 'var(--accent)' : 'var(--danger)',
+                    color: '#fff',
+                    fontSize: 12,
+                    fontWeight: 700,
+                    fontFamily: 'inherit',
+                    cursor: busy === p.identity ? 'wait' : 'pointer',
+                    flexShrink: 0,
+                  }}
+                >
+                  {silenced ? 'Allow' : 'Mute'}
+                </button>
+              )}
+            </li>
+          )
+        })}
+      </ul>
+    </section>
+  )
+}
+
+/**
  * GMeet-style bottom control bar, kept deliberately SHORT: the whole emoji
  * sheet, mic, camera, messages, a "More" menu (hand, screen share, games,
  * compiler, music) and Leave — one row on a phone instead of two.
@@ -1754,6 +2227,9 @@ function Controls({
   onToggleHand,
   codeOpen,
   onOpenCode,
+  peopleOpen,
+  onOpenPeople,
+  hostMuted,
 }: {
   callId: string
   onLeave: () => void
@@ -1769,8 +2245,13 @@ function Controls({
   onToggleHand: () => void
   codeOpen: boolean
   onOpenCode: () => void
+  peopleOpen: boolean
+  onOpenPeople: () => void
+  /** True while a moderator has silenced MY microphone this call. */
+  hostMuted: boolean
 }) {
   const { localParticipant, isMicrophoneEnabled, isCameraEnabled, isScreenShareEnabled } = useLocalParticipant()
+  const room = useRoomContext()
   const [emojiOpen, setEmojiOpen] = useState(false)
   /** Everything too rare for the bar — hand, share, games, compiler, music. */
   const [moreOpen, setMoreOpen] = useState(false)
@@ -1793,11 +2274,42 @@ function Controls({
     setCanScreenShare(!!(typeof navigator !== 'undefined' && navigator.mediaDevices?.getDisplayMedia))
   }, [])
 
+  // ── FLIP THE CAMERA (phones have two, laptops usually have one) ──────────
+  // The list is read on mount and re-read once the camera turns on — that is
+  // when the browser finally hands out real deviceIds — and again whenever a
+  // camera is plugged in or removed, so the flip button only ever shows up
+  // when there is genuinely a second camera to switch to.
+  const [cameras, setCameras] = useState<MediaDeviceInfo[]>([])
+  useEffect(() => {
+    const media = typeof navigator === 'undefined' ? undefined : navigator.mediaDevices
+    if (!media?.enumerateDevices) return
+    let alive = true
+    const refresh = () => {
+      media
+        .enumerateDevices()
+        .then((list) => {
+          if (alive) setCameras(list.filter((d) => d.kind === 'videoinput'))
+        })
+        .catch(() => {
+          /* no device list yet (permission still pending) — no flip button */
+        })
+    }
+    refresh()
+    media.addEventListener('devicechange', refresh)
+    return () => {
+      alive = false
+      media.removeEventListener('devicechange', refresh)
+    }
+  }, [isCameraEnabled])
+
   /** Meet palette for the round controls: neutral = on, red = off. */
   const ON = { background: 'var(--bg-tertiary)', color: 'var(--text-primary)' } as const
   const OFF = { background: 'var(--danger)', color: '#fff' } as const
 
   async function toggleMic() {
+    // A moderator's mute beats the button: the mic stays off until they
+    // release it, exactly like the server-side mute on the other end.
+    if (hostMuted) return
     const nextEnabled = !isMicrophoneEnabled
     try {
       await localParticipant.setMicrophoneEnabled(nextEnabled)
@@ -1825,6 +2337,31 @@ function Controls({
       await localParticipant.setScreenShareEnabled(!isScreenShareEnabled)
     } catch {
       /* user cancelled the picker, or this browser refuses screen capture */
+    }
+  }
+
+  /**
+   * FRONT ↔ BACK — the one camera move a phone has.
+   *
+   * We cycle through whatever the device exposes: the live track is
+   * re-acquired in place, so the room keeps receiving video without anyone
+   * else seeing a gap, and the current camera is read off the running track
+   * (not off a guess) so the very next one in the list is the flip.
+   */
+  async function flipCamera() {
+    if (cameras.length < 2) return
+    const camera = Array.from(localParticipant.videoTrackPublications.values()).find(
+      (p) => p.source === Track.Source.Camera
+    )
+    const currentId = camera?.videoTrack?.mediaStreamTrack.getSettings().deviceId
+    const at = cameras.findIndex((d) => d.deviceId === currentId)
+    // No id to match (some browsers hide it) → take the second camera, which
+    // is the other one on every phone.
+    const next = cameras[at < 0 ? Math.min(1, cameras.length - 1) : (at + 1) % cameras.length]
+    try {
+      await room.switchActiveDevice('videoinput', next.deviceId)
+    } catch {
+      /* the camera refused to switch — the view simply stays where it is */
     }
   }
 
@@ -1869,6 +2406,7 @@ function Controls({
         onClick={toggleMic}
         aria-label={isMicrophoneEnabled ? 'Mute microphone' : 'Unmute microphone'}
         aria-pressed={!isMicrophoneEnabled}
+        title={hostMuted ? 'Muted by a moderator' : undefined}
         className="lvc-ctrl"
         style={isMicrophoneEnabled ? ON : OFF}
       >
@@ -1885,6 +2423,19 @@ function Controls({
       >
         <Icon name={isCameraEnabled ? 'video' : 'video-off'} size={23} />
       </button>
+
+      {/* FLIP — front ↔ back. Only rendered while the camera is live AND the
+          device has a second one, so a one-webcam laptop never sees it. */}
+      {isCameraEnabled && cameras.length > 1 && (
+        <button
+          onClick={() => void flipCamera()}
+          aria-label="Switch between the front and back camera"
+          className="lvc-ctrl"
+          style={ON}
+        >
+          <Icon name="camera-flip" size={23} />
+        </button>
+      )}
 
       {/* Messages — Meet's chat. The badge counts only lines written by other
           people that the panel has not shown yet. */}
@@ -1969,6 +2520,15 @@ function Controls({
               }}
             />
             <MoreItem
+              icon="users"
+              label={peopleOpen ? 'Close the people panel' : 'People — volume and mute'}
+              active={peopleOpen}
+              onClick={() => {
+                onOpenPeople()
+                closeMore()
+              }}
+            />
+            <MoreItem
               icon="music"
               label={musicOpen ? 'Close the music panel' : 'Listen to music with the call'}
               active={musicOpen}
@@ -1986,7 +2546,7 @@ function Controls({
           aria-haspopup="menu"
           className="lvc-ctrl"
           style={
-            moreOpen || gamesOpen || codeOpen || musicOpen
+            moreOpen || gamesOpen || codeOpen || musicOpen || peopleOpen
               ? { background: 'var(--accent)', color: 'var(--on-accent)' }
               : ON
           }

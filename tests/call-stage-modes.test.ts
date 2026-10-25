@@ -74,6 +74,23 @@ describe('three people hold the stage at once', () => {
     expect(surface).toMatch(/layout === 'grid' \|\| !heroId \? \[\] :/)
   })
 
+  it('on a laptop the staged people sit SIDE BY SIDE, all the same size', () => {
+    // "teen logo ka equal size me laptop per dikhe, jaise GMeet per hota hai"
+    expect(surface).toMatch(/function useWideStage\(\)/)
+    expect(surface).toMatch(/window\.matchMedia\('\(min-width: 900px\)'\)/)
+    expect(surface).toMatch(/const wide = useWideStage\(\)/)
+    expect(surface).toMatch(/if \(!share && wide && stagePeople\.length > 1\) \{/)
+    // Equal tiles: each one flexes to its share of the stage — no hero, no pips.
+    expect(surface).toMatch(/variant="row"/)
+    expect(surface).toMatch(/\{ flex: '1 1 0', minWidth: 0, borderRadius: 14 \}/)
+    expect(surface).toMatch(/flex: '1 1 0', minWidth: 0/)
+    expect(surface).toMatch(/aspectRatio: '16 \/ 9'/)
+    // Narrow screens keep the pips: three equal tiles on a phone are thumbs.
+    expect(surface).toMatch(/width: 'clamp\(116px, 16vw, 190px\)'/)
+    // And the strip itself fills its row with the three of them.
+    expect(surface).toMatch(/repeat\(auto-fit, minmax\(128px, 1fr\)\)/)
+  })
+
   it('spotlight always has a hero, even with nothing pinned', () => {
     // Parsed out of the source rather than regex-matched on one line, so a
     // formatter re-wrapping the expression cannot break the test.
