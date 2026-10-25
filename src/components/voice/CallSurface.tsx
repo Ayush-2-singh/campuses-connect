@@ -295,7 +295,17 @@ export default function CallSurface() {
   // user around the app. Every hook above has already run, and nothing mounts
   // or unmounts the room — that lives above the router.
   if (!fullScreen) {
-    return <CallBar callId={callId} count={participants.length} onOpen={openCallScreen} onLeave={leave} />
+    return (
+      <>
+        {/* OFF THE CALL SCREEN TOO — a reaction has to land wherever the
+            person actually is. The overlay is fixed and pointer-transparent,
+            so it rides over any page without touching it; before this, the
+            recipient only ever saw reactions while sitting on the call screen,
+            which read as "emoji nahi dikh rahe". */}
+        <ReactionRise events={emojiEvents} participants={participants} localIdentity={localParticipant?.identity} />
+        <CallBar callId={callId} count={participants.length} onOpen={openCallScreen} onLeave={leave} />
+      </>
+    )
   }
 
   return (
@@ -1363,7 +1373,9 @@ function useReactions(myIdentity: string | undefined) {
   const sendReaction = useCallback(
     (emoji: string) => {
       try {
-        send(new TextEncoder().encode(emoji), { reliable: false })
+        // RELIABLE, not lossy: a dropped reaction reads as "the emoji never
+        // sent" to the person who tapped it, and the payload is a few bytes.
+        send(new TextEncoder().encode(emoji), { reliable: true })
       } catch {
         /* channel not ready yet — the local burst still shows */
       }

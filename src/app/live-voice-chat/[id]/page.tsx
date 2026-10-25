@@ -293,18 +293,37 @@ export default function LiveVoiceChatRoomPage() {
     await load()
   }
 
-  /** Copy the invite link for a locked room — the only way a non-member gets in. */
-  const copyInvite = async () => {
+  /**
+   * SHARE THE ROOM — the system share sheet on a phone, the clipboard
+   * everywhere else. The message carries the room's NAME, so what lands in the
+   * chat reads like an invite: people were copying the bare UUID out of the
+   * address bar ("link ajeeb hai") and it told the recipient nothing.
+   */
+  const shareRoom = async () => {
     const link =
       typeof window !== 'undefined'
         ? `${window.location.origin}/live-voice-chat/${groupId}`
         : `/live-voice-chat/${groupId}`
+    const label = group?.name || 'our live voice room'
+    const text = `Join "${label}" on ConnectToCampus — voice room for students`
+
+    if (typeof navigator !== 'undefined' && typeof navigator.share === 'function') {
+      try {
+        await navigator.share({ title: group?.name || 'ConnectToCampus', text, url: link })
+        return
+      } catch (err) {
+        // Dismissing the sheet is not a failure — do NOT fall through and copy
+        // a link the user just said no to.
+        if ((err as { name?: string } | null)?.name === 'AbortError') return
+      }
+    }
+
     try {
-      await navigator.clipboard.writeText(link)
+      await navigator.clipboard.writeText(`${text}: ${link}`)
       setInviteCopied(true)
       setTimeout(() => setInviteCopied(false), 2000)
     } catch {
-      setError('Could not copy the link. Copy it from the address bar instead.')
+      setError('Could not share the link. Copy it from the address bar instead.')
     }
   }
 
@@ -609,32 +628,32 @@ export default function LiveVoiceChatRoomPage() {
                       </>
                     )}
                   </button>
-                  {/* Locked rooms are invite-only: members hand out the link. */}
-                  {group.is_private && (
-                    <button
-                      onClick={copyInvite}
-                      title="Copy the invite link to share with the people you want in"
-                      aria-label="Copy invite link"
-                      style={{
-                        background: 'var(--bg)',
-                        color: inviteCopied ? 'var(--success-text)' : 'var(--accent-text)',
-                        border: '1px solid var(--border)',
-                        borderRadius: 10,
-                        padding: '12px 16px',
-                        fontSize: 14,
-                        fontWeight: 600,
-                        cursor: 'pointer',
-                        fontFamily: 'inherit',
-                        display: 'inline-flex',
-                        alignItems: 'center',
-                        gap: 6,
-                        flexShrink: 0,
-                      }}
-                    >
-                      <Icon name="link" size={15} strokeWidth={2.2} />
-                      {inviteCopied ? 'Copied' : 'Invite'}
-                    </button>
-                  )}
+                  {/* EVERY room is shareable — not just locked ones. Locked
+                      rooms still need the password on top, but a public room
+                      shared as a raw UUID read as broken to whoever got it. */}
+                  <button
+                    onClick={shareRoom}
+                    title="Share this room — opens your phone's share sheet, or copies the link"
+                    aria-label="Share this room"
+                    style={{
+                      background: 'var(--bg)',
+                      color: inviteCopied ? 'var(--success-text)' : 'var(--accent-text)',
+                      border: '1px solid var(--border)',
+                      borderRadius: 10,
+                      padding: '12px 16px',
+                      fontSize: 14,
+                      fontWeight: 600,
+                      cursor: 'pointer',
+                      fontFamily: 'inherit',
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: 6,
+                      flexShrink: 0,
+                    }}
+                  >
+                    <Icon name="link" size={15} strokeWidth={2.2} />
+                    {inviteCopied ? 'Copied' : 'Share'}
+                  </button>
                   <button
                     onClick={leaveGroup}
                     disabled={busy}

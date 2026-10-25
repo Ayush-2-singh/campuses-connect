@@ -44,9 +44,17 @@ describe('the room page honours the invite flow', () => {
     expect(room).toMatch(/rpc\('get_live_voice_chat_group'/)
   })
 
-  it('lets a member copy the invite link', () => {
-    expect(room).toMatch(/copyInvite/)
+  it('lets a member SHARE the invite link — every room, not just locked ones', () => {
+    // The control used to be a clipboard copy behind `is_private`, so a public
+    // room had no share button at all and people copied a bare UUID out of the
+    // address bar. It now opens the system share sheet on a phone and falls
+    // back to the clipboard, carrying the room's name in the message.
+    expect(room).toMatch(/const shareRoom = async/)
+    expect(room).toMatch(/navigator\.share/)
+    expect(room).toMatch(/clipboard\.writeText/)
+    expect(room).toMatch(/AbortError/) // dismissing the sheet must not copy
     expect(room).toMatch(/\/live-voice-chat\/\$\{groupId\}/)
+    expect(room).toMatch(/aria-label="Share this room"/)
   })
 
   it('tells the invitee the room is invite-only', () => {
