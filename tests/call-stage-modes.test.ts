@@ -55,7 +55,10 @@ describe('the tiles follow the headcount, like Meet', () => {
   it('up to three people: one big tile per row, stacked vertically', () => {
     expect(surface).toMatch(/const stacked = variant === 'grid' && ordered\.length > 0 && ordered\.length <= 3/)
     expect(surface).toMatch(/const stackedMaxWidth = ordered\.length === 1 \? 880/)
-    expect(surface).toMatch(/gridTemplateColumns: variant === 'side' \? '1fr' : stacked \? 'minmax\(0, 1fr\)' :/)
+    // Whitespace-tolerant: the formatter is free to wrap the ternary.
+    expect(surface).toMatch(
+      /gridTemplateColumns:\s+variant === 'side' \? '1fr' : stacked \? 'minmax\(0, 1fr\)' : 'repeat\(auto-fit, minmax\(148px, 1fr\)\)'/
+    )
     expect(surface).toMatch(/justifyItems: stacked \? 'center' : undefined/)
     expect(surface).toMatch(/\.\.\.\(stacked \? \{ width: '100%', maxWidth: stackedMaxWidth \} : null\)/)
   })
@@ -151,7 +154,7 @@ describe("GMeet's shape — three big, the rest riding the right edge", () => {
     expect(surface).toMatch(/width: 'clamp\(196px, 21vw, 264px\)'/)
     expect(surface).toMatch(/maxHeight: '56vh'/)
     // One tile per row down that column…
-    expect(surface).toMatch(/gridTemplateColumns: variant === 'side' \? '1fr' :/)
+    expect(surface).toMatch(/gridTemplateColumns:\s+variant === 'side' \? '1fr' :/)
     // …and on a phone the column simply drops back under the stage.
     expect(surface).toMatch(/\{!stageVisible \|\| !\(layout === 'sidebar' \|\| wide\) \? \(/)
   })
