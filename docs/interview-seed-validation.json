@@ -1,0 +1,816 @@
+{
+  "generated_at": "2026-10-26T19:45:41.481Z",
+  "totals": {
+    "json_records": 64,
+    "csv_records": 64,
+    "unique_source_urls": 63,
+    "valid_unique_records": 61,
+    "duplicate_url_groups": 1,
+    "records_in_duplicate_groups": 2
+  },
+  "files": {
+    "onlyJson": [],
+    "onlyCsv": [],
+    "fieldDiffs": []
+  },
+  "duplicates": [
+    {
+      "normalized_url": "https://leetcode.com/discuss/post/5867781",
+      "count": 2,
+      "titles": ["Atlassian P40 Interview Experience", "Atlassian P40 Interview Experience — 2024"],
+      "urls": [
+        "https://leetcode.com/discuss/post/5867781/atlassian-p40-by-anonymous_user-22k2/",
+        "https://leetcode.com/discuss/interview-experience/5867781"
+      ]
+    }
+  ],
+  "missing": {
+    "url": 0,
+    "company": 1,
+    "role": 0,
+    "summary": 0,
+    "title": 0,
+    "platform": 0,
+    "date": 64,
+    "author_credit": 64
+  },
+  "needs_manual_review": 64,
+  "recommended_import_count": 61,
+  "sources_requiring_manual_verification": [
+    {
+      "title": "Amazon SDE-1 Interview Experience — 2026 (Selected)",
+      "company": "Amazon",
+      "role": "SDE-1",
+      "url": "https://leetcode.com/discuss/post/8546875/amazon-sde-1-interview-experience-2026-b-30gn/",
+      "normalized_url": "https://leetcode.com/discuss/post/8546875",
+      "notes": [
+        "Publication/interview date is not stated by the source",
+        "Credit is generic — the author is only knowable on the source page",
+        "Summary + URL only; the full article is never copied"
+      ]
+    },
+    {
+      "title": "Amazon SDE-2 Interview Experience",
+      "company": "Amazon",
+      "role": "SDE-2",
+      "url": "https://leetcode.com/discuss/post/8523912/amazon-sde-2-interview-experience-by-ano-2sxp/",
+      "normalized_url": "https://leetcode.com/discuss/post/8523912",
+      "notes": [
+        "Publication/interview date is not stated by the source",
+        "Credit is generic — the author is only knowable on the source page",
+        "Summary + URL only; the full article is never copied"
+      ]
+    },
+    {
+      "title": "Amazon SDE-1 Interview Experience (April 2026)",
+      "company": "Amazon",
+      "role": "SDE-1",
+      "url": "https://leetcode.com/discuss/post/8014509/",
+      "normalized_url": "https://leetcode.com/discuss/post/8014509",
+      "notes": [
+        "Publication/interview date is not stated by the source",
+        "Credit is generic — the author is only knowable on the source page",
+        "Summary + URL only; the full article is never copied"
+      ]
+    },
+    {
+      "title": "Amazon SDE 1 Interview Experience",
+      "company": "Amazon",
+      "role": "SDE-1",
+      "url": "https://leetcode.com/discuss/post/1191068/Amazon-SDE-1-Interview-Experience/",
+      "normalized_url": "https://leetcode.com/discuss/post/1191068",
+      "notes": [
+        "Publication/interview date is not stated by the source",
+        "Credit is generic — the author is only knowable on the source page",
+        "Summary + URL only; the full article is never copied"
+      ]
+    },
+    {
+      "title": "Amazon SDE-1 Interview Experience",
+      "company": "Amazon",
+      "role": "SDE-1",
+      "url": "https://leetcode.com/discuss/post/6542280/amazon-sde-1-interview-experience-by-ano-e59a/",
+      "normalized_url": "https://leetcode.com/discuss/post/6542280",
+      "notes": [
+        "Publication/interview date is not stated by the source",
+        "Credit is generic — the author is only knowable on the source page",
+        "Summary + URL only; the full article is never copied"
+      ]
+    },
+    {
+      "title": "Amazon SDE-1 Interview Experience (2026) — Selected",
+      "company": "Amazon",
+      "role": "SDE-1",
+      "url": "https://leetcode.com/discuss/post/8343668/amazon-sde-1-interview-experience-2026-s-uroi/",
+      "normalized_url": "https://leetcode.com/discuss/post/8343668",
+      "notes": [
+        "Publication/interview date is not stated by the source",
+        "Credit is generic — the author is only knowable on the source page",
+        "Summary + URL only; the full article is never copied"
+      ]
+    },
+    {
+      "title": "Amazon SDE 1 DSA Round Experience",
+      "company": "Amazon",
+      "role": "SDE-1",
+      "url": "https://leetcode.com/discuss/post/7344078/",
+      "normalized_url": "https://leetcode.com/discuss/post/7344078",
+      "notes": [
+        "Publication/interview date is not stated by the source",
+        "Credit is generic — the author is only knowable on the source page",
+        "Summary + URL only; the full article is never copied"
+      ]
+    },
+    {
+      "title": "Amazon SDE-2 India Interview Experience",
+      "company": "Amazon",
+      "role": "SDE-2",
+      "url": "https://leetcode.com/discuss/post/6699329/amazon-sde-2-india-interview-experience-5gzeo/",
+      "normalized_url": "https://leetcode.com/discuss/post/6699329",
+      "notes": [
+        "Publication/interview date is not stated by the source",
+        "Credit is generic — the author is only knowable on the source page",
+        "Summary + URL only; the full article is never copied"
+      ]
+    },
+    {
+      "title": "Amazon SDE-2 Interview Experience",
+      "company": "Amazon",
+      "role": "SDE-2",
+      "url": "https://leetcode.com/discuss/post/6938707/amazon-sde-2-interview-experience-by-ano-36v1/",
+      "normalized_url": "https://leetcode.com/discuss/post/6938707",
+      "notes": [
+        "Publication/interview date is not stated by the source",
+        "Credit is generic — the author is only knowable on the source page",
+        "Summary + URL only; the full article is never copied"
+      ]
+    },
+    {
+      "title": "Amazon India SDE-1 Interview Experience",
+      "company": "Amazon",
+      "role": "SDE-1",
+      "url": "https://leetcode.com/discuss/post/7280347/amazon-india-sde-1-interview-experience-2ogbw/",
+      "normalized_url": "https://leetcode.com/discuss/post/7280347",
+      "notes": [
+        "Publication/interview date is not stated by the source",
+        "Credit is generic — the author is only knowable on the source page",
+        "Summary + URL only; the full article is never copied"
+      ]
+    },
+    {
+      "title": "Amazon SDE-1 Application & Interview Experience",
+      "company": "Amazon",
+      "role": "SDE-1",
+      "url": "https://leetcode.com/discuss/post/7623949/amazon-sde-1-application-interview-exper-92xt/",
+      "normalized_url": "https://leetcode.com/discuss/post/7623949",
+      "notes": [
+        "Publication/interview date is not stated by the source",
+        "Credit is generic — the author is only knowable on the source page",
+        "Summary + URL only; the full article is never copied"
+      ]
+    },
+    {
+      "title": "Amazon SDE Intern Interview Experience (Off-Campus)",
+      "company": "Amazon",
+      "role": "SDE Intern",
+      "url": "https://leetcode.com/discuss/post/7335489/",
+      "normalized_url": "https://leetcode.com/discuss/post/7335489",
+      "notes": [
+        "Publication/interview date is not stated by the source",
+        "Credit is generic — the author is only knowable on the source page",
+        "Summary + URL only; the full article is never copied"
+      ]
+    },
+    {
+      "title": "Amazon SDE Intern Interview Experience",
+      "company": "Amazon",
+      "role": "SDE Intern",
+      "url": "https://leetcode.com/discuss/post/8510382/amazon-sde-intern-interview-experience-s-jqok/",
+      "normalized_url": "https://leetcode.com/discuss/post/8510382",
+      "notes": [
+        "Publication/interview date is not stated by the source",
+        "Credit is generic — the author is only knowable on the source page",
+        "Summary + URL only; the full article is never copied"
+      ]
+    },
+    {
+      "title": "Amazon SDE Intern Interview Experience",
+      "company": "Amazon",
+      "role": "SDE Intern",
+      "url": "https://leetcode.com/discuss/post/8415292/amazon-sde-intern-interview-experience-b-mmz1/",
+      "normalized_url": "https://leetcode.com/discuss/post/8415292",
+      "notes": [
+        "Publication/interview date is not stated by the source",
+        "Credit is generic — the author is only knowable on the source page",
+        "Summary + URL only; the full article is never copied"
+      ]
+    },
+    {
+      "title": "Amazon SDE-1 Fresher Interview Experience (2025 batch)",
+      "company": "Amazon",
+      "role": "SDE-1 Fresher",
+      "url": "https://leetcode.com/discuss/post/7407012/sde-1-fresher-interview-experience-off-c-yfoq/",
+      "normalized_url": "https://leetcode.com/discuss/post/7407012",
+      "notes": [
+        "Publication/interview date is not stated by the source",
+        "Credit is generic — the author is only knowable on the source page",
+        "Summary + URL only; the full article is never copied"
+      ]
+    },
+    {
+      "title": "Amazon SDE-1 AUTA Interview Experience (2026)",
+      "company": "Amazon",
+      "role": "SDE-1",
+      "url": "https://leetcode.com/discuss/post/8430457/amazon-sde-1auta-interview-experience-20-eqxs/",
+      "normalized_url": "https://leetcode.com/discuss/post/8430457",
+      "notes": [
+        "Publication/interview date is not stated by the source",
+        "Credit is generic — the author is only knowable on the source page",
+        "Summary + URL only; the full article is never copied"
+      ]
+    },
+    {
+      "title": "Amazon Interview Experience — 2025 (6-month Intern)",
+      "company": "Amazon",
+      "role": "SDE Intern",
+      "url": "https://leetcode.com/discuss/post/5846976/Amazon-Interview-Experience-2025-%286m-Intern%29/",
+      "normalized_url": "https://leetcode.com/discuss/post/5846976",
+      "notes": [
+        "Publication/interview date is not stated by the source",
+        "Credit is generic — the author is only knowable on the source page",
+        "Summary + URL only; the full article is never copied"
+      ]
+    },
+    {
+      "title": "Microsoft SDE Interview Experience",
+      "company": "Microsoft",
+      "role": "SDE",
+      "url": "https://leetcode.com/discuss/post/7224487/microsoft-interview-experience-sde-by-va-zi13/",
+      "normalized_url": "https://leetcode.com/discuss/post/7224487",
+      "notes": [
+        "Publication/interview date is not stated by the source",
+        "Credit is generic — the author is only knowable on the source page",
+        "Summary + URL only; the full article is never copied"
+      ]
+    },
+    {
+      "title": "Microsoft SDE Interview Experience Pattern",
+      "company": "Microsoft",
+      "role": "SDE",
+      "url": "https://leetcode.com/discuss/post/4641421/Microsoft-SDE-interview-experience-pattern/",
+      "normalized_url": "https://leetcode.com/discuss/post/4641421",
+      "notes": [
+        "Publication/interview date is not stated by the source",
+        "Credit is generic — the author is only knowable on the source page",
+        "Summary + URL only; the full article is never copied"
+      ]
+    },
+    {
+      "title": "Microsoft SDE Intern Interview Experience — Round 1",
+      "company": "Microsoft",
+      "role": "SDE Intern",
+      "url": "https://leetcode.com/discuss/post/7400064/microsoft-sde-intern-interview-experienc-y5ap/",
+      "normalized_url": "https://leetcode.com/discuss/post/7400064",
+      "notes": [
+        "Publication/interview date is not stated by the source",
+        "Credit is generic — the author is only knowable on the source page",
+        "Summary + URL only; the full article is never copied"
+      ]
+    },
+    {
+      "title": "Microsoft SDE Intern Interview Experience — Round 2",
+      "company": "Microsoft",
+      "role": "SDE Intern",
+      "url": "https://leetcode.com/discuss/post/7404377/microsoft-sde-intern-interview-experienc-4rmr/",
+      "normalized_url": "https://leetcode.com/discuss/post/7404377",
+      "notes": [
+        "Publication/interview date is not stated by the source",
+        "Credit is generic — the author is only knowable on the source page",
+        "Summary + URL only; the full article is never copied"
+      ]
+    },
+    {
+      "title": "Microsoft SDE-2 Interview Experience",
+      "company": "Microsoft",
+      "role": "SDE-2",
+      "url": "https://leetcode.com/discuss/post/7545165/microsoft-sde-2-l6162-interview-experien-e5q7/",
+      "normalized_url": "https://leetcode.com/discuss/post/7545165",
+      "notes": [
+        "Publication/interview date is not stated by the source",
+        "Credit is generic — the author is only knowable on the source page",
+        "Summary + URL only; the full article is never copied"
+      ]
+    },
+    {
+      "title": "Microsoft SDE-2 Interview Experience",
+      "company": "Microsoft",
+      "role": "SDE-2",
+      "url": "https://leetcode.com/discuss/post/7620569/",
+      "normalized_url": "https://leetcode.com/discuss/post/7620569",
+      "notes": [
+        "Publication/interview date is not stated by the source",
+        "Credit is generic — the author is only knowable on the source page",
+        "Summary + URL only; the full article is never copied"
+      ]
+    },
+    {
+      "title": "Microsoft SDE-2 Interview Experience",
+      "company": "Microsoft",
+      "role": "SDE-2",
+      "url": "https://leetcode.com/discuss/post/7354634/microsoft-sde2-interview-experience-by-a-scrc/",
+      "normalized_url": "https://leetcode.com/discuss/post/7354634",
+      "notes": [
+        "Publication/interview date is not stated by the source",
+        "Credit is generic — the author is only knowable on the source page",
+        "Summary + URL only; the full article is never copied"
+      ]
+    },
+    {
+      "title": "Microsoft SDE-2 Interview Experience",
+      "company": "Microsoft",
+      "role": "SDE-2",
+      "url": "https://leetcode.com/discuss/post/8426715/microsoft-sde-2-interview-experience-by-ep8dz/",
+      "normalized_url": "https://leetcode.com/discuss/post/8426715",
+      "notes": [
+        "Publication/interview date is not stated by the source",
+        "Credit is generic — the author is only knowable on the source page",
+        "Summary + URL only; the full article is never copied"
+      ]
+    },
+    {
+      "title": "Microsoft SDE-2 Interview Experience — India 2026",
+      "company": "Microsoft",
+      "role": "SDE-2",
+      "url": "https://leetcode.com/discuss/post/7769548/",
+      "normalized_url": "https://leetcode.com/discuss/post/7769548",
+      "notes": [
+        "Publication/interview date is not stated by the source",
+        "Credit is generic — the author is only knowable on the source page",
+        "Summary + URL only; the full article is never copied"
+      ]
+    },
+    {
+      "title": "Microsoft SDE Interview — Hyderabad",
+      "company": "Microsoft",
+      "role": "SDE",
+      "url": "https://leetcode.com/discuss/post/2078920/microsoft-sde-interview-hyderabad-offer-accepted/",
+      "normalized_url": "https://leetcode.com/discuss/post/2078920",
+      "notes": [
+        "Publication/interview date is not stated by the source",
+        "Credit is generic — the author is only knowable on the source page",
+        "Summary + URL only; the full article is never copied"
+      ]
+    },
+    {
+      "title": "Microsoft Complete Interview Process — India",
+      "company": "Microsoft",
+      "role": "SDE-2 / SE-2",
+      "url": "https://leetcode.com/discuss/post/1780051/Microsoft-or-Complete-Interview-Process-or-India-or-SDE2SE2/",
+      "normalized_url": "https://leetcode.com/discuss/post/1780051",
+      "notes": [
+        "Publication/interview date is not stated by the source",
+        "Credit is generic — the author is only knowable on the source page",
+        "Summary + URL only; the full article is never copied"
+      ]
+    },
+    {
+      "title": "Google India L3 Interview Experience — Offer Accepted",
+      "company": "Google",
+      "role": "SWE L3",
+      "url": "https://leetcode.com/discuss/post/8543506/google-india-l3-interview-experience-off-1uw5/",
+      "normalized_url": "https://leetcode.com/discuss/post/8543506",
+      "notes": [
+        "Publication/interview date is not stated by the source",
+        "Credit is generic — the author is only knowable on the source page",
+        "Summary + URL only; the full article is never copied"
+      ]
+    },
+    {
+      "title": "Google SDE-1 Interview Experience",
+      "company": "Google",
+      "role": "SDE-1",
+      "url": "https://leetcode.com/discuss/post/7414988/",
+      "normalized_url": "https://leetcode.com/discuss/post/7414988",
+      "notes": [
+        "Publication/interview date is not stated by the source",
+        "Credit is generic — the author is only knowable on the source page",
+        "Summary + URL only; the full article is never copied"
+      ]
+    },
+    {
+      "title": "Google India Software Engineer L4 Interview Experience",
+      "company": "Google",
+      "role": "Software Engineer L4",
+      "url": "https://leetcode.com/discuss/post/6796476/",
+      "normalized_url": "https://leetcode.com/discuss/post/6796476",
+      "notes": [
+        "Publication/interview date is not stated by the source",
+        "Credit is generic — the author is only knowable on the source page",
+        "Summary + URL only; the full article is never copied"
+      ]
+    },
+    {
+      "title": "Google Software Engineer SDE-2 Interview Experience 2025",
+      "company": "Google",
+      "role": "SDE-2",
+      "url": "https://www.geeksforgeeks.org/interview-experiences/google-interview-experience-for-software-engineer-sde-2-2025/",
+      "normalized_url": "https://geeksforgeeks.org/interview-experiences/google-interview-experience-for-software-engineer-sde-2-2025",
+      "notes": [
+        "Publication/interview date is not stated by the source",
+        "Credit is generic — the author is only knowable on the source page",
+        "Summary + URL only; the full article is never copied"
+      ]
+    },
+    {
+      "title": "Tasket/Zeta SDE Intern Interview Experience",
+      "company": "Tasket / Zeta",
+      "role": "SDE Intern",
+      "url": "https://leetcode.com/discuss/post/8108448/tasket-zeta-sde-intern-interview-experie-38q7/",
+      "normalized_url": "https://leetcode.com/discuss/post/8108448",
+      "notes": [
+        "Publication/interview date is not stated by the source",
+        "Credit is generic — the author is only knowable on the source page",
+        "Summary + URL only; the full article is never copied"
+      ]
+    },
+    {
+      "title": "Zeta SDE Intern Interview Experience — Offer",
+      "company": "Zeta",
+      "role": "SDE Intern",
+      "url": "https://leetcode.com/discuss/post/6916714/zeta-sde-intern-interview-experience-off-y91x/",
+      "normalized_url": "https://leetcode.com/discuss/post/6916714",
+      "notes": [
+        "Publication/interview date is not stated by the source",
+        "Credit is generic — the author is only knowable on the source page",
+        "Summary + URL only; the full article is never copied"
+      ]
+    },
+    {
+      "title": "Swiggy SDE Intern Interview Experience",
+      "company": "Swiggy",
+      "role": "SDE Intern",
+      "url": "https://leetcode.com/discuss/post/6837213/",
+      "normalized_url": "https://leetcode.com/discuss/post/6837213",
+      "notes": [
+        "Publication/interview date is not stated by the source",
+        "Credit is generic — the author is only knowable on the source page",
+        "Summary + URL only; the full article is never copied"
+      ]
+    },
+    {
+      "title": "Swiggy SDE Intern Interview Experience",
+      "company": "Swiggy",
+      "role": "SDE Intern",
+      "url": "https://leetcode.com/discuss/post/6332813/sde-intern-interview-experience-swiggy/",
+      "normalized_url": "https://leetcode.com/discuss/post/6332813",
+      "notes": [
+        "Publication/interview date is not stated by the source",
+        "Credit is generic — the author is only knowable on the source page",
+        "Summary + URL only; the full article is never copied"
+      ]
+    },
+    {
+      "title": "GoDaddy SDE Intern Interview Experience",
+      "company": "GoDaddy",
+      "role": "SDE Intern",
+      "url": "https://www.geeksforgeeks.org/interview-experiences/godaddy-interview-experience-for-sde-intern/",
+      "normalized_url": "https://geeksforgeeks.org/interview-experiences/godaddy-interview-experience-for-sde-intern",
+      "notes": [
+        "Publication/interview date is not stated by the source",
+        "Credit is generic — the author is only knowable on the source page",
+        "Summary + URL only; the full article is never copied"
+      ]
+    },
+    {
+      "title": "Groww SDE Intern Interview Experience — AI/LLM role",
+      "company": "Groww",
+      "role": "SDE Intern",
+      "url": "https://leetcode.com/discuss/post/7311827/",
+      "normalized_url": "https://leetcode.com/discuss/post/7311827",
+      "notes": [
+        "Publication/interview date is not stated by the source",
+        "Credit is generic — the author is only knowable on the source page",
+        "Summary + URL only; the full article is never copied"
+      ]
+    },
+    {
+      "title": "Flipkart SDE-1 Interview Experience — 2024 On-Campus",
+      "company": "Flipkart",
+      "role": "SDE-1",
+      "url": "https://leetcode.com/discuss/post/6122468/Interview-experience-at-flipkart-or-2024-or-oncampus-or-AMA/",
+      "normalized_url": "https://leetcode.com/discuss/post/6122468",
+      "notes": [
+        "Publication/interview date is not stated by the source",
+        "Credit is generic — the author is only knowable on the source page",
+        "Summary + URL only; the full article is never copied"
+      ]
+    },
+    {
+      "title": "Flipkart SD2 Interview Experience",
+      "company": "Flipkart",
+      "role": "SDE-2",
+      "url": "https://leetcode.com/discuss/post/5694942/",
+      "normalized_url": "https://leetcode.com/discuss/post/5694942",
+      "notes": [
+        "Publication/interview date is not stated by the source",
+        "Credit is generic — the author is only knowable on the source page",
+        "Summary + URL only; the full article is never copied"
+      ]
+    },
+    {
+      "title": "Flipkart SDE-2 Interview Experience — Jan 2026",
+      "company": "Flipkart",
+      "role": "SDE-2",
+      "url": "https://leetcode.com/discuss/post/8455829/flipkart-sde-2-interview-experience-jan-o8ngx/",
+      "normalized_url": "https://leetcode.com/discuss/post/8455829",
+      "notes": [
+        "Publication/interview date is not stated by the source",
+        "Credit is generic — the author is only knowable on the source page",
+        "Summary + URL only; the full article is never copied"
+      ]
+    },
+    {
+      "title": "Flipkart SDE-2 Interview Experience 2025",
+      "company": "Flipkart",
+      "role": "SDE-2",
+      "url": "https://leetcode.com/discuss/post/6933851/flipkart-sde-2-interview-experience-2025-gcq9/",
+      "normalized_url": "https://leetcode.com/discuss/post/6933851",
+      "notes": [
+        "Publication/interview date is not stated by the source",
+        "Credit is generic — the author is only knowable on the source page",
+        "Summary + URL only; the full article is never copied"
+      ]
+    },
+    {
+      "title": "Flipkart SDE-1 Interview Experience — Off-Campus",
+      "company": "Flipkart",
+      "role": "SDE-1",
+      "url": "https://leetcode.com/discuss/post/7691468/",
+      "normalized_url": "https://leetcode.com/discuss/post/7691468",
+      "notes": [
+        "Publication/interview date is not stated by the source",
+        "Credit is generic — the author is only knowable on the source page",
+        "Summary + URL only; the full article is never copied"
+      ]
+    },
+    {
+      "title": "Flipkart SDE-1 Interview Experience — Off-Campus 2024",
+      "company": "Flipkart",
+      "role": "SDE-1",
+      "url": "https://leetcode.com/discuss/post/4923739/Flipkart-SDE-1-or-Interview-Experience-or-Off-Campus-2024/",
+      "normalized_url": "https://leetcode.com/discuss/post/4923739",
+      "notes": [
+        "Publication/interview date is not stated by the source",
+        "Credit is generic — the author is only knowable on the source page",
+        "Summary + URL only; the full article is never copied"
+      ]
+    },
+    {
+      "title": "Flipkart SDE-1 Interview Experience — Off-Campus",
+      "company": "Flipkart",
+      "role": "SDE-1",
+      "url": "https://leetcode.com/discuss/post/4351325/Flipkart-Interview-Experience-SDE-1-or-Offcampus/",
+      "normalized_url": "https://leetcode.com/discuss/post/4351325",
+      "notes": [
+        "Publication/interview date is not stated by the source",
+        "Credit is generic — the author is only knowable on the source page",
+        "Summary + URL only; the full article is never copied"
+      ]
+    },
+    {
+      "title": "Flipkart SDE-1 Interview Experience — India 2024",
+      "company": "Flipkart",
+      "role": "SDE-1",
+      "url": "https://leetcode.com/discuss/post/5434657/Flipkart-or-Interview-Experience-or-SDE-1/",
+      "normalized_url": "https://leetcode.com/discuss/post/5434657",
+      "notes": [
+        "Publication/interview date is not stated by the source",
+        "Credit is generic — the author is only knowable on the source page",
+        "Summary + URL only; the full article is never copied"
+      ]
+    },
+    {
+      "title": "Uber SDE-2 Backend Engineer Interview Experience — June 2026",
+      "company": "Uber",
+      "role": "SDE-2 Backend",
+      "url": "https://leetcode.com/discuss/post/8509983/uber-sde-2-backend-engineer-interview-ex-sza4/",
+      "normalized_url": "https://leetcode.com/discuss/post/8509983",
+      "notes": [
+        "Publication/interview date is not stated by the source",
+        "Credit is generic — the author is only knowable on the source page",
+        "Summary + URL only; the full article is never copied"
+      ]
+    },
+    {
+      "title": "Uber SDE-2 Interview Experience",
+      "company": "Uber",
+      "role": "SDE-2",
+      "url": "https://leetcode.com/discuss/post/7327020/",
+      "normalized_url": "https://leetcode.com/discuss/post/7327020",
+      "notes": [
+        "Publication/interview date is not stated by the source",
+        "Credit is generic — the author is only knowable on the source page",
+        "Summary + URL only; the full article is never copied"
+      ]
+    },
+    {
+      "title": "Uber SDE-I Interview Experience — Feb 2026",
+      "company": "Uber",
+      "role": "SDE-I",
+      "url": "https://leetcode.com/discuss/post/7647484/uber-sde-i-interview-experience-feb-2026-snr8/",
+      "normalized_url": "https://leetcode.com/discuss/post/7647484",
+      "notes": [
+        "Publication/interview date is not stated by the source",
+        "Credit is generic — the author is only knowable on the source page",
+        "Summary + URL only; the full article is never copied"
+      ]
+    },
+    {
+      "title": "Uber SDE-2 Interview Experience",
+      "company": "Uber",
+      "role": "SDE-2",
+      "url": "https://leetcode.com/discuss/post/8244779/uber-interview-experiencesoftware-engine-v8un/",
+      "normalized_url": "https://leetcode.com/discuss/post/8244779",
+      "notes": [
+        "Publication/interview date is not stated by the source",
+        "Credit is generic — the author is only knowable on the source page",
+        "Summary + URL only; the full article is never copied"
+      ]
+    },
+    {
+      "title": "Uber SDE-2 Interview Experience — Nov 2025",
+      "company": "Uber",
+      "role": "SDE-2",
+      "url": "https://leetcode.com/discuss/post/7672800/interview-experience-sde2-uber-nov-2025-v0b3r/",
+      "normalized_url": "https://leetcode.com/discuss/post/7672800",
+      "notes": [
+        "Publication/interview date is not stated by the source",
+        "Credit is generic — the author is only knowable on the source page",
+        "Summary + URL only; the full article is never copied"
+      ]
+    },
+    {
+      "title": "Uber SDE-2 Interview Experience — India",
+      "company": "Uber",
+      "role": "SDE-2",
+      "url": "https://leetcode.com/discuss/post/6878990/",
+      "normalized_url": "https://leetcode.com/discuss/post/6878990",
+      "notes": [
+        "Publication/interview date is not stated by the source",
+        "Credit is generic — the author is only knowable on the source page",
+        "Summary + URL only; the full article is never copied"
+      ]
+    },
+    {
+      "title": "Uber L4 SDE-2 Backend Interview Experience",
+      "company": "Uber",
+      "role": "SDE-2 Backend",
+      "url": "https://leetcode.com/discuss/post/7706639/uber-l4-sde-2-interview-experience-offer-r0k1/",
+      "normalized_url": "https://leetcode.com/discuss/post/7706639",
+      "notes": [
+        "Publication/interview date is not stated by the source",
+        "Credit is generic — the author is only knowable on the source page",
+        "Summary + URL only; the full article is never copied"
+      ]
+    },
+    {
+      "title": "Adobe Software Engineer Interview Experience",
+      "company": "Adobe",
+      "role": "Software Engineer",
+      "url": "https://leetcode.com/discuss/post/1608070/adobe-software-engineer-interview-experience/",
+      "normalized_url": "https://leetcode.com/discuss/post/1608070",
+      "notes": [
+        "Publication/interview date is not stated by the source",
+        "Credit is generic — the author is only knowable on the source page",
+        "Summary + URL only; the full article is never copied"
+      ]
+    },
+    {
+      "title": "Adobe Interview Experience — Declined",
+      "company": "Adobe",
+      "role": "Software Engineer",
+      "url": "https://leetcode.com/discuss/post/6999129/declined-adobe-interview-experience-by-a-tl6n/",
+      "normalized_url": "https://leetcode.com/discuss/post/6999129",
+      "notes": [
+        "Publication/interview date is not stated by the source",
+        "Credit is generic — the author is only knowable on the source page",
+        "Summary + URL only; the full article is never copied"
+      ]
+    },
+    {
+      "title": "Zomato/District SDE-1 Interview Experience",
+      "company": "District by Zomato",
+      "role": "SDE-1",
+      "url": "https://leetcode.com/discuss/post/7617100/zomatodistrict-sde-1-interview-experienc-770j/",
+      "normalized_url": "https://leetcode.com/discuss/post/7617100",
+      "notes": [
+        "Publication/interview date is not stated by the source",
+        "Credit is generic — the author is only knowable on the source page",
+        "Summary + URL only; the full article is never copied"
+      ]
+    },
+    {
+      "title": "Atlassian P50 Senior Engineer Interview Experience",
+      "company": "Atlassian",
+      "role": "Senior Engineer",
+      "url": "https://leetcode.com/discuss/post/6817408/atlassian-interview-experience-p50-senio-t1zu/",
+      "normalized_url": "https://leetcode.com/discuss/post/6817408",
+      "notes": [
+        "Publication/interview date is not stated by the source",
+        "Credit is generic — the author is only knowable on the source page",
+        "Summary + URL only; the full article is never copied"
+      ]
+    },
+    {
+      "title": "Atlassian SDE-2 Interview Experience — Remote India",
+      "company": "Atlassian",
+      "role": "SDE-2",
+      "url": "https://leetcode.com/discuss/post/1795183/atlassian-sde-2-remote-india/",
+      "normalized_url": "https://leetcode.com/discuss/post/1795183",
+      "notes": [
+        "Publication/interview date is not stated by the source",
+        "Credit is generic — the author is only knowable on the source page",
+        "Summary + URL only; the full article is never copied"
+      ]
+    },
+    {
+      "title": "Atlassian P40 Interview Experience",
+      "company": "Atlassian",
+      "role": "P40",
+      "url": "https://leetcode.com/discuss/post/6763689/",
+      "normalized_url": "https://leetcode.com/discuss/post/6763689",
+      "notes": [
+        "Publication/interview date is not stated by the source",
+        "Credit is generic — the author is only knowable on the source page",
+        "Summary + URL only; the full article is never copied"
+      ]
+    },
+    {
+      "title": "Atlassian P40 Interview Experience — Awaiting Team Match",
+      "company": "Atlassian",
+      "role": "P40",
+      "url": "https://leetcode.com/discuss/post/7495920/",
+      "normalized_url": "https://leetcode.com/discuss/post/7495920",
+      "notes": [
+        "Publication/interview date is not stated by the source",
+        "Credit is generic — the author is only knowable on the source page",
+        "Summary + URL only; the full article is never copied"
+      ]
+    },
+    {
+      "title": "Atlassian Senior Backend Engineer Interview — Bengaluru",
+      "company": "Atlassian",
+      "role": "Senior Backend Engineer",
+      "url": "https://leetcode.com/discuss/post/7545973/",
+      "normalized_url": "https://leetcode.com/discuss/post/7545973",
+      "notes": [
+        "Publication/interview date is not stated by the source",
+        "Credit is generic — the author is only knowable on the source page",
+        "Summary + URL only; the full article is never copied"
+      ]
+    }
+  ],
+  "url_checks": [
+    {
+      "url": "https://leetcode.com/discuss/post/8546875/amazon-sde-1-interview-experience-2026-b-30gn/",
+      "status": 403,
+      "result": "blocked"
+    },
+    {
+      "url": "https://leetcode.com/discuss/post/8523912/amazon-sde-2-interview-experience-by-ano-2sxp/",
+      "status": 403,
+      "result": "blocked"
+    },
+    {
+      "url": "https://leetcode.com/discuss/post/8014509/",
+      "status": 403,
+      "result": "blocked"
+    },
+    {
+      "url": "https://leetcode.com/discuss/post/1191068/Amazon-SDE-1-Interview-Experience/",
+      "status": 403,
+      "result": "blocked"
+    },
+    {
+      "url": "https://leetcode.com/discuss/post/6542280/amazon-sde-1-interview-experience-by-ano-e59a/",
+      "status": 403,
+      "result": "blocked"
+    },
+    {
+      "url": "https://leetcode.com/discuss/post/8343668/amazon-sde-1-interview-experience-2026-s-uroi/",
+      "status": 403,
+      "result": "blocked"
+    },
+    {
+      "url": "https://leetcode.com/discuss/post/7344078/",
+      "status": 403,
+      "result": "blocked"
+    },
+    {
+      "url": "https://leetcode.com/discuss/post/6699329/amazon-sde-2-india-interview-experience-5gzeo/",
+      "status": 403,
+      "result": "blocked"
+    }
+  ],
+  "url_check_note": "A resolving URL is not verification; blocked/rate-limited hosts are recorded as blocked, never as dead."
+}
