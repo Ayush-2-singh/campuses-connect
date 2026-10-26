@@ -192,6 +192,23 @@ describe('the importer keeps its promises', () => {
   })
 })
 
+describe('a human is the only thing that can publish a lead', () => {
+  const review = read('scripts/review-interview-experiences.mjs')
+
+  it('reviews ONE row at a time, by id — no bulk approve', () => {
+    expect(review).toMatch(/const approveId = arg\('approve'\)/)
+    // No flag can approve more than the one id it was given.
+    expect(review).not.toMatch(/arg\('all'\)|approveAll|update\(\{ review_status: next \}\)\s*\.(in|neq|is)\(/)
+    expect(review).toMatch(/Bulk review is deliberately not supported/)
+  })
+
+  it('moves review_status only, and never deletes', () => {
+    expect(review).toMatch(/update\(\{ review_status: next \}\)/)
+    expect(review).not.toMatch(/verification_status:/)
+    expect(review).not.toMatch(/\.delete\(\)/)
+  })
+})
+
 describe('the migration makes that safe at the database level', () => {
   const migration = read('supabase/migrations/20261113_interview_experience_sources.sql')
 

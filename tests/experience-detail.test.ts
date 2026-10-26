@@ -22,7 +22,10 @@ const root = process.cwd()
 const read = (rel: string) => fs.readFileSync(path.join(root, rel), 'utf8')
 
 const detail = read('src/app/experiences/[id]/page.tsx')
-const list = read('src/app/experiences/page.tsx')
+// The interactive list lives in ExperiencesApp; /experiences/page.tsx is the
+// server route that fetches the approved rows and renders it.
+const list = read('src/app/experiences/ExperiencesApp.tsx')
+const listRoute = read('src/app/experiences/page.tsx')
 const sitemap = read('src/app/sitemap.ts')
 
 describe('the write-up is rendered on the server', () => {
@@ -78,10 +81,24 @@ describe('the route is reachable by crawlers and by people', () => {
     expect(list).toMatch(/href=\{`\/experiences\/\$\{exp\.id\}`\}/)
   })
 
-  it('lists the write-ups in the sitemap', () => {
+  it('ships the approved rows inside the HTML, not only after a fetch', () => {
+    // The list route reads approved rows on the server and hands them to the
+    // client as its starting state; a crawler (and a signed-out visitor) then
+    // sees the cards without running JavaScript or holding a session.
+    expect(listRoute).not.toMatch(/^'use client'/m)
+    expect(listRoute).toMatch(/export default async function ExperiencesRoute/)
+    expect(listRoute).toMatch(/\.eq\('review_status', 'approved'\)/)
+    expect(listRoute).toMatch(/initialExperiences=\{experiences\}/)
+    expect(list).toMatch(/useState<any\[\]>\(initialExperiences\)/)
+  })
+
+  it('lists the write-ups in the sitemap — approved ones only', () => {
     expect(sitemap).toMatch(/async function experiencePaths/)
     expect(sitemap).toMatch(/\.from\('interview_experiences'\)/)
     expect(sitemap).toMatch(/export default async function sitemap/)
     expect(sitemap).toMatch(/priority: 0\.7/)
+    // A pending row is not readable by a visitor, so listing it would submit a
+    // soft 404 to Google.
+    expect(sitemap).toMatch(/\.eq\('review_status', 'approved'\)/)
   })
 })

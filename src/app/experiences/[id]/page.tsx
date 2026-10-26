@@ -40,6 +40,12 @@ interface ExperienceRow {
   tips: string | null
   offer_salary: string | null
   created_at: string
+  updated_at: string | null
+  review_status: 'pending_review' | 'approved' | 'rejected'
+  /** Present only on a seeded lead — the page always credits it. */
+  source_url: string | null
+  source_platform: string | null
+  source_credit: string | null
   companies: { name: string; slug: string; logo_url: string | null } | null
 }
 
@@ -77,6 +83,11 @@ async function getExperience(id: string): Promise<{ experience: ExperienceRow; a
       .eq('id', id)
       .maybeSingle()
     if (!data) return null
+    // Only an APPROVED write-up is public (see 20261113). Anything else must
+    // 404 rather than render: a page a visitor can not read is a page Google
+    // must not index, and rendering it here would also put unmoderated text
+    // into a cached snippet.
+    if (data.review_status !== 'approved') return null
 
     // Author in a second query on purpose: interview_experiences.user_id
     // references auth.users(id), so PostgREST cannot embed profiles across it
@@ -171,7 +182,7 @@ export default async function ExperienceDetailPage({ params }: PageProps) {
     headline: headlineFor(exp),
     description: summaryFor(exp),
     datePublished: exp.created_at,
-    dateModified: exp.created_at,
+    dateModified: exp.updated_at ?? exp.created_at,
     inLanguage: 'en-IN',
     author: { '@type': 'Person', name: authorName },
     publisher: {
@@ -218,6 +229,25 @@ export default async function ExperienceDetailPage({ params }: PageProps) {
       <article className="hc-card" style={{ whiteSpace: 'pre-wrap', lineHeight: 1.75, fontSize: 15 }}>
         {exp.experience}
       </article>
+
+      {/* A seeded write-up is a summary of something somebody posted elsewhere.
+          Crediting the original is both the honest thing to do and the correct
+          SEO move for a page built from a source: rel="nofollow" because we are
+          pointing at it, not vouching for it. */}
+      {exp.source_url && (
+        <p className="hc-note" style={{ marginTop: 14 }}>
+          Originally reported on {exp.source_platform || 'the source page'} —{' '}
+          <a
+            href={exp.source_url}
+            target="_blank"
+            rel="nofollow noopener noreferrer"
+            style={{ textDecoration: 'underline' }}
+          >
+            read the full account there
+          </a>
+          {exp.source_credit ? `. Credit: ${exp.source_credit}.` : '.'}
+        </p>
+      )}
 
       {exp.tips?.trim() && (
         <section className="hc-card" style={{ marginTop: 14 }}>
