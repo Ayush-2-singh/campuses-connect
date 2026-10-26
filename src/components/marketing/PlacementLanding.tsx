@@ -55,7 +55,6 @@ type Post = {
   category: string
   author: string | null
 }
-type StudentFace = { name: string; avatar_url: string }
 
 const DIFF_TAG: Record<string, string> = {
   easy: 'hl-tag hl-tag--easy',
@@ -190,20 +189,17 @@ export default function PlacementLanding({
   problems,
   wins,
   posts,
-  faces,
 }: {
   stats?: Stats
   companies?: Company[]
   problems?: Problem[]
   wins?: Win[]
   posts?: Post[]
-  faces?: StudentFace[]
 }) {
   const companyList = companies ?? []
   const problemList = problems ?? []
   const winList = wins ?? []
   const postList = posts ?? []
-  const faceList = faces ?? []
 
   const modules = [
     {
@@ -264,7 +260,7 @@ export default function PlacementLanding({
 
       <main>
         {/* ── Hero (orbit stage) ── */}
-        <OrbitHero faces={faceList} />
+        <OrbitHero />
 
         {/* ── Real counts (hidden entirely when the query fails) ── */}
         {stats && (

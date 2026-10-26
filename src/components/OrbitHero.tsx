@@ -1,8 +1,9 @@
 'use client'
 
-import type { CSSProperties } from 'react'
+import { useEffect, useState, type CSSProperties } from 'react'
 import Link from 'next/link'
 import { motion } from 'framer-motion'
+import { createClient, getBootUser } from '@/lib/supabase/client'
 import {
   SiGoogle,
   SiMeta,
@@ -37,15 +38,18 @@ import './orbit-hero.css'
  * product is: a drive, round by round.
  *
  * ── What changed, and why ──────────────────────────────────────────────────
- *  • The hub used to be a stranger's photograph (i.pravatar.cc) captioned
- *    "Full-Stack Developer", and the copy promised to make you a "Top 1% SDE".
- *    That is a bootcamp claim, not this product: the site is round-by-round
- *    interview write-ups, the companies behind them, and the practice that goes
- *    with them. The hub is now a STRUCTURED diagram of a drive's rounds — the
- *    thing the rest of the page is about — and no avatar, stock photo or
- *    third-party image host is loaded on the landing at all.
- *  • Copy now matches the page's own metadata ("Campus placement, round by
- *    round"), so a visitor is told the same thing by the hero and the <title>.
+ *  • The middle ring used to carry a dozen OTHER members' photos. A signed-out
+ *    visitor has no reason to be shown strangers' faces on a landing page, so
+ *    that ring is gone. The hub is now the ONE face this page may show: the
+ *    reader's own — their photo if they uploaded one, otherwise a monogram of
+ *    their name — and it links to /profile. Signed out, the server-rendered
+ *    hub (the drive's four rounds) stays exactly as it was, so the static page
+ *    never flickers or shows a placeholder person.
+ *  • The hub itself used to be a stranger's photograph (i.pravatar.cc)
+ *    captioned "Full-Stack Developer", and the copy promised to make you a
+ *    "Top 1% SDE". That is a bootcamp claim, not this product: the site is
+ *    round-by-round interview write-ups, the companies behind them, and the
+ *    practice that goes with them.
  *
  * ── Notes on the orbit (unchanged) ─────────────────────────────────────────
  *  • Radius is expressed in `cqw`, and `.orbit-visual` is an inline-size
@@ -94,48 +98,43 @@ const technologies: OrbitItem[] = [
 /** The hub's ladder — the same four-round shape the panels below describe. */
 const HUB_ROUNDS = ['R1', 'R2', 'R3', 'R4']
 
-/** A member face — pre-filtered server-side to only those who uploaded a photo. */
-type Face = { name: string; avatar_url: string }
-
 /**
- * Middle ring of REAL member photos. Deliberately NOT the OrbitRing: an icon
- * badge and a photo badge size differently, and mixing them on one component
- * would grow a props union that only this page uses. When `faces` is empty the
- * parent does not render this at all, so there is never an empty or
- * placeholder ring.
+ * The reader, if they are signed in. The landing is cached and served to
+ * everyone, so this can only be resolved in the browser AFTER mount — which is
+ * also why the hub renders the signed-out diagram on the server and only swaps
+ * to the viewer's own face on the client, with no hydration mismatch.
  */
-function FaceRing({ faces, radius, duration }: { faces: Face[]; radius: number; duration: number }) {
-  if (faces.length === 0) return null
-  return (
-    <motion.div
-      className="orbit-ring orbit-ring--faces"
-      style={{ '--orbit-radius': `${radius}cqw` } as CSSProperties}
-      animate={{ rotate: 360 }}
-      transition={{ duration, repeat: Infinity, ease: 'linear' }}
-    >
-      {faces.map((face, index) => {
-        const angle = (index / faces.length) * 360
-        return (
-          <div
-            className="orbit-item"
-            key={`${face.name}-${index}`}
-            style={{ '--angle': `${angle}deg` } as CSSProperties}
-          >
-            <motion.div
-              className="orbit-badge"
-              // Counter-rotate so the face stays upright while the ring turns.
-              animate={{ rotate: -360 }}
-              transition={{ duration, repeat: Infinity, ease: 'linear' }}
-              title={face.name}
-            >
-              <img className="orbit-face" src={face.avatar_url} alt={face.name} loading="lazy" decoding="async" />
-              <span className="orbit-label">{face.name.split(' ')[0]}</span>
-            </motion.div>
-          </div>
-        )
-      })}
-    </motion.div>
-  )
+type Viewer = { name: string; avatarUrl: string | null; initial: string }
+
+function useViewer(): Viewer | null {
+  const [viewer, setViewer] = useState<Viewer | null>(null)
+
+  useEffect(() => {
+    const supabase = createClient()
+    let cancelled = false
+
+    getBootUser(supabase)
+      .then(async (user) => {
+        if (!user) return null
+        const { data } = await supabase
+          .from('profiles')
+          .select('full_name, username, avatar_url')
+          .eq('id', user.id)
+          .maybeSingle()
+        const name = String(data?.full_name || data?.username || '').trim() || 'Student'
+        return { name, avatarUrl: data?.avatar_url ? String(data.avatar_url) : null, initial: name[0].toUpperCase() }
+      })
+      .then((profile) => {
+        if (!cancelled) setViewer(profile)
+      })
+      .catch(() => {})
+
+    return () => {
+      cancelled = true
+    }
+  }, [])
+
+  return viewer
 }
 
 function OrbitRing({
@@ -188,7 +187,9 @@ function OrbitRing({
   )
 }
 
-export default function OrbitHero({ faces = [] }: { faces?: Face[] }) {
+export default function OrbitHero() {
+  const viewer = useViewer()
+
   return (
     <section className="orbit-hero">
       <div className="orbit-copy">
@@ -214,32 +215,43 @@ export default function OrbitHero({ faces = [] }: { faces?: Face[] }) {
         </div>
       </div>
 
-      <div className="orbit-visual" aria-label="Rotating technology and company orbits around a drive's rounds">
+      <div className="orbit-visual" aria-label="Rotating technology and company orbits around a hub">
         {/* Outer orbit: the tech stack (15 marks, so it gets the long
             circumference — crowding them onto the inner ring overlapped the
             labels). */}
         <OrbitRing items={technologies} radius={46} duration={45} />
 
-        {/* Middle orbit: REAL member faces — only students who uploaded a photo.
-            Sits between the tech ring (46) and the company ring (29). Renders
-            nothing when the list is empty — no placeholder, no initials. */}
-        <FaceRing faces={faces} radius={37} duration={38} />
-
         {/* Inner orbit: companies (9 marks) stay legible on the short ring. */}
         <OrbitRing items={companies} radius={29} duration={32} reverse className="orbit-ring--inner" />
 
-        {/* Structured hub: the four rounds a drive is read in. */}
-        <div className="orbit-hub">
-          <span className="orbit-hub-label">A drive</span>
-          <div className="orbit-hub-rounds" aria-hidden="true">
-            {HUB_ROUNDS.map((r) => (
-              <span className="orbit-hub-round" key={r}>
-                {r}
+        {/* Hub. Signed in: the reader's OWN profile — their uploaded photo, or
+            a monogram until they add one. Signed out: the structured diagram of
+            a drive's four rounds, which is what this page is about. */}
+        {viewer ? (
+          <Link className="orbit-hub orbit-hub--viewer" href="/profile" aria-label={`Your profile — ${viewer.name}`}>
+            {viewer.avatarUrl ? (
+              <img className="orbit-hub-avatar" src={viewer.avatarUrl} alt="" decoding="async" />
+            ) : (
+              <span className="orbit-hub-initial" aria-hidden="true">
+                {viewer.initial}
               </span>
-            ))}
+            )}
+            <span className="orbit-hub-name">{viewer.name}</span>
+            <span className="orbit-hub-sub">Your profile ↗</span>
+          </Link>
+        ) : (
+          <div className="orbit-hub">
+            <span className="orbit-hub-label">A drive</span>
+            <div className="orbit-hub-rounds" aria-hidden="true">
+              {HUB_ROUNDS.map((r) => (
+                <span className="orbit-hub-round" key={r}>
+                  {r}
+                </span>
+              ))}
+            </div>
+            <span className="orbit-hub-sub">round by round</span>
           </div>
-          <span className="orbit-hub-sub">round by round</span>
-        </div>
+        )}
       </div>
     </section>
   )

@@ -12,9 +12,9 @@
    2. Badges are centred with the `translate` property, never `transform`.
       framer-motion writes `transform: rotate(...)` inline on the counter-
       rotated badge, which would wipe a `translate(-50%,-50%)` there.
-   3. The demo profile is chosen on the client after mount (see OrbitHero.tsx),
-      so the server and client render the same name and React never has to
-      patch a hydration mismatch.
+   3. The signed-in reader's own profile is resolved on the client after mount
+      (see OrbitHero.tsx), so the server-rendered hub and the first client
+      render agree and React never has to patch a hydration mismatch.
 
    Everything is scoped to `.orbit-hero` so it cannot leak into the app.
    ═════════════════════════════════════════════════════════════════════════ */
@@ -161,22 +161,13 @@
   pointer-events: none;
 }
 
-/* The inner (companies) ring used to be targeted with :nth-of-type(2). The
-   faces ring sits between the outer and inner rings in the DOM, which would
-   shift that index and restyle the wrong ring — so each ring now carries an
-   explicit modifier class instead of relying on DOM position. */
+/* The inner (companies) ring used to be targeted with :nth-of-type(2), which
+   restyled the wrong ring as soon as another ring was added to the DOM — so
+   each ring now carries an explicit modifier class instead of relying on
+   position. */
 .orbit-ring--inner {
   inset: 21%;
   border-color: color-mix(in srgb, var(--orbit-blue) 45%, transparent);
-}
-
-/* The faces ring: the middle orbit of real member photos. Its radius (37cqw)
-   sits between the outer (46) and inner (29) rings, so the guide circle is
-   inset to match. It only renders when at least one member has uploaded a
-   photo — never as an empty or placeholder ring. */
-.orbit-ring--faces {
-  inset: 25%;
-  border-color: color-mix(in srgb, var(--orbit-blue) 30%, transparent);
 }
 
 /* Position badges around the ellipse */
@@ -251,32 +242,11 @@
   white-space: nowrap;
 }
 
-/* A real member's photo on the faces ring. Round, bordered to lift it off the
-   canvas, and sized to sit comfortably between the icon badges without
-   crowding the hub. Only members who uploaded a photo reach here — there is no
-   initials or placeholder fallback in the ring. */
-.orbit-face {
-  box-sizing: border-box;
-  width: 46px;
-  height: 46px;
-  border: 2px solid var(--lq-surface, #fff);
-  border-radius: 50%;
-  object-fit: cover;
-  background: var(--lq-surface, #fff);
-  box-shadow: 0 6px 20px #1c2f5026;
-  transition:
-    box-shadow 200ms ease,
-    scale 200ms ease;
-}
-
-.orbit-badge:hover .orbit-face {
-  scale: 1.12;
-  box-shadow: 0 10px 30px #3478f638;
-}
-
-/* The hub — a CIRCLE, so it reads as the centre the rings turn around, but its
-   content is STRUCTURED: the four rounds a drive is read in. No photograph and
-   no invented person sits at the middle of this page any more.
+/* The hub — a CIRCLE, so it reads as the centre the rings turn around.
+   Signed out it holds a STRUCTURED diagram: the four rounds a drive is read in.
+   Signed in it holds the READER'S OWN profile — their uploaded photo, or a
+   monogram until they add one — and links to /profile. Nobody else's face is
+   ever rendered here.
    A circle must be square, so the box is fixed at 190×190 and the radius does
    all the shaping; the ladder is capped well under the diameter, because a
    chord shrinks fast off-centre. */
@@ -301,6 +271,59 @@
   text-align: center;
   transform: translate(-50%, -50%);
   backdrop-filter: blur(12px);
+}
+
+/* Signed-in hub: the reader's own face and name. */
+.orbit-hub--viewer {
+  gap: 8px;
+  padding: 0 20px;
+  color: var(--lq-text, #171717);
+  text-decoration: none;
+  transition:
+    box-shadow 200ms ease,
+    scale 200ms ease;
+}
+
+.orbit-hub--viewer:hover {
+  scale: 1.03;
+  box-shadow:
+    0 16px 46px #2d5b9f22,
+    inset 0 0 0 6px color-mix(in srgb, var(--orbit-blue) 10%, transparent);
+}
+
+.orbit-hub-avatar,
+.orbit-hub-initial {
+  box-sizing: border-box;
+  width: 82px;
+  height: 82px;
+  border: 2px solid var(--lq-surface, #fff);
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--orbit-blue) 14%, var(--lq-surface, #fff));
+  box-shadow: 0 8px 24px #1c2f5026;
+}
+
+.orbit-hub-avatar {
+  object-fit: cover;
+}
+
+.orbit-hub-initial {
+  display: grid;
+  place-items: center;
+  color: color-mix(in srgb, var(--orbit-blue) 60%, #0b1b33);
+  font-size: 32px;
+  font-weight: 800;
+}
+
+.orbit-hub-name {
+  max-width: 132px;
+  overflow: hidden;
+  color: var(--lq-text, #171717);
+  font-size: 15px;
+  font-weight: 800;
+  letter-spacing: -0.2px;
+  line-height: 1.25;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .orbit-hub-label,
@@ -418,6 +441,21 @@
     box-shadow:
       0 8px 26px #2d5b9f14,
       inset 0 0 0 4px color-mix(in srgb, var(--orbit-blue) 6%, transparent);
+  }
+
+  .orbit-hub-avatar,
+  .orbit-hub-initial {
+    width: 64px;
+    height: 64px;
+  }
+
+  .orbit-hub-initial {
+    font-size: 25px;
+  }
+
+  .orbit-hub-name {
+    max-width: 104px;
+    font-size: 13px;
   }
 
   .orbit-hub-rounds {
