@@ -2358,30 +2358,98 @@ a,
 }
 
 /*
- * Voice-call reactions, Meet style: the emoji (and the sender's name) starts
- * at the bottom edge of the call screen and climbs to the top before fading,
- * over 6s — long enough to read who sent it. Replaces the old burst, which
- * only travelled 150px inside the sender's own tile.
+ * Voice-call reactions, Meet style — but they NEVER take the screen.
+ * A reaction lives in a two-line band pinned above the control bar (see
+ * .lvc-reaction-band below), so the call above stays readable and scrollable.
+ * It pops in, holds long enough to read who sent it, and fades where it
+ * stands — nothing climbs the screen any more.
  */
-@keyframes ccReactionRise {
+@keyframes ccReactionPop {
   0% {
     opacity: 0;
-    transform: translateY(0) scale(0.7);
+    transform: translateY(10px) scale(0.55);
   }
   8% {
     opacity: 1;
-    transform: translateY(-6vh) scale(1.12);
+    transform: translateY(0) scale(1.08);
   }
-  22% {
-    transform: translateY(-15vh) scale(1) translateX(10px);
+  14% {
+    transform: translateY(0) scale(1);
   }
-  72% {
+  86% {
     opacity: 1;
-    transform: translateY(-50vh) translateX(-8px);
+    transform: translateY(0) scale(1);
   }
   100% {
     opacity: 0;
-    transform: translateY(-70vh) scale(0.92) translateX(6px);
+    transform: translateY(-6px) scale(0.96);
+  }
+}
+
+@keyframes ccReactionFade {
+  0% {
+    opacity: 0;
+  }
+  6% {
+    opacity: 1;
+  }
+  88% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+
+/* ── In-call reactions — the BOTTOM BAND: two lines, six per line ─────────
+   Fixed above the control bar and pointer-transparent, so a tap or a scroll
+   passes straight through and the rest of the call stays usable while the
+   emoji are on screen. Twelve cells at most — the thirteenth burst evicts the
+   oldest, which by then has already faded (see EmojiEvent.slot). */
+.lvc-reaction-band {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: calc(86px + env(safe-area-inset-bottom, 0px));
+  height: 96px;
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  grid-template-rows: repeat(2, 48px);
+  align-items: center;
+  justify-items: center;
+  padding: 0 14px;
+  overflow: hidden;
+  pointer-events: none;
+  z-index: 5;
+}
+.lvc-reaction {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  max-width: 100%;
+  min-width: 0;
+  animation: ccReactionPop 6s cubic-bezier(0.25, 0.6, 0.35, 1) forwards;
+}
+.lvc-reaction-emoji {
+  font-size: 30px;
+  line-height: 1;
+  filter: drop-shadow(0 6px 14px rgba(0, 0, 0, 0.55));
+}
+.lvc-reaction-name {
+  font-size: 12px;
+  font-weight: 700;
+  color: #fff;
+  background: rgba(0, 0, 0, 0.55);
+  padding: 4px 10px;
+  border-radius: 999px;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+@media (prefers-reduced-motion: reduce) {
+  .lvc-reaction {
+    animation: ccReactionFade 6s linear forwards;
   }
 }
 
@@ -2743,50 +2811,12 @@ a:active,
   }
 }
 
-/* ── Live voice call — animated video frame ──────────────────────────
-   Camera tiles wear a slowly-rotating conic gradient border (three accent
-   hues cycling). The gradient sits on a ::before layer slightly larger than
-   the video; the video stays visible in the middle. Speaks while active:
-   the ring speeds up. Respects reduced motion. */
-@keyframes lvcFrameSpin {
-  to {
-    --lvc-angle: 360deg;
-  }
-}
-@property --lvc-angle {
-  syntax: '<angle>';
-  initial-value: 0deg;
-  inherits: false;
-}
-.lvc-frame {
-  position: relative;
-}
-.lvc-frame::before {
-  content: '';
-  position: absolute;
-  inset: -2px;
-  border-radius: 14px;
-  background: conic-gradient(
-    from var(--lvc-angle),
-    var(--accent) 0%,
-    var(--accent-purple) 30%,
-    var(--accent-cyan) 60%,
-    var(--accent) 100%
-  );
-  animation: lvcFrameSpin 7s linear infinite;
-  opacity: 0.85;
-  z-index: 0;
-}
-.lvc-frame > * {
-  position: relative;
-  z-index: 1;
-}
-@media (prefers-reduced-motion: reduce) {
-  .lvc-frame::before {
-    animation: none;
-  }
-}
-
+/* ── Live voice call — the participant frame ───────────────────────────────
+   The tile IS the frame: a 16:9 box with the camera (or the avatar) filling
+   it edge to edge, the name chip over the bottom-left corner and a solid
+   green border while that person speaks. The old slowly-rotating conic
+   gradient that ringed the camera is gone — it read as decoration, not as
+   "who is talking". */
 /* ── Live voice call page — Meet-style controls ──────────────────────── */
 .lvc-back {
   width: 40px;

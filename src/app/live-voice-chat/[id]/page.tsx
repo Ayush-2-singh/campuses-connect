@@ -46,6 +46,9 @@ export default function LiveVoiceChatRoomPage() {
   const [reported, setReported] = useState(false)
   /** Which member's role is being handed out right now (co-admin tap). */
   const [roleBusy, setRoleBusy] = useState<string | null>(null)
+  /** Room size dial and lock switch are the admin's — neither may double-fire. */
+  const [sizeBusy, setSizeBusy] = useState(false)
+  const [lockBusy, setLockBusy] = useState(false)
 
   // ── Load bookkeeping ───────────────────────────────────────────────────────
   // Realtime, the focus refetch and the 15s fallback all call load() and they
@@ -152,7 +155,7 @@ export default function LiveVoiceChatRoomPage() {
 
     const { data: callRow } = await supabase
       .from('live_voice_chat_calls')
-      .select('id, status, started_at')
+      .select('id, status, started_at, locked')
       .eq('group_id', groupId)
       .eq('status', 'active')
       .maybeSingle()
@@ -468,6 +471,53 @@ export default function LiveVoiceChatRoomPage() {
      (mute people, keep order) when the owner is away. */
   const canPromote =
     !!user && (group?.created_by === user.id || members.some((m: any) => m.user_id === user.id && m.role === 'admin'))
+  /* Who RUNS the room: locking it and silencing it are owner/admin/co-admin. */
+  const myRole = members.find((m: any) => m.user_id === user?.id)?.role
+  const canRunRoom = !!user && (group?.created_by === user.id || myRole === 'admin' || myRole === 'co-admin')
+  /** Free4talk-style cap: how big this room may grow (admin's dial). */
+  const roomSize = (group?.max_participants ?? null) as number | null
+  const roomLocked = !!call?.locked
+  const amInCall = participants.some((p: any) => p.user_id === user?.id)
+  const atCapacity = roomSize !== null && participants.length >= roomSize
+  /** Locked or full stops NEW people — never somebody already inside, and
+   *  never whoever runs the room (they must always be able to get back in). */
+  const shutOut = isLive && !amInCall && !canRunRoom && (roomLocked || atCapacity)
+
+  const setRoomSize = async (next: number) => {
+    const capped = Math.min(200, Math.max(2, next))
+    if (capped === roomSize) return
+    setSizeBusy(true)
+    try {
+      const { error: rpcError } = await supabase.rpc('set_live_voice_chat_room_size', {
+        p_group_id: groupId,
+        p_max: capped,
+      })
+      if (rpcError) throw new Error(rpcError.message)
+      setGroup((g: any) => (g ? { ...g, max_participants: capped } : g))
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Could not change the room size.')
+    } finally {
+      setSizeBusy(false)
+    }
+  }
+
+  const toggleRoomLock = async () => {
+    if (!call) return
+    const next = !roomLocked
+    setLockBusy(true)
+    try {
+      const { error: rpcError } = await supabase.rpc('set_live_voice_chat_call_lock', {
+        p_call_id: call.id,
+        p_locked: next,
+      })
+      if (rpcError) throw new Error(rpcError.message)
+      setCall((c: any) => (c ? { ...c, locked: next } : c))
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Could not change the lock.')
+    } finally {
+      setLockBusy(false)
+    }
+  }
 
   const promoteMember = async (userId: string, role: 'co-admin' | 'member') => {
     setRoleBusy(userId)
@@ -622,14 +672,131 @@ export default function LiveVoiceChatRoomPage() {
                 </p>
               )}
 
+              {(canPromote || (canRunRoom && isLive)) && (
+                <div
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 10,
+                    flexWrap: 'wrap',
+                    marginBottom: 12,
+                    padding: '9px 12px',
+                    border: '1px dashed var(--border)',
+                    borderRadius: 12,
+                    background: 'var(--bg-secondary)',
+                    fontSize: 13,
+                    color: 'var(--text-secondary)',
+                  }}
+                >
+                  {canPromote && (
+                    <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>
+                      Room size
+                      <button
+                        onClick={() => void setRoomSize((roomSize ?? participants.length) - 1)}
+                        disabled={sizeBusy || (roomSize ?? 2) <= 2}
+                        aria-label="Decrease the room size"
+                        style={{
+                          width: 30,
+                          height: 30,
+                          borderRadius: 9,
+                          border: '1px solid var(--border)',
+                          background: 'var(--bg)',
+                          color: 'var(--text-primary)',
+                          cursor: sizeBusy ? 'wait' : 'pointer',
+                          fontFamily: 'inherit',
+                          fontSize: 16,
+                          lineHeight: 1,
+                        }}
+                      >
+                        −
+                      </button>
+                      <strong style={{ color: 'var(--text-primary)', minWidth: 58, textAlign: 'center' }}>
+                        {participants.length}
+                        {roomSize !== null ? ` / ${roomSize}` : ''}
+                      </strong>
+                      <button
+                        onClick={() => void setRoomSize((roomSize ?? participants.length) + 1)}
+                        disabled={sizeBusy || (roomSize ?? 0) >= 200}
+                        aria-label="Increase the room size"
+                        style={{
+                          width: 30,
+                          height: 30,
+                          borderRadius: 9,
+                          border: '1px solid var(--border)',
+                          background: 'var(--bg)',
+                          color: 'var(--text-primary)',
+                          cursor: sizeBusy ? 'wait' : 'pointer',
+                          fontFamily: 'inherit',
+                          fontSize: 16,
+                          lineHeight: 1,
+                        }}
+                      >
+                        +
+                      </button>
+                    </span>
+                  )}
+
+                  {canRunRoom && isLive && (
+                    <button
+                      onClick={() => void toggleRoomLock()}
+                      disabled={lockBusy}
+                      aria-pressed={roomLocked}
+                      style={{
+                        marginLeft: 'auto',
+                        minHeight: 34,
+                        padding: '0 12px',
+                        borderRadius: 9,
+                        border: 'none',
+                        background: roomLocked ? 'var(--accent)' : 'var(--bg-tertiary)',
+                        color: roomLocked ? 'var(--on-accent)' : 'var(--text-primary)',
+                        fontSize: 12.5,
+                        fontWeight: 700,
+                        fontFamily: 'inherit',
+                        cursor: lockBusy ? 'wait' : 'pointer',
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: 6,
+                      }}
+                    >
+                      <Icon name={roomLocked ? 'lock' : 'unlock'} size={14} strokeWidth={2.2} />
+                      {lockBusy ? '…' : roomLocked ? 'Locked — tap to open' : 'Lock the room'}
+                    </button>
+                  )}
+                </div>
+              )}
+
+              {shutOut && (
+                <p
+                  role="status"
+                  style={{
+                    margin: '0 0 12px',
+                    padding: '9px 12px',
+                    borderRadius: 10,
+                    fontSize: 13,
+                    fontWeight: 600,
+                    color: 'var(--danger)',
+                    background: 'color-mix(in srgb, var(--danger) 12%, transparent)',
+                  }}
+                >
+                  {roomLocked
+                    ? 'This room is locked — the host has to let you in.'
+                    : `This room is full (${participants.length}/${roomSize}). An admin has to make it bigger.`}
+                </p>
+              )}
+
               {isMember ? (
                 <div style={{ display: 'flex', gap: 8 }}>
                   <button
                     onClick={enterCall}
-                    disabled={busy}
+                    disabled={busy || shutOut}
                     style={{
                       flex: 1,
-                      background: busy ? 'var(--disabled)' : isLive ? 'var(--success, var(--accent))' : 'var(--accent)',
+                      background:
+                        busy || shutOut
+                          ? 'var(--disabled)'
+                          : isLive
+                            ? 'var(--success, var(--accent))'
+                            : 'var(--accent)',
                       color: 'var(--on-accent)',
                       border: 'none',
                       borderRadius: 10,
@@ -649,7 +816,13 @@ export default function LiveVoiceChatRoomPage() {
                     ) : (
                       <>
                         <Icon name="mic" size={17} strokeWidth={2.2} />
-                        {isLive ? `Join call (${participants.length} in)` : 'Start voice chat'}
+                        {shutOut
+                          ? roomLocked
+                            ? 'Room is locked'
+                            : 'Room is full'
+                          : isLive
+                            ? `Join call (${participants.length} in)`
+                            : 'Start voice chat'}
                       </>
                     )}
                   </button>

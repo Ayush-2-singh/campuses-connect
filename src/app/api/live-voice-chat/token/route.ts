@@ -73,11 +73,56 @@ export async function POST(req: NextRequest) {
     // RLS means the call is only visible when the caller is a group member.
     const { data: call } = await supabase
       .from('live_voice_chat_calls')
-      .select('id, group_id')
+      .select('id, group_id, locked')
       .eq('id', callId)
       .maybeSingle()
     if (!call) {
       return NextResponse.json({ error: 'Call not found or not allowed' }, { status: 403 })
+    }
+
+    // ── ROOM LOCK + ROOM SIZE — the actual door ───────────────────────────
+    // A locked room, or one already at its cap, hands out no token to anyone
+    // NEW: being shut out therefore means never reaching the LiveKit room at
+    // all, rather than joining a call that then ignores you. Whoever runs the
+    // room (owner/admin/co-admin) and anybody already inside always keep
+    // their way back in — a lock must never lock the host out.
+    const [{ data: group }, { data: member }] = await Promise.all([
+      supabase
+        .from('live_voice_chat_groups')
+        .select('created_by, max_participants')
+        .eq('id', call.group_id)
+        .maybeSingle(),
+      supabase
+        .from('live_voice_chat_members')
+        .select('role')
+        .eq('group_id', call.group_id)
+        .eq('user_id', user.id)
+        .maybeSingle(),
+    ])
+    const myRole = (member?.role ?? '') as string
+    const runsRoom = group?.created_by === user.id || myRole === 'admin' || myRole === 'co-admin'
+    if (!runsRoom) {
+      const { data: mine } = await supabase
+        .from('live_voice_chat_participants')
+        .select('user_id')
+        .eq('call_id', callId)
+        .eq('user_id', user.id)
+        .maybeSingle()
+      const alreadyIn = !!mine
+      if (call.locked && !alreadyIn) {
+        return NextResponse.json({ error: 'This room is locked — the host has to let you in.' }, { status: 403 })
+      }
+      const max = (group?.max_participants ?? null) as number | null
+      if (max !== null && !alreadyIn) {
+        const { count } = await supabase
+          .from('live_voice_chat_participants')
+          .select('user_id', { count: 'exact', head: true })
+          .eq('call_id', callId)
+          .is('left_at', null)
+        if ((count ?? 0) >= max) {
+          return NextResponse.json({ error: 'This room is full. An admin has to make it bigger.' }, { status: 409 })
+        }
+      }
     }
 
     const at = new AccessToken(process.env.LIVEKIT_API_KEY!, process.env.LIVEKIT_API_SECRET!, {

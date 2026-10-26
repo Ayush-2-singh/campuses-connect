@@ -28,6 +28,8 @@ const mock = vi.hoisted(() => {
     visibleCalls: [] as Row[],
     /** Every `from(table)` the route touched — proves which table it reads. */
     tablesQueried: [] as string[],
+    /** How many people are in the call — the room-size cap reads this. */
+    activeParticipants: 0,
     /** The Authorization header the client was constructed with. */
     clientAuthHeader: '' as string,
   }
@@ -51,11 +53,22 @@ const mock = vi.hoisted(() => {
         state.tablesQueried.push(table)
         let eq: { col: string; val: any } | null = null
         const builder: any = {
-          select: () => builder,
+          select: (_cols?: string, opts?: { count?: string; head?: boolean }) => {
+            if (opts?.head) builder.headCount = true
+            return builder
+          },
           eq: (col: string, val: any) => {
             eq = { col, val }
             return builder
           },
+          is: (col: string, val: any) => {
+            eq = { col, val }
+            return builder
+          },
+          // The cap check is a head-count query: awaiting the builder itself
+          // is how supabase-js returns `{ count }`.
+          then: (resolve: any, reject: any) =>
+            Promise.resolve({ count: state.activeParticipants, data: null, error: null }).then(resolve, reject),
           maybeSingle: async () => {
             // Stands in for RLS: only rows the policy allows are returned.
             const rows = state.visibleCalls.filter((r) => !eq || r[eq.col] === eq.val)
@@ -92,6 +105,7 @@ beforeEach(() => {
   mock.state.sessions = new Map()
   mock.state.visibleCalls = []
   mock.state.tablesQueried = []
+  mock.state.activeParticipants = 0
   mock.state.clientAuthHeader = ''
 
   // Any api key/secret works — the JWT is signed locally, never sent to LiveKit.
@@ -147,7 +161,13 @@ describe('POST /api/live-voice-chat/token — authorization', () => {
 
     await POST(request({ jwt: 'good-jwt', body: { callId: 'call-1' } }))
 
-    expect(mock.state.tablesQueried).toEqual(['live_voice_chat_calls'])
+    // The call row is still read FIRST, under the caller's own JWT — every
+    // later read (the lock and room-size checks) hangs off THAT row's
+    // group_id, never off a group id the request made up.
+    expect(mock.state.tablesQueried[0]).toBe('live_voice_chat_calls')
+    expect(mock.state.tablesQueried).toEqual(
+      expect.arrayContaining(['live_voice_chat_groups', 'live_voice_chat_members', 'live_voice_chat_participants'])
+    )
   })
 
   it('runs the lookup as the caller, so RLS applies to that user', async () => {
@@ -215,5 +235,68 @@ describe('POST /api/live-voice-chat/token — issued grant', () => {
     const payload = decode((await res.json()).token)
 
     expect(payload.name).toBe('Ayush')
+  })
+})
+
+describe('POST /api/live-voice-chat/token — the door (lock and room size)', () => {
+  /** A call the caller CAN see (RLS passed), inside a room they do not run. */
+  const baseRoom = (overrides: { locked?: boolean; max?: number | null } = {}) => {
+    mock.state.visibleCalls = [
+      { id: 'call-1', group_id: 'group-1', locked: overrides.locked ?? false },
+      { id: 'group-1', created_by: 'host-user', max_participants: overrides.max ?? null },
+    ]
+  }
+
+  beforeEach(() => {
+    mock.state.sessions.set('good-jwt', { id: 'user-1' })
+  })
+
+  it('refuses a token for a locked room — no token means no LiveKit room', async () => {
+    baseRoom({ locked: true })
+
+    const res = await POST(request({ jwt: 'good-jwt', body: { callId: 'call-1' } }))
+
+    expect(res.status).toBe(403)
+    await expect(res.json()).resolves.toMatchObject({ error: expect.stringMatching(/locked/i) })
+  })
+
+  it('shuts the door on a room that is already at its cap', async () => {
+    baseRoom({ max: 3 })
+    mock.state.activeParticipants = 3
+
+    const res = await POST(request({ jwt: 'good-jwt', body: { callId: 'call-1' } }))
+
+    expect(res.status).toBe(409)
+    await expect(res.json()).resolves.toMatchObject({ error: expect.stringMatching(/full/i) })
+  })
+
+  it('whoever runs the room walks straight in, lock or no lock', async () => {
+    baseRoom({ locked: true, max: 2 })
+    mock.state.visibleCalls[1] = { id: 'group-1', created_by: 'user-1', max_participants: 2 }
+    mock.state.activeParticipants = 9
+
+    const res = await POST(request({ jwt: 'good-jwt', body: { callId: 'call-1' } }))
+
+    expect(res.status).toBe(200)
+  })
+
+  it('a full room still takes its OWN people back in', async () => {
+    baseRoom({ max: 3 })
+    // This caller already holds a row in the call — they are inside, not new.
+    mock.state.visibleCalls.push({ call_id: 'call-1', user_id: 'user-1' })
+    mock.state.activeParticipants = 3
+
+    const res = await POST(request({ jwt: 'good-jwt', body: { callId: 'call-1' } }))
+
+    expect(res.status).toBe(200)
+  })
+
+  it('a room with no cap keeps handing out tokens as before', async () => {
+    baseRoom({ max: null })
+    mock.state.activeParticipants = 60
+
+    const res = await POST(request({ jwt: 'good-jwt', body: { callId: 'call-1' } }))
+
+    expect(res.status).toBe(200)
   })
 })

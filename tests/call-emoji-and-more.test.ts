@@ -195,18 +195,30 @@ describe('a sent reaction is impossible to miss — Meet style', () => {
     expect(surface).toMatch(/if \(Date\.now\(\) - last < 2_000\) return/)
   })
 
-  it('rises from the bottom of the call screen to the top', () => {
+  it('lives in a TWO-LINE BAND at the bottom — six emoji to a line', () => {
+    // "emoji sirf last 2 lines me aaye, pura screen na le — max 6 per line"
     expect(surface).toMatch(/<ReactionRise events=\{emojiEvents\}/)
-    expect(surface).toMatch(/animation: 'ccReactionRise 6s/)
-    expect(css).toMatch(/@keyframes ccReactionRise \{/)
-    expect(css).toMatch(/transform: translateY\(-70vh\)/)
+    expect(surface).toMatch(/className="lvc-reaction-band"/)
+    expect(css).toMatch(/\.lvc-reaction-band \{/)
+    expect(css).toMatch(/grid-template-rows: repeat\(2, 48px\)/)
+    expect(css).toMatch(/grid-template-columns: repeat\(6, minmax\(0, 1fr\)\)/)
+    expect(css).toMatch(/@keyframes ccReactionPop \{/)
+    // Nothing climbs the screen any more, and the band can not grow past
+    // two lines of six.
+    expect(css).not.toMatch(/ccReactionRise/)
+    expect(css).not.toMatch(/translateY\(-70vh\)/)
+    expect(surface).toMatch(/const REACTION_BAND_CELLS = 12/)
+    // Each burst keeps the cell it arrived in, so nothing jumps around.
+    expect(surface).toMatch(/gridRow: Math\.floor\(e\.slot \/ 6\) \+ 1/)
+    expect(surface).toMatch(/gridColumn: \(e\.slot % 6\) \+ 1/)
   })
 
   it('shows who sent it, and says You for your own', () => {
     expect(surface).toMatch(/const name = sender\?\.name\?\.trim\(\)/)
     expect(surface).toMatch(/\{mine \? 'You' : name\}/)
-    // The name rides beside the emoji, not on a second line.
-    expect(surface).toMatch(/display: 'inline-flex',[\s\S]{0,80}alignItems: 'center',\s*\n\s*gap: 8/)
+    // The name rides beside the emoji in the same cell, not on a second line.
+    expect(css).toMatch(/\.lvc-reaction \{[\s\S]*?display: inline-flex;/)
+    expect(css).toMatch(/\.lvc-reaction-name \{[\s\S]*?white-space: nowrap;/)
   })
 
   it('no longer hides the emoji inside the sender\u2019s own tile', () => {
@@ -221,8 +233,12 @@ describe('a sent reaction is impossible to miss — Meet style', () => {
     expect(surface).toMatch(/const REACTION_LIFETIME = 6_000/)
     expect(surface).toMatch(/}, REACTION_LIFETIME\)/)
     const rise = surface.slice(surface.indexOf('function ReactionRise'), surface.indexOf('Data-channel reactions'))
-    expect(rise).toMatch(/pointerEvents: 'none'/)
-    expect(rise).toMatch(/position: 'fixed'/)
     expect(rise).toMatch(/aria-live="polite"/)
+    expect(rise).toMatch(/className="lvc-reaction-band"/)
+    // Fixed, transparent to pointers and capped — all of it in the sheet, so
+    // the call above the band stays readable, scrollable and clickable.
+    expect(css).toMatch(/\.lvc-reaction-band \{[\s\S]*?position: fixed;/)
+    expect(css).toMatch(/\.lvc-reaction-band \{[\s\S]*?pointer-events: none;/)
+    expect(css).toMatch(/\.lvc-reaction-band \{[\s\S]*?overflow: hidden;/)
   })
 })

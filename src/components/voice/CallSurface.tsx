@@ -38,6 +38,16 @@ interface MusicInvite {
   from?: string
 }
 
+/** Meet's four view modes — the whole set, nothing invented. */
+type CallLayout = 'auto' | 'grid' | 'spotlight' | 'sidebar'
+
+const LAYOUT_MODES: { key: CallLayout; label: string; icon: string }[] = [
+  { key: 'auto', label: 'Auto', icon: 'layout' },
+  { key: 'grid', label: 'Grid', icon: 'users' },
+  { key: 'spotlight', label: 'Spotlight', icon: 'eye' },
+  { key: 'sidebar', label: 'Sidebar', icon: 'layers' },
+]
+
 /**
  * CALL SURFACE — everything the person in a call sees.
  *
@@ -81,7 +91,7 @@ export default function CallSurface() {
   }, [callUrl, router])
 
   const participants = useParticipants()
-  const { localParticipant, isMicrophoneEnabled } = useLocalParticipant()
+  const { localParticipant, isMicrophoneEnabled, isCameraEnabled } = useLocalParticipant()
   const { emojiEvents, sendReaction } = useReactions(localParticipant?.identity, callId)
 
   // ── IN-CALL MESSAGES ───────────────────────────────────────────────────
@@ -94,7 +104,7 @@ export default function CallSurface() {
   // client reads the same flag and keeps its microphone off (below), and the
   // server mutes the track at LiveKit as well, so a backgrounded tab is
   // silenced too.
-  const { canModerate, iamHostMuted, hostMutedIds, toggleHostMute } = useModeration(
+  const { canModerate, iamHostMuted, hostMutedIds, toggleHostMute, roomLocked, toggleLock, muteAll } = useModeration(
     callId,
     groupId,
     localParticipant?.identity
@@ -150,6 +160,11 @@ export default function CallSurface() {
   /** The roster panel: per-person playback volume for everyone, host mute
    *  for an owner/admin/co-admin. */
   const [peopleOpen, setPeopleOpen] = useState(false)
+  /** The floating self-view can be dismissed — until the camera goes off. */
+  const [selfPreviewHidden, setSelfPreviewHidden] = useState(false)
+  useEffect(() => {
+    if (!isCameraEnabled) setSelfPreviewHidden(false)
+  }, [isCameraEnabled])
   const [musicKey, setMusicKey] = useState(DEFAULT_MUSIC_KEY)
   const [musicAuto, setMusicAuto] = useState(false)
   /** The flavour *I* have shared with the call, or null. */
@@ -278,10 +293,10 @@ export default function CallSurface() {
   // 'grid'   → everyone as equal tiles, no stage
   // 'spotlight' → the pinned (or loudest/first) person fills the stage
   // Pinned identity survives layout switches; stored per session.
-  const [layout, setLayout] = useState<'auto' | 'grid' | 'spotlight'>(() => {
+  const [layout, setLayout] = useState<CallLayout>(() => {
     try {
       const v = window.sessionStorage.getItem('cc-voice-layout')
-      return v === 'grid' || v === 'spotlight' || v === 'auto' ? v : 'auto'
+      return v === 'grid' || v === 'spotlight' || v === 'sidebar' || v === 'auto' ? v : 'auto'
     } catch {
       return 'auto'
     }
@@ -315,7 +330,7 @@ export default function CallSurface() {
     })
   }, [])
 
-  const changeLayout = useCallback((next: 'auto' | 'grid' | 'spotlight') => {
+  const changeLayout = useCallback((next: CallLayout) => {
     setLayout(next)
     try {
       window.sessionStorage.setItem('cc-voice-layout', next)
@@ -332,12 +347,37 @@ export default function CallSurface() {
   // Stage roster: pins first (oldest pin = hero), then the first remote
   // person, then me. Spotlight always stages somebody; Auto stages only what
   // the user pinned; Grid stages nobody — every tile is equal there.
+  /** The person Auto has settled on as the current speaker (see below). */
+  const [autoSpeaker, setAutoSpeaker] = useState<string | null>(null)
+  /** Laptop-or-wider: the stage and the strip can sit SIDE BY SIDE. */
+  const wide = useWideStage()
+
   const presentPins = pinnedIds.filter((id) => participants.some((p) => p.identity === id))
   const fallbackId = participants.find((p) => !p.isLocal)?.identity ?? localParticipant?.identity ?? null
-  const heroId = (layout === 'spotlight' ? (presentPins[0] ?? fallbackId) : presentPins[0]) ?? null
+
+  // AUTO FOLLOWS WHOEVER IS ACTUALLY TALKING (Meet's auto): the stage would
+  // otherwise sit on an empty hero while somebody is mid-sentence. The new
+  // speaker has to hold the floor for a couple of seconds first — otherwise a
+  // room of four would flick between faces on every "haan".
+  const speakerId = participants.find((p) => p.isSpeaking && !p.isLocal)?.identity ?? null
+  useEffect(() => {
+    if (layout !== 'auto' || !speakerId || speakerId === autoSpeaker) return
+    const timer = window.setTimeout(() => setAutoSpeaker(speakerId), 2_500)
+    return () => window.clearTimeout(timer)
+  }, [layout, speakerId, autoSpeaker])
+  // Nobody pinned in Auto → the person who has been talking gets the stage.
+  const autoSpeakerId = layout === 'auto' && presentPins.length === 0 ? autoSpeaker : null
+
+  const heroId =
+    (layout === 'spotlight' || layout === 'sidebar'
+      ? (presentPins[0] ?? fallbackId)
+      : (presentPins[0] ?? autoSpeakerId)) ?? null
   // Grid stages NOBODY by definition — every tile is equal there — so a pin
   // never silently removes somebody from the grid.
   const stagePeople = layout === 'grid' || !heroId ? [] : [heroId, ...presentPins.filter((id) => id !== heroId)]
+  /** Does the stage have anything to show? Decides whether the strip can move
+   *  to the right-hand column beside it (GMeet's shape) instead of below. */
+  const stageVisible = stagePeople.length > 0 || (!!screenShareRef?.publication && layout === 'auto')
 
   // Off the call route: the same LiveKit room, shrunk to a bar that follows the
   // user around the app. Every hook above has already run, and nothing mounts
@@ -384,6 +424,9 @@ export default function CallSurface() {
               canModerate={canModerate}
               hostMutedIds={hostMutedIds}
               onToggleMute={toggleHostMute}
+              roomLocked={roomLocked}
+              onToggleLock={toggleLock}
+              onMuteAll={muteAll}
               onClose={() => setPeopleOpen(false)}
             />
           ) : musicOpen ? (
@@ -424,25 +467,66 @@ export default function CallSurface() {
             />
           ) : (
             <>
-              {/* Layout switcher — Auto / Grid / Spotlight, like Meet's tile buttons. */}
-              <LayoutSwitcher layout={layout} onChange={changeLayout} />
+              {/* GMEET'S SHAPE — up to THREE people get the big tiles and
+                  everybody after that rides the RIGHT edge in small tiles,
+                  stacked vertically, exactly as members join (free4talk and
+                  Meet both do this). Below 900px the column drops under the
+                  stage instead: a phone has no room for a sidebar. */}
+              <div
+                style={
+                  stageVisible && (layout === 'sidebar' || wide)
+                    ? { display: 'flex', gap: 14, alignItems: 'flex-start', width: '100%' }
+                    : { display: 'contents' }
+                }
+              >
+                <div
+                  style={
+                    stageVisible && (layout === 'sidebar' || wide) ? { flex: 1, minWidth: 0 } : { display: 'contents' }
+                  }
+                >
+                  {(layout === 'auto' || layout === 'spotlight' || layout === 'sidebar') && (
+                    <Stage
+                      mode={layout === 'auto' ? 'share' : 'spotlight'}
+                      participants={participants}
+                      shareRef={screenShareRef}
+                      stagePeople={stagePeople}
+                      onUnpin={togglePin}
+                    />
+                  )}
+                </div>
 
-              {(layout === 'auto' || layout === 'spotlight') && (
-                <Stage
-                  mode={layout === 'spotlight' ? 'spotlight' : 'share'}
+                {stageVisible && (layout === 'sidebar' || wide) && (
+                  <aside
+                    aria-label="Everyone else"
+                    style={{
+                      width: 'clamp(196px, 21vw, 264px)',
+                      flexShrink: 0,
+                      maxHeight: '56vh',
+                      overflowY: 'auto',
+                      paddingRight: 2,
+                    }}
+                  >
+                    <Participants
+                      participants={participants}
+                      stagedIds={stagePeople}
+                      pinnedIds={presentPins}
+                      handIds={presentHands.map((h) => h.id)}
+                      onPin={togglePin}
+                      variant="side"
+                    />
+                  </aside>
+                )}
+              </div>
+
+              {!stageVisible || !(layout === 'sidebar' || wide) ? (
+                <Participants
                   participants={participants}
-                  shareRef={screenShareRef}
-                  stagePeople={stagePeople}
-                  onUnpin={togglePin}
+                  stagedIds={stagePeople}
+                  pinnedIds={presentPins}
+                  handIds={presentHands.map((h) => h.id)}
+                  onPin={togglePin}
                 />
-              )}
-
-              <Participants
-                participants={participants}
-                stagedIds={stagePeople}
-                pinnedIds={presentPins}
-                onPin={togglePin}
-              />
+              ) : null}
             </>
           )}
         </div>
@@ -600,6 +684,9 @@ export default function CallSurface() {
         {/* Meet-style: every reaction rises from the bottom of the call screen
             carrying the sender's name, instead of hiding inside one tile. */}
         <ReactionRise events={emojiEvents} participants={participants} localIdentity={localParticipant?.identity} />
+        {/* Meet's floating self-view: your camera, draggable, always clear of
+            the control bar. Only while the camera is on. */}
+        {isCameraEnabled && !selfPreviewHidden && <SelfPreview onClose={() => setSelfPreviewHidden(true)} />}
         <Controls
           callId={callId}
           onLeave={leave}
@@ -636,6 +723,8 @@ export default function CallSurface() {
             setPeopleOpen((open) => !open)
           }}
           hostMuted={iamHostMuted}
+          layout={layout}
+          onChangeLayout={changeLayout}
         />
       </div>
     </div>
@@ -643,61 +732,58 @@ export default function CallSurface() {
 }
 
 /**
- * LAYOUT SWITCHER — Meet's three view modes. Segmented control, one press to
- * reflow the room; the choice persists for the session.
+ * VIEW MODE — Meet's four layouts (Auto / Grid / Spotlight / Sidebar), moved
+ * off the call canvas and into the More menu. A segmented bar above the stage
+ * spent a whole band of the call on a control nobody touches twice; here the
+ * same four choices sit one tap deeper, with the active one ticked.
+ *
+ * The menu stays open after a pick, exactly like Meet's layout panel, so the
+ * modes can be compared without reopening it each time.
  */
-function LayoutSwitcher({
-  layout,
-  onChange,
-}: {
-  layout: 'auto' | 'grid' | 'spotlight'
-  onChange: (next: 'auto' | 'grid' | 'spotlight') => void
-}) {
-  const MODES: { key: 'auto' | 'grid' | 'spotlight'; label: string; icon: string }[] = [
-    { key: 'auto', label: 'Auto', icon: 'layout' },
-    { key: 'grid', label: 'Grid', icon: 'users' },
-    { key: 'spotlight', label: 'Spotlight', icon: 'eye' },
-  ]
+function ViewModeSection({ layout, onChange }: { layout: CallLayout; onChange: (next: CallLayout) => void }) {
   return (
-    <div
-      role="radiogroup"
-      aria-label="Call layout"
-      style={{
-        display: 'inline-flex',
-        alignSelf: 'flex-start',
-        gap: 2,
-        background: 'var(--bg)',
-        border: '1px solid var(--border)',
-        borderRadius: 12,
-        padding: 3,
-        marginBottom: 14,
-      }}
-    >
-      {MODES.map((m) => {
+    <div role="group" aria-label="View mode" style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+      <span
+        style={{
+          padding: '7px 10px 3px',
+          fontSize: 10.5,
+          fontWeight: 800,
+          letterSpacing: '0.09em',
+          textTransform: 'uppercase',
+          color: 'var(--text-muted)',
+        }}
+      >
+        View mode
+      </span>
+      {LAYOUT_MODES.map((m) => {
         const active = layout === m.key
         return (
           <button
             key={m.key}
-            role="radio"
+            role="menuitemradio"
             aria-checked={active}
+            aria-label={`${m.label} view`}
             onClick={() => onChange(m.key)}
             style={{
-              display: 'inline-flex',
+              display: 'flex',
               alignItems: 'center',
-              gap: 6,
+              gap: 10,
+              width: '100%',
               border: 'none',
-              borderRadius: 9,
-              padding: '7px 12px',
-              fontSize: 12.5,
+              borderRadius: 10,
+              padding: '9px 10px',
+              background: active ? 'var(--accent-light)' : 'transparent',
+              color: active ? 'var(--accent-text)' : 'var(--text-primary)',
+              fontSize: 13.5,
               fontWeight: active ? 700 : 500,
               fontFamily: 'inherit',
+              textAlign: 'left',
               cursor: 'pointer',
-              background: active ? 'var(--accent)' : 'transparent',
-              color: active ? 'var(--on-accent)' : 'var(--text-secondary)',
             }}
           >
-            <Icon name={m.icon} size={14} strokeWidth={2.2} />
-            {m.label}
+            <Icon name={m.icon} size={18} strokeWidth={2.1} />
+            <span style={{ flex: 1, minWidth: 0 }}>{m.label}</span>
+            {active && <Icon name="check" size={16} strokeWidth={2.6} />}
           </button>
         )
       })}
@@ -1092,7 +1178,14 @@ interface EmojiEvent {
   key: number
   emoji: string
   from: string
+  /** Cell in the bottom band (two lines of six). Allocated when the burst is
+   *  pushed and freed when it expires, so a reaction never jumps to another
+   *  cell while it is on screen. */
+  slot: number
 }
+
+/** The band is TWO LINES of SIX reactions — never more of the screen. */
+const REACTION_BAND_CELLS = 12
 
 /** How long one reaction stays on screen — matches ccReactionRise (6s). */
 const REACTION_LIFETIME = 6_000
@@ -1247,49 +1340,71 @@ function ScreenStage() {
 }
 
 /**
- * PARTICIPANT TILES — one card per person (GMeet-style): speaking ring,
- * mute indicator, and floating emoji bursts anchored to the tile.
- * A participant with their camera on shows real video (mirrored for your
- * own tile); everyone else keeps the voice-first avatar tile.
+ * PARTICIPANT TILES — one card per person, Meet-style.
+ *
+ * THE FRAME: every tile is a 16:9 frame with the camera (or the avatar)
+ * filling it edge to edge, the name and mic state always visible over the
+ * bottom-left corner, and a solid green ring while that person talks — Meet's
+ * speaking signal instead of the decorative gradient ring that used to spin.
  *
  * GMeet layout behaviours:
- *   • grid/strip hide the pinned/spotlighted person (they're on the stage)
+ *   • the stage's people are lifted out — nobody is ever shown twice
  *   • every tile carries a Pin button — pinning puts that person on the stage
- *   • tile frames slowly cycle accent hues (animated gradient borders)
+ *   • raised hands sort first, then whoever is talking
+ *   • variant="side" is the column that lives beside the stage: one small
+ *     tile per row, where everybody after the first three keeps riding along
  */
 function Participants({
   participants,
   stagedIds,
   pinnedIds,
+  handIds = [],
   onPin,
+  variant = 'grid',
 }: {
   participants: ReturnType<typeof useParticipants>
   /** Everyone holding the stage right now — they never repeat in the strip. */
   stagedIds: string[]
   /** Pinned identities (max three) — the pin control lights for these. */
   pinnedIds: string[]
+  /** Raised hands — they sort to the front of the strip. */
+  handIds?: string[]
   onPin: (identity: string) => void
+  /** 'grid' = a responsive row of equal tiles; 'side' = one row per person. */
+  variant?: 'grid' | 'side'
 }) {
   const camRefs = useTracks([Track.Source.Camera])
   // Anyone on the stage is lifted out of the strip so nobody shows twice. In
-  // grid mode nothing is staged, so the strip IS the room — equal small tiles.
+  // grid mode nothing is staged, so the strip IS the room — equal tiles.
   const strip = participants.filter((p) => !stagedIds.includes(p.identity))
+  // Hands first (they asked to speak), then whoever is talking, then the room.
+  const rank = (id: string, speaking: boolean) => (handIds.includes(id) ? 2 : speaking ? 1 : 0)
+  const ordered = [...strip].sort((a, b) => rank(b.identity, b.isSpeaking) - rank(a.identity, a.isSpeaking))
+
+  /** Up to three people: one big tile per row, stacked vertically. */
+  const stacked = variant === 'grid' && ordered.length > 0 && ordered.length <= 3
+  /** How wide each stacked tile may grow, so three of them still fit a laptop. */
+  const stackedMaxWidth = ordered.length === 1 ? 880 : ordered.length === 2 ? 640 : 500
 
   return (
     <div
       style={{
         display: 'grid',
-        // Compact by design: this is the "everyone else" row that sits under a
-        // stage which may already be showing three people. auto-FIT (not
-        // auto-fill): with three people on a laptop the three tiles stretch to
-        // fill the row equally — Meet-style — instead of huddling at 128px on
-        // the left while the rest of the row stays empty.
-        gridTemplateColumns: 'repeat(auto-fit, minmax(128px, 1fr))',
+        // Meet's tile flow, by headcount:
+        //   • 1–3 people → one tile PER ROW, stacked vertically, each face
+        //     kept big;
+        //   • the fourth person onward → the compact tiled grid: smaller
+        //     tiles in as many columns as the width allows, exactly the way
+        //     Meet shrinks once the room fills up.
+        // The right-hand column has no choice to make: one tile per row.
+        gridTemplateColumns:
+          variant === 'side' ? '1fr' : stacked ? 'minmax(0, 1fr)' : 'repeat(auto-fit, minmax(148px, 1fr))',
+        justifyItems: stacked ? 'center' : undefined,
         gap: 10,
         width: '100%',
       }}
     >
-      {strip.map((p) => {
+      {ordered.map((p) => {
         const muted = !p.isMicrophoneEnabled
         const camRef = camRefs.find((r) => r.participant.identity === p.identity)
         const isPinned = pinnedIds.includes(p.identity)
@@ -1298,60 +1413,21 @@ function Participants({
             key={p.identity}
             style={{
               position: 'relative',
+              ...(stacked ? { width: '100%', maxWidth: stackedMaxWidth } : null),
+              aspectRatio: '16 / 9',
               overflow: 'hidden',
-              borderRadius: 16,
+              borderRadius: 14,
               border: p.isSpeaking ? '2px solid var(--success, var(--accent))' : '1px solid var(--border)',
-              background: 'var(--bg-secondary)',
-              padding: '22px 12px 14px',
-              textAlign: 'center',
+              background: 'linear-gradient(160deg, var(--bg-secondary), var(--bg-page))',
               boxShadow: p.isSpeaking
                 ? '0 0 24px color-mix(in srgb, var(--success, var(--accent)) 25%, transparent)'
                 : 'none',
               transition: 'border-color 0.15s ease, box-shadow 0.15s ease',
             }}
           >
-            {/* pin control — Meet-style: keep this person on the stage */}
-            <button
-              onClick={() => onPin(p.identity)}
-              aria-label={isPinned ? `Unpin ${p.name ?? 'participant'}` : `Pin ${p.name ?? 'participant'} to the stage`}
-              aria-pressed={isPinned}
-              title={isPinned ? 'Unpin' : 'Pin to stage'}
-              style={{
-                position: 'absolute',
-                top: 8,
-                right: 8,
-                width: 30,
-                height: 30,
-                borderRadius: 9,
-                display: 'inline-flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                border: isPinned ? 'none' : '1px solid var(--border)',
-                background: isPinned ? 'var(--accent)' : 'var(--bg)',
-                color: isPinned ? 'var(--on-accent)' : 'var(--text-muted)',
-                cursor: 'pointer',
-                zIndex: 3,
-              }}
-            >
-              <Icon name="pin" size={14} strokeWidth={2.2} />
-            </button>
-            {/* Floating reactions now rise over the WHOLE call screen — see
-                ReactionRise. They used to live here, as a 26px glyph inside
-                this overflow:hidden tile, where the control bar and the open
-                emoji sheet sat right on top of them. */}
-
+            {/* THE FRAME — camera or avatar, filling the tile edge to edge. */}
             {camRef ? (
-              <div
-                className="lvc-frame"
-                style={{
-                  width: '100%',
-                  height: 124,
-                  borderRadius: 12,
-                  overflow: 'hidden',
-                  margin: '0 auto 10px',
-                  background: '#000',
-                }}
-              >
+              <div style={{ position: 'absolute', inset: 0, background: '#000' }}>
                 <VideoTrack
                   trackRef={camRef}
                   muted
@@ -1365,52 +1441,81 @@ function Participants({
                 />
               </div>
             ) : (
-              <div
-                style={{
-                  width: 56,
-                  height: 56,
-                  borderRadius: '50%',
-                  margin: '0 auto 10px',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  fontSize: 22,
-                  fontWeight: 800,
-                  color: p.isSpeaking ? 'var(--on-accent)' : 'var(--accent-text)',
-                  background: p.isSpeaking ? 'var(--success, var(--accent))' : 'var(--accent-light)',
-                  transition: 'background 0.2s ease',
-                }}
-              >
-                {(p.name ?? '?').charAt(0).toUpperCase()}
+              <div style={{ position: 'absolute', inset: 0, display: 'grid', placeItems: 'center' }}>
+                <span
+                  style={{
+                    width: 'min(34%, 84px)',
+                    aspectRatio: '1',
+                    borderRadius: '50%',
+                    overflow: 'hidden',
+                    display: 'grid',
+                    placeItems: 'center',
+                    fontSize: 'clamp(16px, 3vw, 30px)',
+                    fontWeight: 800,
+                    color: p.isSpeaking ? 'var(--on-accent)' : 'var(--accent-text)',
+                    background: p.isSpeaking ? 'var(--success, var(--accent))' : 'var(--accent-light)',
+                    transition: 'background 0.2s ease',
+                  }}
+                >
+                  {(p.name ?? '?').charAt(0).toUpperCase()}
+                </span>
               </div>
             )}
-            <p
+
+            {/* Name + mic state, always on — never a hover-only detail. */}
+            <span
               style={{
-                fontSize: 13,
-                fontWeight: 700,
-                color: 'var(--text-primary)',
-                overflow: 'hidden',
-                textOverflow: 'ellipsis',
-                whiteSpace: 'nowrap',
-                margin: 0,
-              }}
-            >
-              {p.name ?? 'Student'}
-              {p.isLocal ? ' (You)' : ''}
-            </p>
-            <p
-              style={{
+                position: 'absolute',
+                left: 8,
+                bottom: 7,
+                maxWidth: 'calc(100% - 46px)',
                 display: 'inline-flex',
                 alignItems: 'center',
-                gap: 4,
-                fontSize: 11,
-                color: muted ? 'var(--danger)' : 'var(--text-muted)',
-                margin: '4px 0 0',
+                gap: 5,
+                fontSize: 11.5,
+                fontWeight: 700,
+                color: '#fff',
+                background: 'rgba(0,0,0,0.55)',
+                padding: '3px 8px',
+                borderRadius: 7,
+                overflow: 'hidden',
               }}
             >
-              <Icon name={muted ? 'mic-off' : 'mic'} size={12} />
-              {muted ? 'muted' : 'live'}
-            </p>
+              {muted && <Icon name="mic-off" size={11} strokeWidth={2.4} />}
+              <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                {p.name ?? 'Student'}
+                {p.isLocal ? ' (You)' : ''}
+              </span>
+            </span>
+
+            {/* pin control — Meet-style: keep this person on the stage */}
+            <button
+              onClick={() => onPin(p.identity)}
+              aria-label={isPinned ? `Unpin ${p.name ?? 'participant'}` : `Pin ${p.name ?? 'participant'} to the stage`}
+              aria-pressed={isPinned}
+              title={isPinned ? 'Unpin' : 'Pin to stage'}
+              style={{
+                position: 'absolute',
+                top: 6,
+                right: 6,
+                width: 28,
+                height: 28,
+                borderRadius: 8,
+                display: 'inline-flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                border: isPinned ? 'none' : '1px solid rgba(255, 255, 255, 0.35)',
+                background: isPinned ? 'var(--accent)' : 'rgba(0, 0, 0, 0.55)',
+                color: isPinned ? 'var(--on-accent)' : '#fff',
+                cursor: 'pointer',
+                zIndex: 3,
+              }}
+            >
+              <Icon name="pin" size={13} strokeWidth={2.2} />
+            </button>
+            {/* Floating reactions live over the BOTTOM TWO LINES of the call
+                screen — see ReactionRise — never inside this overflow:hidden
+                tile, where the control bar sits on top of them. */}
           </div>
         )
       })}
@@ -1419,14 +1524,17 @@ function Participants({
 }
 
 /**
- * MEET-STYLE REACTION RAIN — the emoji rises from the BOTTOM of the call
- * screen to the top with the sender's name beside it, so a reaction can not be
- * missed. (It used to be a small glyph clipped inside the sender's own tile,
- * under the control bar: visible only if you were looking for it.)
+ * REACTIONS — TWO LINES AT THE BOTTOM, SIX TO A LINE.
  *
- * Fixed and pointer-transparent: it sits above the stage, below the popups,
- * and can never swallow a click. Each burst carries its own key, so several
- * people reacting at once simply share the screen.
+ * The ask: the emoji section should be there, but only over the LAST TWO
+ * lines — never the whole screen, so the call above it stays readable and
+ * scrollable. The band is pointer-transparent, so taps and scrolls pass
+ * straight through it, and it never grows past twelve (two lines of six).
+ *
+ * Every burst keeps the cell it was handed when it arrived (see
+ * EmojiEvent.slot), so nothing slides to a different cell while it is on
+ * screen; when the band is full, the oldest — by then already faded — gives
+ * up its cell to the newest tap.
  */
 function ReactionRise({
   events,
@@ -1440,17 +1548,7 @@ function ReactionRise({
   if (events.length === 0) return null
 
   return (
-    <div
-      aria-live="polite"
-      aria-label="Reactions"
-      style={{
-        position: 'fixed',
-        inset: 0,
-        overflow: 'hidden',
-        pointerEvents: 'none',
-        zIndex: 5,
-      }}
-    >
+    <div aria-live="polite" aria-label="Reactions" className="lvc-reaction-band">
       {events.map((e) => {
         const sender = participants.find((p) => p.identity === e.from)
         const mine = e.from === localIdentity || e.from === 'local'
@@ -1458,39 +1556,11 @@ function ReactionRise({
         return (
           <span
             key={e.key}
-            style={{
-              position: 'absolute',
-              bottom: 76,
-              // Spread the bursts across the width instead of piling them up.
-              left: `${6 + ((e.key * 17) % 76)}%`,
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: 8,
-              whiteSpace: 'nowrap',
-              animation: 'ccReactionRise 6s cubic-bezier(0.25, 0.6, 0.35, 1) forwards',
-            }}
+            className="lvc-reaction"
+            style={{ gridRow: Math.floor(e.slot / 6) + 1, gridColumn: (e.slot % 6) + 1 }}
           >
-            <span
-              style={{
-                fontSize: 34,
-                lineHeight: 1,
-                filter: 'drop-shadow(0 6px 14px rgba(0,0,0,0.55))',
-              }}
-            >
-              {e.emoji}
-            </span>
-            <span
-              style={{
-                fontSize: 12,
-                fontWeight: 700,
-                color: '#fff',
-                background: 'rgba(0,0,0,0.55)',
-                padding: '4px 10px',
-                borderRadius: 999,
-              }}
-            >
-              {mine ? 'You' : name}
-            </span>
+            <span className="lvc-reaction-emoji">{e.emoji}</span>
+            <span className="lvc-reaction-name">{mine ? 'You' : name}</span>
           </span>
         )
       })}
@@ -1517,6 +1587,9 @@ function useReactions(myIdentity: string | undefined, callId: string) {
   const seq = useRef(0)
   /** When each sender last showed each emoji — the duplicate guard. */
   const shownAt = useRef(new Map<string, number>())
+  /** Which band cells are busy, oldest first — see EmojiEvent.slot. */
+  const busyCells = useRef(new Set<number>())
+  const cellOrder = useRef<{ key: number; slot: number }[]>([])
   /** The one broadcast channel for this call, so send and receive agree. */
   const channelRef = useRef<ReturnType<typeof supabase.channel> | null>(null)
 
@@ -1528,10 +1601,27 @@ function useReactions(myIdentity: string | undefined, callId: string) {
     shownAt.current.set(dupKey, Date.now())
     if (shownAt.current.size > 60) shownAt.current.clear()
 
+    // THE BAND IS FULL → the oldest, most-faded cell goes to the new one.
+    // Reactions are arrivals, not history: the newest tap is the one worth
+    // showing when the two lines are already busy.
+    if (cellOrder.current.length >= REACTION_BAND_CELLS) {
+      const evicted = cellOrder.current.shift()
+      if (evicted) {
+        busyCells.current.delete(evicted.slot)
+        setEmojiEvents((prev) => prev.filter((e) => e.key !== evicted.key))
+      }
+    }
+    let slot = 0
+    while (slot < REACTION_BAND_CELLS && busyCells.current.has(slot)) slot += 1
+    busyCells.current.add(slot)
+
     const key = ++seq.current
-    setEmojiEvents((prev) => [...prev.slice(-14), { key, emoji, from }])
+    cellOrder.current.push({ key, slot })
+    setEmojiEvents((prev) => [...prev.slice(-14), { key, emoji, from, slot }])
     window.setTimeout(() => {
       setEmojiEvents((prev) => prev.filter((e) => e.key !== key))
+      busyCells.current.delete(slot)
+      cellOrder.current = cellOrder.current.filter((c) => c.key !== key)
     }, REACTION_LIFETIME)
   }, [])
 
@@ -1909,9 +1999,22 @@ function HandRail({ hands }: { hands: RaisedHand[] }) {
 function useModeration(callId: string, groupId: string, myId: string | undefined) {
   const [canModerate, setCanModerate] = useState(false)
   const [hostMutedIds, setHostMutedIds] = useState<string[]>([])
+  /** The door: no NEW person gets a token while this is on (see the route). */
+  const [roomLocked, setRoomLocked] = useState(false)
 
   const refresh = useCallback(async () => {
     if (!callId || !groupId || !myId) return
+    try {
+      const { data: callRow, error } = await supabase
+        .from('live_voice_chat_calls')
+        .select('locked')
+        .eq('id', callId)
+        .maybeSingle()
+      // The column arrives with its migration — until then nothing is locked.
+      if (!error) setRoomLocked(!!callRow?.locked)
+    } catch {
+      /* pre-migration: the room simply has no lock */
+    }
     try {
       const [group, me] = await Promise.all([
         supabase.from('live_voice_chat_groups').select('created_by').eq('id', groupId).maybeSingle(),
@@ -1963,6 +2066,11 @@ function useModeration(callId: string, groupId: string, myId: string | undefined
         { event: '*', schema: 'public', table: 'live_voice_chat_members', filter: `group_id=eq.${groupId}` },
         () => void refresh()
       )
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'live_voice_chat_calls', filter: `id=eq.${callId}` },
+        () => void refresh()
+      )
       .subscribe()
     return () => {
       void supabase.removeChannel(channel)
@@ -1989,11 +2097,45 @@ function useModeration(callId: string, groupId: string, myId: string | undefined
     [callId, refresh]
   )
 
+  /** Lock / open the room. Same role check as a mute — in SQL. */
+  const toggleLock = useCallback(
+    async (locked: boolean) => {
+      const { error } = await supabase.rpc('set_live_voice_chat_call_lock', {
+        p_call_id: callId,
+        p_locked: locked,
+      })
+      if (error) throw new Error(error.message)
+      setRoomLocked(locked)
+    },
+    [callId]
+  )
+
+  /** MUTE EVERYONE but me — the roster panel's one tap (see the API route). */
+  const muteAll = useCallback(
+    async (muted: boolean) => {
+      const { data } = await supabase.auth.getSession()
+      const jwt = data.session?.access_token
+      if (!jwt) throw new Error('Sign in again to moderate the room.')
+      const res = await fetch('/api/live-voice-chat/mute', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${jwt}` },
+        body: JSON.stringify({ callId, all: true, muted }),
+      })
+      const json = (await res.json().catch(() => ({}))) as { error?: string }
+      if (!res.ok) throw new Error(json.error ?? 'Could not do that')
+      await refresh()
+    },
+    [callId, refresh]
+  )
+
   return {
     canModerate,
     iamHostMuted: !!myId && hostMutedIds.includes(myId),
     hostMutedIds,
     toggleHostMute,
+    roomLocked,
+    toggleLock,
+    muteAll,
   }
 }
 
@@ -2014,6 +2156,9 @@ function CallPeoplePanel({
   canModerate,
   hostMutedIds,
   onToggleMute,
+  roomLocked,
+  onToggleLock,
+  onMuteAll,
   onClose,
 }: {
   participants: ReturnType<typeof useParticipants>
@@ -2022,22 +2167,35 @@ function CallPeoplePanel({
   canModerate: boolean
   hostMutedIds: string[]
   onToggleMute: (identity: string, muted: boolean) => Promise<void>
+  /** The door: no NEW person joins while this is on. */
+  roomLocked: boolean
+  onToggleLock: (locked: boolean) => Promise<void>
+  /** Mute everyone but the moderator pressing it. */
+  onMuteAll: (muted: boolean) => Promise<void>
   onClose: () => void
 }) {
   const [busy, setBusy] = useState<string | null>(null)
   const [error, setError] = useState('')
 
-  async function mute(identity: string, next: boolean) {
-    setBusy(identity)
+  async function run(key: string, action: () => Promise<void>) {
+    setBusy(key)
     setError('')
     try {
-      await onToggleMute(identity, next)
+      await action()
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Could not change that')
     } finally {
       setBusy(null)
     }
   }
+
+  async function mute(identity: string, next: boolean) {
+    await run(identity, () => onToggleMute(identity, next))
+  }
+
+  /** Nobody else is speaking through me — everyone else, in one tap. */
+  const others = participants.filter((p) => !p.isLocal)
+  const everyoneMuted = others.length > 0 && others.every((p) => hostMutedIds.includes(p.identity))
 
   return (
     <section
@@ -2056,6 +2214,56 @@ function CallPeoplePanel({
           People · {participants.length}
         </h2>
         <span style={{ flex: 1 }} />
+
+        {canModerate && (
+          <button
+            onClick={() => void run('mute-all', () => onMuteAll(!everyoneMuted))}
+            disabled={busy === 'mute-all'}
+            aria-label={everyoneMuted ? 'Let everyone speak again' : 'Mute everyone else'}
+            style={{
+              minHeight: 32,
+              padding: '0 11px',
+              borderRadius: 9,
+              border: '1px solid var(--border)',
+              background: everyoneMuted ? 'var(--accent)' : 'var(--bg-secondary)',
+              color: everyoneMuted ? 'var(--on-accent)' : 'var(--text-primary)',
+              fontSize: 12,
+              fontWeight: 700,
+              fontFamily: 'inherit',
+              cursor: busy === 'mute-all' ? 'wait' : 'pointer',
+            }}
+          >
+            {busy === 'mute-all' ? '…' : everyoneMuted ? 'Allow everyone' : 'Mute everyone'}
+          </button>
+        )}
+
+        {canModerate && (
+          <button
+            onClick={() => void run('lock', () => onToggleLock(!roomLocked))}
+            disabled={busy === 'lock'}
+            aria-pressed={roomLocked}
+            aria-label={roomLocked ? 'Open the room to new people' : 'Lock the room to new people'}
+            style={{
+              minHeight: 32,
+              padding: '0 11px',
+              borderRadius: 9,
+              border: '1px solid var(--border)',
+              background: roomLocked ? 'var(--accent)' : 'var(--bg-secondary)',
+              color: roomLocked ? 'var(--on-accent)' : 'var(--text-primary)',
+              fontSize: 12,
+              fontWeight: 700,
+              fontFamily: 'inherit',
+              cursor: busy === 'lock' ? 'wait' : 'pointer',
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: 6,
+            }}
+          >
+            <Icon name={roomLocked ? 'lock' : 'unlock'} size={13} strokeWidth={2.2} />
+            {busy === 'lock' ? '…' : roomLocked ? 'Open room' : 'Lock room'}
+          </button>
+        )}
+
         <button
           onClick={onClose}
           aria-label="Close the people panel"
@@ -2202,6 +2410,160 @@ function CallPeoplePanel({
   )
 }
 
+import {
+  PANEL_MARGIN,
+  clampPanelPosition,
+  movePanelByKey,
+  movePanelPosition,
+  readPanelPosition,
+  savePanelPosition,
+} from '@/lib/floatingPanel'
+
+/**
+ * SELF-VIEW PREVIEW — your own camera as a small floating window, Meet-style.
+ *
+ * It rides the call screen instead of competing with the stage for tiles, it
+ * can be dragged anywhere (and moved with the arrow keys), and it always
+ * lands inside the viewport and ABOVE the control bar — that maths lives in
+ * lib/floatingPanel.ts, next to the chat panel's, and is unit-tested there.
+ * ✕ hides it until the camera goes off and on again, so it never fights the
+ * person for screen space.
+ */
+/** Size of the floating self-view: a 16:9 picture plus its grip bar. */
+const SELF_PREVIEW_BOX = { width: 176, height: 132 }
+
+function SelfPreview({ onClose }: { onClose: () => void }) {
+  const camRefs = useTracks([Track.Source.Camera])
+  const camRef = camRefs.find((r) => r.participant.isLocal)
+  const viewport = () => ({ width: window.innerWidth, height: window.innerHeight })
+  /** sessionStorage key: where the person last parked their own preview. */
+  const storageKey = 'cc-self-preview'
+
+  const [point, setPoint] = useState(() => {
+    let stored: string | null = null
+    try {
+      stored = window.sessionStorage.getItem(storageKey)
+    } catch {
+      /* private browsing — just dock it */
+    }
+    // Saved spot wins; otherwise bottom-left, just above the control bar.
+    return stored
+      ? readPanelPosition(window.sessionStorage, storageKey, SELF_PREVIEW_BOX, viewport())
+      : clampPanelPosition({ x: PANEL_MARGIN, y: window.innerHeight }, SELF_PREVIEW_BOX, viewport())
+  })
+
+  // The window can shrink under it (rotate, half-screen): keep it reachable.
+  useEffect(() => {
+    const onResize = () => setPoint((p) => clampPanelPosition(p, SELF_PREVIEW_BOX, viewport()))
+    window.addEventListener('resize', onResize)
+    return () => window.removeEventListener('resize', onResize)
+  }, [])
+
+  const drag = useRef<{ x: number; y: number; origin: { x: number; y: number } } | null>(null)
+
+  if (!camRef) return null
+
+  return (
+    <section
+      aria-label="Your camera preview"
+      style={{
+        position: 'fixed',
+        left: point.x,
+        top: point.y,
+        width: SELF_PREVIEW_BOX.width,
+        borderRadius: 14,
+        overflow: 'hidden',
+        border: '1px solid var(--border)',
+        background: '#000',
+        boxShadow: '0 12px 34px rgba(0, 0, 0, 0.45)',
+        zIndex: 20,
+      }}
+    >
+      {/* The grip is the drag surface: dragging the VIDEO must not steal the
+          preview from under a stray thumb. */}
+      <div
+        onPointerDown={(e) => {
+          drag.current = { x: e.clientX, y: e.clientY, origin: point }
+          e.currentTarget.setPointerCapture(e.pointerId)
+        }}
+        onPointerMove={(e) => {
+          const d = drag.current
+          if (!d) return
+          setPoint(
+            movePanelPosition(d.origin, { x: e.clientX - d.x, y: e.clientY - d.y }, SELF_PREVIEW_BOX, viewport())
+          )
+        }}
+        onPointerUp={(e) => {
+          if (!drag.current) return
+          drag.current = null
+          e.currentTarget.releasePointerCapture(e.pointerId)
+          setPoint((p) => {
+            savePanelPosition(window.sessionStorage, storageKey, p)
+            return p
+          })
+        }}
+        onPointerCancel={() => {
+          drag.current = null
+        }}
+        onKeyDown={(e) => {
+          const next = movePanelByKey(point, e.key, SELF_PREVIEW_BOX, viewport())
+          if (!next) return
+          e.preventDefault()
+          setPoint(next)
+        }}
+        role="button"
+        tabIndex={0}
+        aria-label="Move your camera preview"
+        title="Drag to move — arrow keys work too"
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: 6,
+          padding: '4px 6px',
+          background: 'rgba(0, 0, 0, 0.55)',
+          color: '#fff',
+          cursor: 'grab',
+          touchAction: 'none',
+          userSelect: 'none',
+        }}
+      >
+        <Icon name="grip" size={14} strokeWidth={2.2} />
+        <span style={{ flex: 1, fontSize: 11, fontWeight: 700, whiteSpace: 'nowrap' }}>You</span>
+        <button
+          onClick={onClose}
+          aria-label="Hide your camera preview"
+          style={{
+            width: 22,
+            height: 22,
+            borderRadius: 7,
+            border: 'none',
+            background: 'rgba(255, 255, 255, 0.16)',
+            color: '#fff',
+            display: 'inline-flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            cursor: 'pointer',
+          }}
+        >
+          <Icon name="x" size={13} strokeWidth={2.4} />
+        </button>
+      </div>
+      <VideoTrack
+        trackRef={camRef}
+        muted
+        style={{
+          display: 'block',
+          width: '100%',
+          height: SELF_PREVIEW_BOX.height - 28,
+          objectFit: 'cover',
+          // Meet-style: your own camera is a mirror.
+          transform: 'scaleX(-1)',
+        }}
+      />
+    </section>
+  )
+}
+
 /**
  * GMeet-style bottom control bar, kept deliberately SHORT: the whole emoji
  * sheet, mic, camera, messages, a "More" menu (hand, screen share, games,
@@ -2230,6 +2592,8 @@ function Controls({
   peopleOpen,
   onOpenPeople,
   hostMuted,
+  layout,
+  onChangeLayout,
 }: {
   callId: string
   onLeave: () => void
@@ -2247,6 +2611,9 @@ function Controls({
   onOpenCode: () => void
   peopleOpen: boolean
   onOpenPeople: () => void
+  /** The room's current view mode, and the setter the More menu writes to. */
+  layout: CallLayout
+  onChangeLayout: (next: CallLayout) => void
   /** True while a moderator has silenced MY microphone this call. */
   hostMuted: boolean
 }) {
@@ -2255,6 +2622,25 @@ function Controls({
   const [emojiOpen, setEmojiOpen] = useState(false)
   /** Everything too rare for the bar — hand, share, games, compiler, music. */
   const [moreOpen, setMoreOpen] = useState(false)
+
+  /** Browser full screen — Meet keeps it in the same layout panel, so here it
+   *  is the row right under View mode. Read from the document itself, because
+   *  Esc leaves full screen without ever touching our state. */
+  const [isFull, setIsFull] = useState(false)
+  useEffect(() => {
+    const sync = () => setIsFull(!!document.fullscreenElement)
+    sync()
+    document.addEventListener('fullscreenchange', sync)
+    return () => document.removeEventListener('fullscreenchange', sync)
+  }, [])
+  const toggleFullScreen = useCallback(async () => {
+    try {
+      if (document.fullscreenElement) await document.exitFullscreen()
+      else await document.documentElement.requestFullscreen()
+    } catch {
+      /* the browser (or an embedded webview) refused — the view stays put */
+    }
+  }, [])
 
   // Each floating panel keeps its own refs: the sheet, and the button that
   // opened it, so tapping that button again toggles instead of bouncing.
@@ -2534,6 +2920,21 @@ function Controls({
               active={musicOpen}
               onClick={() => {
                 onOpenMusic()
+                closeMore()
+              }}
+            />
+
+            {/* EVERY WAY THE SCREEN CAN BE LAID OUT, in one place — Meet's
+                four modes plus full screen, instead of a segmented bar taking
+                up room above the stage. */}
+            <div style={{ height: 1, background: 'var(--border)', margin: '5px 6px' }} />
+            <ViewModeSection layout={layout} onChange={onChangeLayout} />
+            <MoreItem
+              icon="maximize"
+              label={isFull ? 'Exit full screen' : 'Full screen'}
+              active={isFull}
+              onClick={() => {
+                void toggleFullScreen()
                 closeMore()
               }}
             />

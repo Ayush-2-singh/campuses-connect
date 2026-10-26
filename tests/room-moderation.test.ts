@@ -22,7 +22,9 @@ const read = (rel: string) => fs.readFileSync(path.join(root, rel), 'utf8')
 const surface = read('src/components/voice/CallSurface.tsx')
 const page = read('src/app/live-voice-chat/[id]/page.tsx')
 const migration = read('supabase/migrations/20261110_room_moderation.sql')
+const controls = read('supabase/migrations/20261111_room_controls.sql')
 const route = read('src/app/api/live-voice-chat/mute/route.ts')
+const token = read('src/app/api/live-voice-chat/token/route.ts')
 
 describe('co-admin is a real role, handed out by the owner or an admin', () => {
   it('grows the vocabulary of live_voice_chat_members', () => {
@@ -69,10 +71,18 @@ describe('owner, admin and co-admin can mute the rest', () => {
 
   it('also asks LiveKit to silence the track, so a backgrounded tab stops too', () => {
     expect(route).toMatch(/new RoomServiceClient\(url, apiKey, apiSecret\)/)
-    expect(route).toMatch(/mutePublishedTrack\(roomName, target\.identity, microphone\.sid, muted\)/)
+    expect(route).toMatch(/mutePublishedTrack\(roomName, participant\.identity, microphone\.sid, muted\)/)
     // Authorisation still comes from the RPC — the route only relays it.
     expect(route).toMatch(/supabase\.rpc\('set_live_voice_chat_host_mute'/)
     expect(route).toMatch(/Only the owner, an admin or a co-admin can mute somebody/)
+  })
+
+  it('MUTE EVERYONE is one tap, and still the moderator’s power only', () => {
+    expect(route).toMatch(/set_live_voice_chat_host_mute_all/)
+    expect(route).toMatch(/Only the owner, an admin or a co-admin can mute everybody/)
+    // Whoever pressed it keeps their own microphone.
+    expect(route).toMatch(/participants\.filter\(\(p\) => p\.identity !== actorId\)/)
+    expect(surface).toMatch(/body: JSON\.stringify\(\{ callId, all: true, muted \}\)/)
   })
 
   it('the muted client keeps its mic off and can not unmute it', () => {
@@ -113,5 +123,56 @@ describe('volume is per person, and only ever yours', () => {
   it('opens from the same More menu as the rest of the room’s controls', () => {
     expect(surface).toMatch(/icon="users"/)
     expect(surface).toMatch(/label=\{peopleOpen \? 'Close the people panel' : 'People — volume and mute'\}/)
+  })
+})
+
+describe('the door: lock the room, size the room', () => {
+  it('locks the call, and names who may flip the switch', () => {
+    expect(controls).toMatch(/ADD COLUMN IF NOT EXISTS locked BOOLEAN NOT NULL DEFAULT FALSE/)
+    expect(controls).toMatch(/CREATE OR REPLACE FUNCTION public\.set_live_voice_chat_call_lock/)
+    // Owner, admin or co-admin — and nobody else, decided in SQL.
+    expect(controls).toMatch(/AND v_my_role IS DISTINCT FROM 'co-admin' THEN/)
+  })
+
+  it('lets the admin make the room bigger or smaller, free4talk-style', () => {
+    expect(controls).toMatch(/ADD COLUMN IF NOT EXISTS max_participants INTEGER/)
+    expect(controls).toMatch(/CHECK \(max_participants BETWEEN 2 AND 200\)/)
+    expect(controls).toMatch(/CREATE OR REPLACE FUNCTION public\.set_live_voice_chat_room_size/)
+    // Size is the owner's / admin's dial, not a co-admin's.
+    expect(controls).toMatch(/AND v_my_role IS DISTINCT FROM 'admin' THEN/)
+  })
+
+  it('mutes everyone except the moderator who pressed it', () => {
+    expect(controls).toMatch(/CREATE OR REPLACE FUNCTION public\.set_live_voice_chat_host_mute_all/)
+    expect(controls).toMatch(/AND user_id <> v_me/)
+  })
+
+  it('the door is enforced where tokens are minted, not just in a button', () => {
+    // No token → no LiveKit room: being shut out happens at the source.
+    expect(token).toMatch(/This room is locked — the host has to let you in\./)
+    expect(token).toMatch(/This room is full\. An admin has to make it bigger\./)
+    expect(token).toMatch(
+      /const runsRoom = group\?\.created_by === user\.id \|\| myRole === 'admin' \|\| myRole === 'co-admin'/
+    )
+    // Somebody already inside — and whoever runs the room — always get back in.
+    expect(token).toMatch(/const alreadyIn = !!mine/)
+    expect(token).toMatch(/\.is\('left_at', null\)/)
+  })
+
+  it('the roster panel carries the lock and mute-everyone switches', () => {
+    expect(surface).toMatch(/roomLocked=\{roomLocked\}/)
+    expect(surface).toMatch(/onToggleLock=\{toggleLock\}/)
+    expect(surface).toMatch(/onMuteAll=\{muteAll\}/)
+    expect(surface).toMatch(/'Lock room'/)
+    expect(surface).toMatch(/everyoneMuted \? 'Allow everyone' : 'Mute everyone'/)
+    expect(surface).toMatch(/table: 'live_voice_chat_calls', filter: `id=eq\.\$\{callId\}`/)
+  })
+
+  it('the room page shows the dial, the lock, and why someone was shut out', () => {
+    expect(page).toMatch(/supabase\.rpc\('set_live_voice_chat_room_size'/)
+    expect(page).toMatch(/supabase\.rpc\('set_live_voice_chat_call_lock'/)
+    expect(page).toMatch(/Room is locked/)
+    expect(page).toMatch(/This room is full/)
+    expect(page).toMatch(/aria-label="Decrease the room size"/)
   })
 })
