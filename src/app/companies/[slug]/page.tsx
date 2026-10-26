@@ -19,6 +19,9 @@ import { getApprovedExperiences, getCompaniesWithExperiences } from '@/lib/publi
 
 export const revalidate = 600
 
+/** Absolute urls in structured data — see /companies. */
+const APP_URL = (process.env.NEXT_PUBLIC_APP_URL || 'https://www.connecttocampus.com').replace(/\/$/, '')
+
 type PageProps = { params: Promise<{ slug: string }> }
 
 async function getCompany(slug: string) {
@@ -53,6 +56,23 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
       title: `${company.name} interview experience · ConnectToCampus`,
       description,
       url: `/companies/${company.slug}`,
+      siteName: 'ConnectToCampus',
+      locale: 'en_IN',
+      // A page-level `openGraph` replaces the root one, images included.
+      images: [
+        {
+          url: '/og.png',
+          width: 1200,
+          height: 630,
+          alt: `${company.name} interview experience · ConnectToCampus`,
+        },
+      ],
+    },
+    twitter: {
+      card: 'summary_large_image',
+      title: `${company.name} interview experience · ConnectToCampus`,
+      description,
+      images: ['/og.png'],
     },
   }
 }
@@ -64,17 +84,23 @@ export default async function CompanyPage({ params }: PageProps) {
 
   const { company, experiences } = found
 
+  const canonical = `${APP_URL}/companies/${company.slug}`
+
   const jsonLd = {
     '@context': 'https://schema.org',
     '@type': 'CollectionPage',
     name: `${company.name} interview experiences`,
+    description: `Real ${company.name} interview experiences shared by students — the rounds they faced, written round by round.`,
+    url: canonical,
     inLanguage: 'en-IN',
+    isPartOf: { '@type': 'WebSite', name: 'ConnectToCampus', url: APP_URL },
+    about: { '@type': 'Organization', name: company.name },
     breadcrumb: {
       '@type': 'BreadcrumbList',
       itemListElement: [
-        { '@type': 'ListItem', position: 1, name: 'Home', item: '/' },
-        { '@type': 'ListItem', position: 2, name: 'Companies', item: '/companies' },
-        { '@type': 'ListItem', position: 3, name: company.name, item: `/companies/${company.slug}` },
+        { '@type': 'ListItem', position: 1, name: 'Home', item: `${APP_URL}/` },
+        { '@type': 'ListItem', position: 2, name: 'Companies', item: `${APP_URL}/companies` },
+        { '@type': 'ListItem', position: 3, name: company.name, item: canonical },
       ],
     },
     mainEntity: {
@@ -83,7 +109,7 @@ export default async function CompanyPage({ params }: PageProps) {
       itemListElement: experiences.map((exp, index) => ({
         '@type': 'ListItem',
         position: index + 1,
-        url: `/experiences/${exp.id}`,
+        url: `${APP_URL}/experiences/${exp.id}`,
         name: exp.title,
       })),
     },
@@ -146,6 +172,18 @@ export default async function CompanyPage({ params }: PageProps) {
             </article>
           ))}
         </div>
+
+        {/* Back up to the newest-first list, so the company hub is not a dead
+            end for a reader — or for a crawler. */}
+        <p className="hc-note" style={{ marginTop: 22 }}>
+          <Link href="/experiences" style={{ textDecoration: 'underline' }}>
+            Read every interview experience, newest first
+          </Link>
+          {' · '}
+          <Link href="/companies" style={{ textDecoration: 'underline' }}>
+            Browse another company
+          </Link>
+        </p>
       </main>
 
       <PublicFooter />

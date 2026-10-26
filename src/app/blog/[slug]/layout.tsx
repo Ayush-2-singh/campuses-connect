@@ -44,6 +44,9 @@ interface PostRow {
 /** Fresh enough for a blog: a new post must not wait for the next deploy. */
 export const revalidate = 600
 
+/** Absolute urls in structured data (relative ones are dropped by Google). */
+const APP_URL = (process.env.NEXT_PUBLIC_APP_URL || 'https://www.connecttocampus.com').replace(/\/$/, '')
+
 let _admin: SupabaseClient | null = null
 function getAdmin(): SupabaseClient | null {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL
@@ -94,7 +97,10 @@ export async function generateMetadata({ params }: SlugProps): Promise<Metadata>
   const post = await getPost(slug)
   if (!post) return { title: 'Post not found' }
 
-  const title = post.title
+  // Brand suffix written out: /blog/layout.tsx declares a plain-string title,
+  // which stops Next applying the root template here (the rendered post had no
+  // suffix at all until this was added).
+  const title = `${post.title} · ConnectToCampus`
   const description = summaryOf(post)
   const published = post.published_at ?? post.created_at
 
@@ -104,7 +110,7 @@ export async function generateMetadata({ params }: SlugProps): Promise<Metadata>
     alternates: { canonical: `/blog/${slug}` },
     openGraph: {
       type: 'article',
-      title: `${title} · ConnectToCampus`,
+      title,
       description,
       url: `/blog/${slug}`,
       siteName: 'ConnectToCampus',
@@ -112,13 +118,15 @@ export async function generateMetadata({ params }: SlugProps): Promise<Metadata>
       publishedTime: published,
       authors: [authorNameOf(post)],
       tags: post.tags?.length ? post.tags : undefined,
-      images: post.cover_url ? [{ url: post.cover_url }] : undefined,
+      // A page-level `openGraph` replaces the root one, images included — a
+      // post with no cover would otherwise preview as an empty box.
+      images: post.cover_url ? [{ url: post.cover_url }] : [{ url: '/og.png', width: 1200, height: 630, alt: title }],
     },
     twitter: {
       card: 'summary_large_image',
-      title: `${title} · ConnectToCampus`,
+      title,
       description,
-      images: post.cover_url ? [post.cover_url] : undefined,
+      images: post.cover_url ? [post.cover_url] : ['/og.png'],
     },
   }
 }
@@ -152,14 +160,17 @@ export default async function BlogPostLayout({ children, params }: SlugProps & {
     datePublished: post.published_at ?? post.created_at,
     dateModified: post.published_at ?? post.created_at,
     inLanguage: 'en-IN',
-    mainEntityOfPage: { '@type': 'WebPage', '@id': `/blog/${slug}` },
+    // Absolute, because Google's validator ignores a relative `@id` / `url`
+    // and the post then links to nothing.
+    url: `${APP_URL}/blog/${slug}`,
+    mainEntityOfPage: { '@type': 'WebPage', '@id': `${APP_URL}/blog/${slug}` },
     author: { '@type': 'Person', name: authorNameOf(post) },
     publisher: {
       '@type': 'Organization',
       name: 'ConnectToCampus',
-      logo: { '@type': 'ImageObject', url: '/icon-512.png' },
+      logo: { '@type': 'ImageObject', url: `${APP_URL}/icon-512.png`, width: 512, height: 512 },
     },
-    image: post.cover_url ?? undefined,
+    image: post.cover_url ?? `${APP_URL}/og.png`,
     keywords: post.tags?.length ? post.tags.join(', ') : undefined,
     articleSection: CATEGORY_LABEL[post.category ?? ''] ?? 'Blog',
   }

@@ -29,7 +29,10 @@ describe('a blog post is labelled on the server', () => {
   })
 
   it('titles and describes the post from its own content', () => {
-    expect(layout).toMatch(/const title = post\.title/)
+    // With the brand suffix written out: /blog/layout.tsx declares a plain
+    // string title, which stops the root `%s · ConnectToCampus` template from
+    // reaching this segment (the rendered post had no suffix before).
+    expect(layout).toMatch(/const title = `\$\{post\.title\} · ConnectToCampus`/)
     expect(layout).toMatch(/function summaryOf/)
     expect(layout).toMatch(/post\.excerpt \|\| post\.body/)
     // Truncated, so a long post cannot emit a description Google ignores.

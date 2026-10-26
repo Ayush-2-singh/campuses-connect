@@ -171,6 +171,12 @@ export default function ExperiencesApp({ initialExperiences = [] }: { initialExp
           <button className="hc-btn" type="button" onClick={() => router.push('/blog')}>
             Guides &amp; blogs
           </button>
+          {/* The same write-ups, grouped by company — the page built for
+              "<company> interview experience". Linked from here because a
+              crawler only finds the directory through a link it can follow. */}
+          <Link className="hc-btn" href="/companies" style={{ textDecoration: 'none' }}>
+            <Icon name="building" size={14} /> By company
+          </Link>
         </div>
 
         {/* Every write-up is ONE student's own account — never the company's

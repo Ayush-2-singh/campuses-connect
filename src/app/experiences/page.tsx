@@ -71,6 +71,10 @@ export const metadata: Metadata = {
   alternates: { canonical: '/experiences' },
 }
 
+/** Absolute urls in structured data — relative `url` / `item` are dropped by
+ *  Google's validator. */
+const APP_URL = (process.env.NEXT_PUBLIC_APP_URL || 'https://www.connecttocampus.com').replace(/\/$/, '')
+
 export default async function ExperiencesRoute() {
   const experiences = await getApprovedExperiences()
 
@@ -83,14 +87,30 @@ export default async function ExperiencesRoute() {
     name: 'Interview experiences — ConnectToCampus',
     description:
       'Round-by-round interview experiences written by students who sat the drive, with the company, role and questions they faced.',
+    url: `${APP_URL}/experiences`,
     inLanguage: 'en-IN',
+    isPartOf: { '@type': 'WebSite', name: 'ConnectToCampus', url: APP_URL },
+    // The same collection, sliced by company — the directory a "<company>
+    // interview experience" search should land on.
+    isRelatedTo: {
+      '@type': 'CollectionPage',
+      name: 'Interview experiences by company',
+      url: `${APP_URL}/companies`,
+    },
+    breadcrumb: {
+      '@type': 'BreadcrumbList',
+      itemListElement: [
+        { '@type': 'ListItem', position: 1, name: 'Home', item: `${APP_URL}/` },
+        { '@type': 'ListItem', position: 2, name: 'Interview experiences', item: `${APP_URL}/experiences` },
+      ],
+    },
     mainEntity: {
       '@type': 'ItemList',
       numberOfItems: experiences.length,
       itemListElement: experiences.map((exp, index) => ({
         '@type': 'ListItem',
         position: index + 1,
-        url: `/experiences/${exp.id}`,
+        url: `${APP_URL}/experiences/${exp.id}`,
         name: exp.title,
       })),
     },

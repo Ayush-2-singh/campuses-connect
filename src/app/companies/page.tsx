@@ -20,6 +20,10 @@ import { getCompaniesWithExperiences } from '@/lib/publicExperiences'
 
 export const revalidate = 600
 
+/** Absolute urls in structured data — relative `url` / `item` are dropped by
+ *  Google's validator, which costs the entry its link in the rich result. */
+const APP_URL = (process.env.NEXT_PUBLIC_APP_URL || 'https://www.connecttocampus.com').replace(/\/$/, '')
+
 export const metadata: Metadata = {
   title: 'Interview experiences by company',
   description:
@@ -30,6 +34,24 @@ export const metadata: Metadata = {
     title: 'Interview experiences by company · ConnectToCampus',
     description: 'Every company with a write-up on ConnectToCampus, and the rounds students actually faced there.',
     url: '/companies',
+    siteName: 'ConnectToCampus',
+    locale: 'en_IN',
+    // Set explicitly: a page-level `openGraph` replaces the root one wholesale,
+    // so leaving images out here would ship a share card with no picture.
+    images: [
+      {
+        url: '/og.png',
+        width: 1200,
+        height: 630,
+        alt: 'Interview experiences by company · ConnectToCampus',
+      },
+    ],
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'Interview experiences by company · ConnectToCampus',
+    description: 'Every company with a write-up on ConnectToCampus, and the rounds students actually faced there.',
+    images: ['/og.png'],
   },
 }
 
@@ -41,14 +63,25 @@ export default async function CompaniesPage() {
     '@context': 'https://schema.org',
     '@type': 'CollectionPage',
     name: 'Interview experiences by company',
+    description:
+      'Every company with an approved interview write-up on ConnectToCampus, and the rounds students faced there.',
+    url: `${APP_URL}/companies`,
     inLanguage: 'en-IN',
+    isPartOf: { '@type': 'WebSite', name: 'ConnectToCampus', url: APP_URL },
+    breadcrumb: {
+      '@type': 'BreadcrumbList',
+      itemListElement: [
+        { '@type': 'ListItem', position: 1, name: 'Home', item: `${APP_URL}/` },
+        { '@type': 'ListItem', position: 2, name: 'Companies', item: `${APP_URL}/companies` },
+      ],
+    },
     mainEntity: {
       '@type': 'ItemList',
       numberOfItems: companies.length,
       itemListElement: companies.map((company, index) => ({
         '@type': 'ListItem',
         position: index + 1,
-        url: `/companies/${company.slug}`,
+        url: `${APP_URL}/companies/${company.slug}`,
         name: `${company.name} interview experiences`,
       })),
     },
@@ -135,6 +168,16 @@ export default async function CompaniesPage() {
             ))}
           </div>
         )}
+
+        {/* The directory is one entrance to the write-ups; the list is the
+            other. Linking both ways is what keeps either one crawlable. */}
+        <p className="hc-note" style={{ marginTop: 22 }}>
+          Looking for the write-ups themselves, newest first?{' '}
+          <Link href="/experiences" style={{ textDecoration: 'underline' }}>
+            Read all interview experiences
+          </Link>
+          .
+        </p>
       </main>
 
       <PublicFooter />

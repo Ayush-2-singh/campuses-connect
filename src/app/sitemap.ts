@@ -11,6 +11,13 @@ import { getCompaniesWithExperiences } from '@/lib/publicExperiences'
 const APP_URL = (process.env.NEXT_PUBLIC_APP_URL || 'https://www.connecttocampus.com').replace(/\/$/, '')
 
 /**
+ * Without this the sitemap is frozen at BUILD time: a write-up approved (or a
+ * post published) an hour after the deploy would not be submitted until the
+ * next one. Ten minutes matches the pages it lists.
+ */
+export const revalidate = 600
+
+/**
  * Every APPROVED write-up has its own URL (see /experiences/[id]), so the
  * sitemap carries them: a detail route Google cannot discover is a detail route
  * that cannot rank.
@@ -40,6 +47,37 @@ async function experiencePaths(): Promise<{ path: string; lastModified: string }
       path: `/experiences/${row.id}`,
       lastModified: row.updated_at,
     }))
+  } catch {
+    return []
+  }
+}
+
+/**
+ * Published blog posts have their own URLs (/blog/[slug]) and their own
+ * BlogPosting metadata, but the old comment here assumed crawlers would find
+ * them "through internal links". They are the long-tail content this site
+ * writes for — a post a crawler has to guess at is a post that does not rank. —
+ * so they are listed. `status = 'published'` mirrors the layout's own filter: a
+ * draft 404s for a visitor, and must never be advertised.
+ */
+async function blogPaths(): Promise<{ path: string; lastModified: string }[]> {
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL
+  const key = process.env.SUPABASE_SERVICE_ROLE_KEY
+  if (!url || !key) return []
+  try {
+    const db = createClient(url, key, { auth: { persistSession: false } })
+    const { data } = await db
+      .from('blog_posts')
+      .select('slug, updated_at, published_at')
+      .eq('status', 'published')
+      .order('published_at', { ascending: false })
+      .limit(500)
+    return ((data ?? []) as { slug: string | null; updated_at: string | null; published_at: string | null }[])
+      .filter((row) => Boolean(row.slug))
+      .map((row) => ({
+        path: `/blog/${row.slug}`,
+        lastModified: row.updated_at ?? row.published_at ?? new Date().toISOString(),
+      }))
   } catch {
     return []
   }
@@ -78,6 +116,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   ]
 
   const experiences = await experiencePaths()
+  const posts = await blogPaths()
   // One page per company that HAS an approved write-up — the directory pages
   // this site wants to rank for "<company> interview experience".
   const companyPaths = (await getCompaniesWithExperiences()).map((c) => `/companies/${c.slug}`)
@@ -94,6 +133,12 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       lastModified: now,
       changeFrequency: 'weekly' as const,
       priority: 0.7,
+    })),
+    ...posts.map((p) => ({
+      url: `${APP_URL}${p.path}`,
+      lastModified: new Date(p.lastModified),
+      changeFrequency: 'monthly' as const,
+      priority: 0.6,
     })),
     ...core.map((c) => ({
       url: `${APP_URL}${c.path}`,

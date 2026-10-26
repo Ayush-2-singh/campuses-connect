@@ -61,6 +61,13 @@ interface AuthorRow {
  *  new one must not wait for the next deploy to become visible. */
 export const revalidate = 600
 
+/**
+ * Structured data needs ABSOLUTE urls: Google's validator drops `url`, `item`
+ * and `@id` that are relative, which silently costs the breadcrumb and the
+ * canonical in the rich result.
+ */
+const APP_URL = (process.env.NEXT_PUBLIC_APP_URL || 'https://www.connecttocampus.com').replace(/\/$/, '')
+
 let _admin: SupabaseClient | null = null
 function getAdmin(): SupabaseClient | null {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL
@@ -115,6 +122,20 @@ function headlineFor(exp: ExperienceRow): string {
   return exp.role ? `${company} interview experience — ${exp.role}` : `${company} interview experience`
 }
 
+/**
+ * The <title> Google prints. It is NOT `headlineFor` alone: the author's own
+ * headline is often "SDE Interview", which names neither the company nor the
+ * product and so competes with nothing. Company first, then role, then the
+ * round count — that is the shape of the query ("amazon interview experience,
+ * sde, how many rounds").
+ */
+function seoTitleFor(exp: ExperienceRow): string {
+  const company = exp.companies?.name || 'Campus'
+  const role = exp.role?.trim()
+  const rounds = exp.round_count ? `, ${exp.round_count} rounds` : ''
+  return `${company} interview experience${role ? ` — ${role}` : ''}${rounds}`
+}
+
 function summaryFor(exp: ExperienceRow): string {
   const company = exp.companies?.name || 'a company'
   const role = exp.role ? ` for ${exp.role}` : ''
@@ -135,8 +156,11 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   if (!found) return { title: 'Experience not found' }
 
   const { experience: exp } = found
-  const title = headlineFor(exp)
   const description = summaryFor(exp)
+  // The brand suffix is written out because /experiences/layout.tsx declares a
+  // plain-string title, which stops Next from applying the root template to
+  // this segment's children (verified in the rendered HTML: no suffix).
+  const title = `${seoTitleFor(exp)} · ConnectToCampus`
 
   return {
     title,
@@ -144,16 +168,22 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     alternates: { canonical: `/experiences/${id}` },
     openGraph: {
       type: 'article',
-      title: `${title} · ConnectToCampus`,
+      title,
       description,
       url: `/experiences/${id}`,
       siteName: 'ConnectToCampus',
       locale: 'en_IN',
+      publishedTime: exp.created_at,
+      modifiedTime: exp.updated_at ?? exp.created_at,
+      // A child's `openGraph` REPLACES the root layout's, images included —
+      // without this line every shared write-up previewed with no picture.
+      images: [{ url: '/og.png', width: 1200, height: 630, alt: title }],
     },
     twitter: {
       card: 'summary_large_image',
-      title: `${title} · ConnectToCampus`,
+      title,
       description,
+      images: ['/og.png'],
     },
   }
 }
@@ -176,22 +206,50 @@ export default async function ExperienceDetailPage({ params }: PageProps) {
   const published = new Date(exp.created_at)
   const dateText = published.toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' })
 
+  const canonical = `${APP_URL}/experiences/${id}`
+  const companyHref = exp.companies?.slug ? `${APP_URL}/companies/${exp.companies.slug}` : `${APP_URL}/companies`
+
+  const breadcrumbTrail = [
+    { '@type': 'ListItem', position: 1, name: 'Home', item: `${APP_URL}/` },
+    { '@type': 'ListItem', position: 2, name: 'Companies', item: `${APP_URL}/companies` },
+    ...(exp.companies?.slug ? [{ '@type': 'ListItem', position: 3, name: company, item: companyHref }] : []),
+  ]
+
   const jsonLd = {
     '@context': 'https://schema.org',
     '@type': 'Article',
     headline: headlineFor(exp),
     description: summaryFor(exp),
+    // Article rich results want an image; without one Google falls back to a
+    // bare blue link. The site card is the honest default (it is not a photo
+    // of an interview we do not have).
+    image: [`${APP_URL}/og.png`],
     datePublished: exp.created_at,
     dateModified: exp.updated_at ?? exp.created_at,
     inLanguage: 'en-IN',
+    url: canonical,
     author: { '@type': 'Person', name: authorName },
     publisher: {
       '@type': 'Organization',
       name: 'ConnectToCampus',
-      logo: { '@type': 'ImageObject', url: '/icon-512.png' },
+      logo: { '@type': 'ImageObject', url: `${APP_URL}/icon-512.png`, width: 512, height: 512 },
     },
-    mainEntityOfPage: { '@type': 'WebPage', '@id': `/experiences/${id}` },
-    about: { '@type': 'Organization', name: company },
+    mainEntityOfPage: { '@type': 'WebPage', '@id': canonical },
+    about: { '@type': 'Organization', name: company, url: companyHref },
+    // Home › Companies › <Company> › this write-up, so the company page shows
+    // in the URL path Google prints under the result.
+    breadcrumb: {
+      '@type': 'BreadcrumbList',
+      itemListElement: [
+        ...breadcrumbTrail,
+        {
+          '@type': 'ListItem',
+          position: breadcrumbTrail.length + 1,
+          name: headlineFor(exp),
+          item: canonical,
+        },
+      ],
+    },
   }
 
   return (
@@ -206,7 +264,19 @@ export default async function ExperienceDetailPage({ params }: PageProps) {
         <Link href="/experiences" className="hc-back" aria-label="Back to all experiences">
           <Icon name="chevron" size={16} strokeWidth={2.2} style={{ transform: 'rotate(180deg)' }} />
         </Link>
-        <span className="hc-eyebrow">Interview experience · {company}</span>
+        <span className="hc-eyebrow">
+          Interview experience ·{' '}
+          {/* Internal link to the company hub: it is the page built for
+              "<company> interview experience", and a crawler only finds it if
+              something he can follow points at it. */}
+          {exp.companies?.slug ? (
+            <Link href={`/companies/${exp.companies.slug}`} style={{ color: 'inherit', textDecoration: 'underline' }}>
+              {company}
+            </Link>
+          ) : (
+            company
+          )}
+        </span>
         <h1 className="hc-h1">
           {headlineFor(exp)}
           <em className="hc-em">, round by round.</em>
@@ -265,6 +335,11 @@ export default async function ExperienceDetailPage({ params }: PageProps) {
         <Link href="/experiences" className="hc-btn">
           Share yours
         </Link>
+        {exp.companies?.slug && (
+          <Link href={`/companies/${exp.companies.slug}`} className="hc-btn">
+            More {company} experiences
+          </Link>
+        )}
       </div>
     </div>
   )
