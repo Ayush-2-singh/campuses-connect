@@ -30,6 +30,8 @@ const mock = vi.hoisted(() => {
     tablesQueried: [] as string[],
     /** How many people are in the call — the room-size cap reads this. */
     activeParticipants: 0,
+    /** Removals from THIS call (live_voice_chat_kicks) — empty by default. */
+    kicks: [] as Row[],
     /** The Authorization header the client was constructed with. */
     clientAuthHeader: '' as string,
   }
@@ -70,6 +72,12 @@ const mock = vi.hoisted(() => {
           then: (resolve: any, reject: any) =>
             Promise.resolve({ count: state.activeParticipants, data: null, error: null }).then(resolve, reject),
           maybeSingle: async () => {
+            // The kick list is its own table, and it is empty unless a test
+            // seeds a removal — it must never borrow a row from `visibleCalls`.
+            if (table === 'live_voice_chat_kicks') {
+              const removed = state.kicks.filter((r) => !eq || r[eq.col] === eq.val)
+              return removed[0] ? { data: removed[0], error: null } : { data: null, error: null }
+            }
             // Stands in for RLS: only rows the policy allows are returned.
             const rows = state.visibleCalls.filter((r) => !eq || r[eq.col] === eq.val)
             return rows[0] ? { data: rows[0], error: null } : { data: null, error: null }
@@ -106,6 +114,7 @@ beforeEach(() => {
   mock.state.visibleCalls = []
   mock.state.tablesQueried = []
   mock.state.activeParticipants = 0
+  mock.state.kicks = []
   mock.state.clientAuthHeader = ''
 
   // Any api key/secret works — the JWT is signed locally, never sent to LiveKit.
@@ -289,6 +298,19 @@ describe('POST /api/live-voice-chat/token — the door (lock and room size)', ()
     const res = await POST(request({ jwt: 'good-jwt', body: { callId: 'call-1' } }))
 
     expect(res.status).toBe(200)
+  })
+
+  it('a removed person gets no token for that call — not even a rejoin', async () => {
+    baseRoom({ max: 50 })
+    // They were removed earlier, so a participant row exists (left_at set) and
+    // the old "already inside" shortcut would otherwise wave them through.
+    mock.state.visibleCalls.push({ call_id: 'call-1', user_id: 'user-1' })
+    mock.state.kicks = [{ call_id: 'call-1', user_id: 'user-1' }]
+
+    const res = await POST(request({ jwt: 'good-jwt', body: { callId: 'call-1' } }))
+
+    expect(res.status).toBe(403)
+    await expect(res.json()).resolves.toMatchObject({ error: expect.stringMatching(/removed/i) })
   })
 
   it('a room with no cap keeps handing out tokens as before', async () => {

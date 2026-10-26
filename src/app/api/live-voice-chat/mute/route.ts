@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { RoomServiceClient, TrackType } from 'livekit-server-sdk'
-import { createClient } from '@supabase/supabase-js'
+import { createClient, type SupabaseClient } from '@supabase/supabase-js'
 import { serverError } from '@/lib/api/errors'
 
 /**
@@ -89,6 +89,7 @@ export async function POST(req: NextRequest) {
       }
 
       await applyLiveKitMute(callId, user.id, muted, true)
+      await logAction(supabase, callId, muted ? 'mute_all' : 'unmute_all')
       return NextResponse.json({ ok: true, count: typeof count === 'number' ? count : 0 })
     }
 
@@ -105,9 +106,32 @@ export async function POST(req: NextRequest) {
     }
 
     await applyLiveKitMute(callId, user.id, muted, false, targetUserId)
+    await logAction(supabase, callId, muted ? 'mute' : 'unmute', targetUserId)
     return NextResponse.json({ ok: true })
   } catch (e: unknown) {
     return serverError('live-voice-chat/mute', e)
+  }
+}
+
+/**
+ * Write the action into the room's trail (public.audit_log, read by /admin's
+ * Audit Log). Best-effort: the mute already happened, and failing the request
+ * over a missing log row would only make the moderator press the button again.
+ */
+async function logAction(
+  supabase: SupabaseClient,
+  callId: string,
+  action: 'mute' | 'unmute' | 'mute_all' | 'unmute_all',
+  targetUserId?: string
+) {
+  try {
+    await supabase.rpc('record_live_voice_chat_action', {
+      p_call_id: callId,
+      p_action: action,
+      p_target: targetUserId ?? null,
+    })
+  } catch {
+    /* the log is a record of what happened, never a gate on it */
   }
 }
 

@@ -102,6 +102,23 @@ export async function POST(req: NextRequest) {
     const myRole = (member?.role ?? '') as string
     const runsRoom = group?.created_by === user.id || myRole === 'admin' || myRole === 'co-admin'
     if (!runsRoom) {
+      // ── KICKED — the door stays shut for the rest of THIS call ───────────
+      // Checked before the "already inside" shortcut below: a removed person's
+      // participant row still exists (with left_at set), so without this they
+      // would be treated as someone who left and may walk back in.
+      const { data: kicked } = await supabase
+        .from('live_voice_chat_kicks')
+        .select('user_id')
+        .eq('call_id', callId)
+        .eq('user_id', user.id)
+        .maybeSingle()
+      if (kicked) {
+        return NextResponse.json(
+          { error: 'A moderator removed you from this call. You can join the next one.' },
+          { status: 403 }
+        )
+      }
+
       const { data: mine } = await supabase
         .from('live_voice_chat_participants')
         .select('user_id')

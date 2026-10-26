@@ -1,6 +1,6 @@
 'use client'
 
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState, type CSSProperties } from 'react'
 import { usePathname, useRouter } from 'next/navigation'
 import {
   useDataChannel,
@@ -104,11 +104,19 @@ export default function CallSurface() {
   // client reads the same flag and keeps its microphone off (below), and the
   // server mutes the track at LiveKit as well, so a backgrounded tab is
   // silenced too.
-  const { canModerate, iamHostMuted, hostMutedIds, toggleHostMute, roomLocked, toggleLock, muteAll } = useModeration(
-    callId,
-    groupId,
-    localParticipant?.identity
-  )
+  const {
+    canModerate,
+    iamHostMuted,
+    hostMutedIds,
+    toggleHostMute,
+    roomLocked,
+    toggleLock,
+    muteAll,
+    roomSize,
+    canResize,
+    changeRoomSize,
+    kickParticipant,
+  } = useModeration(callId, groupId, localParticipant?.identity)
 
   /** How loudly each person plays ON MY DEVICE — 0..1, keyed by identity.
    *  It is only ever my own setting: nobody else's call is affected. */
@@ -427,6 +435,7 @@ export default function CallSurface() {
               roomLocked={roomLocked}
               onToggleLock={toggleLock}
               onMuteAll={muteAll}
+              onKick={kickParticipant}
               onClose={() => setPeopleOpen(false)}
             />
           ) : musicOpen ? (
@@ -725,6 +734,12 @@ export default function CallSurface() {
           hostMuted={iamHostMuted}
           layout={layout}
           onChangeLayout={changeLayout}
+          canModerate={canModerate}
+          roomLocked={roomLocked}
+          onToggleLock={toggleLock}
+          roomSize={roomSize}
+          canResize={canResize}
+          onRoomSize={changeRoomSize}
         />
       </div>
     </div>
@@ -2001,6 +2016,11 @@ function useModeration(callId: string, groupId: string, myId: string | undefined
   const [hostMutedIds, setHostMutedIds] = useState<string[]>([])
   /** The door: no NEW person gets a token while this is on (see the route). */
   const [roomLocked, setRoomLocked] = useState(false)
+  /** How big this room may grow — the owner's / admin's dial, 2..200. */
+  const [roomSize, setRoomSize] = useState<number | null>(null)
+  /** Size is the owner's and an admin's dial — a co-admin runs the call, not
+   *  the room's numbers (the SQL RPC checks exactly the same thing). */
+  const [canResize, setCanResize] = useState(false)
 
   const refresh = useCallback(async () => {
     if (!callId || !groupId || !myId) return
@@ -2017,7 +2037,7 @@ function useModeration(callId: string, groupId: string, myId: string | undefined
     }
     try {
       const [group, me] = await Promise.all([
-        supabase.from('live_voice_chat_groups').select('created_by').eq('id', groupId).maybeSingle(),
+        supabase.from('live_voice_chat_groups').select('created_by, max_participants').eq('id', groupId).maybeSingle(),
         supabase
           .from('live_voice_chat_members')
           .select('role')
@@ -2026,7 +2046,11 @@ function useModeration(callId: string, groupId: string, myId: string | undefined
           .maybeSingle(),
       ])
       const role = (me.data?.role ?? '') as string
-      setCanModerate(group.data?.created_by === myId || role === 'admin' || role === 'co-admin')
+      const isOwner = group.data?.created_by === myId
+      setCanModerate(isOwner || role === 'admin' || role === 'co-admin')
+      setCanResize(isOwner || role === 'admin')
+      const max = (group.data as { max_participants?: number | null } | null)?.max_participants
+      setRoomSize(typeof max === 'number' ? max : null)
     } catch {
       /* before the migration lands there is simply nobody with power */
     }
@@ -2097,6 +2121,26 @@ function useModeration(callId: string, groupId: string, myId: string | undefined
     [callId, refresh]
   )
 
+  /**
+   * Write one moderation action into the room's trail (public.audit_log, which
+   * /admin's Audit Log reads). Best-effort on purpose: the action already
+   * happened, and a missing log row must never look like a failed action.
+   */
+  const logAction = useCallback(
+    async (action: 'lock' | 'unlock' | 'size', detail?: Record<string, unknown>) => {
+      try {
+        await supabase.rpc('record_live_voice_chat_action', {
+          p_call_id: callId,
+          p_action: action,
+          p_detail: detail ?? {},
+        })
+      } catch {
+        /* the log records what happened; it never blocks it */
+      }
+    },
+    [callId]
+  )
+
   /** Lock / open the room. Same role check as a mute — in SQL. */
   const toggleLock = useCallback(
     async (locked: boolean) => {
@@ -2106,8 +2150,45 @@ function useModeration(callId: string, groupId: string, myId: string | undefined
       })
       if (error) throw new Error(error.message)
       setRoomLocked(locked)
+      void logAction(locked ? 'lock' : 'unlock')
     },
-    [callId]
+    [callId, logAction]
+  )
+
+  /** The room-size dial, in the call: 2..200 people, clamped the way the room
+   *  page's stepper and the SQL constraint already clamp it. */
+  const changeRoomSize = useCallback(
+    async (next: number) => {
+      const capped = Math.min(200, Math.max(2, Math.round(next)))
+      if (!groupId) return
+      const { error } = await supabase.rpc('set_live_voice_chat_room_size', {
+        p_group_id: groupId,
+        p_max: capped,
+      })
+      if (error) throw new Error(error.message)
+      setRoomSize(capped)
+      void logAction('size', { max: capped })
+    },
+    [groupId, logAction]
+  )
+
+  /** REMOVE somebody from the call. The route owns the authorisation (rank in
+   *  SQL) and LiveKit drops their connection; this only refreshes the roster. */
+  const kickParticipant = useCallback(
+    async (target: string) => {
+      const { data } = await supabase.auth.getSession()
+      const jwt = data.session?.access_token
+      if (!jwt) throw new Error('Sign in again to moderate the room.')
+      const res = await fetch('/api/live-voice-chat/kick', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${jwt}` },
+        body: JSON.stringify({ callId, targetUserId: target }),
+      })
+      const json = (await res.json().catch(() => ({}))) as { error?: string }
+      if (!res.ok) throw new Error(json.error ?? 'Could not remove that person')
+      void refresh()
+    },
+    [callId, refresh]
   )
 
   /** MUTE EVERYONE but me — the roster panel's one tap (see the API route). */
@@ -2136,6 +2217,10 @@ function useModeration(callId: string, groupId: string, myId: string | undefined
     roomLocked,
     toggleLock,
     muteAll,
+    roomSize,
+    canResize,
+    changeRoomSize,
+    kickParticipant,
   }
 }
 
@@ -2159,6 +2244,7 @@ function CallPeoplePanel({
   roomLocked,
   onToggleLock,
   onMuteAll,
+  onKick,
   onClose,
 }: {
   participants: ReturnType<typeof useParticipants>
@@ -2172,6 +2258,8 @@ function CallPeoplePanel({
   onToggleLock: (locked: boolean) => Promise<void>
   /** Mute everyone but the moderator pressing it. */
   onMuteAll: (muted: boolean) => Promise<void>
+  /** Remove somebody from the call — they can not rejoin this one. */
+  onKick: (identity: string) => Promise<void>
   onClose: () => void
 }) {
   const [busy, setBusy] = useState<string | null>(null)
@@ -2191,6 +2279,12 @@ function CallPeoplePanel({
 
   async function mute(identity: string, next: boolean) {
     await run(identity, () => onToggleMute(identity, next))
+  }
+
+  /** Kick is destructive and irreversible for this call, so it asks first. */
+  async function remove(identity: string, name: string) {
+    if (typeof window !== 'undefined' && !window.confirm(`Remove ${name} from this call?`)) return
+    await run(`kick:${identity}`, () => onKick(identity))
   }
 
   /** Nobody else is speaking through me — everyone else, in one tap. */
@@ -2402,6 +2496,34 @@ function CallPeoplePanel({
                   {silenced ? 'Allow' : 'Mute'}
                 </button>
               )}
+
+              {canModerate && !p.isLocal && (
+                <button
+                  onClick={() => void remove(p.identity, name)}
+                  disabled={busy === `kick:${p.identity}`}
+                  aria-label={`Remove ${name} from this call`}
+                  title="Remove from the call — they can not rejoin this one"
+                  style={{
+                    minHeight: 32,
+                    padding: '0 10px',
+                    borderRadius: 9,
+                    border: '1px solid var(--border)',
+                    background: 'var(--bg)',
+                    color: 'var(--danger)',
+                    fontSize: 12,
+                    fontWeight: 700,
+                    fontFamily: 'inherit',
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: 5,
+                    cursor: busy === `kick:${p.identity}` ? 'wait' : 'pointer',
+                    flexShrink: 0,
+                  }}
+                >
+                  <Icon name="x" size={12} strokeWidth={2.6} />
+                  {busy === `kick:${p.identity}` ? '…' : 'Remove'}
+                </button>
+              )}
             </li>
           )
         })}
@@ -2594,6 +2716,12 @@ function Controls({
   hostMuted,
   layout,
   onChangeLayout,
+  canModerate,
+  roomLocked,
+  onToggleLock,
+  roomSize,
+  canResize,
+  onRoomSize,
 }: {
   callId: string
   onLeave: () => void
@@ -2614,6 +2742,13 @@ function Controls({
   /** The room's current view mode, and the setter the More menu writes to. */
   layout: CallLayout
   onChangeLayout: (next: CallLayout) => void
+  /** Whoever runs the room may lock it from here; the owner/admin may size it. */
+  canModerate: boolean
+  roomLocked: boolean
+  onToggleLock: (locked: boolean) => Promise<void>
+  roomSize: number | null
+  canResize: boolean
+  onRoomSize: (next: number) => Promise<void>
   /** True while a moderator has silenced MY microphone this call. */
   hostMuted: boolean
 }) {
@@ -2622,6 +2757,22 @@ function Controls({
   const [emojiOpen, setEmojiOpen] = useState(false)
   /** Everything too rare for the bar — hand, share, games, compiler, music. */
   const [moreOpen, setMoreOpen] = useState(false)
+
+  /** The room's own dials (lock, size) report their outcome inline, because
+   *  their buttons live inside a menu that stays open while they are used. */
+  const [roomBusy, setRoomBusy] = useState(false)
+  const [roomNotice, setRoomNotice] = useState('')
+  const roomAction = useCallback(async (action: () => Promise<void>) => {
+    setRoomBusy(true)
+    setRoomNotice('')
+    try {
+      await action()
+    } catch (e) {
+      setRoomNotice(e instanceof Error ? e.message : 'Could not change that')
+    } finally {
+      setRoomBusy(false)
+    }
+  }, [])
 
   /** Browser full screen — Meet keeps it in the same layout panel, so here it
    *  is the row right under View mode. Read from the document itself, because
@@ -2855,6 +3006,10 @@ function Controls({
               bottom: 68,
               right: 0,
               minWidth: 232,
+              // The menu now carries view mode AND the room's dials — on a
+              // phone it has to scroll instead of running off the top.
+              maxHeight: '70vh',
+              overflowY: 'auto',
               background: 'var(--bg)',
               border: '1px solid var(--border)',
               borderRadius: 14,
@@ -2929,6 +3084,62 @@ function Controls({
                 up room above the stage. */}
             <div style={{ height: 1, background: 'var(--border)', margin: '5px 6px' }} />
             <ViewModeSection layout={layout} onChange={onChangeLayout} />
+
+            {/* THE ROOM'S DOOR AND ITS SIZE — the same two dials the room page
+                carries, one tap away while the call is on screen. Only the
+                people who run the room see them; size is owner/admin only. */}
+            {canModerate && (
+              <>
+                <div style={{ height: 1, background: 'var(--border)', margin: '5px 6px' }} />
+                <MoreItem
+                  icon={roomLocked ? 'unlock' : 'lock'}
+                  label={roomLocked ? 'Open the room to new people' : 'Lock the room to new people'}
+                  active={roomLocked}
+                  onClick={() => void roomAction(() => onToggleLock(!roomLocked))}
+                />
+
+                {canResize && (
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '4px 10px 8px' }}>
+                    <span style={{ flex: 1, minWidth: 0, fontSize: 12.5, color: 'var(--text-secondary)' }}>
+                      Room size
+                    </span>
+                    <button
+                      onClick={() => void roomAction(() => onRoomSize((roomSize ?? 2) - 1))}
+                      disabled={roomBusy || (roomSize ?? 2) <= 2}
+                      aria-label="Make the room smaller"
+                      style={roomStepStyle(roomBusy || (roomSize ?? 2) <= 2)}
+                    >
+                      −
+                    </button>
+                    <span
+                      style={{
+                        minWidth: 30,
+                        textAlign: 'center',
+                        fontSize: 13,
+                        fontWeight: 800,
+                        color: 'var(--text-primary)',
+                      }}
+                    >
+                      {roomSize ?? '—'}
+                    </span>
+                    <button
+                      onClick={() => void roomAction(() => onRoomSize((roomSize ?? 0) + 1))}
+                      disabled={roomBusy || (roomSize ?? 0) >= 200}
+                      aria-label="Make the room bigger"
+                      style={roomStepStyle(roomBusy || (roomSize ?? 0) >= 200)}
+                    >
+                      +
+                    </button>
+                  </div>
+                )}
+
+                {roomNotice && (
+                  <p role="alert" style={{ margin: '0 10px 8px', fontSize: 12, color: 'var(--danger)' }}>
+                    {roomNotice}
+                  </p>
+                )}
+              </>
+            )}
             <MoreItem
               icon="maximize"
               label={isFull ? 'Exit full screen' : 'Full screen'}
@@ -2961,6 +3172,24 @@ function Controls({
       </button>
     </div>
   )
+}
+
+/** The −/+ steps beside "Room size" — 28px squares that fit the menu's rows. */
+function roomStepStyle(disabled: boolean): CSSProperties {
+  return {
+    width: 28,
+    height: 28,
+    borderRadius: 8,
+    border: '1px solid var(--border)',
+    background: 'var(--bg-secondary)',
+    color: disabled ? 'var(--text-muted)' : 'var(--text-primary)',
+    fontSize: 15,
+    fontWeight: 800,
+    fontFamily: 'inherit',
+    lineHeight: 1,
+    cursor: disabled ? 'not-allowed' : 'pointer',
+    flexShrink: 0,
+  }
 }
 
 /**
