@@ -8,11 +8,14 @@
 // nothing here may point at them.
 //
 // Bottom bar (four primary destinations):
-//   Colleges | Rooms | Compete | Profile
+//   Rooms | Experiences | Compete | Profile
 // ☰ menu = the full kept-feature index.
 //
 // `/live-voice-chat` is a KEPT route: the LiveKit study rooms were retired
 // with the social plane and then re-enabled, so they appear here.
+// `/messages` is also KEPT: the student network (requests + 1:1 DMs) came
+// back on its own, without the feed/communities. It lives in the ☰ menu so
+// the four primary destinations keep their space on a phone.
 
 export const MOBILE_NAV = [
   { label: 'Rooms', href: '/live-voice-chat', icon: 'mic' },
@@ -27,5 +30,6 @@ export const MOBILE_MENU_NAV = [
   { label: 'Experiences', href: '/experiences', icon: 'pencil' },
   { label: 'Compete', href: '/compete', icon: 'zap' },
   // ── Account ─────────────────────────────────────────────────
+  { label: 'Messages', href: '/messages', icon: 'message' },
   { label: 'Notifications', href: '/notifications', icon: 'bell' },
 ]

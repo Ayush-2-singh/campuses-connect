@@ -283,6 +283,15 @@
   --accent-text: var(--blue-text);
   --accent-border: color-mix(in srgb, var(--accent-blue) 42%, transparent);
   --accent-glow: 0 0 22px color-mix(in srgb, var(--accent-blue) 22%, transparent);
+
+  /* The blue section's warm counterpoint. Deep orange, not the light warning
+     tint: it has to hold 4.5:1 against a card in BOTH themes, and it is used
+     only for small marks (the eyebrow, the "personal accounts" note) so it
+     accents the blue instead of competing with it. */
+  --accent-warm: #c2410c;
+  --accent-warm-light: color-mix(in srgb, #c2410c 12%, transparent);
+  --accent-warm-text: #fb923c;
+  --accent-warm-border: color-mix(in srgb, #c2410c 40%, transparent);
 }
 
 /* Light-mode adjustments for section accents (darker text on pale surfaces) */
@@ -310,6 +319,9 @@
   --accent-light: color-mix(in srgb, var(--accent-blue) 13%, white);
   --accent-text: #2456c9;
   --accent-border: color-mix(in srgb, var(--accent-blue) 45%, white);
+  --accent-warm-light: color-mix(in srgb, #c2410c 10%, white);
+  --accent-warm-text: #b03a05;
+  --accent-warm-border: color-mix(in srgb, #c2410c 40%, white);
 }
 
 /* ───────────────────────── 6. CONTEXTUAL GRADIENTS & AMBIENT ───────────────────────── */
@@ -1506,6 +1518,11 @@ a,
   margin: 0 0 10px;
   text-align: center;
 }
+/* Warm eyebrow for the blue reading section — the one deep-orange mark in the
+   header, so the two colours read as a pair instead of two competing accents. */
+.hc-eyebrow--warm {
+  color: var(--accent-warm-text, var(--text-muted));
+}
 
 /* The ONE accent phrase allowed in a header — serif italic, like the landing. */
 .hc-em {
@@ -1696,6 +1713,20 @@ a,
 .hc-btn:disabled {
   cursor: not-allowed;
   opacity: 0.6;
+}
+
+/* The blue sections (Experiences + Blog) keep the brand promise the rest of
+   the product already makes: a blue primary button, not the warm gradient.
+   The gradient starts at #2563eb so white text clears 4.5:1 at every stop
+   (5.17:1 → 6.70:1). Doubling the class outranks `.hc-btn--primary:hover`
+   further down the file without touching every other section. */
+[data-accent='blue'] .hc-btn--primary.hc-btn--primary,
+[data-accent='blue'] .hc-btn--primary.hc-btn--primary:hover {
+  background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+  color: #ffffff;
+  box-shadow:
+    0 8px 20px -10px color-mix(in srgb, #1d4ed8 65%, transparent),
+    inset 0 1px 0 rgba(255, 255, 255, 0.16);
 }
 @media (prefers-reduced-motion: reduce) {
   .hc-btn--primary:hover {
@@ -2015,6 +2046,11 @@ a,
   border-radius: var(--radius);
   padding: 10px 14px;
   margin: 0;
+}
+/* Same note, warm counterpoint: >7:1 on the dark tint, >5:1 on the light one. */
+.hc-note--warm {
+  color: var(--accent-warm-text, var(--accent-text));
+  background: var(--accent-warm-light, var(--accent-light));
 }
 
 /* ── Empty state ───────────────────────────────────────────────────── */

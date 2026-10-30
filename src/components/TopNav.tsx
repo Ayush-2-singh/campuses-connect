@@ -36,6 +36,10 @@ const NAV: NavEntry[] = [
   { label: 'Rooms', href: '/live-voice-chat', icon: 'mic' },
   { label: 'Experiences', href: '/experiences', icon: 'pencil' },
   { label: 'Compete', href: '/compete', icon: 'zap' },
+  // Requests + 1:1 DMs. Re-enabled with the student network (see
+  // src/lib/featureGates.ts) — the only part of the old social plane that
+  // came back, because it is how a campus directory becomes useful.
+  { label: 'Messages', href: '/messages', icon: 'message' },
   { label: 'Profile', href: '/profile', icon: 'user' },
 ]
 

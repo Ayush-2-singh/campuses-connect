@@ -12,13 +12,18 @@
  * panel, but THIS const is the runtime source of truth.
  *
  * ── What is retired (social plane) ─────────────────────────────────────────
- *   /global (feed) · /community + /communities · /chat · /messages ·
- *   /connections · /groups · /meetings · /watch · /games ·
- *   /polls · /saved · /weekly · /badges · /teams · /post/[id]
+ *   /global (feed) · /community + /communities · /chat · /groups ·
+ *   /meetings · /watch · /games · /polls · /saved · /weekly · /badges ·
+ *   /teams · /post/[id]
  *
  * `/live-voice-chat` was on this list and has been RE-ENABLED: the LiveKit
  * study rooms are a kept feature of the student product (read together, quiz
  * each other in a room), not part of the retired social plane.
+ *
+ * `/messages` and `/connections` are also RE-ENABLED: the student↔student
+ * network is how a campus directory becomes useful (send a request from a
+ * profile or the people finder, chat once it is accepted). Only 1:1 DMs came
+ * back — the public feed, communities and groups stay retired.
  *
  * ── What stays (hiring plane) ──────────────────────────────────────────────
  *   /jobs · /companies · /applications · /experiences · /opportunities ·
@@ -38,8 +43,6 @@ export const RETIRED_ROUTES = [
   '/community',
   '/communities',
   '/chat',
-  '/messages',
-  '/connections',
   '/groups',
   '/meetings',
   '/watch',

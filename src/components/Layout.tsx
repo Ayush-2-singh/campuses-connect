@@ -29,7 +29,7 @@ const CommandPalette = dynamic(() => import('@/components/CommandPalette'), { ss
 // This file only warms their routes so the first click is instant.
 
 // Warmed right after mount — first click on any destination is instant.
-const PREFETCH_ROUTES = ['/live-voice-chat', '/experiences', '/compete', '/leaderboard', '/profile']
+const PREFETCH_ROUTES = ['/live-voice-chat', '/experiences', '/compete', '/messages', '/profile']
 
 const FAB_ACTIONS = [
   { label: 'Ask ConnectToCampus', desc: 'Search, shortcuts & questions', icon: 'sparkles', action: 'cmd' as const },

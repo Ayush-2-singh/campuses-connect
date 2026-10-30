@@ -100,12 +100,17 @@ export default function NotificationsPage() {
    * teams, opportunities and communities were retired, so mapping them to a
    * path (even the old `/more` index, which no longer exists) sent people to a
    * redirect or a 404 from their own inbox.
+   *
+   * Connection notifications now open the network rather than a profile: the
+   * request is one tap from Accept, and an accepted request is one tap from
+   * the new chat.
    */
   const targetFor = (n: any): string | null => {
     switch (n.type) {
       case 'connection_request':
+        return '/messages?tab=requests'
       case 'connection_accepted':
-        return n.profiles?.username ? `/profile/${n.profiles.username}` : '/profile'
+        return '/messages?tab=chats'
       default:
         return null
     }

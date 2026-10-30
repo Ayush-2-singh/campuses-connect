@@ -10,6 +10,8 @@
 
 | Date | Change | Details |
 |------|--------|---------|
+| Oct 2026 | **Campus network returns** | Connection requests + 1:1 DMs at `/messages` (Chats · Requests · Sent · Connections · Find people); profile Message button and notification deep links; old `/connections` links redirect with their tab intact |
+| Oct 2026 | **Experiences palette** | Reading section (`/experiences`, `/blog`) uses the product blue with a deep-orange counterpoint; section primary buttons are blue with AA white ink |
 | Aug 2026 | **N+1 query fixes** | Events & Connections batch attendee/unread counts |
 | Aug 2026 | **AI Brain premium gating** | Free users see upgrade prompt, premium gets full access |
 | Aug 2026 | **Middleware optimization** | Skip getUser() for 90% of public routes |

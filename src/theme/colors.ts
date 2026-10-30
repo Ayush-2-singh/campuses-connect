@@ -59,6 +59,13 @@ export type AccentName = 'gold' | 'blue' | 'cyan' | 'purple' | 'green'
  *  - green   → networking / talent / success
  */
 export const ACCENT_BY_ROUTE: Record<string, AccentName> = {
+  // Experiences (and its blog subsection) is the reading surface, so it wears
+  // the product's blue — the same blue its primary buttons use. The section's
+  // warm counterpoint (the eyebrow and the personal-accounts note) is a deep
+  // orange, declared in globals.css under `[data-accent='blue']`.
+  '/experiences': 'blue',
+  '/blog': 'blue',
+
   '/jobs': 'cyan',
   '/leaderboard': 'gold',
   '/weekly': 'gold',

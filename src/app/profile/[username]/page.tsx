@@ -38,6 +38,7 @@ import EmptyState from '@/components/EmptyState'
 import { CardSkeleton } from '@/components/Skeleton'
 import { Icon } from '@/components/icons'
 import { useToast } from '@/components/Toast'
+import { connectionState, type ConnectionRow } from '@/lib/messaging'
 
 export default function UserProfilePage() {
   const [user, setUser] = useState<any>(null)
@@ -100,14 +101,18 @@ export default function UserProfilePage() {
           .or(
             `and(requester_id.eq.${user.id},receiver_id.eq.${prof.id}),and(requester_id.eq.${prof.id},receiver_id.eq.${user.id})`
           )
-          .limit(1)
-        const c = conn?.[0]
-        if (c) {
-          setConnId(c.id)
-          if (c.status === 'accepted') setConnState('accepted')
-          else if (c.requester_id === user.id) setConnState('pending_sent')
-          else setConnState('pending_received')
-        }
+        const list = (conn || []) as ConnectionRow[]
+        const state = connectionState(list, user.id, prof.id)
+        setConnState(state)
+        // Point the cancel/accept buttons at the row THEY own: responding uses
+        // the incoming request, cancelling uses the outgoing one.
+        const row =
+          state === 'pending_sent'
+            ? list.find((r) => r.requester_id === user.id)
+            : state === 'pending_received'
+              ? list.find((r) => r.receiver_id === user.id)
+              : list[0]
+        if (state !== 'none' && row) setConnId(row.id)
       }
 
       setLoading(false)
@@ -152,11 +157,26 @@ export default function UserProfilePage() {
     }
     if (accept) {
       setConnState('accepted')
-      toast('Connected!', { tone: 'success' })
+      toast('Connected! You can message each other now', { tone: 'success' })
     } else {
       setConnState('none')
       setConnId(null)
     }
+  }
+
+  // Connected students go straight into the DM thread. The RPC is the gate:
+  // it returns null unless an accepted connection exists, so a stale UI can
+  // never open a conversation the database would refuse.
+  const handleMessage = async () => {
+    if (!profile || connBusy) return
+    setConnBusy(true)
+    const { data: convId, error } = await supabase.rpc('start_or_get_conversation', { p_peer_id: profile.id })
+    setConnBusy(false)
+    if (error || !convId) {
+      toast('You can only message students you are connected with', { tone: 'danger' })
+      return
+    }
+    router.push(`/messages/${convId}`)
   }
 
   const timeAgo = (date: string) => {
@@ -336,6 +356,26 @@ export default function UserProfilePage() {
                   >
                     <Icon name="check" size={12} /> Connected
                   </span>
+                  <button
+                    onClick={handleMessage}
+                    disabled={connBusy}
+                    style={{
+                      padding: '8px 16px',
+                      borderRadius: 8,
+                      border: 'none',
+                      background: 'var(--accent)',
+                      color: 'var(--on-accent)',
+                      fontSize: 13,
+                      fontWeight: 600,
+                      cursor: connBusy ? 'default' : 'pointer',
+                      fontFamily: 'inherit',
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: 6,
+                    }}
+                  >
+                    <Icon name="message" size={14} /> Message
+                  </button>
                 </div>
               )}
               {!isOwnProfile && user && connState === 'pending_sent' && (

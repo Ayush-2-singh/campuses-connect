@@ -154,7 +154,7 @@ export default function ExperiencesApp({ initialExperiences = [] }: { initialExp
             ←
           </button>
           <div style={{ minWidth: 0 }}>
-            <span className="hc-eyebrow">Community</span>
+            <span className="hc-eyebrow hc-eyebrow--warm">Community</span>
             <h1 className="hc-h1">
               Interviews, <em className="hc-em">as they happened.</em>
             </h1>
@@ -182,7 +182,7 @@ export default function ExperiencesApp({ initialExperiences = [] }: { initialExp
         {/* Every write-up is ONE student's own account — never the company's
             official process. Marked prominently so no reader mistakes a
             personal account for the definitive process. */}
-        <p className="hc-note hc-reveal" style={{ marginBottom: 16 } as React.CSSProperties}>
+        <p className="hc-note hc-note--warm hc-reveal" style={{ marginBottom: 16 } as React.CSSProperties}>
           <strong>Personal accounts only.</strong> Every write-up below is one student&apos;s own experience of their
           own drive — not the company&apos;s official process. The same company can run a different process at a
           different campus, so read these as experiences, not as answer sheets.

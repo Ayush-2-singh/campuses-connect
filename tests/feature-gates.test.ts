@@ -57,6 +57,12 @@ describe('retired-route matching', () => {
       '/reminders',
       '/premium',
       '/admin',
+      // Re-enabled: the student network. Requests and 1:1 DMs are a kept
+      // feature; only the public social plane stays retired.
+      '/messages',
+      '/messages/conv-1',
+      '/connections',
+      '/connections?tab=requests',
     ]) {
       expect(isRetiredPath(kept), kept).toBe(false)
     }
@@ -75,9 +81,19 @@ describe('retired-route matching', () => {
   })
 
   it('lists the full retired surface', () => {
-    for (const route of ['/global', '/community', '/communities', '/chat', '/messages', '/games', '/watch']) {
+    for (const route of ['/global', '/community', '/communities', '/chat', '/groups', '/games', '/watch']) {
       expect(RETIRED_ROUTES).toContain(route)
     }
+  })
+
+  it('keeps the re-enabled student network out of the retired surface', () => {
+    // Requests + 1:1 DMs came back with the network; feed, communities and
+    // groups did not. `/chat` (the old public room) stays retired.
+    expect(RETIRED_ROUTES).not.toContain('/messages')
+    expect(RETIRED_ROUTES).not.toContain('/connections')
+    expect(isRetiredPath('/messages')).toBe(false)
+    expect(isRetiredPath('/messages/conv-1')).toBe(false)
+    expect(isRetiredPath('/connections')).toBe(false)
   })
 
   it('keeps the re-enabled live study rooms out of the retired surface', () => {
