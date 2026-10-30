@@ -11,6 +11,7 @@
 | Date | Change | Details |
 |------|--------|---------|
 | Oct 2026 | **Campus network returns** | Connection requests + 1:1 DMs at `/messages` (Chats · Requests · Sent · Connections · Find people); profile Message button and notification deep links; old `/connections` links redirect with their tab intact |
+| Oct 2026 | **Transparent favicon** | URL-bar/tab icon no longer sits on a black plate: the plate is keyed out and the white mark is drawn in near-black ink, so the logo reads on light and dark tabs |
 | Oct 2026 | **Blue CTAs everywhere** | Every primary button uses the theme blue (white ink); orange stays the section accent (Experiences, highlights), never a button fill. Phones get 44px touch targets |
 | Oct 2026 | **Blue Messages** | Messages gets the blue accent and an iMessage-style thread — blue sent bubbles, gray replies, blurred header/composer, system font |
 | Oct 2026 | **Landing message CTA** | Messages joins the public nav and the hero, so a visitor can start a request/chat from the landing page |
