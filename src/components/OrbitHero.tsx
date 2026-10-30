@@ -212,6 +212,11 @@ export default function OrbitHero() {
           <Link href="/live-voice-chat" className="orbit-secondary">
             Create a group
           </Link>
+          {/* The network is the newest surface: put it in the hero instead of
+              hiding it in the footer. Guests are sent to login first. */}
+          <Link href="/messages" className="orbit-secondary">
+            Message a senior
+          </Link>
         </div>
       </div>
 

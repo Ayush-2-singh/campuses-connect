@@ -254,8 +254,8 @@ export default async function ExperienceDetailPage({ params }: PageProps) {
 
   return (
     // Standalone reading page: it renders no Layout, so it sets the section
-    // accent itself — same blue as the list it belongs to, same warm marks.
-    <div className="hc-page" data-accent="blue">
+    // accent itself — same orange as the list it belongs to.
+    <div className="hc-page" data-accent="gold">
       {/* Crawlers read JSON-LD; the markup below is what a student reads. */}
       <script
         type="application/ld+json"
@@ -266,7 +266,7 @@ export default async function ExperienceDetailPage({ params }: PageProps) {
         <Link href="/experiences" className="hc-back" aria-label="Back to all experiences">
           <Icon name="chevron" size={16} strokeWidth={2.2} style={{ transform: 'rotate(180deg)' }} />
         </Link>
-        <span className="hc-eyebrow hc-eyebrow--warm">
+        <span className="hc-eyebrow">
           Interview experience ·{' '}
           {/* Internal link to the company hub: it is the page built for
               "<company> interview experience", and a crawler only finds it if
@@ -307,7 +307,7 @@ export default async function ExperienceDetailPage({ params }: PageProps) {
           SEO move for a page built from a source: rel="nofollow" because we are
           pointing at it, not vouching for it. */}
       {exp.source_url && (
-        <p className="hc-note hc-note--warm" style={{ marginTop: 14 }}>
+        <p className="hc-note" style={{ marginTop: 14 }}>
           Originally reported on {exp.source_platform || 'the source page'} —{' '}
           <a
             href={exp.source_url}

@@ -38,11 +38,12 @@ import EmptyState from '@/components/EmptyState'
 import { CardSkeleton } from '@/components/Skeleton'
 import { Icon } from '@/components/icons'
 import { useToast } from '@/components/Toast'
-import { connectionState, type ConnectionRow } from '@/lib/messaging'
+import { canRequestConnection, connectionErrorCopy, connectionState, type ConnectionRow } from '@/lib/messaging'
 
 export default function UserProfilePage() {
   const [user, setUser] = useState<any>(null)
   const [profile, setProfile] = useState<any>(null)
+  const [myProfile, setMyProfile] = useState<any>(null)
   const [posts, setPosts] = useState<any[]>([])
   const [notes, setNotes] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
@@ -67,7 +68,18 @@ export default function UserProfilePage() {
       const {
         data: { user },
       } = await supabase.auth.getUser()
-      if (user) setUser(user)
+      if (user) {
+        setUser(user)
+        // The interaction-scope switch lives on MY profile; the target carries
+        // its own scope, so the Connect button can be decided without a failed
+        // request round-trip.
+        const { data: me } = await supabase
+          .from('profiles')
+          .select('id, interaction_scope, campus_id')
+          .eq('id', user.id)
+          .maybeSingle()
+        setMyProfile(me)
+      }
 
       const { data: prof } = await supabase
         .from('profiles')
@@ -123,14 +135,41 @@ export default function UserProfilePage() {
   const handleConnect = async () => {
     if (!user || !profile || connBusy) return
     setConnBusy(true)
-    const { error } = await supabase.from('connections').insert({
+
+    // Preferred path: the RPC also accepts a reverse request and tells us WHY
+    // it refused. Fall back to the plain insert on databases without it.
+    const { data: result, error } = await supabase.rpc('send_connection_request', { p_receiver_id: profile.id })
+    if (!error) {
+      setConnBusy(false)
+      if (result === 'accepted') {
+        setConnState('accepted')
+        toast('Connected! You can message each other now', { tone: 'success' })
+      } else if (result === 'campus_only') {
+        toast('This student only accepts requests from their own campus', { tone: 'danger' })
+      } else if (result === 'blocked') {
+        toast('You cannot send a request to this student', { tone: 'danger' })
+      } else if (result === 'invalid') {
+        toast('That student could not be found', { tone: 'danger' })
+      } else {
+        setConnState('pending_sent')
+        toast('Request sent — they will see it in their connections', { tone: 'success' })
+      }
+      return
+    }
+    if (error.code !== 'PGRST202' && error.code !== '42883') {
+      setConnBusy(false)
+      toast(connectionErrorCopy(error), { tone: 'danger' })
+      return
+    }
+
+    const { error: insertError } = await supabase.from('connections').insert({
       requester_id: user.id,
       receiver_id: profile.id,
       status: 'pending',
     })
     setConnBusy(false)
-    if (error) {
-      toast('Could not send the request', { tone: 'danger' })
+    if (insertError) {
+      toast(connectionErrorCopy(insertError), { tone: 'danger' })
       return
     }
     setConnState('pending_sent')
@@ -138,10 +177,21 @@ export default function UserProfilePage() {
   }
 
   const handleCancelRequest = async () => {
-    if (!connId || connBusy) return
+    if (!user || !profile || connBusy) return
     setConnBusy(true)
-    await supabase.from('connections').delete().eq('id', connId)
+    // Delete by the PAIR, not by a cached id: a request sent moments ago in
+    // this page has no connId yet, which used to make Cancel a no-op.
+    const { error } = await supabase
+      .from('connections')
+      .delete()
+      .eq('requester_id', user.id)
+      .eq('receiver_id', profile.id)
+      .eq('status', 'pending')
     setConnBusy(false)
+    if (error) {
+      toast('Could not cancel the request', { tone: 'danger' })
+      return
+    }
     setConnState('none')
     setConnId(null)
   }
@@ -327,14 +377,16 @@ export default function UserProfilePage() {
                 display: 'flex',
                 alignItems: 'flex-end',
                 justifyContent: 'space-between',
+                flexWrap: 'wrap',
+                rowGap: 10,
                 marginBottom: 14,
                 marginTop: -30,
                 position: 'relative',
               }}
             >
-              <div style={{ display: 'flex', alignItems: 'flex-end', gap: 14 }}>
+              <div style={{ display: 'flex', alignItems: 'flex-end', gap: 14, minWidth: 0 }}>
                 <Avatar name={profile.full_name} avatarUrl={profile.avatar_url} size={64} ring fontSize={24} />
-                <div style={{ paddingBottom: 2 }}>
+                <div style={{ paddingBottom: 2, minWidth: 0 }}>
                   <p style={{ fontSize: 18, fontWeight: 700, color: 'var(--text-primary)', margin: '0 0 2px' }}>
                     {profile.full_name}
                   </p>
@@ -435,25 +487,44 @@ export default function UserProfilePage() {
                   </button>
                 </div>
               )}
-              {!isOwnProfile && user && connState === 'none' && (
-                <button
-                  onClick={handleConnect}
-                  disabled={connBusy}
-                  style={{
-                    padding: '8px 18px',
-                    borderRadius: 8,
-                    border: '1px solid var(--accent)',
-                    background: 'var(--accent)',
-                    color: 'var(--on-accent)',
-                    fontSize: 13,
-                    fontWeight: 600,
-                    cursor: connBusy ? 'default' : 'pointer',
-                    fontFamily: 'inherit',
-                  }}
-                >
-                  {connBusy ? '…' : 'Connect'}
-                </button>
-              )}
+              {!isOwnProfile &&
+                user &&
+                connState === 'none' &&
+                (!myProfile || canRequestConnection(myProfile, profile) ? (
+                  <button
+                    onClick={handleConnect}
+                    disabled={connBusy}
+                    style={{
+                      padding: '8px 18px',
+                      borderRadius: 8,
+                      border: '1px solid var(--accent)',
+                      background: 'var(--accent)',
+                      color: 'var(--on-accent)',
+                      fontSize: 13,
+                      fontWeight: 600,
+                      cursor: connBusy ? 'default' : 'pointer',
+                      fontFamily: 'inherit',
+                    }}
+                  >
+                    {connBusy ? '…' : 'Connect'}
+                  </button>
+                ) : (
+                  <span
+                    title="This profile only accepts requests from its own campus"
+                    style={{
+                      padding: '8px 14px',
+                      borderRadius: 8,
+                      border: '1px solid var(--border)',
+                      background: 'var(--bg)',
+                      color: 'var(--text-muted)',
+                      fontSize: 12.5,
+                      fontWeight: 600,
+                      whiteSpace: 'nowrap',
+                    }}
+                  >
+                    Campus only
+                  </span>
+                ))}
               {!isOwnProfile && !user && (
                 <button
                   onClick={() =>

@@ -1,7 +1,9 @@
 import { describe, expect, it } from 'vitest'
 import {
   buildNetwork,
+  canRequestConnection,
   chatPeerId,
+  connectionErrorCopy,
   connectionBetween,
   connectionState,
   conversationPreview,
@@ -99,6 +101,40 @@ const conv = (over: { last_read_at?: string | null; participants?: string[] } = 
     profile_id: id,
     last_read_at: id === ME ? (over.last_read_at ?? null) : null,
   })),
+})
+
+describe('request gate', () => {
+  const me = { id: ME, interaction_scope: 'global', campus_id: 'campus-a' }
+  const target = { id: PEER, interaction_scope: 'global', campus_id: 'campus-b' }
+
+  it('allows two global profiles to connect', () => {
+    expect(canRequestConnection(me, target)).toBe(true)
+  })
+
+  it('blocks a campus-only profile from another campus', () => {
+    expect(canRequestConnection(me, { ...target, interaction_scope: 'campus' })).toBe(false)
+    expect(canRequestConnection({ ...me, interaction_scope: 'campus' }, { ...target, campus_id: 'campus-a' })).toBe(
+      true
+    )
+    expect(canRequestConnection({ ...me, interaction_scope: 'campus' }, target)).toBe(false)
+  })
+
+  it('allows the same campus, and rejects self or missing profiles', () => {
+    expect(canRequestConnection({ ...me, interaction_scope: 'campus' }, { ...target, campus_id: 'campus-a' })).toBe(
+      true
+    )
+    expect(canRequestConnection(me, me)).toBe(false)
+    expect(canRequestConnection(null, target)).toBe(false)
+    expect(canRequestConnection(me, { id: PEER, campus_id: 'campus-b' })).toBe(true)
+  })
+
+  it('turns the common database errors into actionable copy', () => {
+    expect(connectionErrorCopy({ code: '23505' })).toContain('already sent')
+    expect(connectionErrorCopy({ code: '42501' })).toContain('own campus')
+    expect(connectionErrorCopy({ code: '23514' })).toContain('yourself')
+    expect(connectionErrorCopy({ code: 'XX000', message: 'boom' })).toContain('boom')
+    expect(connectionErrorCopy(null)).toBe('Could not send the request')
+  })
 })
 
 describe('conversation list', () => {

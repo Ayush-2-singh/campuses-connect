@@ -31,7 +31,9 @@ import { useToast } from '@/components/Toast'
 import { Icon } from '@/components/icons'
 import {
   buildNetwork,
+  canRequestConnection,
   connectionBetween,
+  connectionErrorCopy,
   connectionState,
   conversationPreview,
   formatRelativeTime,
@@ -125,7 +127,9 @@ function MessagesPageInner() {
       if (!unique.length) return
       const { data } = await supabase
         .from('profiles')
-        .select('id, full_name, username, avatar_url, bio, batch_year, campuses(name), colleges(name)')
+        .select(
+          'id, full_name, username, avatar_url, bio, batch_year, interaction_scope, campus_id, campuses(name), colleges(name)'
+        )
         .in('id', unique)
       if (!data) return
       setPeople((prev) => {
@@ -257,7 +261,9 @@ function MessagesPageInner() {
     const timer = setTimeout(async () => {
       const { data } = await supabase
         .from('profiles')
-        .select('id, full_name, username, avatar_url, bio, batch_year, campuses(name), colleges(name)')
+        .select(
+          'id, full_name, username, avatar_url, bio, batch_year, interaction_scope, campus_id, campuses(name), colleges(name)'
+        )
         .eq('is_public', true)
         .neq('id', user.id)
         .or(`full_name.ilike.%${q}%,username.ilike.%${q}%`)
@@ -316,25 +322,48 @@ function MessagesPageInner() {
     toast('Request withdrawn')
   }
 
+  /**
+   * Send a request. The RPC is the preferred path: it auto-accepts a reverse
+   * pending request and returns WHY it refused (campus-only). Older databases
+   * that do not have the RPC yet fall back to the plain insert, so the button
+   * keeps working before the migration is applied.
+   */
   const connect = async (peerId: string) => {
     if (!user || busy) return
     setBusy(peerId)
-    const { data, error } = await supabase
-      .from('connections')
-      .insert({ requester_id: user.id, receiver_id: peerId, status: 'pending' })
-      .select('id, requester_id, receiver_id, status, created_at')
-      .single()
-    setBusy(null)
-    if (error) {
-      // 23505 = already requested; treat it as sent rather than an error.
-      if ((error as any).code === '23505') {
-        toast('You already sent them a request', { tone: 'danger' })
-      } else {
-        toast('Could not send the request', { tone: 'danger' })
-      }
+    const { data: result, error } = await supabase.rpc('send_connection_request', { p_receiver_id: peerId })
+
+    if (!error) {
+      await loadNetwork(user.id)
+      setBusy(null)
+      if (result === 'accepted') toast('Connected — you can message each other now', { tone: 'success' })
+      else if (result === 'campus_only')
+        toast('This student only accepts requests from their own campus', { tone: 'danger' })
+      else if (result === 'blocked') toast('You cannot send a request to this student', { tone: 'danger' })
+      else if (result === 'invalid') toast('That student could not be found', { tone: 'danger' })
+      else toast('Request sent', { tone: 'success' })
       return
     }
-    setRows((prev) => [...prev, data as ConnectionRow])
+
+    // PGRST202 / 42883 = the function is not deployed yet.
+    if (error.code !== 'PGRST202' && error.code !== '42883') {
+      setBusy(null)
+      toast(connectionErrorCopy(error), { tone: 'danger' })
+      return
+    }
+
+    // Fallback: no `.select().single()` here — a hidden RETURNING row must not
+    // turn a successful insert into a failed request.
+    const { error: insertError } = await supabase
+      .from('connections')
+      .insert({ requester_id: user.id, receiver_id: peerId, status: 'pending' })
+    if (insertError) {
+      setBusy(null)
+      toast(connectionErrorCopy(insertError), { tone: 'danger' })
+      return
+    }
+    await loadNetwork(user.id)
+    setBusy(null)
     toast('Request sent', { tone: 'success' })
   }
 
@@ -370,6 +399,11 @@ function MessagesPageInner() {
         label: 'Accept',
         run: () => row && respond(row, true),
       }
+    }
+    // The database policy refuses this pair; say so instead of offering a
+    // button that can only fail (campus-only profile on another campus).
+    if (!canRequestConnection(profile, people[peerId])) {
+      return { state, label: 'Campus only', run: () => {} }
     }
     return { state, label: 'Connect', run: () => connect(peerId) }
   }
@@ -443,11 +477,14 @@ function MessagesPageInner() {
   const actionButton = (peerId: string) => {
     const action = actionFor(peerId)
     const isBusy = busy === peerId || busy === connectionBetween(rows, user?.id || '', peerId)?.id
-    const primary = action.state === 'none' || action.state === 'pending_received' || action.state === 'accepted'
+    const blocked = action.label === 'Campus only'
+    const primary =
+      !blocked && (action.state === 'none' || action.state === 'pending_received' || action.state === 'accepted')
     return (
       <button
         onClick={action.run}
-        disabled={isBusy}
+        disabled={isBusy || blocked}
+        title={blocked ? 'This student only accepts requests from their own campus' : undefined}
         style={{
           flexShrink: 0,
           minWidth: 86,
@@ -458,9 +495,9 @@ function MessagesPageInner() {
           color: primary ? 'var(--on-accent)' : 'var(--text-secondary)',
           fontSize: 13,
           fontWeight: 600,
-          cursor: isBusy ? 'default' : 'pointer',
+          cursor: isBusy || blocked ? 'default' : 'pointer',
           fontFamily: 'inherit',
-          opacity: isBusy ? 0.65 : 1,
+          opacity: isBusy ? 0.65 : blocked ? 0.8 : 1,
         }}
       >
         {isBusy ? '…' : action.label}

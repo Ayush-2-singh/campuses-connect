@@ -35,6 +35,9 @@ export const PUBLIC_NAV = [
   { label: 'Rooms', href: '/live-voice-chat', icon: 'mic' },
   { label: 'Experiences', href: '/experiences', icon: 'pencil' },
   { label: 'Compete', href: '/compete', icon: 'zap' },
+  // The student network is public to browse: a guest lands on the login gate
+  // with `redirect=/messages`, a signed-in student goes straight to chats.
+  { label: 'Messages', href: '/messages', icon: 'message' },
 ]
 
 export default function PublicNav() {

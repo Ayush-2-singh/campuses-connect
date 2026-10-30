@@ -23,6 +23,54 @@ export interface ConnectionRow {
   created_at?: string
 }
 
+export interface ScopeProfile {
+  id?: string | null
+  interaction_scope?: string | null
+  campus_id?: string | null
+}
+
+/**
+ * Mirrors `can_interact_with_profile` (migration 034): a campus-only profile is
+ * reachable only from the same campus. The UI uses this to avoid offering a
+ * Connect button the database would reject, and to say WHY it is unavailable.
+ */
+export function canRequestConnection(
+  me: ScopeProfile | null | undefined,
+  target: ScopeProfile | null | undefined
+): boolean {
+  if (!me?.id || !target?.id || me.id === target.id) return false
+  const myScope = me.interaction_scope || 'global'
+  const theirScope = target.interaction_scope || 'global'
+  if (myScope === 'campus' && (!me.campus_id || me.campus_id !== target.campus_id)) return false
+  if (theirScope === 'campus' && (!target.campus_id || target.campus_id !== me.campus_id)) return false
+  return true
+}
+
+/**
+ * Postgres/PostgREST errors → copy a student can act on. The generic fallback
+ * keeps the backend message: a connection request used to fail with no clue
+ * why, which is what made this bug hard to report.
+ */
+export function connectionErrorCopy(
+  error: { code?: string | null; message?: string | null } | null | undefined
+): string {
+  switch (error?.code) {
+    case '23505':
+      return 'You already sent them a request'
+    case '42501':
+      return 'This student only accepts requests from their own campus'
+    case '23503':
+      return 'That student could not be found'
+    case '23514':
+      return 'You cannot connect with yourself'
+    case 'PGRST202':
+    case '42883':
+      return 'Connections are not set up yet — try again in a moment'
+    default:
+      return error?.message ? `Could not send the request — ${error.message}` : 'Could not send the request'
+  }
+}
+
 export interface Network {
   /** Accepted connections — these peers can be messaged. */
   accepted: { id: string; peerId: string }[]
