@@ -28,6 +28,9 @@
      Neutral-blue ink (not the old warm brown) so it reads correctly on both the
      blue brand fill and any gold section accent. */
   --on-accent: #0b1220;
+  /* Text on the brand-blue CTA fill. The fill is deep enough for white in both
+     themes, unlike the light accents above which need dark ink. */
+  --on-brand: #ffffff;
 }
 
 /* ───────────────────────── 2. DARK FOUNDATION (default) ───────────────────────── */
@@ -125,10 +128,11 @@
   /* Top inner hairline — the “lit edge” that makes a dark panel read raised. */
   --highlight: inset 0 1px 0 rgba(255, 255, 255, 0.045);
 
-  /* Brand gradient — the CTA / wordmark fill. Kept LIGHT on purpose: the old
-     dark-orange stop read as a harsh slab against the warm surfaces, and the
-     light fill carries near-black ink at 9.8:1–14.5:1. */
-  --grad-brand: linear-gradient(135deg, #ffe0b0 0%, #ffc978 48%, #ffb45e 100%);
+  /* Brand gradient — the CTA fill. Theme blue (the same accent the rest of the
+     product already uses), with white ink at 4.5:1–6.4:1 in both themes. The
+     dark-orange stop was harsh and the medium orange looked off on light
+     surfaces; orange stays as the section accent, never the button fill. */
+  --grad-brand: linear-gradient(135deg, #2b6ef6 0%, #1a59d8 100%);
   /* Warm ambient wash behind light heroes/sections — barely-there, so it reads
      as paper warmth rather than a coloured block. */
   --grad-warm: radial-gradient(120% 80% at 12% 0%, rgba(253, 143, 1, 0.1), transparent 62%);
@@ -171,26 +175,29 @@
   -webkit-color-scheme: light;
 
   /* Light surfaces — the same ladder, lightness inverted: page < card < inset.
-     Warm neutral (paper) rather than the previous cool blue-grey: the product
-     leads with this surface now, and a warm base is what lets the orange accent
-     sit on it without the whole page looking tinted. */
-  --bg-page: #faf9f7;
+     Neutral cool grey on white: the palette the product's public landing and
+     every reference screen share (off-white canvas, white cards, one royal
+     blue accent). The earlier warm-paper base is retired so in-app pages match
+     the landing the visitor just came from. */
+  --bg-page: #f8f9fa;
   --bg: #ffffff;
-  --bg-secondary: #f5f4f1;
-  --bg-tertiary: #ecebe6;
+  --bg-secondary: #f1f3f5;
+  --bg-tertiary: #e9ecef;
   --bg-elevated: #ffffff;
 
-  --border: #e8e6e0;
-  --border-strong: #d4d1c9;
+  --border: #e5e7eb;
+  --border-strong: #d3d8de;
 
-  --text-primary: #1a1815;
-  --text-secondary: #5f5a52;
-  --text-muted: #8b857b;
+  --text-primary: #16181d;
+  --text-secondary: #4b5563;
+  --text-muted: #6b7280;
 
-  --accent: var(--accent-gold);
-  --accent-light: color-mix(in srgb, var(--accent) 14%, white);
+  /* Royal blue accent — the reference blue. Stays light enough that the dark
+     on-accent ink clears AA (5.09:1); the deeper blue is the CTA fill. */
+  --accent: #3b82f6;
+  --accent-light: color-mix(in srgb, var(--accent) 12%, white);
   /* Was #b35c00: 4.18:1 on the accent-tinted surface, under AA. */
-  --accent-text: #8f4a00;
+  --accent-text: #1d4ed8;
   --accent-border: color-mix(in srgb, var(--accent) 46%, white);
   --accent-glow: 0 0 18px color-mix(in srgb, var(--accent) 18%, transparent);
 
@@ -219,14 +226,10 @@
   --cyan-text: #0b7683;
   --cyan-border: color-mix(in srgb, #0fa6b8 42%, white);
 
-  --accent: #4f8ef7;
-  --accent-text: #2f6fe0;
-  --accent-light: color-mix(in srgb, #4f8ef7 12%, white);
-  --accent-border: color-mix(in srgb, #4f8ef7 40%, white);
-  --blue: #2f6fe0;
-  --blue-light: color-mix(in srgb, #2f6fe0 13%, white);
-  --blue-text: #2456c9;
-  --blue-border: color-mix(in srgb, #2f6fe0 42%, white);
+  --blue: #2b6ef6;
+  --blue-light: color-mix(in srgb, #2b6ef6 13%, white);
+  --blue-text: #1a59d8;
+  --blue-border: color-mix(in srgb, #2b6ef6 42%, white);
 
   --orange-light: color-mix(in srgb, #b97c14 13%, white);
   --orange-text: #925f0a;
@@ -236,14 +239,13 @@
   --gray-soft: #eaebef;
   --disabled: color-mix(in srgb, var(--accent) 38%, white);
 
-  /* Warm-tinted, layered shadows — a neutral-black shadow on a warm surface
-     reads grey and muddy. */
-  --shadow-sm: 0 1px 2px rgba(60, 48, 30, 0.05), 0 2px 6px -1px rgba(60, 48, 30, 0.06);
-  --shadow-md: 0 6px 14px -4px rgba(60, 48, 30, 0.08), 0 16px 28px -10px rgba(60, 48, 30, 0.09);
-  --shadow: 0 10px 22px -8px rgba(60, 48, 30, 0.09), 0 24px 40px -16px rgba(60, 48, 30, 0.11);
-  --shadow-lg: 0 24px 48px -12px rgba(60, 48, 30, 0.16), 0 48px 80px -32px rgba(60, 48, 30, 0.14);
+  /* Neutral-tinted, layered shadows — they belong to the cool grey canvas. */
+  --shadow-sm: 0 1px 2px rgba(17, 24, 39, 0.05), 0 2px 6px -1px rgba(17, 24, 39, 0.07);
+  --shadow-md: 0 6px 14px -4px rgba(17, 24, 39, 0.1), 0 16px 28px -10px rgba(17, 24, 39, 0.1);
+  --shadow: 0 10px 22px -8px rgba(17, 24, 39, 0.12), 0 24px 44px -16px rgba(17, 24, 39, 0.12);
+  --shadow-lg: 0 24px 48px -12px rgba(17, 24, 39, 0.16), 0 48px 80px -32px rgba(17, 24, 39, 0.14);
   --highlight: inset 0 1px 0 rgba(255, 255, 255, 0.9);
-  --grad-warm: radial-gradient(120% 80% at 12% 0%, rgba(253, 143, 1, 0.09), transparent 60%);
+  --grad-warm: radial-gradient(120% 80% at 12% 0%, rgba(43, 110, 246, 0.1), transparent 62%);
 }
 
 /* ───────────────────────── 5. CONTEXTUAL SECTION ACCENTS ───────────────────────── */
@@ -1133,17 +1135,17 @@ a,
 }
 .ss-btn--primary {
   border: none;
-  color: #24160a;
+  color: var(--on-brand);
   background: var(--grad-brand);
   box-shadow:
-    0 8px 20px -10px color-mix(in srgb, var(--accent) 80%, transparent),
-    inset 0 1px 0 rgba(255, 255, 255, 0.4);
+    0 8px 20px -10px color-mix(in srgb, #2b6ef6 55%, transparent),
+    inset 0 1px 0 rgba(255, 255, 255, 0.16);
 }
 .ss-btn--primary:hover {
   transform: translateY(-1px);
   background: var(--grad-brand);
-  color: #24160a;
-  box-shadow: 0 14px 28px -12px color-mix(in srgb, var(--accent) 90%, transparent);
+  color: var(--on-brand);
+  box-shadow: 0 14px 28px -12px color-mix(in srgb, #2b6ef6 70%, transparent);
 }
 @media (max-width: 640px) {
   .ss-wrap {
@@ -1404,7 +1406,7 @@ a,
 .cd-btn--primary {
   border-color: transparent;
   background: var(--grad-brand);
-  color: #24160a;
+  color: var(--on-brand);
   flex: 0 0 auto;
   padding: 0 16px;
 }
@@ -1679,17 +1681,17 @@ a,
 }
 .hc-btn--primary {
   border: none;
-  color: var(--on-accent);
+  color: var(--on-brand);
   background: var(--grad-brand);
   box-shadow:
-    0 8px 20px -10px color-mix(in srgb, var(--accent) 80%, transparent),
-    inset 0 1px 0 rgba(255, 255, 255, 0.4);
+    0 8px 20px -10px color-mix(in srgb, #2b6ef6 55%, transparent),
+    inset 0 1px 0 rgba(255, 255, 255, 0.16);
 }
 .hc-btn--primary:hover {
   transform: translateY(-1px);
   background: var(--grad-brand);
-  color: var(--on-accent);
-  box-shadow: 0 14px 28px -12px color-mix(in srgb, var(--accent) 90%, transparent);
+  color: var(--on-brand);
+  box-shadow: 0 14px 28px -12px color-mix(in srgb, #2b6ef6 70%, transparent);
 }
 .hc-btn--block {
   width: 100%;
@@ -1697,6 +1699,19 @@ a,
 .hc-btn:disabled {
   cursor: not-allowed;
   opacity: 0.6;
+}
+
+/* Experiences/blog: orange section, BLUE primary actions. The two colours are
+   the product's whole palette; a blue CTA on the warm reading surface reads as
+   deliberate, where the orange-on-orange button was either harsh (dark) or
+   washed out (light). Secondary buttons keep the section's orange hover. */
+[data-experience='1'] .hc-btn--primary.hc-btn--primary,
+[data-experience='1'] .hc-btn--primary.hc-btn--primary:hover {
+  background: var(--grad-brand);
+  color: var(--on-brand);
+  box-shadow:
+    0 8px 20px -10px color-mix(in srgb, #2b6ef6 55%, transparent),
+    inset 0 1px 0 rgba(255, 255, 255, 0.16);
 }
 
 /* Phones get a real touch target. A 38px button is fine with a mouse and a
@@ -1785,7 +1800,9 @@ a,
   inset: 0 auto 0 0;
   width: 3px;
   border-radius: var(--radius-lg) 0 0 var(--radius-lg);
-  background: var(--grad-brand);
+  /* Section accent, not the CTA fill: an experiences card keeps its orange
+     rail while every primary button stays theme blue. */
+  background: var(--accent);
   opacity: 0;
   transition: opacity 0.18s ease;
 }
@@ -3791,12 +3808,12 @@ html.nav-hidden .fab-wrap {
   border-radius: 9px;
   border: none;
   background: var(--grad-brand);
-  color: var(--on-accent);
+  color: var(--on-brand);
   font-family: inherit;
   font-size: 13px;
   font-weight: 700;
   cursor: pointer;
-  box-shadow: 0 8px 18px -10px color-mix(in srgb, var(--accent) 85%, transparent);
+  box-shadow: 0 8px 18px -10px color-mix(in srgb, #2b6ef6 65%, transparent);
 }
 .topnav-join:hover {
   transform: translateY(-1px);

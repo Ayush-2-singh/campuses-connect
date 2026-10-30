@@ -245,7 +245,7 @@
 .au-submit {
   width: 100%;
   background: var(--grad-brand);
-  color: #24160a;
+  color: var(--on-brand);
   border: none;
   border-radius: var(--radius);
   padding: 13px;
@@ -255,15 +255,15 @@
   cursor: pointer;
   margin-top: 18px;
   box-shadow:
-    0 8px 22px -10px color-mix(in srgb, var(--hl-brand, #fd8f01) 85%, transparent),
-    inset 0 1px 0 rgba(255, 255, 255, 0.4);
+    0 8px 22px -10px color-mix(in srgb, #2b6ef6 55%, transparent),
+    inset 0 1px 0 rgba(255, 255, 255, 0.16);
   transition:
     transform 0.16s ease,
     box-shadow 0.2s ease;
 }
 .au-submit:hover:not(:disabled) {
   transform: translateY(-1px);
-  box-shadow: 0 16px 34px -12px color-mix(in srgb, var(--hl-brand, #fd8f01) 95%, transparent);
+  box-shadow: 0 16px 34px -12px color-mix(in srgb, #2b6ef6 70%, transparent);
 }
 .au-submit:disabled {
   cursor: not-allowed;

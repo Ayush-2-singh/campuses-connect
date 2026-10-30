@@ -59,6 +59,10 @@ export type AccentName = 'gold' | 'blue' | 'cyan' | 'purple' | 'green'
  *  - green   → networking / talent / success
  */
 export const ACCENT_BY_ROUTE: Record<string, AccentName> = {
+  // Messaging is the product's blue surface — the same blue the chat bubbles
+  // and Apple-style composer use.
+  '/messages': 'blue',
+
   '/jobs': 'cyan',
   '/leaderboard': 'gold',
   '/weekly': 'gold',

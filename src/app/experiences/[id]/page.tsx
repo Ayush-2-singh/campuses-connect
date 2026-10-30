@@ -255,7 +255,7 @@ export default async function ExperienceDetailPage({ params }: PageProps) {
   return (
     // Standalone reading page: it renders no Layout, so it sets the section
     // accent itself — same orange as the list it belongs to.
-    <div className="hc-page" data-accent="gold">
+    <div className="hc-page" data-accent="gold" data-experience="1">
       {/* Crawlers read JSON-LD; the markup below is what a student reads. */}
       <script
         type="application/ld+json"

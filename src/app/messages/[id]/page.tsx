@@ -35,6 +35,11 @@ type Message = {
 const MAX_BODY = 4000
 const POLL_MS = 20_000
 
+/** iMessage-ish blue: vibrant, but white text still clears 4.5:1 (4.86:1). */
+const APPLE_BLUE = '#0a6ee0'
+const CHAT_FONT =
+  "-apple-system, BlinkMacSystemFont, 'SF Pro Text', 'SF Pro Display', 'Segoe UI', var(--font-sans), sans-serif"
+
 function one<T>(value: T | T[] | null | undefined): T | null {
   return Array.isArray(value) ? (value[0] ?? null) : (value ?? null)
 }
@@ -207,13 +212,14 @@ export default function ChatPage() {
   if (loading)
     return (
       <div
-        className="chat-doodle-bg"
         style={{
           height: 'var(--app-dvh)',
           display: 'flex',
           flexDirection: 'column',
           maxWidth: 720,
           margin: '0 auto',
+          background: 'var(--bg-page)',
+          fontFamily: CHAT_FONT,
         }}
         aria-busy="true"
       >
@@ -284,15 +290,15 @@ export default function ChatPage() {
           <button
             onClick={() => router.push('/messages?tab=find')}
             style={{
-              background: 'var(--accent)',
-              color: 'var(--on-accent)',
+              background: APPLE_BLUE,
+              color: '#ffffff',
               border: 'none',
-              borderRadius: 'var(--radius-sm)',
-              padding: '10px 20px',
+              borderRadius: 999,
+              padding: '11px 20px',
               fontSize: 14,
               fontWeight: 600,
               cursor: 'pointer',
-              fontFamily: 'inherit',
+              fontFamily: CHAT_FONT,
             }}
           >
             Find people to connect with
@@ -305,7 +311,7 @@ export default function ChatPage() {
 
   return (
     <div
-      className="chat-doodle-bg"
+      data-accent="blue"
       style={{
         height: 'var(--app-dvh)',
         display: 'flex',
@@ -313,6 +319,8 @@ export default function ChatPage() {
         maxWidth: 720,
         margin: '0 auto',
         position: 'relative',
+        background: 'var(--bg-page)',
+        fontFamily: CHAT_FONT,
       }}
     >
       {/* Header */}
@@ -323,8 +331,10 @@ export default function ChatPage() {
           gap: 10,
           padding: '10px 14px',
           paddingTop: 'calc(10px + env(safe-area-inset-top))',
-          borderBottom: '1px solid var(--border)',
-          background: 'var(--bg)',
+          borderBottom: '1px solid color-mix(in srgb, var(--border) 70%, transparent)',
+          background: 'color-mix(in srgb, var(--bg) 82%, transparent)',
+          backdropFilter: 'blur(18px) saturate(180%)',
+          WebkitBackdropFilter: 'blur(18px) saturate(180%)',
           flexShrink: 0,
           zIndex: 5,
         }}
@@ -338,10 +348,10 @@ export default function ChatPage() {
             display: 'inline-flex',
             alignItems: 'center',
             justifyContent: 'center',
-            borderRadius: 10,
+            borderRadius: 999,
             border: 'none',
             background: 'none',
-            color: 'var(--text-secondary)',
+            color: APPLE_BLUE,
             cursor: 'pointer',
             flexShrink: 0,
           }}
@@ -362,8 +372,9 @@ export default function ChatPage() {
           <p
             onClick={() => peer.username && router.push(`/profile/${peer.username}`)}
             style={{
-              fontSize: 15,
-              fontWeight: 700,
+              fontSize: 16,
+              fontWeight: 600,
+              letterSpacing: '-0.01em',
               color: 'var(--text-primary)',
               margin: 0,
               overflow: 'hidden',
@@ -377,7 +388,7 @@ export default function ChatPage() {
           <p
             style={{
               fontSize: 11.5,
-              color: 'var(--success-text)',
+              color: 'var(--text-muted)',
               margin: 0,
               display: 'inline-flex',
               alignItems: 'center',
@@ -394,13 +405,26 @@ export default function ChatPage() {
         style={{
           flex: 1,
           overflowY: 'auto',
-          padding: '16px 14px 12px',
+          padding: '18px 14px 12px',
           display: 'flex',
           flexDirection: 'column',
-          gap: 8,
+          gap: 3,
         }}
         aria-live="polite"
       >
+        {messages.length > 0 && new Date(messages[0].created_at).toDateString() === new Date().toDateString() && (
+          <p
+            style={{
+              textAlign: 'center',
+              fontSize: 11,
+              fontWeight: 600,
+              color: 'var(--text-muted)',
+              margin: '0 0 10px',
+            }}
+          >
+            Today
+          </p>
+        )}
         {messages.length === 0 && (
           <div style={{ textAlign: 'center', margin: 'auto 0', padding: '32px 12px' }}>
             <Avatar name={peer.full_name} avatarUrl={peer.avatar_url} size={60} />
@@ -419,21 +443,23 @@ export default function ChatPage() {
             <div key={m.id} style={{ display: 'flex', justifyContent: mine ? 'flex-end' : 'flex-start' }}>
               <div
                 style={{
-                  maxWidth: '78%',
-                  background: mine ? 'var(--accent)' : 'var(--bg)',
-                  border: mine ? '1px solid transparent' : '1px solid var(--border)',
-                  borderRadius: 14,
-                  borderBottomRightRadius: mine ? 4 : 14,
-                  borderBottomLeftRadius: mine ? 14 : 4,
-                  padding: '9px 13px',
-                  boxShadow: 'var(--shadow-sm)',
+                  maxWidth: '76%',
+                  background: mine ? APPLE_BLUE : 'var(--bg-secondary)',
+                  border: mine
+                    ? '1px solid transparent'
+                    : '1px solid color-mix(in srgb, var(--border) 65%, transparent)',
+                  borderRadius: 19,
+                  borderBottomRightRadius: mine ? 6 : 19,
+                  borderBottomLeftRadius: mine ? 19 : 6,
+                  padding: '8px 13px 7px',
                 }}
               >
                 <p
                   style={{
-                    fontSize: 13.5,
-                    lineHeight: 1.5,
-                    color: mine ? 'var(--on-accent)' : 'var(--text-primary)',
+                    fontSize: 15,
+                    lineHeight: 1.4,
+                    letterSpacing: '-0.01em',
+                    color: mine ? '#ffffff' : 'var(--text-primary)',
                     margin: 0,
                     whiteSpace: 'pre-wrap',
                     wordBreak: 'break-word',
@@ -443,9 +469,9 @@ export default function ChatPage() {
                 </p>
                 <p
                   style={{
-                    fontSize: 10,
-                    color: mine ? 'rgba(255,255,255,0.72)' : 'var(--text-muted)',
-                    margin: '3px 0 0',
+                    fontSize: 10.5,
+                    color: mine ? 'rgba(255,255,255,0.7)' : 'var(--text-muted)',
+                    margin: '2px 0 0',
                     textAlign: 'right',
                   }}
                 >
@@ -455,6 +481,11 @@ export default function ChatPage() {
             </div>
           )
         })}
+        {messages.length > 0 && messages[messages.length - 1].sender_id === user?.id && (
+          <p style={{ textAlign: 'right', fontSize: 10.5, color: 'var(--text-muted)', margin: '2px 4px 0' }}>
+            Delivered
+          </p>
+        )}
         <div ref={bottomRef} />
       </div>
 
@@ -462,8 +493,10 @@ export default function ChatPage() {
       <div
         style={{
           flexShrink: 0,
-          background: 'var(--bg)',
-          borderTop: '1px solid var(--border)',
+          background: 'color-mix(in srgb, var(--bg) 86%, transparent)',
+          backdropFilter: 'blur(18px) saturate(180%)',
+          WebkitBackdropFilter: 'blur(18px) saturate(180%)',
+          borderTop: '1px solid color-mix(in srgb, var(--border) 70%, transparent)',
           padding: '10px 14px',
           paddingBottom: 'calc(10px + env(safe-area-inset-bottom))',
         }}
@@ -495,11 +528,11 @@ export default function ChatPage() {
               flex: 1,
               minWidth: 0,
               border: '1px solid var(--border)',
-              borderRadius: 22,
+              borderRadius: 21,
               padding: '11px 16px',
-              fontSize: 14,
+              fontSize: 15,
               outline: 'none',
-              fontFamily: 'inherit',
+              fontFamily: CHAT_FONT,
               color: 'var(--text-primary)',
               background: 'var(--bg-secondary)',
               boxSizing: 'border-box',
@@ -514,8 +547,8 @@ export default function ChatPage() {
               height: 44,
               borderRadius: '50%',
               border: 'none',
-              background: !text.trim() || sending ? 'var(--disabled)' : 'var(--accent)',
-              color: 'var(--on-accent)',
+              background: !text.trim() || sending ? 'var(--disabled)' : APPLE_BLUE,
+              color: '#ffffff',
               display: 'inline-flex',
               alignItems: 'center',
               justifyContent: 'center',

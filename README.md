@@ -11,9 +11,10 @@
 | Date | Change | Details |
 |------|--------|---------|
 | Oct 2026 | **Campus network returns** | Connection requests + 1:1 DMs at `/messages` (Chats · Requests · Sent · Connections · Find people); profile Message button and notification deep links; old `/connections` links redirect with their tab intact |
-| Oct 2026 | **Experiences palette** | Reading section stays orange; primary buttons use a lighter orange fill with AA dark ink (no harsh #f0740a slab), and phones get 44px touch targets |
+| Oct 2026 | **Blue CTAs everywhere** | Every primary button uses the theme blue (white ink); orange stays the section accent (Experiences, highlights), never a button fill. Phones get 44px touch targets |
+| Oct 2026 | **Blue Messages** | Messages gets the blue accent and an iMessage-style thread — blue sent bubbles, gray replies, blurred header/composer, system font |
 | Oct 2026 | **Landing message CTA** | Messages joins the public nav and the hero, so a visitor can start a request/chat from the landing page |
-| Oct 2026 | **Connection requests fixed** | Migration 20261115 repairs the legacy notification trigger and adds `send_connection_request` (campus-scope reason, reverse-request auto-accept) |
+| Oct 2026 | **Connection requests fixed** | Requests now run through `/api/connections/request` (service-role scope check, reverse-request auto-accept, actionable errors); migration 20261115 also repairs the legacy trigger |
 | Aug 2026 | **N+1 query fixes** | Events & Connections batch attendee/unread counts |
 | Aug 2026 | **AI Brain premium gating** | Free users see upgrade prompt, premium gets full access |
 | Aug 2026 | **Middleware optimization** | Skip getUser() for 90% of public routes |

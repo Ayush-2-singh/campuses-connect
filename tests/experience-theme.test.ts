@@ -1,12 +1,10 @@
 /**
- * EXPERIENCES PALETTE — the reading section is orange, and its primary buttons
- * are LIGHT orange with near-black ink.
+ * EXPERIENCES PALETTE — orange reading section, BLUE primary actions.
  *
- * The first attempt moved the section to the blue brand accent. It read as a
- * different product on a page that is supposed to feel warm, so the section is
- * back on the gold/orange accent. What stays from that pass is the contrast
- * discipline: the old #f0740a button stop was a harsh dark-orange slab, and the
- * light fill must keep WCAG AA ink in both themes.
+ * The section wore both extremes before: a dark-orange button (harsh) and a
+ * pale-orange one (washed out in light mode). The final pairing uses the
+ * product's two colours: orange for the section accent, blue for every primary
+ * button (theme blue in both themes), never an orange button fill.
  */
 import { describe, expect, it } from 'vitest'
 import fs from 'node:fs'
@@ -29,32 +27,52 @@ function contrast(a: string, b: string): number {
   return (hi + 0.05) / (lo + 0.05)
 }
 
-describe('experiences section accent', () => {
-  it('is orange again, not the blue brand accent', () => {
+describe('experiences section', () => {
+  it('stays on the orange/gold accent', () => {
     expect(accentForPath('/experiences')).toBe('gold')
     expect(accentForPath('/experiences/abc')).toBe('gold')
     expect(accentForPath('/blog')).toBe('gold')
   })
 
-  it('does not paint the section primary button blue', () => {
-    expect(css).not.toContain("[data-accent='blue'] .hc-btn--primary")
-    expect(css).not.toContain('--accent-warm')
+  it('pairs the section with a blue primary button', () => {
+    expect(css).toContain("[data-experience='1'] .hc-btn--primary.hc-btn--primary")
+    expect(contrast('#ffffff', '#2b6ef6')).toBeGreaterThanOrEqual(4.5)
+    expect(contrast('#ffffff', '#1a59d8')).toBeGreaterThanOrEqual(4.5)
   })
 
-  it('uses a light-orange brand gradient, not the dark #f0740a stop', () => {
-    expect(css).toContain('--grad-brand: linear-gradient(135deg, #ffe0b0 0%, #ffc978 48%, #ffb45e 100%)')
+  it('uses the theme blue for the global CTA, not an orange fill', () => {
+    expect(css).toContain('--grad-brand: linear-gradient(135deg, #2b6ef6 0%, #1a59d8 100%)')
+    expect(css).not.toContain('#ffe0b0')
     expect(css).not.toContain('#f0740a')
   })
 
-  it('keeps dark ink readable on every stop of the light fill', () => {
-    // --on-accent in both themes
-    expect(contrast('#0b1220', '#ffe0b0')).toBeGreaterThanOrEqual(4.5)
-    expect(contrast('#0b1220', '#ffc978')).toBeGreaterThanOrEqual(4.5)
-    expect(contrast('#0b1220', '#ffb45e')).toBeGreaterThanOrEqual(4.5)
+  it('keeps white ink readable on the blue CTA', () => {
+    expect(css).toContain('--on-brand: #ffffff')
+    expect(contrast('#ffffff', '#2b6ef6')).toBeGreaterThanOrEqual(4.5)
+    expect(contrast('#ffffff', '#1a59d8')).toBeGreaterThanOrEqual(4.5)
+  })
+
+  it('leaves no brown ink on the brand fill', () => {
+    expect(css).not.toContain('#24160a')
   })
 
   it('gives touch devices a 44px button target', () => {
     expect(css).toMatch(/@media \(pointer: coarse\)/)
     expect(css).toContain('.hc-btn,\n  .ss-btn,\n  .cd-btn,')
+  })
+})
+
+describe('light theme palette', () => {
+  it('matches the reference: off-white canvas, white cards, royal blue accent', () => {
+    expect(css).toContain('--bg-page: #f8f9fa')
+    expect(css).toContain('--bg-secondary: #f1f3f5')
+    expect(css).toContain('--accent: #3b82f6')
+    // Dark ink on the accent is what every filled chip/badge uses.
+    expect(contrast('#0b1220', '#3b82f6')).toBeGreaterThanOrEqual(4.5)
+  })
+
+  it('retires the warm paper surfaces', () => {
+    expect(css).not.toContain('#faf9f7')
+    expect(css).not.toContain('rgba(60, 48, 30')
   })
 })

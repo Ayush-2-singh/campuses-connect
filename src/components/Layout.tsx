@@ -143,9 +143,17 @@ export default function Layout({ children, user, profile }: { children: React.Re
   // Contextual accent for the current section — recolors the whole shell
   // (top-nav active states, FAB, bottom nav) to match the page identity.
   const sectionAccent = accentForPath(pathname)
+  // The reading section is orange with blue primary actions. The flag lives on
+  // the shell so every Experiences/blog page (and its nested routes) gets the
+  // same button treatment without hardcoding colors in each component.
+  const experienceTheme = pathname.startsWith('/experiences') || pathname.startsWith('/blog')
 
   return (
-    <div data-accent={sectionAccent} style={{ minHeight: 'var(--app-vh)', display: 'flex', flexDirection: 'column' }}>
+    <div
+      data-accent={sectionAccent}
+      data-experience={experienceTheme ? '1' : undefined}
+      style={{ minHeight: 'var(--app-vh)', display: 'flex', flexDirection: 'column' }}
+    >
       {/* ── Horizontal top nav (desktop) ── */}
       <TopNav
         pathname={pathname}

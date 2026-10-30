@@ -38,7 +38,8 @@ import EmptyState from '@/components/EmptyState'
 import { CardSkeleton } from '@/components/Skeleton'
 import { Icon } from '@/components/icons'
 import { useToast } from '@/components/Toast'
-import { canRequestConnection, connectionErrorCopy, connectionState, type ConnectionRow } from '@/lib/messaging'
+import { canRequestConnection, connectionState, type ConnectionRow } from '@/lib/messaging'
+import { requestResultCopy, sendConnectionRequest } from '@/lib/connectionRequest'
 
 export default function UserProfilePage() {
   const [user, setUser] = useState<any>(null)
@@ -135,45 +136,12 @@ export default function UserProfilePage() {
   const handleConnect = async () => {
     if (!user || !profile || connBusy) return
     setConnBusy(true)
-
-    // Preferred path: the RPC also accepts a reverse request and tells us WHY
-    // it refused. Fall back to the plain insert on databases without it.
-    const { data: result, error } = await supabase.rpc('send_connection_request', { p_receiver_id: profile.id })
-    if (!error) {
-      setConnBusy(false)
-      if (result === 'accepted') {
-        setConnState('accepted')
-        toast('Connected! You can message each other now', { tone: 'success' })
-      } else if (result === 'campus_only') {
-        toast('This student only accepts requests from their own campus', { tone: 'danger' })
-      } else if (result === 'blocked') {
-        toast('You cannot send a request to this student', { tone: 'danger' })
-      } else if (result === 'invalid') {
-        toast('That student could not be found', { tone: 'danger' })
-      } else {
-        setConnState('pending_sent')
-        toast('Request sent — they will see it in their connections', { tone: 'success' })
-      }
-      return
-    }
-    if (error.code !== 'PGRST202' && error.code !== '42883') {
-      setConnBusy(false)
-      toast(connectionErrorCopy(error), { tone: 'danger' })
-      return
-    }
-
-    const { error: insertError } = await supabase.from('connections').insert({
-      requester_id: user.id,
-      receiver_id: profile.id,
-      status: 'pending',
-    })
+    const result = await sendConnectionRequest(profile.id)
     setConnBusy(false)
-    if (insertError) {
-      toast(connectionErrorCopy(insertError), { tone: 'danger' })
-      return
-    }
-    setConnState('pending_sent')
-    toast('Request sent — they will see it in their connections', { tone: 'success' })
+    if (result.status === 'accepted') setConnState('accepted')
+    else if (result.status === 'pending') setConnState('pending_sent')
+    const copy = requestResultCopy(result)
+    toast(copy.message, { tone: copy.tone })
   }
 
   const handleCancelRequest = async () => {

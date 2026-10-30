@@ -29,11 +29,11 @@ import EmptyState from '@/components/EmptyState'
 import ErrorBoundary from '@/components/ErrorBoundary'
 import { useToast } from '@/components/Toast'
 import { Icon } from '@/components/icons'
+import { requestResultCopy, sendConnectionRequest } from '@/lib/connectionRequest'
 import {
   buildNetwork,
   canRequestConnection,
   connectionBetween,
-  connectionErrorCopy,
   connectionState,
   conversationPreview,
   formatRelativeTime,
@@ -323,48 +323,18 @@ function MessagesPageInner() {
   }
 
   /**
-   * Send a request. The RPC is the preferred path: it auto-accepts a reverse
-   * pending request and returns WHY it refused (campus-only). Older databases
-   * that do not have the RPC yet fall back to the plain insert, so the button
-   * keeps working before the migration is applied.
+   * Send a request through the server route. It re-checks the interaction
+   * scope and returns a reason for every refusal, so this button can never
+   * surface the old opaque "could not send" dead end.
    */
   const connect = async (peerId: string) => {
     if (!user || busy) return
     setBusy(peerId)
-    const { data: result, error } = await supabase.rpc('send_connection_request', { p_receiver_id: peerId })
-
-    if (!error) {
-      await loadNetwork(user.id)
-      setBusy(null)
-      if (result === 'accepted') toast('Connected — you can message each other now', { tone: 'success' })
-      else if (result === 'campus_only')
-        toast('This student only accepts requests from their own campus', { tone: 'danger' })
-      else if (result === 'blocked') toast('You cannot send a request to this student', { tone: 'danger' })
-      else if (result === 'invalid') toast('That student could not be found', { tone: 'danger' })
-      else toast('Request sent', { tone: 'success' })
-      return
-    }
-
-    // PGRST202 / 42883 = the function is not deployed yet.
-    if (error.code !== 'PGRST202' && error.code !== '42883') {
-      setBusy(null)
-      toast(connectionErrorCopy(error), { tone: 'danger' })
-      return
-    }
-
-    // Fallback: no `.select().single()` here — a hidden RETURNING row must not
-    // turn a successful insert into a failed request.
-    const { error: insertError } = await supabase
-      .from('connections')
-      .insert({ requester_id: user.id, receiver_id: peerId, status: 'pending' })
-    if (insertError) {
-      setBusy(null)
-      toast(connectionErrorCopy(insertError), { tone: 'danger' })
-      return
-    }
+    const result = await sendConnectionRequest(peerId)
     await loadNetwork(user.id)
     setBusy(null)
-    toast('Request sent', { tone: 'success' })
+    const copy = requestResultCopy(result)
+    toast(copy.message, { tone: copy.tone })
   }
 
   const openConversation = async (peerId: string) => {
