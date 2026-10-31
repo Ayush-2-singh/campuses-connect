@@ -371,7 +371,8 @@ export default function ExperiencesApp({ initialExperiences = [] }: { initialExp
                       ) : (
                         exp.companies?.name || '—'
                       )}{' '}
-                      {exp.role && `· ${exp.role}`} · by {exp.profiles?.full_name || 'Anonymous'}
+                      {exp.role && `· ${exp.role}`} · by{' '}
+                      {exp.profiles?.full_name || exp.source_author || 'Community member'}
                     </p>
                   </div>
                   <div className="hc-tags" style={{ flexShrink: 0, justifyContent: 'flex-end' }}>
@@ -379,10 +380,22 @@ export default function ExperiencesApp({ initialExperiences = [] }: { initialExp
                         every card so it is never read as the official process. */}
                     <span
                       className="hc-tag hc-tag--ghost"
-                      title="One student's own account, not the company's official process"
+                      title={
+                        exp.provenance === 'seed'
+                          ? 'Summary of a publicly posted account — read the original at the source'
+                          : "One student's own account, not the company's official process"
+                      }
                     >
-                      Personal experience
+                      {exp.provenance === 'seed' ? 'Sourced write-up' : 'Personal experience'}
                     </span>
+                    {exp.is_verified && (
+                      <span
+                        className="hc-tag hc-tag--success"
+                        title={`Source checked on ${exp.source_platform || 'the original platform'}`}
+                      >
+                        <Icon name="shield" size={11} /> Verified source
+                      </span>
+                    )}
                     {exp.difficulty && (
                       <span className={`hc-tag ${DIFF_TONE[exp.difficulty] || ''}`}>{exp.difficulty}</span>
                     )}
@@ -438,7 +451,9 @@ export default function ExperiencesApp({ initialExperiences = [] }: { initialExp
                     </span>
                   )}
                   <span className="hc-spacer" />
-                  <span className="hc-meta">{new Date(exp.created_at).toLocaleDateString()}</span>
+                  <span className="hc-meta">
+                    {new Date(exp.experience_date || exp.created_at).toLocaleDateString()}
+                  </span>
                 </div>
               </article>
             ))}

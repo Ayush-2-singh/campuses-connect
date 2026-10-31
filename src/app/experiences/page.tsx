@@ -27,6 +27,10 @@ type PublicExperience = {
   experience: string
   role: string | null
   created_at: string
+  experience_date: string | null
+  is_verified: boolean | null
+  source_platform: string | null
+  provenance: 'user' | 'seed'
   companies: { name: string; slug: string; logo_url: string | null } | null
 }
 
@@ -45,10 +49,12 @@ async function getApprovedExperiences(): Promise<PublicExperience[]> {
   try {
     const { data } = await db
       .from('interview_experiences')
-      .select('id, title, experience, role, created_at, companies(name, slug, logo_url)')
+      .select(
+        'id, title, experience, role, created_at, experience_date, is_verified, source_platform, provenance, companies(name, slug, logo_url)'
+      )
       .eq('review_status', 'approved')
       .order('created_at', { ascending: false })
-      .limit(30)
+      .limit(200)
     // PostgREST answers a to-one embed as an ARRAY, so normalise it here rather
     // than making every caller remember.
     type Row = Omit<PublicExperience, 'title' | 'companies'> & {

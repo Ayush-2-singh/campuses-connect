@@ -40,6 +40,9 @@ interface ExperienceRow {
   tips: string | null
   offer_salary: string | null
   created_at: string
+  experience_date: string | null
+  is_verified: boolean | null
+  source_author: string | null
   updated_at: string | null
   review_status: 'pending_review' | 'approved' | 'rejected'
   /** Present only on a seeded lead — the page always credits it. */
@@ -201,9 +204,12 @@ export default async function ExperienceDetailPage({ params }: PageProps) {
 
   const { experience: exp, author } = found
   const company = exp.companies?.name || 'Campus'
-  const authorName = author?.full_name?.trim() || author?.username?.trim() || 'Anonymous student'
+  const authorName =
+    author?.full_name?.trim() || author?.username?.trim() || exp.source_author?.trim() || 'Community contributor'
   const campus = author?.campuses?.[0]?.name || null
-  const published = new Date(exp.created_at)
+  // Seed rows carry the interview/source date; user rows fall back to when the
+  // write-up was posted.
+  const published = new Date(exp.experience_date || exp.created_at)
   const dateText = published.toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' })
 
   const canonical = `${APP_URL}/experiences/${id}`
@@ -296,6 +302,11 @@ export default async function ExperienceDetailPage({ params }: PageProps) {
         {exp.round_count ? <span className="hc-tag">{exp.round_count} rounds</span> : null}
         {exp.rating ? <span className="hc-tag hc-tag--warn">{exp.rating}/5</span> : null}
         {exp.offer_salary && <span className="hc-tag hc-tag--ghost">{exp.offer_salary}</span>}
+        {exp.is_verified && (
+          <span className="hc-tag hc-tag--success" title="The source URL was checked when this row was imported">
+            <Icon name="shield" size={11} /> Verified source
+          </span>
+        )}
       </div>
 
       <article className="hc-card" style={{ whiteSpace: 'pre-wrap', lineHeight: 1.75, fontSize: 15 }}>
@@ -308,7 +319,8 @@ export default async function ExperienceDetailPage({ params }: PageProps) {
           pointing at it, not vouching for it. */}
       {exp.source_url && (
         <p className="hc-note" style={{ marginTop: 14 }}>
-          Originally reported on {exp.source_platform || 'the source page'} —{' '}
+          {exp.is_verified ? 'Verified source. ' : ''}Originally reported on {exp.source_platform || 'the source page'}{' '}
+          —{' '}
           <a
             href={exp.source_url}
             target="_blank"

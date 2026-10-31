@@ -40,7 +40,7 @@ export async function GET(req: NextRequest) {
     // existed. Profiles are fetched separately below and merged in.
     .select('*, companies(name, slug, logo_url)')
     .order('created_at', { ascending: false })
-    .limit(30)
+    .limit(200)
 
   if (companySlug) {
     const { data: company } = await supabase.from('companies').select('id').eq('slug', companySlug).single()
