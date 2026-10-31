@@ -10,6 +10,7 @@ import OfflineIndicator from '@/components/OfflineIndicator'
 import LoadingBar from '@/components/LoadingBar'
 import NativeShell from '@/components/NativeShell'
 import CookieConsent from '@/components/CookieConsent'
+import InstallPrompt from '@/components/InstallPrompt'
 import Analytics from '@/components/Analytics'
 import { CallProvider } from '@/components/voice/CallProvider'
 
@@ -294,6 +295,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           {/* Cookie consent + consent-gated analytics (both no-ops until the
               visitor decides; Analytics additionally needs env vars set). */}
           <CookieConsent />
+          <InstallPrompt />
           <Analytics />
           {/* The live voice call lives ABOVE the routes: that is what lets it
               survive navigation, so back/minimise can never hang anybody up.

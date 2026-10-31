@@ -4312,3 +4312,118 @@ html.nav-hidden .fab-wrap {
     font-size: 19px;
   }
 }
+
+/* ── Install-to-home-screen prompt ──────────────────────────────────────
+   Bottom-right on desktop; above the fixed mobile tab bar on phones. The
+   cookie banner (z-index 300) always wins the bottom edge, and this prompt
+   only appears after that choice, so the two never overlap. */
+.pwa-install {
+  position: fixed;
+  right: 18px;
+  bottom: calc(18px + env(safe-area-inset-bottom, 0px));
+  z-index: 250;
+  width: min(360px, calc(100vw - 24px));
+  background: var(--bg);
+  color: var(--text);
+  border: 1px solid var(--border-strong);
+  border-radius: 15px;
+  box-shadow: var(--shadow-lg);
+  padding: 15px 16px 14px;
+  font-family: inherit;
+  animation: pwaInstallIn 0.24s ease-out;
+}
+
+.pwa-install-close {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  width: 28px;
+  height: 28px;
+  display: grid;
+  place-items: center;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--text-muted);
+  cursor: pointer;
+}
+.pwa-install-close:hover {
+  background: var(--bg-hover, var(--bg-subtle));
+  color: var(--text);
+}
+
+.pwa-install-head {
+  display: flex;
+  align-items: flex-start;
+  gap: 11px;
+  padding-right: 24px;
+}
+.pwa-install-icon {
+  border-radius: 10px;
+  flex-shrink: 0;
+}
+.pwa-install-title {
+  margin: 1px 0 3px;
+  font-size: 13.5px;
+  font-weight: 800;
+  line-height: 1.3;
+}
+.pwa-install-body {
+  margin: 0;
+  font-size: 12.5px;
+  line-height: 1.5;
+  color: var(--text-secondary);
+}
+
+.pwa-install-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 12px;
+}
+.pwa-install-skip,
+.pwa-install-cta {
+  min-height: 38px;
+  border-radius: 9px;
+  padding: 9px 15px;
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+}
+.pwa-install-skip {
+  background: transparent;
+  color: var(--text-secondary);
+  border: 1px solid var(--border-strong);
+}
+.pwa-install-cta {
+  background: var(--accent);
+  color: var(--on-accent);
+  border: none;
+}
+
+@keyframes pwaInstallIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (max-width: 768px) {
+  .pwa-install {
+    left: 12px;
+    right: 12px;
+    width: auto;
+    bottom: calc(84px + env(safe-area-inset-bottom, 0px));
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pwa-install {
+    animation: none;
+  }
+}
