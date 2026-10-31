@@ -1,6 +1,6 @@
 // Shared types for compete page tab components
 
-export type Tab = 'rankings' | 'challenge' | 'clash' | 'games'
+export type Tab = 'rankings' | 'contributors' | 'challenge' | 'clash' | 'games'
 
 export type Problem = {
   id: string

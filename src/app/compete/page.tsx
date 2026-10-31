@@ -8,6 +8,7 @@ import { useRouter, useSearchParams } from 'next/navigation'
 import ScoreHeader from '@/components/ScoreHeader'
 import { Icon } from '@/components/icons'
 import RankingsTab from './RankingsTab'
+import ContributorsTab from './ContributorsTab'
 import ChallengeTab from './ChallengeTab'
 import ClashTab from './ClashTab'
 import GamesTab from './GamesTab'
@@ -15,6 +16,12 @@ import type { Tab, Problem, Submission, SeasonInfo } from './types'
 
 const TABS: { key: Tab; label: string; icon: string; d: string }[] = [
   { key: 'rankings', label: 'Rankings', icon: 'trophy', d: 'M4 19h16M4 19 2.5 8l5.5 4L12 4l4 8 5.5-4L20 19' },
+  {
+    key: 'contributors',
+    label: 'Contributors',
+    icon: 'pencil',
+    d: 'M12 20h9M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z',
+  },
   { key: 'challenge', label: 'Daily Challenge', icon: 'code', d: 'm16 18 6-6-6-6M8 6l-6 6 6 6' },
   {
     key: 'clash',
@@ -29,6 +36,8 @@ const TABS: { key: Tab; label: string; icon: string; d: string }[] = [
 
 const TAB_FROM_URL: Record<string, Tab> = {
   rankings: 'rankings',
+  contributors: 'contributors',
+  creators: 'contributors',
   daily: 'challenge',
   'daily-challenge': 'challenge',
   clash: 'clash',
@@ -36,7 +45,13 @@ const TAB_FROM_URL: Record<string, Tab> = {
   games: 'games',
 }
 
-const TAB_URL: Record<Tab, string> = { rankings: 'rankings', challenge: 'daily', clash: 'clash', games: 'games' }
+const TAB_URL: Record<Tab, string> = {
+  rankings: 'rankings',
+  contributors: 'contributors',
+  challenge: 'daily',
+  clash: 'clash',
+  games: 'games',
+}
 
 function CompetePageInner() {
   const supabase = createClient()
@@ -322,6 +337,7 @@ function CompetePageInner() {
           ) : (
             <>
               {tab === 'rankings' && <RankingsTab user={user} profile={profile} season={season} karma={karma} />}
+              {tab === 'contributors' && <ContributorsTab user={user} profile={profile} />}
               {tab === 'challenge' && (
                 <ChallengeTab
                   daily={daily}

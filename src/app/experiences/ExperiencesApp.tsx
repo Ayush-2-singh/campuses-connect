@@ -190,6 +190,9 @@ export default function ExperiencesApp({ initialExperiences = [] }: { initialExp
           <Link className="hc-btn" href="/companies" style={{ textDecoration: 'none' }}>
             <Icon name="building" size={14} /> By company
           </Link>
+          <Link className="hc-btn" href="/compete?tab=contributors" style={{ textDecoration: 'none' }}>
+            <Icon name="trophy" size={14} /> Creator ranking
+          </Link>
         </div>
 
         {/* Every write-up is ONE student's own account — never the company's

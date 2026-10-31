@@ -181,6 +181,9 @@ export default function BlogPage() {
           <button className="hc-btn hc-btn--primary" type="button" aria-current="page">
             Guides &amp; blogs
           </button>
+          <button className="hc-btn" type="button" onClick={() => router.push('/compete?tab=contributors')}>
+            <Icon name="trophy" size={14} /> Creator ranking
+          </button>
         </div>
 
         <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 12 }}>
