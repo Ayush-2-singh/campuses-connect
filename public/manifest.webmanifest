@@ -1,6 +1,8 @@
 {
+  "id": "/",
   "name": "ConnectToCampus — Interview Experiences for CSE & SDE Aspirants",
   "short_name": "ConnectToCampus",
+  "lang": "en-IN",
   "description": "Read and share round-by-round interview experiences from Indian campuses, create your own study group, and practise the questions those rounds actually asked.",
   "start_url": "/",
   "scope": "/",
@@ -8,6 +10,7 @@
   "background_color": "#faf9f7",
   "theme_color": "#faf9f7",
   "orientation": "portrait-primary",
+  "categories": ["education", "social"],
   "icons": [
     {
       "src": "/icon-192.png",
