@@ -48,6 +48,7 @@ export default function ExperiencesApp({ initialExperiences = [] }: { initialExp
   const [companies, setCompanies] = useState<any[]>([])
   const [form, setForm] = useState(EMPTY_FORM)
   const [submitting, setSubmitting] = useState(false)
+  const [votingId, setVotingId] = useState<string | null>(null)
   const [error, setError] = useState('')
   const router = useRouter()
   const supabase = createClient()
@@ -133,16 +134,28 @@ export default function ExperiencesApp({ initialExperiences = [] }: { initialExp
       router.push('/auth/login?redirect=/experiences')
       return
     }
-    await fetch('/api/experiences', {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json', credentials: 'include' },
-      body: JSON.stringify({ experience_id: expId, vote: voteVal }),
-    })
-    // Reload
-    const res = await fetch('/api/experiences', { credentials: 'include' })
-    if (res.ok) {
-      const d = await res.json()
-      setExperiences(d.experiences || [])
+    if (votingId) return
+    setVotingId(expId)
+    try {
+      const res = await fetch('/api/experiences', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json', credentials: 'include' },
+        body: JSON.stringify({ experience_id: expId, vote: voteVal }),
+      })
+      const data = await res.json().catch(() => ({}))
+      if (!res.ok) {
+        setError(data.error || 'Could not save your vote. Please try again.')
+        return
+      }
+      // Use the server's recalculated total instead of refetching the whole
+      // list — the button now visibly changes on the card that was clicked.
+      setExperiences((prev) =>
+        prev.map((exp) => (exp.id === expId ? { ...exp, upvotes: data.upvotes ?? exp.upvotes } : exp))
+      )
+    } catch {
+      setError('Could not save your vote — check your connection and try again.')
+    } finally {
+      setVotingId(null)
     }
   }
 
@@ -395,10 +408,20 @@ export default function ExperiencesApp({ initialExperiences = [] }: { initialExp
                 )}
 
                 <div className="hc-foot">
-                  <button className="hc-chip" onClick={() => vote(exp.id, 1)} aria-label="Mark helpful">
+                  <button
+                    className="hc-chip"
+                    onClick={() => vote(exp.id, 1)}
+                    disabled={votingId === exp.id}
+                    aria-label="Mark helpful"
+                  >
                     <Icon name="check" size={12} /> Helpful
                   </button>
-                  <button className="hc-chip" onClick={() => vote(exp.id, -1)} aria-label="Not helpful">
+                  <button
+                    className="hc-chip"
+                    onClick={() => vote(exp.id, -1)}
+                    disabled={votingId === exp.id}
+                    aria-label="Not helpful"
+                  >
                     <Icon name="x" size={12} />
                   </button>
                   <span className="hc-meta" style={{ color: exp.upvotes > 0 ? 'var(--success-text)' : undefined }}>
