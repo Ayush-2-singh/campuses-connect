@@ -1956,6 +1956,15 @@ a,
   color: var(--text-primary);
   margin: 0;
 }
+/* A write-up title is whatever the contributor pasted — e.g. "Staff Eng |
+   Facebook/Airbnb/Pinterest/Square/…", one unbreakable token at 396px. Without
+   this it widened /experiences past a 360px phone (measured 418px). `anywhere`
+   rather than `break-word` so the flex/grid min-content size is affected too. */
+.hc-title,
+.hc-sub,
+.hc-body {
+  overflow-wrap: anywhere;
+}
 .hc-sub {
   font-size: 12px;
   color: var(--text-muted);
