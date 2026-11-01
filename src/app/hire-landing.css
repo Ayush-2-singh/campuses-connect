@@ -2604,6 +2604,13 @@
   .hl-nav-links {
     display: none;
   }
+  /* With the links gone, nothing was pushing the account controls to the right
+     any more: they sat directly after the wordmark and left ~35px of dead space
+     at the edge (measured 244–327 inside a 360px bar). The auto margin restores
+     the right edge at every width where the links are in the sheet. */
+  .hl-nav-right {
+    margin-left: auto;
+  }
   .hl-nav-burger {
     display: inline-flex;
   }
