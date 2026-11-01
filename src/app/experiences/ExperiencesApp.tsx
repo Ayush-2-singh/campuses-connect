@@ -349,8 +349,11 @@ export default function ExperiencesApp({ initialExperiences = [] }: { initialExp
           <div className="hc-grid hc-grid--list">
             {experiences.map((exp, i) => (
               <article key={exp.id} className="hc-card hc-reveal" style={{ '--hc-i': i } as React.CSSProperties}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 10 }}>
-                  <div style={{ minWidth: 0 }}>
+                {/* `.hc-card-head-row` wraps: on a phone the tag cluster is
+                    wider than the space left of it, so it drops under the
+                    title instead of crushing the headline into a sliver. */}
+                <div className="hc-card-head-row">
+                  <div style={{ flex: '1 1 240px', minWidth: 0 }}>
                     {/* The title IS the link: one write-up, one URL, so it can
                         be shared and so Google can index it on its own terms
                         (see /experiences/[id]). */}
@@ -378,7 +381,7 @@ export default function ExperiencesApp({ initialExperiences = [] }: { initialExp
                       {exp.profiles?.full_name || exp.source_author || 'Community member'}
                     </p>
                   </div>
-                  <div className="hc-tags" style={{ flexShrink: 0, justifyContent: 'flex-end' }}>
+                  <div className="hc-tags">
                     {/* The experience is one person's own account — labelled on
                         every card so it is never read as the official process. */}
                     <span

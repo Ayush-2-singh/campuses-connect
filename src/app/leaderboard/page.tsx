@@ -557,7 +557,7 @@ export default function LeaderboardPage() {
             {/* 2nd place */}
             <div
               onClick={() => router.push(`/profile/${sorted[1].username}`)}
-              style={{ flex: 1, textAlign: 'center', cursor: 'pointer' }}
+              style={{ flex: 1, minWidth: 0, textAlign: 'center', cursor: 'pointer' }}
             >
               <Avatar name={sorted[1].full_name} avatarUrl={sorted[1].avatar_url} size={44} />
               <p style={{ fontSize: 24, margin: '4px 0 2px' }}>
@@ -591,7 +591,7 @@ export default function LeaderboardPage() {
             {/* 1st place */}
             <div
               onClick={() => router.push(`/profile/${sorted[0].username}`)}
-              style={{ flex: 1, textAlign: 'center', cursor: 'pointer' }}
+              style={{ flex: 1, minWidth: 0, textAlign: 'center', cursor: 'pointer' }}
             >
               <Avatar name={sorted[0].full_name} avatarUrl={sorted[0].avatar_url} size={52} />
               <p style={{ fontSize: 32, margin: '4px 0 2px' }}>
@@ -625,7 +625,7 @@ export default function LeaderboardPage() {
             {/* 3rd place */}
             <div
               onClick={() => router.push(`/profile/${sorted[2].username}`)}
-              style={{ flex: 1, textAlign: 'center', cursor: 'pointer' }}
+              style={{ flex: 1, minWidth: 0, textAlign: 'center', cursor: 'pointer' }}
             >
               <Avatar name={sorted[2].full_name} avatarUrl={sorted[2].avatar_url} size={40} />
               <p style={{ fontSize: 22, margin: '4px 0 2px' }}>

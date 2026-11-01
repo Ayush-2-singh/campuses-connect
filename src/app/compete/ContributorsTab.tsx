@@ -54,6 +54,8 @@ function TierBadge({ tier }: { tier: string }) {
         display: 'inline-flex',
         alignItems: 'center',
         gap: 4,
+        maxWidth: '100%',
+        minWidth: 0,
         padding: '2px 8px',
         borderRadius: 20,
         background: tone.bg,
@@ -63,7 +65,10 @@ function TierBadge({ tier }: { tier: string }) {
         letterSpacing: '0.02em',
       }}
     >
-      <Icon name="sparkles" size={10} /> {tier}
+      <Icon name="sparkles" size={10} />
+      {/* A podium column is only a third of the phone: "Trailblazer" used to
+          break out of it into the next rank's space. */}
+      <span style={{ minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{tier}</span>
     </span>
   )
 }
@@ -138,7 +143,7 @@ export default function ContributorsTab({ user, profile }: { user: any; profile:
             </p>
           </div>
           {user && (
-            <div style={{ textAlign: 'right' }}>
+            <div style={{ textAlign: 'right', marginLeft: 'auto' }}>
               <p style={{ margin: 0, fontSize: 22, fontWeight: 800, color: 'var(--accent)' }}>
                 {myEntry ? `#${myEntry.rank_position}` : '—'}
               </p>
@@ -159,7 +164,15 @@ export default function ContributorsTab({ user, profile }: { user: any; profile:
 
       {/* Scope */}
       <div
-        style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 10, marginBottom: 14 }}
+        style={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          gap: 10,
+          rowGap: 8,
+          flexWrap: 'wrap',
+          marginBottom: 14,
+        }}
       >
         <p
           style={{
@@ -244,10 +257,20 @@ export default function ContributorsTab({ user, profile }: { user: any; profile:
                     tabIndex={0}
                     onClick={() => router.push(`/profile/${entry.username}`)}
                     onKeyDown={(e) => (e.key === 'Enter' || e.key === ' ') && router.push(`/profile/${entry.username}`)}
-                    style={{ flex: 1, maxWidth: 150, textAlign: 'center', cursor: 'pointer' }}
+                    style={{ flex: 1, minWidth: 0, maxWidth: 150, textAlign: 'center', cursor: 'pointer' }}
                   >
                     <Avatar name={entry.full_name} avatarUrl={entry.avatar_url} size={pos === 0 ? 54 : 42} />
-                    <p style={{ margin: '5px 0 1px', fontSize: 12, fontWeight: 700, color: 'var(--text-primary)' }}>
+                    <p
+                      style={{
+                        margin: '5px 0 1px',
+                        fontSize: 12,
+                        fontWeight: 700,
+                        color: 'var(--text-primary)',
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis',
+                        whiteSpace: 'nowrap',
+                      }}
+                    >
                       {entry.full_name?.split(' ')[0] || 'Anonymous'}
                     </p>
                     <TierBadge tier={entry.tier} />

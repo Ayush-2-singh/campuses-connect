@@ -1969,6 +1969,32 @@ a,
   white-space: pre-wrap;
 }
 
+/* Experience card header row — title on the left, a tag cluster on the right.
+   The tags used to be `flex-shrink: 0`, which on a phone (where "Sourced
+   write-up" + "Verified source" + difficulty + result + rating run past 380px)
+   left the headline a few characters wide and pushed the cluster out of the
+   card. The row wraps instead, so the tags take their own line under the
+   title. Deliberately NOT `.hc-card-head`: that is the avatar + text row the
+   archived jobs/applications pages use, and it must keep `align-items:center`. */
+.hc-card-head-row {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+  flex-wrap: wrap;
+  min-width: 0;
+}
+.hc-card-head-row > .hc-tags {
+  flex: 0 1 auto;
+  min-width: 0;
+  justify-content: flex-end;
+}
+@media (max-width: 640px) {
+  .hc-card-head-row > .hc-tags {
+    justify-content: flex-start;
+  }
+}
+
 /* ── Tags ──────────────────────────────────────────────────────────── */
 .hc-tags {
   display: flex;
