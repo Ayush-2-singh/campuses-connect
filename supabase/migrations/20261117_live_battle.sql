@@ -48,7 +48,7 @@ AS $$
   SELECT p_user_id IS NOT NULL
      AND (
        EXISTS (SELECT 1 FROM public.live_quiz_hosts h WHERE h.user_id = p_user_id)
-       OR public.is_platform_admin()
+       OR public.is_platform_admin(p_user_id)
      );
 $$;
 
@@ -58,8 +58,8 @@ GRANT EXECUTE ON FUNCTION public.is_live_quiz_host(UUID) TO authenticated;
 DROP POLICY IF EXISTS live_quiz_hosts_admin_all ON public.live_quiz_hosts;
 CREATE POLICY live_quiz_hosts_admin_all ON public.live_quiz_hosts
   FOR ALL TO authenticated
-  USING (public.is_platform_admin())
-  WITH CHECK (public.is_platform_admin());
+  USING (public.is_platform_admin(auth.uid()))
+  WITH CHECK (public.is_platform_admin(auth.uid()));
 
 DROP POLICY IF EXISTS live_quiz_hosts_self_read ON public.live_quiz_hosts;
 CREATE POLICY live_quiz_hosts_self_read ON public.live_quiz_hosts
@@ -112,8 +112,8 @@ ALTER TABLE public.question_bank_options ENABLE ROW LEVEL SECURITY;
 DROP POLICY IF EXISTS question_bank_owner ON public.question_bank;
 CREATE POLICY question_bank_owner ON public.question_bank
   FOR ALL TO authenticated
-  USING (created_by = auth.uid() OR public.is_platform_admin())
-  WITH CHECK (created_by = auth.uid() OR public.is_platform_admin());
+  USING (created_by = auth.uid() OR public.is_platform_admin(auth.uid()))
+  WITH CHECK (created_by = auth.uid() OR public.is_platform_admin(auth.uid()));
 
 DROP POLICY IF EXISTS question_bank_options_owner ON public.question_bank_options;
 CREATE POLICY question_bank_options_owner ON public.question_bank_options
@@ -122,14 +122,14 @@ CREATE POLICY question_bank_options_owner ON public.question_bank_options
     EXISTS (
       SELECT 1 FROM public.question_bank q
       WHERE q.id = question_bank_options.question_id
-        AND (q.created_by = auth.uid() OR public.is_platform_admin())
+        AND (q.created_by = auth.uid() OR public.is_platform_admin(auth.uid()))
     )
   )
   WITH CHECK (
     EXISTS (
       SELECT 1 FROM public.question_bank q
       WHERE q.id = question_bank_options.question_id
-        AND (q.created_by = auth.uid() OR public.is_platform_admin())
+        AND (q.created_by = auth.uid() OR public.is_platform_admin(auth.uid()))
     )
   );
 
@@ -160,8 +160,8 @@ ALTER TABLE public.quiz_import_jobs ENABLE ROW LEVEL SECURITY;
 DROP POLICY IF EXISTS quiz_import_jobs_owner ON public.quiz_import_jobs;
 CREATE POLICY quiz_import_jobs_owner ON public.quiz_import_jobs
   FOR ALL TO authenticated
-  USING (created_by = auth.uid() OR public.is_platform_admin())
-  WITH CHECK (created_by = auth.uid() OR public.is_platform_admin());
+  USING (created_by = auth.uid() OR public.is_platform_admin(auth.uid()))
+  WITH CHECK (created_by = auth.uid() OR public.is_platform_admin(auth.uid()));
 
 -- ------------------------------------------------------------
 -- 3. COMPETITIONS
@@ -342,8 +342,8 @@ ALTER TABLE public.leaderboard_snapshots ENABLE ROW LEVEL SECURITY;
 DROP POLICY IF EXISTS competitions_host_all ON public.competitions;
 CREATE POLICY competitions_host_all ON public.competitions
   FOR ALL TO authenticated
-  USING (host_id = auth.uid() OR public.is_platform_admin())
-  WITH CHECK (host_id = auth.uid() AND public.is_live_quiz_host() OR public.is_platform_admin());
+  USING (host_id = auth.uid() OR public.is_platform_admin(auth.uid()))
+  WITH CHECK (host_id = auth.uid() AND public.is_live_quiz_host() OR public.is_platform_admin(auth.uid()));
 
 DROP POLICY IF EXISTS competitions_public_read ON public.competitions;
 CREATE POLICY competitions_public_read ON public.competitions
@@ -359,7 +359,7 @@ CREATE POLICY competition_questions_member_read ON public.competition_questions
     EXISTS (
       SELECT 1 FROM public.competitions c
       WHERE c.id = competition_questions.competition_id
-        AND (c.host_id = auth.uid() OR public.is_platform_admin()
+        AND (c.host_id = auth.uid() OR public.is_platform_admin(auth.uid())
              OR EXISTS (
                SELECT 1 FROM public.competition_participants p
                WHERE p.competition_id = c.id AND p.user_id = auth.uid()
@@ -377,7 +377,7 @@ CREATE POLICY competition_options_host_read ON public.competition_question_optio
       SELECT 1 FROM public.competition_questions q
       JOIN public.competitions c ON c.id = q.competition_id
       WHERE q.id = competition_question_options.competition_question_id
-        AND (c.host_id = auth.uid() OR public.is_platform_admin())
+        AND (c.host_id = auth.uid() OR public.is_platform_admin(auth.uid()))
     )
   );
 
@@ -390,7 +390,7 @@ CREATE POLICY competition_participants_read ON public.competition_participants
     OR EXISTS (
       SELECT 1 FROM public.competitions c
       WHERE c.id = competition_participants.competition_id
-        AND (c.host_id = auth.uid() OR public.is_platform_admin())
+        AND (c.host_id = auth.uid() OR public.is_platform_admin(auth.uid()))
     )
   );
 
@@ -406,7 +406,7 @@ CREATE POLICY competition_answers_read ON public.competition_answers
     OR EXISTS (
       SELECT 1 FROM public.competitions c
       WHERE c.id = competition_answers.competition_id
-        AND (c.host_id = auth.uid() OR public.is_platform_admin())
+        AND (c.host_id = auth.uid() OR public.is_platform_admin(auth.uid()))
     )
   );
 
@@ -422,7 +422,7 @@ CREATE POLICY competition_events_member_read ON public.competition_events
     EXISTS (
       SELECT 1 FROM public.competitions c
       WHERE c.id = competition_events.competition_id
-        AND (c.host_id = auth.uid() OR public.is_platform_admin()
+        AND (c.host_id = auth.uid() OR public.is_platform_admin(auth.uid())
              OR EXISTS (
                SELECT 1 FROM public.competition_participants p
                WHERE p.competition_id = c.id AND p.user_id = auth.uid()
@@ -437,7 +437,7 @@ CREATE POLICY competition_results_read ON public.competition_results
   FOR SELECT TO authenticated
   USING (
     user_id = auth.uid()
-    OR public.is_platform_admin()
+    OR public.is_platform_admin(auth.uid())
     OR EXISTS (
       SELECT 1 FROM public.competitions c
       WHERE c.id = competition_results.competition_id
@@ -452,7 +452,7 @@ CREATE POLICY leaderboard_snapshots_read ON public.leaderboard_snapshots
     EXISTS (
       SELECT 1 FROM public.competitions c
       WHERE c.id = leaderboard_snapshots.competition_id
-        AND (c.host_id = auth.uid() OR public.is_platform_admin()
+        AND (c.host_id = auth.uid() OR public.is_platform_admin(auth.uid())
              OR EXISTS (
                SELECT 1 FROM public.competition_participants p
                WHERE p.competition_id = c.id AND p.user_id = auth.uid()
@@ -562,7 +562,7 @@ BEGIN
     SELECT q.*
     FROM unnest(p_question_ids) WITH ORDINALITY AS t(id, ord)
     JOIN public.question_bank q ON q.id = t.id
-    WHERE (q.created_by = v_me OR public.is_platform_admin())
+    WHERE (q.created_by = v_me OR public.is_platform_admin(auth.uid()))
     ORDER BY t.ord
   LOOP
     INSERT INTO public.competition_questions (
@@ -698,7 +698,7 @@ DECLARE
 BEGIN
   SELECT * INTO v_comp FROM public.competitions WHERE id = p_competition_id;
   IF v_comp.id IS NULL THEN RAISE EXCEPTION 'competition not found' USING ERRCODE = '02000'; END IF;
-  IF v_comp.host_id <> v_me AND NOT public.is_platform_admin() THEN
+  IF v_comp.host_id <> v_me AND NOT public.is_platform_admin(auth.uid()) THEN
     RAISE EXCEPTION 'only the host can control this competition' USING ERRCODE = '42501';
   END IF;
 
@@ -791,7 +791,7 @@ BEGIN
     WHERE p.competition_id = v_comp.id AND p.user_id = v_me AND p.is_kicked = FALSE
   ) INTO v_member;
 
-  IF NOT (v_member OR v_comp.host_id = v_me OR public.is_platform_admin()) THEN
+  IF NOT (v_member OR v_comp.host_id = v_me OR public.is_platform_admin(auth.uid())) THEN
     RETURN jsonb_build_object('ok', false, 'error', 'not_in_room');
   END IF;
 
@@ -956,7 +956,7 @@ DECLARE
 BEGIN
   SELECT * INTO v_comp FROM public.competitions WHERE id = p_competition_id;
   IF v_comp.id IS NULL THEN RETURN jsonb_build_object('ok', false, 'error', 'not_found'); END IF;
-  IF v_comp.host_id <> v_me AND NOT public.is_platform_admin() THEN
+  IF v_comp.host_id <> v_me AND NOT public.is_platform_admin(auth.uid()) THEN
     RAISE EXCEPTION 'only the host can end this competition' USING ERRCODE = '42501';
   END IF;
 
@@ -1038,7 +1038,7 @@ BEGIN
     WHERE p.competition_id = v_comp.id AND p.user_id = v_me
   ) INTO v_member;
 
-  IF NOT (v_member OR v_comp.host_id = v_me OR public.is_platform_admin()) THEN
+  IF NOT (v_member OR v_comp.host_id = v_me OR public.is_platform_admin(auth.uid())) THEN
     RETURN jsonb_build_object('ok', false, 'error', 'not_in_room');
   END IF;
 
@@ -1111,7 +1111,7 @@ BEGIN
     WHERE p.competition_id = v_comp.id AND p.user_id = v_me
   ) INTO v_member;
 
-  IF NOT (v_member OR v_comp.host_id = v_me OR public.is_platform_admin()) THEN
+  IF NOT (v_member OR v_comp.host_id = v_me OR public.is_platform_admin(auth.uid())) THEN
     RETURN jsonb_build_object('ok', false, 'error', 'not_in_room');
   END IF;
 

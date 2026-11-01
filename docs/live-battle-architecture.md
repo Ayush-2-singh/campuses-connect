@@ -99,15 +99,33 @@ does not carry the tab query string.
 acceptance test is a scripted room of N concurrent participants against a real
 deployment; that number will be documented after it runs.
 
-## 7. Blocked (why this stops at schema)
+## 7. Applied and verified (2026-11-01)
 
-The migration cannot be applied from this machine: there is no Supabase CLI
-session and no direct Postgres connection string in the environment (only the
-REST URL + keys). Until `20261117_live_battle.sql` is applied, any screen built
-on these RPCs would be a decorative demo — which the spec explicitly forbids.
+`supabase/migrations/20261117_live_battle.sql` is applied to the project the
+app's env already points at (`tnlbqirrrjrkxkxlkpat`):
 
-To unblock: apply the migration in the Supabase SQL editor (or restore a CLI
-login), then set at least one host with
-`INSERT INTO public.live_quiz_hosts (user_id) VALUES ('<uuid>');`, plus a
-storage bucket `quiz-images` for image questions. Phase 2 can start immediately
-after that.
+- **12/12 tables** created, **RLS enabled on all 12**, **14 policies**.
+- Public storage bucket **`quiz-images`** added (image questions store a URL).
+- One change was required against the live schema: `public.is_platform_admin()`
+  is **overloaded** in this database (a zero-arg form and a
+  `uuid DEFAULT auth.uid()` form), which made every bare call ambiguous. All
+  calls now pass `auth.uid()` explicitly, and `is_live_quiz_host()` passes its
+  own `p_user_id`.
+- **End-to-end smoke test: 25/25 checks passed** (temporary script, not
+  committed): create → 6-digit room code → join → rejoin (no duplicate) →
+  non-host refused (403) → start → question served without the answer key →
+  correct answer accepted → duplicate rejected → early reveal refused → next →
+  end → leaderboard (rank 1, score 120 = 100 + 20 speed bonus, 50% accuracy) →
+  key released after the window → personal history → answer/result rows
+  persisted. RLS also verified to block a participant reading
+  `competition_question_options` (0 rows) and inserting into
+  `competition_answers` (403).
+
+Hosting is granted two ways: platform admins
+(`admin_grants.admin_type = 'platform_admin'`) or an explicit allow-list row:
+
+```sql
+INSERT INTO public.live_quiz_hosts (user_id) VALUES ('<uuid>');
+```
+
+Nothing on the database side is blocking Phase 2.
