@@ -260,6 +260,9 @@ function CompetePageInner() {
               <p className="ss-sub">Rank. Play. Win. Earn Aura.</p>
             </div>
             <div className="ss-actions">
+              <button className="hc-btn hc-btn--primary" type="button" onClick={() => router.push('/compete/live')}>
+                <Icon name="gamepad" size={14} /> Live Battle
+              </button>
               <button className="hc-btn" type="button" onClick={() => router.push('/compete/live/questions')}>
                 <Icon name="notebook" size={14} /> Question bank
               </button>

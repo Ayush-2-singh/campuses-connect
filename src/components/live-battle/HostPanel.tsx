@@ -1,0 +1,408 @@
+'use client'
+
+/**
+ * HOST CONTROL PANEL — the only screen that drives the room.
+ *
+ * Every control is `live_quiz_advance`; the room state, the current question and
+ * the board are re-read from the server after each press, so the panel never
+ * drifts from what participants see. `start` locks the question snapshot and
+ * opens question 1, `next` closes the current window and opens the next (or
+ * finalises), `pause`/`resume` stop and restart the clock, `end` finalises now
+ * and `cancel` abandons the room.
+ */
+
+import { useCallback, useEffect, useState } from 'react'
+import Link from 'next/link'
+import { createClient } from '@/lib/supabase/client'
+import { Icon } from '@/components/icons'
+
+type Room = {
+  ok: boolean
+  id: string
+  room_code: string
+  title: string
+  category: string
+  status: string
+  question_count: number
+  position: number
+  participants: number
+  is_host: boolean
+  error?: string
+}
+
+type QuestionPayload = {
+  ok: boolean
+  status: string
+  position: number
+  total: number
+  question: { text: string; type: string; marks: number; time_limit_seconds: number } | null
+  options: { position: number; text: string }[]
+  deadline: string | null
+  answered: boolean
+  error?: string
+}
+
+type BoardEntry = { rank: number; display_name: string; score: number; correct_count: number; answered_count: number }
+
+const OPTION_LETTERS = ['A', 'B', 'C', 'D']
+type Action = 'start' | 'next' | 'pause' | 'resume' | 'end' | 'cancel'
+
+export default function HostPanel({ competitionId }: { competitionId: string }) {
+  const supabase = createClient()
+
+  const [room, setRoom] = useState<Room | null>(null)
+  const [question, setQuestion] = useState<QuestionPayload | null>(null)
+  const [key, setKey] = useState<number[] | null>(null)
+  const [board, setBoard] = useState<BoardEntry[]>([])
+  const [busy, setBusy] = useState<Action | null>(null)
+  const [error, setError] = useState('')
+  const [loading, setLoading] = useState(true)
+  const [copied, setCopied] = useState(false)
+  const [now, setNow] = useState(Date.now())
+
+  const refresh = useCallback(async () => {
+    const [roomRes, questionRes, boardRes] = await Promise.all([
+      supabase.rpc('live_quiz_room', { p_competition_id: competitionId }),
+      supabase.rpc('live_quiz_question', { p_competition_id: competitionId }),
+      supabase.rpc('live_quiz_leaderboard', { p_competition_id: competitionId, p_limit: 50 }),
+    ])
+
+    const roomData = roomRes.data as Room | null
+    if (!roomData?.ok) {
+      setError(roomData?.error === 'not_in_room' ? "You don't have access to this room." : 'Room not found.')
+      setLoading(false)
+      return
+    }
+    if (!roomData.is_host) {
+      setError('Only the host can control this room.')
+      setLoading(false)
+      return
+    }
+    setRoom(roomData)
+    setQuestion(questionRes.data as QuestionPayload | null)
+
+    const boardData = boardRes.data as { ok: boolean; top: BoardEntry[] } | null
+    setBoard(boardData?.ok ? (boardData.top ?? []) : [])
+
+    // The host may read the key once the window is closed — never before.
+    if (roomData.status !== 'live') {
+      const revealRes = await supabase.rpc('live_quiz_reveal', { p_competition_id: competitionId })
+      const revealData = revealRes.data as { ok: boolean; correct_positions?: number[] } | null
+      setKey(revealData?.ok ? (revealData.correct_positions ?? []) : null)
+    } else {
+      setKey(null)
+    }
+
+    setLoading(false)
+  }, [competitionId, supabase])
+
+  useEffect(() => {
+    refresh()
+  }, [refresh])
+
+  useEffect(() => {
+    const tick = setInterval(() => setNow(Date.now()), 500)
+    const poll = setInterval(refresh, 4000)
+    return () => {
+      clearInterval(tick)
+      clearInterval(poll)
+    }
+  }, [refresh])
+
+  const act = async (action: Action) => {
+    if (busy) return
+    if (action === 'end' && !window.confirm('End the competition now and publish the final ranking?')) return
+    if (action === 'cancel' && !window.confirm('Cancel this room? Participants will be disconnected.')) return
+    setBusy(action)
+    setError('')
+    try {
+      const { data, error: rpcError } = await supabase.rpc('live_quiz_advance', {
+        p_competition_id: competitionId,
+        p_action: action,
+      })
+      if (rpcError) throw rpcError
+      const result = data as { ok: boolean; error?: string }
+      if (!result?.ok) setError(result?.error ? `Host action failed: ${result.error}` : 'Host action failed.')
+      await refresh()
+    } catch (err: any) {
+      setError(err?.message || 'Host action failed.')
+    } finally {
+      setBusy(null)
+    }
+  }
+
+  const copyLink = async () => {
+    if (!room) return
+    try {
+      await navigator.clipboard.writeText(`${window.location.origin}/live/${room.room_code}`)
+      setCopied(true)
+      setTimeout(() => setCopied(false), 1600)
+    } catch {
+      setError('Copy failed — copy the code manually.')
+    }
+  }
+
+  const remaining =
+    question?.deadline && room?.status === 'live'
+      ? Math.max(0, Math.ceil((new Date(question.deadline).getTime() - now) / 1000))
+      : 0
+
+  if (loading) {
+    return (
+      <div className="hc-page">
+        <div className="skeleton" style={{ height: 120, borderRadius: 14, marginBottom: 12 }} />
+        <div className="skeleton" style={{ height: 200, borderRadius: 14 }} />
+      </div>
+    )
+  }
+
+  if (error && !room) {
+    return (
+      <div className="hc-page">
+        <div className="hc-empty">
+          <div className="hc-empty-ic">
+            <Icon name="alert" size={30} strokeWidth={1.6} />
+          </div>
+          <p className="hc-empty-t">Cannot open this room</p>
+          <p className="hc-empty-s">{error}</p>
+          <Link className="hc-btn hc-btn--primary" href="/compete/live" style={{ textDecoration: 'none' }}>
+            Back to Live Battle
+          </Link>
+        </div>
+      </div>
+    )
+  }
+
+  if (!room) return null
+
+  const isLive = room.status === 'live'
+  const isPaused = room.status === 'paused'
+  const isOver = room.status === 'completed' || room.status === 'cancelled'
+  const canStart = room.status === 'draft' || room.status === 'waiting'
+
+  return (
+    <div className="hc-page" style={{ paddingBottom: 90 }}>
+      <div className="hc-page-head hc-reveal">
+        <span className="hc-eyebrow">Host controls · {room.category}</span>
+        <h1 className="hc-h1">{room.title}</h1>
+        <div className="hc-tags">
+          <span className={`hc-tag ${isLive ? 'hc-tag--success' : isPaused ? 'hc-tag--warn' : 'hc-tag--ghost'}`}>
+            {room.status}
+          </span>
+          <span className="hc-tag">{room.participants} joined</span>
+          <span className="hc-tag">
+            {room.question_count
+              ? `${Math.min(room.position + 1, room.question_count)} / ${room.question_count}`
+              : '0 questions'}
+          </span>
+        </div>
+      </div>
+
+      {error && (
+        <div className="hc-alert" role="alert">
+          {error}
+        </div>
+      )}
+
+      {/* Share */}
+      <section className="hc-card hc-reveal" aria-label="Share the room" style={{ marginBottom: 14 }}>
+        <span
+          style={{
+            fontSize: 11,
+            fontWeight: 700,
+            letterSpacing: '0.08em',
+            textTransform: 'uppercase',
+            color: 'var(--text-muted)',
+          }}
+        >
+          Room code
+        </span>
+        <p
+          style={{
+            margin: 0,
+            fontSize: 34,
+            fontWeight: 800,
+            letterSpacing: '0.18em',
+            color: 'var(--accent-text)',
+            fontVariantNumeric: 'tabular-nums',
+          }}
+        >
+          {room.room_code}
+        </p>
+        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+          <button className="hc-btn" type="button" onClick={copyLink}>
+            <Icon name="copy" size={13} /> {copied ? 'Copied' : 'Copy join link'}
+          </button>
+          <Link className="hc-btn" href={`/live/${room.room_code}`} target="_blank" style={{ textDecoration: 'none' }}>
+            <Icon name="eye" size={13} /> Preview as player
+          </Link>
+        </div>
+        <p className="hc-note" style={{ margin: 0 }}>
+          Announce the code on your stream — students open connecttocampus.com/live/{room.room_code}.
+        </p>
+      </section>
+
+      {/* Current question */}
+      {question?.question ? (
+        <section className="hc-card hc-reveal" aria-label="Current question" style={{ marginBottom: 14 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <span className="hc-tag hc-tag--accent">
+              Question {question.position + 1} / {question.total}
+            </span>
+            <span className="hc-spacer" />
+            {isLive && (
+              <span className="hc-tag" style={{ fontVariantNumeric: 'tabular-nums', fontWeight: 800 }}>
+                <Icon name="clock" size={12} /> {remaining}s
+              </span>
+            )}
+          </div>
+          <p style={{ margin: 0, fontSize: 16, fontWeight: 700, lineHeight: 1.4 }}>{question.question.text}</p>
+          <ol style={{ margin: 0, paddingLeft: 18, fontSize: 13, lineHeight: 1.8, color: 'var(--text-secondary)' }}>
+            {question.options.map((option, index) => {
+              const correct = key?.includes(option.position)
+              return (
+                <li
+                  key={option.position}
+                  style={{ color: correct ? 'var(--success-text)' : undefined, fontWeight: correct ? 700 : 400 }}
+                >
+                  {OPTION_LETTERS[index] ?? index + 1}. {option.text} {correct ? '✓' : ''}
+                </li>
+              )
+            })}
+          </ol>
+          {!key && (
+            <p className="hc-note" style={{ margin: 0 }}>
+              The answer key stays hidden while answers are open.
+            </p>
+          )}
+        </section>
+      ) : (
+        <section className="hc-card hc-reveal" style={{ marginBottom: 14 }}>
+          <p style={{ margin: 0, fontSize: 14, fontWeight: 700 }}>
+            {isOver ? 'Competition finished.' : canStart ? 'Ready when you are.' : 'Waiting for the next question…'}
+          </p>
+          <p className="hc-note" style={{ margin: 0 }}>
+            {canStart
+              ? 'Students in the waiting room see the first question the moment you press start.'
+              : 'The room has no open question right now.'}
+          </p>
+        </section>
+      )}
+
+      {/* Controls */}
+      <section className="hc-card hc-reveal" aria-label="Controls" style={{ marginBottom: 14 }}>
+        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+          {canStart && (
+            <button
+              className="hc-btn hc-btn--primary"
+              type="button"
+              onClick={() => act('start')}
+              disabled={Boolean(busy)}
+            >
+              <Icon name="zap" size={14} /> {busy === 'start' ? 'Starting…' : 'Start competition'}
+            </button>
+          )}
+          {(isLive || isPaused) && (
+            <button
+              className="hc-btn hc-btn--primary"
+              type="button"
+              onClick={() => act('next')}
+              disabled={Boolean(busy)}
+            >
+              <Icon name="chevron" size={14} /> {busy === 'next' ? 'Moving…' : 'Next question'}
+            </button>
+          )}
+          {isLive && (
+            <button className="hc-btn" type="button" onClick={() => act('pause')} disabled={Boolean(busy)}>
+              <Icon name="clock" size={13} /> Pause
+            </button>
+          )}
+          {isPaused && (
+            <button className="hc-btn" type="button" onClick={() => act('resume')} disabled={Boolean(busy)}>
+              <Icon name="zap" size={13} /> Resume
+            </button>
+          )}
+          {!isOver && (
+            <button className="hc-btn" type="button" onClick={() => act('end')} disabled={Boolean(busy)}>
+              <Icon name="trophy" size={13} /> End & publish ranking
+            </button>
+          )}
+          {!isOver && (
+            <button className="hc-btn" type="button" onClick={() => act('cancel')} disabled={Boolean(busy)}>
+              <Icon name="x" size={13} /> Cancel room
+            </button>
+          )}
+          {isOver && (
+            <Link
+              className="hc-btn hc-btn--primary"
+              href={`/live/${room.room_code}`}
+              style={{ textDecoration: 'none' }}
+            >
+              <Icon name="trophy" size={14} /> View final board
+            </Link>
+          )}
+        </div>
+      </section>
+
+      {/* Live board */}
+      <section className="hc-reveal" aria-label="Live board">
+        <h2
+          style={{
+            fontSize: 12,
+            fontWeight: 700,
+            letterSpacing: '0.08em',
+            textTransform: 'uppercase',
+            color: 'var(--text-muted)',
+            margin: '0 0 8px',
+          }}
+        >
+          Live standings
+        </h2>
+        {board.length === 0 ? (
+          <p className="hc-empty-s" style={{ margin: 0 }}>
+            No answers yet.
+          </p>
+        ) : (
+          <div className="hc-grid hc-grid--list" style={{ gap: 6 }}>
+            {board.map((entry) => (
+              <div
+                key={`${entry.rank}-${entry.display_name}`}
+                className="hc-card"
+                style={{ flexDirection: 'row', alignItems: 'center', gap: 10, padding: '9px 13px' }}
+              >
+                <span
+                  style={{
+                    width: 24,
+                    textAlign: 'center',
+                    fontWeight: 800,
+                    fontSize: 12.5,
+                    color: 'var(--text-muted)',
+                  }}
+                >
+                  {entry.rank}
+                </span>
+                <span
+                  style={{
+                    flex: 1,
+                    minWidth: 0,
+                    fontSize: 13,
+                    fontWeight: 650,
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
+                    whiteSpace: 'nowrap',
+                  }}
+                >
+                  {entry.display_name}
+                </span>
+                <span style={{ fontSize: 11, color: 'var(--text-muted)' }}>
+                  {entry.correct_count ?? 0}/{entry.answered_count ?? 0}
+                </span>
+                <span style={{ fontSize: 13, fontWeight: 800, color: 'var(--accent-text)' }}>{entry.score}</span>
+              </div>
+            ))}
+          </div>
+        )}
+      </section>
+    </div>
+  )
+}
