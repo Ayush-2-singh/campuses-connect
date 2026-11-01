@@ -121,11 +121,16 @@ app's env already points at (`tnlbqirrrjrkxkxlkpat`):
   `competition_question_options` (0 rows) and inserting into
   `competition_answers` (403).
 
-Hosting is granted two ways: platform admins
-(`admin_grants.admin_type = 'platform_admin'`) or an explicit allow-list row:
+**Hosting is open** (migration `20261118_open_live_quiz_hosting.sql`): any
+signed-in account can create a room. The allow-list from the first cut is
+dropped, and `is_live_quiz_host()` survives as the single gate — so tightening
+hosting again later (verified teachers, paid tier, campus admins) is a one-
+function change rather than an edit to every RPC and policy. Anonymous callers
+are still refused (no `auth.uid()` → 403).
 
-```sql
-INSERT INTO public.live_quiz_hosts (user_id) VALUES ('<uuid>');
-```
+The 25-check run above happened while hosting was still allow-listed; the
+open-hosting change was then verified separately (9/9): a brand-new account with
+**no** admin grant and **no** host row created a competition (room `428385`),
+and an anonymous caller was refused with 403.
 
 Nothing on the database side is blocking Phase 2.
