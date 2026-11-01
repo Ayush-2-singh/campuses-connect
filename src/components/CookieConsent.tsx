@@ -83,11 +83,9 @@ export default function CookieConsent() {
       aria-modal="false"
       aria-labelledby="cookie-consent-title"
       aria-describedby="cookie-consent-body"
+      className="cookie-consent"
       style={{
         position: 'fixed',
-        left: 12,
-        right: 12,
-        bottom: 12,
         zIndex: 300,
         display: 'flex',
         alignItems: 'center',

@@ -870,7 +870,14 @@ export default function ProfilePage() {
           <h3 style={{ fontSize: 14, fontWeight: 700, color: 'var(--text-primary)', margin: '0 0 14px' }}>
             Campus Info
           </h3>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+          {/* `minmax(0, 1fr)` + `.mg-stack`: a bare `1fr` track cannot shrink
+              below its content, so a long email address (one unbreakable
+              token) widened both columns and the whole page to 425px on a
+              360px phone. Cards stack on a phone now. */}
+          <div
+            className="mg-stack"
+            style={{ display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0, 1fr))', gap: 10 }}
+          >
             {[
               { label: 'College', value: profile?.colleges?.name || (profile?.campus_id ? null : 'Global Campus') },
               { label: 'Campus', value: profile?.campuses?.name || (!profile?.campus_id ? 'Global Campus' : null) },
@@ -886,7 +893,15 @@ export default function ProfilePage() {
                 <p style={{ fontSize: 11, color: 'var(--text-muted)', margin: '0 0 3px', fontWeight: 500 }}>
                   {item.label}
                 </p>
-                <p style={{ fontSize: 13, color: 'var(--text-primary)', margin: 0, fontWeight: 500 }}>
+                <p
+                  style={{
+                    fontSize: 13,
+                    color: 'var(--text-primary)',
+                    margin: 0,
+                    fontWeight: 500,
+                    overflowWrap: 'anywhere',
+                  }}
+                >
                   {item.value || '—'}
                 </p>
               </div>

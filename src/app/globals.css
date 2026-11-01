@@ -4348,6 +4348,26 @@ html.nav-hidden .fab-wrap {
   }
 }
 
+/* ── Cookie consent ─────────────────────────────────────────────────────
+   Desktop stays on the bottom edge. On a phone the fixed tab bar owns the
+   bottom ~56px and the FAB another 52px at 84px up, so a banner at `bottom:
+   12px` painted over the bar and left its nav icons peeking out in the 12px
+   side margins — it looked broken and the bar could not be tapped. Lifting the
+   banner clear of both controls fixes that without touching the copy. */
+.cookie-consent {
+  left: 12px;
+  right: 12px;
+  bottom: 12px;
+}
+
+@media (max-width: 768px) {
+  .cookie-consent {
+    left: 10px;
+    right: 10px;
+    bottom: calc(146px + env(safe-area-inset-bottom, 0px));
+  }
+}
+
 /* ── Install-to-home-screen prompt ──────────────────────────────────────
    Bottom-right on desktop; above the fixed mobile tab bar on phones. The
    cookie banner (z-index 300) always wins the bottom edge, and this prompt
@@ -4453,7 +4473,9 @@ html.nav-hidden .fab-wrap {
     left: 12px;
     right: 12px;
     width: auto;
-    bottom: calc(84px + env(safe-area-inset-bottom, 0px));
+    /* Clear the tab bar AND the create FAB: both park in this corner (bar at 0,
+       FAB at 84px), and `bottom: 84px` put the card straight over the FAB. */
+    bottom: calc(146px + env(safe-area-inset-bottom, 0px));
   }
 }
 
