@@ -102,17 +102,14 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     // page with real search demand ("create a study group online", "group
     // study room"), so it belongs in the sitemap next to the write-ups.
     { path: '/live-voice-chat', priority: 0.8, changeFrequency: 'daily' },
-    { path: '/premium', priority: 0.5, changeFrequency: 'monthly' },
+    // `/premium` is deliberately absent: there is no paid tier, the page is a
+    // "everything is free" notice, and it now carries its own noindex. Listing
+    // a noindex URL asks a crawler to fetch a page it must not rank.
     { path: '/about', priority: 0.6, changeFrequency: 'monthly' },
     { path: '/privacy', priority: 0.3, changeFrequency: 'yearly' },
     { path: '/terms', priority: 0.3, changeFrequency: 'yearly' },
     { path: '/cookies', priority: 0.3, changeFrequency: 'yearly' },
     { path: '/refund', priority: 0.3, changeFrequency: 'yearly' },
-  ]
-
-  const auth: { path: string; priority: number }[] = [
-    { path: '/auth/login', priority: 0.4 },
-    { path: '/auth/signup', priority: 0.5 },
   ]
 
   const experiences = await experiencePaths()
@@ -145,12 +142,6 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       lastModified: now,
       changeFrequency: c.changeFrequency,
       priority: c.priority,
-    })),
-    ...auth.map((a) => ({
-      url: `${APP_URL}${a.path}`,
-      lastModified: now,
-      changeFrequency: 'monthly' as const,
-      priority: a.priority,
     })),
   ]
 }
