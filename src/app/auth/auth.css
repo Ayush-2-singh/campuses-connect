@@ -135,12 +135,28 @@
     border-bottom: 1px solid var(--border);
   }
   .au-aside-h {
-    font-size: 22px;
+    font-size: 20px;
     max-width: none;
-    margin-bottom: 0;
+    margin-bottom: 10px;
+  }
+  /* The three product points ARE the pitch — hiding them on a phone left the
+     panel as a bare headline, so a visitor never learned what the site does.
+     Keep them, just tighten the type and the icons. */
+  .au-points {
+    gap: 10px;
+  }
+  .au-point-ic {
+    width: 30px;
+    height: 30px;
+    border-radius: 9px;
+  }
+  .au-point-body strong {
+    font-size: 13px;
+  }
+  .au-point-body span {
+    font-size: 12px;
   }
   .au-aside-sub,
-  .au-points,
   .au-aside-foot {
     display: none;
   }

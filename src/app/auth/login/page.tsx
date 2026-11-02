@@ -79,7 +79,7 @@ export default function LoginPage() {
   }
 
   return (
-    <AuthShell eyebrow="Welcome back" title="Sign in" subtitle="Continue to your campus hiring dashboard.">
+    <AuthShell eyebrow="Welcome back" title="Sign in" subtitle="Continue to your ConnectToCampus account.">
       <GoogleSignInButton />
       <div className="au-divider">
         <span>or with email</span>

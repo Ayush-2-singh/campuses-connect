@@ -15,21 +15,25 @@ import { Icon } from '@/components/icons'
 
 type Point = { icon: string; title: string; body: string }
 
+// Only what the product actually ships: published interview write-ups, live
+// study rooms, and server-scored practice. No hiring/shortlist promise — the
+// recruiter storefront is not live, so claiming "companies hire from here" was
+// a promise the site could not keep.
 const DEFAULT_POINTS: Point[] = [
   {
+    icon: 'notebook',
+    title: 'Real interview rounds',
+    body: 'Drives written round by round by the students who cleared them.',
+  },
+  {
+    icon: 'mic',
+    title: 'Study rooms',
+    body: 'Open a live room and prepare out loud with your batch.',
+  },
+  {
     icon: 'zap',
-    title: 'Prove your skill',
-    body: 'Compete in timed assessments that score you objectively.',
-  },
-  {
-    icon: 'shield',
-    title: 'Verified signals',
-    body: 'Connect GitHub and LeetCode so your profile shows real proof.',
-  },
-  {
-    icon: 'briefcase',
-    title: 'Get hired on campus',
-    body: 'Companies hiring tier-2/3 engineers shortlist from here.',
+    title: 'Timed practice',
+    body: 'Compete on the questions those rounds asked, scored on the server.',
   },
 ]
 
@@ -37,8 +41,8 @@ export default function AuthShell({
   eyebrow,
   title,
   subtitle,
-  asideHeadline = 'Build proof of skill. Get hired.',
-  asideSub = 'ConnectToCampus is where Indian CS students show verified ability — and where companies hire from.',
+  asideHeadline = 'Read the rounds. Practise them.',
+  asideSub = 'Interview experiences from Indian campuses, live study rooms, and timed practice — free for CSE & ECE students.',
   points = DEFAULT_POINTS,
   disclaimer = 'ConnectToCampus is an independent student platform, not affiliated with any institution.',
   children,
