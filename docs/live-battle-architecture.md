@@ -133,4 +133,12 @@ open-hosting change was then verified separately (9/9): a brand-new account with
 **no** admin grant and **no** host row created a competition (room `428385`),
 and an anonymous caller was refused with 403.
 
+**Host controls are host-only** (migration `20261121_live_quiz_owner_controls.sql`,
+applied and verified on 2026-11-02 with `scripts/e2e-live-battle-smoke.mjs`,
+**26/26 checks passed**): `live_quiz_room()` reports `is_host` only when
+`competitions.host_id = auth.uid()`, so the control panel and the "Open host
+controls" link appear solely for the account that hosted the competition.
+Platform admins can still open a room to watch it and keep their server-side
+moderation rights, but they are no longer treated as the room's host in the UI.
+
 Nothing on the database side is blocking Phase 2.
