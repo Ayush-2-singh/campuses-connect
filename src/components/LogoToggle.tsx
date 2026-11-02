@@ -42,6 +42,8 @@ export default function LogoToggle({ size = 36 }: { size?: number }) {
   if (!mounted) return null
 
   return (
+    // No plate behind the mark: the PNG is transparent, so a background (or a
+    // border) here reads as a black/white square on the other theme.
     <div
       style={{
         width: size,
@@ -51,19 +53,16 @@ export default function LogoToggle({ size = 36 }: { size?: number }) {
         alignItems: 'center',
         justifyContent: 'center',
         flexShrink: 0,
-        overflow: 'hidden',
-        border: flash ? '2px solid var(--accent)' : '1px solid var(--border)',
-        transition: 'border 0.2s ease',
-        background: 'var(--bg)',
+        transition: 'box-shadow 0.2s ease',
+        boxShadow: flash ? '0 0 0 2px var(--accent)' : 'none',
       }}
     >
       <img
         src={logoSrc}
         alt="CTC"
-        width={size - 6}
-        height={size - 6}
+        width={size}
+        height={size}
         style={{
-          borderRadius: '50%',
           transition: 'transform 0.2s ease, opacity 0.2s ease',
           transform: flash ? 'scale(1.15)' : 'scale(1)',
           opacity: flash ? 0.8 : 1,

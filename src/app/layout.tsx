@@ -135,9 +135,12 @@ export const metadata: Metadata = {
     creator: '@connecttocampus',
   },
   icons: {
+    // Tab icon: the transparent "CTC" mark. The PNG/app icons stay as they
+    // are — a home-screen icon needs a solid plate, a tab icon must not have
+    // one.
     icon: [
-      { url: '/icon-192.png', sizes: '192x192', type: 'image/png' },
-      { url: '/icon-512.png', sizes: '512x512', type: 'image/png' },
+      { url: '/favicon.ico', sizes: '16x16 32x32 48x48' },
+      { url: '/favicon-ctc.png', sizes: '64x64', type: 'image/png' },
     ],
     apple: [{ url: '/apple-touch-icon.png', sizes: '180x180', type: 'image/png' }],
   },
@@ -264,7 +267,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
 
         {/* Favicons & App Icons */}
         <link rel="shortcut icon" href="/favicon.ico" />
-        <link rel="icon" href="/icon-192.png" type="image/png" sizes="192x192" />
+        <link rel="icon" href="/favicon-ctc.png" type="image/png" sizes="64x64" />
         <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
         <link rel="manifest" href="/manifest.webmanifest" />
         {/* theme-color is emitted by the `viewport` export above (light/dark
