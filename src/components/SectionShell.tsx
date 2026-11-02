@@ -47,7 +47,7 @@ export default function SectionShell({
   title: string
   /**
    * The one italic accent phrase in the headline ("Companies that are
-   * *hiring.*"). Rendered inside the h2 as `.hc-em`, so it inherits the
+   * *hiring.*"). Rendered inside the h1 as `.hc-em`, so it inherits the
    * display size and sits in the line rather than beside it.
    */
   accent?: string
@@ -64,7 +64,11 @@ export default function SectionShell({
         </span>
 
         <div style={{ minWidth: 0 }}>
-          <h2 className="ss-title">
+          {/* The page's ONE H1. It was an h2 while the mobile top bar carried
+              the only h1 on the page (the brand name), so a section page
+              advertised itself to Google as "ConnectToCampus" and had no
+              page-level heading at all. */}
+          <h1 className="ss-title">
             {title}
             {accent ? (
               <>
@@ -72,7 +76,7 @@ export default function SectionShell({
                 <em className="hc-em">{accent}</em>
               </>
             ) : null}
-          </h2>
+          </h1>
           <p className="ss-sub">{subtitle}</p>
         </div>
 

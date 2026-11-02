@@ -229,12 +229,17 @@ export default function Layout({ children, user, profile }: { children: React.Re
               >
                 <img src={logoSrc} alt="" width={30} height={30} style={{ borderRadius: 9, display: 'block' }} />
               </Link>
-              <h1
+              {/* Brand text, NOT a heading. It used to be an <h1>, which made
+                  every app page open with an H1 reading "ConnectToCampus" —
+                  so /leaderboard, /live-voice-chat and /blog shipped two H1s
+                  (or a brand H1 instead of the page's own), and the page title
+                  Google saw was the logo. It is a <div> now; the page's own
+                  heading is the only H1. */}
+              <div
                 style={{
                   fontSize: 17,
                   fontWeight: 800,
                   color: 'var(--text-primary)',
-                  margin: 0,
                   whiteSpace: 'nowrap',
                   overflow: 'hidden',
                   textOverflow: 'ellipsis',
@@ -242,7 +247,7 @@ export default function Layout({ children, user, profile }: { children: React.Re
                 }}
               >
                 <BrandName />
-              </h1>
+              </div>
             </div>
             <div
               style={{
