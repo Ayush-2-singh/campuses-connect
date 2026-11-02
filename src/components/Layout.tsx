@@ -207,7 +207,25 @@ export default function Layout({ children, user, profile }: { children: React.Re
             {/* flex 1 1 auto: the brand absorbs all the shrink (ellipsis) and
                 the controls keep their full touch size. */}
             <div style={{ display: 'flex', alignItems: 'center', gap: 8, minWidth: 0, flex: '1 1 auto' }}>
-              <img src={logoSrc} alt="CTC" width={30} height={30} style={{ borderRadius: 9, flexShrink: 0 }} />
+              {/* The mark is the way home on a phone — it was a bare <img>, so a
+                  tap did nothing. The button keeps the 30px art but gets a
+                  proper touch target and an accessible name. */}
+              <button
+                type="button"
+                onClick={() => navigate('/')}
+                aria-label="ConnectToCampus home"
+                style={{
+                  display: 'inline-flex',
+                  flexShrink: 0,
+                  padding: 0,
+                  border: 'none',
+                  background: 'none',
+                  cursor: 'pointer',
+                  borderRadius: 9,
+                }}
+              >
+                <img src={logoSrc} alt="" width={30} height={30} style={{ borderRadius: 9, display: 'block' }} />
+              </button>
               <h1
                 style={{
                   fontSize: 17,
