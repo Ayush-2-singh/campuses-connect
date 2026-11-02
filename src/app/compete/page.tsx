@@ -1,10 +1,11 @@
 'use client'
 
-import { useEffect, useState, useCallback, Suspense } from 'react'
+import { useEffect, useState, useCallback } from 'react'
+import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
 import Layout from '@/components/Layout'
 import ErrorBoundary from '@/components/ErrorBoundary'
-import { useRouter, useSearchParams } from 'next/navigation'
+import { useRouter } from 'next/navigation'
 import ScoreHeader from '@/components/ScoreHeader'
 import { Icon } from '@/components/icons'
 import RankingsTab from './RankingsTab'
@@ -56,15 +57,26 @@ const TAB_URL: Record<Tab, string> = {
 function CompetePageInner() {
   const supabase = createClient()
   const router = useRouter()
-  const searchParams = useSearchParams()
 
   const [user, setUser] = useState<any>(null)
   const [profile, setProfile] = useState<any>(null)
   const [loading, setLoading] = useState(true)
 
-  const urlTab = searchParams.get('tab') || ''
-  const initialTab: Tab = TAB_FROM_URL[urlTab] || 'rankings'
-  const [tab, setTab] = useState<Tab>(initialTab)
+  const [tab, setTab] = useState<Tab>('rankings')
+
+  /**
+   * Deep links (`/compete?tab=clash`) are read AFTER mount instead of through
+   * `useSearchParams()`.`useSearchParams` opts the whole page out of
+   * prerendering, which is why this route shipped to Google as a 10-word
+   * shell with no heading. Reading `location.search` in an effect keeps the
+   * same URLs working while the header, tabs and intro below are in the HTML
+   * a crawler (or a signed-out visitor on a slow phone) receives.
+   */
+  useEffect(() => {
+    const urlTab = new URLSearchParams(window.location.search).get('tab') || ''
+    const fromUrl = TAB_FROM_URL[urlTab]
+    if (fromUrl && fromUrl !== 'rankings') setTab(fromUrl)
+  }, [])
 
   // challenge state
   const [daily, setDaily] = useState<Problem | null>(null)
@@ -254,10 +266,12 @@ function CompetePageInner() {
               <Icon name="zap" size={20} />
             </span>
             <div style={{ minWidth: 0 }}>
-              <h2 className="ss-title">
+              {/* The page's only H1 (the mobile top bar used to carry a brand
+                  H1, which is what Google saw instead of this). */}
+              <h1 className="ss-title">
                 Rank. Play. Win. <em className="hc-em">Earn aura.</em>
-              </h2>
-              <p className="ss-sub">Rank. Play. Win. Earn Aura.</p>
+              </h1>
+              <p className="ss-sub">Timed DSA practice, campus clashes and leaderboards — scored on the server.</p>
             </div>
             <div className="ss-actions">
               <button className="hc-btn hc-btn--primary" type="button" onClick={() => router.push('/compete/live')}>
@@ -284,6 +298,45 @@ function CompetePageInner() {
                 )}
               </div>
             )}
+          </div>
+
+          {/* Crawlable intro + real <a> links. This is the content a search
+              result can quote, and the links are how the crawler reaches the
+              clash, games and Live Battle surfaces from /compete. */}
+          <p
+            style={{
+              fontSize: 14,
+              lineHeight: 1.65,
+              color: 'var(--text-secondary)',
+              margin: '0 0 10px',
+              textAlign: 'left',
+            }}
+          >
+            Compete is the practice side of ConnectToCampus: a daily DSA challenge scored on the server,
+            campus-vs-campus clashes, a contributor board for interview write-ups, and typing and quick-maths battles
+            for a break. Every submission is timed and graded server-side, so a score means the same thing for everyone.
+          </p>
+          <div
+            style={{
+              display: 'flex',
+              gap: 14,
+              flexWrap: 'wrap',
+              fontSize: 13,
+              fontWeight: 600,
+              margin: '0 0 18px',
+            }}
+          >
+            {[
+              { href: '/compete?tab=daily', label: 'Daily DSA challenge' },
+              { href: '/compete?tab=clash', label: 'Campus clash' },
+              { href: '/compete?tab=games', label: 'Typing & maths battles' },
+              { href: '/compete/live', label: 'Host a live quiz' },
+              { href: '/leaderboard', label: 'Leaderboard' },
+            ].map((l) => (
+              <Link key={l.href} href={l.href} style={{ color: 'var(--accent-text)', textDecoration: 'underline' }}>
+                {l.label}
+              </Link>
+            ))}
           </div>
 
           {/* The four metrics, kept separate: Rating / Aura / XP / Karma.
@@ -375,9 +428,7 @@ function CompetePageInner() {
 }
 
 export default function CompetePage() {
-  return (
-    <Suspense fallback={<div style={{ minHeight: 'var(--app-vh)' }} />}>
-      <CompetePageInner />
-    </Suspense>
-  )
+  // No <Suspense> wrapper: it only existed to satisfy useSearchParams, and it
+  // is what made this route prerender as an empty fallback.
+  return <CompetePageInner />
 }
