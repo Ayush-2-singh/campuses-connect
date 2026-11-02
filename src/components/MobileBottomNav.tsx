@@ -70,6 +70,9 @@ export default function MobileBottomNav({
                 cursor: 'pointer',
                 fontFamily: 'inherit',
                 padding: 0,
+                // Five tabs share the bar now: let each one shrink so the
+                // longest label can ellipsize instead of overflowing 320px.
+                minWidth: 0,
               }}
             >
               <span
@@ -77,10 +80,12 @@ export default function MobileBottomNav({
                   display: 'flex',
                   flexDirection: 'column',
                   alignItems: 'center',
-                  gap: 3,
-                  // Four tabs now share the bar, so the pill is narrower — 16px
-                  // of padding each side made "Community" overflow 320px phones.
-                  padding: '7px 10px',
+                  gap: 2,
+                  maxWidth: '100%',
+                  minWidth: 0,
+                  // Five tabs share the bar, so the pill tightens again — with
+                  // 16px of padding each side "Experiences" overflowed 320px.
+                  padding: '7px 6px',
                   borderRadius: 16,
                   background: active ? 'var(--accent-light)' : 'transparent',
                   transition: 'background 0.18s ease, color 0.18s ease',
@@ -88,10 +93,15 @@ export default function MobileBottomNav({
               >
                 <Icon name={item.icon} size={20} strokeWidth={active ? 2.4 : 2} />
                 <span
+                  title={item.label}
                   style={{
-                    fontSize: 10,
+                    maxWidth: '100%',
+                    fontSize: 9.5,
                     fontWeight: active ? 600 : 400,
+                    letterSpacing: '-0.2px',
                     whiteSpace: 'nowrap',
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
                     color: active ? 'var(--accent-text)' : 'var(--text-muted)',
                   }}
                 >

@@ -7,8 +7,10 @@
 // games) is retired — those routes redirect via src/lib/featureGates.ts, so
 // nothing here may point at them.
 //
-// Bottom bar (four primary destinations):
-//   Rooms | Experiences | Compete | Profile
+// Bottom bar (five primary destinations):
+//   Rooms | Experiences | Messages | Compete | Profile
+// Messages sits third because reaching a batchmate to chat is the most-used
+// action on a phone, and the old placement buried it in the ☰ menu.
 // ☰ menu = the full kept-feature index.
 //
 // `/live-voice-chat` is a KEPT route: the LiveKit study rooms were retired
@@ -20,6 +22,7 @@
 export const MOBILE_NAV = [
   { label: 'Rooms', href: '/live-voice-chat', icon: 'mic' },
   { label: 'Experiences', href: '/experiences', icon: 'pencil' },
+  { label: 'Messages', href: '/messages', icon: 'message' },
   { label: 'Compete', href: '/compete', icon: 'zap' },
   { label: 'Profile', href: '/profile', icon: 'user' },
 ]
