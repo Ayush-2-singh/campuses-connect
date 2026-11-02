@@ -3,7 +3,7 @@ import type { Metadata } from 'next'
 export const metadata: Metadata = {
   title: 'Privacy Policy',
   description:
-    'How ConnectToCampus collects, uses and protects data for students and hiring companies — profiles, assessments, applications, shortlists and your controls.',
+    'How ConnectToCampus collects, uses and protects student data — profiles, interview experiences, study rooms, Compete and Live Battle results, and your privacy controls.',
   alternates: { canonical: '/privacy' },
 }
 
