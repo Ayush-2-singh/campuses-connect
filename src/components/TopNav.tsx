@@ -5,8 +5,8 @@
  *
  * The app used to put its destinations in a 240px left sidebar: vertical,
  * always-on, and it permanently ate a sixth of the screen. This is the
- * horizontal replacement — brand at the left, the six destinations in one row
- * at the middle, account controls at the right — and its second-level links
+ * horizontal replacement — brand at the left, the destinations in one row at
+ * the middle, account controls at the right — and its second-level links
  * live in a dropdown that opens when the pointer (or keyboard focus) enters
  * the parent item, the way the reference product's nav behaves.
  *
@@ -28,9 +28,10 @@ type NavLeaf = { label: string; href: string; icon: string }
 type NavEntry = { label: string; href: string; icon: string; items?: NavLeaf[] }
 
 /**
- * V4 IA (campus-hiring pivot). Same destinations the sidebar carried: the two
- * pillars (Hiring, Skills) now expose their children in a dropdown instead of
- * as an indented list, and the primary destinations stay flat.
+ * Primary destinations, in one flat centred row. Profile is deliberately NOT
+ * here: the avatar at the right end of the bar already opens /profile, so a
+ * fifth link only repeated a destination and squeezed the rest on narrower
+ * desktops.
  */
 const NAV: NavEntry[] = [
   { label: 'Rooms', href: '/live-voice-chat', icon: 'mic' },
@@ -40,7 +41,6 @@ const NAV: NavEntry[] = [
   // src/lib/featureGates.ts) — the only part of the old social plane that
   // came back, because it is how a campus directory becomes useful.
   { label: 'Messages', href: '/messages', icon: 'message' },
-  { label: 'Profile', href: '/profile', icon: 'user' },
 ]
 
 export default function TopNav({
