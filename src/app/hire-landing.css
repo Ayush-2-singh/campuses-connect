@@ -891,8 +891,11 @@
 .hl-section {
   position: relative;
   z-index: 1;
-  /* `.hl-wrap` (same element) owns the gutter — see above. */
-  padding: clamp(44px, 4.6vw, 74px) 0;
+  /* Vertical rhythm only. This element is also `.hl-wrap`, which owns the
+     horizontal gutter; the old `padding: ... 0` shorthand reset that gutter to
+     zero, so on phones every section sat flush against the screen edge and the
+     first/last letters looked cut off. */
+  padding-block: clamp(44px, 4.6vw, 74px);
 }
 .hl-eyebrow {
   margin: 0 0 14px;
