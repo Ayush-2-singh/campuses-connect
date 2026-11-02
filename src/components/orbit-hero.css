@@ -243,13 +243,11 @@
 }
 
 /* The hub — a CIRCLE, so it reads as the centre the rings turn around.
-   Signed out it holds a STRUCTURED diagram: the four rounds a drive is read in.
-   Signed in it holds the READER'S OWN profile — their uploaded photo, or a
-   monogram until they add one — and links to /profile. Nobody else's face is
-   ever rendered here.
-   A circle must be square, so the box is fixed at 190×190 and the radius does
-   all the shaping; the ladder is capped well under the diameter, because a
-   chord shrinks fast off-centre. */
+   Both states now say "Your profile": signed in it holds the READER'S OWN
+   photo (or a monogram) and links to /profile; signed out it holds a user
+   glyph and a sign-in hint. Nobody else's face is ever rendered here.
+   A circle must be square, so the box is fixed and the radius does all the
+   shaping. */
 .orbit-hub {
   position: absolute;
   z-index: 3;
@@ -326,36 +324,12 @@
   white-space: nowrap;
 }
 
-.orbit-hub-label,
 .orbit-hub-sub {
   color: var(--lq-muted, #747474);
   font-size: 10px;
   font-weight: 800;
   letter-spacing: 0.16em;
   text-transform: uppercase;
-}
-
-/* The ladder itself: four chips joined by a hairline, R1 → R4. */
-.orbit-hub-rounds {
-  position: relative;
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 7px;
-  width: 138px;
-}
-.orbit-hub-round {
-  display: grid;
-  place-items: center;
-  height: 30px;
-  border-radius: 9px;
-  border: 1px solid color-mix(in srgb, var(--orbit-blue) 28%, transparent);
-  background: color-mix(in srgb, var(--orbit-blue) 9%, var(--lq-surface, #fff));
-  /* 82% blue on the tinted chip measured 3.91:1 — under AA for 11px text. */
-  color: color-mix(in srgb, var(--orbit-blue) 52%, #0b1b33);
-  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
-  font-size: 11px;
-  font-weight: 700;
-  letter-spacing: 0.04em;
 }
 
 /* Tablet */
@@ -434,45 +408,44 @@
     font-size: 8px;
   }
 
+  /* 140px read as a second hero inside a 360px screen — the profile hub
+     should sit in the middle of the rings, not dominate them. */
   .orbit-hub {
-    width: 140px;
-    height: 140px;
-    gap: 7px;
+    width: 110px;
+    height: 110px;
+    gap: 5px;
     box-shadow:
-      0 8px 26px #2d5b9f14,
-      inset 0 0 0 4px color-mix(in srgb, var(--orbit-blue) 6%, transparent);
+      0 8px 22px #2d5b9f14,
+      inset 0 0 0 3px color-mix(in srgb, var(--orbit-blue) 6%, transparent);
+  }
+
+  .orbit-hub--viewer {
+    padding: 0 12px;
   }
 
   .orbit-hub-avatar,
   .orbit-hub-initial {
-    width: 64px;
-    height: 64px;
+    width: 48px;
+    height: 48px;
   }
 
   .orbit-hub-initial {
-    font-size: 25px;
+    font-size: 19px;
+  }
+
+  .orbit-hub-initial svg {
+    width: 20px;
+    height: 20px;
   }
 
   .orbit-hub-name {
-    max-width: 104px;
-    font-size: 13px;
+    max-width: 84px;
+    font-size: 11.5px;
   }
 
-  .orbit-hub-rounds {
-    width: 100px;
-    gap: 5px;
-  }
-
-  .orbit-hub-round {
-    height: 24px;
-    border-radius: 7px;
-    font-size: 9.5px;
-  }
-
-  .orbit-hub-label,
   .orbit-hub-sub {
-    font-size: 8px;
-    letter-spacing: 0.12em;
+    font-size: 7.5px;
+    letter-spacing: 0.1em;
   }
 }
 

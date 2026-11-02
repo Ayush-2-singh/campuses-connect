@@ -4,6 +4,7 @@ import { useEffect, useState, type CSSProperties } from 'react'
 import Link from 'next/link'
 import { motion } from 'framer-motion'
 import { createClient, getBootUser } from '@/lib/supabase/client'
+import { Icon } from '@/components/icons'
 import {
   SiGoogle,
   SiMeta,
@@ -94,9 +95,6 @@ const technologies: OrbitItem[] = [
   { name: 'Supabase', Icon: SiSupabase, color: '#3ECF8E' },
   { name: 'Firebase', Icon: SiFirebase, color: '#FFCA28' },
 ]
-
-/** The hub's ladder — the same four-round shape the panels below describe. */
-const HUB_ROUNDS = ['R1', 'R2', 'R3', 'R4']
 
 /**
  * The reader, if they are signed in. The landing is cached and served to
@@ -230,8 +228,9 @@ export default function OrbitHero() {
         <OrbitRing items={companies} radius={29} duration={32} reverse className="orbit-ring--inner" />
 
         {/* Hub. Signed in: the reader's OWN profile — their uploaded photo, or
-            a monogram until they add one. Signed out: the structured diagram of
-            a drive's four rounds, which is what this page is about. */}
+            a monogram until they add one. Signed out: the same "Your profile"
+            card, with a user glyph and a sign-in hint, so the centre always
+            names the reader instead of a drive's R1–R4 diagram. */}
         {viewer ? (
           <Link className="orbit-hub orbit-hub--viewer" href="/profile" aria-label={`Your profile — ${viewer.name}`}>
             {viewer.avatarUrl ? (
@@ -245,17 +244,13 @@ export default function OrbitHero() {
             <span className="orbit-hub-sub">Your profile ↗</span>
           </Link>
         ) : (
-          <div className="orbit-hub">
-            <span className="orbit-hub-label">A drive</span>
-            <div className="orbit-hub-rounds" aria-hidden="true">
-              {HUB_ROUNDS.map((r) => (
-                <span className="orbit-hub-round" key={r}>
-                  {r}
-                </span>
-              ))}
-            </div>
-            <span className="orbit-hub-sub">round by round</span>
-          </div>
+          <Link className="orbit-hub orbit-hub--viewer" href="/profile" aria-label="Your profile">
+            <span className="orbit-hub-initial" aria-hidden="true">
+              <Icon name="user" size={30} strokeWidth={1.8} />
+            </span>
+            <span className="orbit-hub-name">Your profile</span>
+            <span className="orbit-hub-sub">Sign in ↗</span>
+          </Link>
         )}
       </div>
     </section>
