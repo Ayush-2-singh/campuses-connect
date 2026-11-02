@@ -15,7 +15,6 @@ const DOCS = [
   { href: '/privacy', label: 'Privacy Policy' },
   { href: '/terms', label: 'Terms & Conditions' },
   { href: '/cookies', label: 'Cookie Policy' },
-  { href: '/refund', label: 'Refund & Cancellation' },
 ]
 
 export default function LegalPage({
@@ -53,7 +52,7 @@ export default function LegalPage({
             ))}
           </nav>
           <p className="legal-footer-brand">
-            <Link href="/">ConnectToCampus</Link> · Connecting campuses and companies
+            <Link href="/">ConnectToCampus</Link> · Interview prep and practice for campus placements
           </p>
         </footer>
       </div>

@@ -2,9 +2,10 @@ import Link from 'next/link'
 import LegalPage from '@/components/legal/LegalPage'
 
 /**
- * Cookie Policy — describes the cookies and local storage the app actually
+ * Cookie Policy — describes the cookies and browser storage the app actually
  * uses: strictly-necessary session cookies (Supabase auth), preference keys
- * (theme, cookie choice), and optional consent-gated analytics.
+ * (theme, cookie choice, install prompt, small UI caches), and optional consent
+ * -gated analytics.
  *
  * Metadata (title / description / canonical) lives in ./layout.tsx.
  */
@@ -13,11 +14,11 @@ export default function CookiePolicyPage() {
   return (
     <LegalPage
       title="Cookie Policy"
-      updated="October 13, 2026"
+      updated="November 2, 2026"
       lede={
         <>
-          We keep cookies to a minimum: what we need to sign you in, a couple of preference keys, and optional analytics
-          that only run if you accept them.
+          We keep cookies to a minimum: what we need to sign you in, a few preference keys, and optional analytics that
+          only run if you accept them.
         </>
       }
     >
@@ -91,6 +92,13 @@ export default function CookiePolicyPage() {
               request is made.
             </td>
           </tr>
+          <tr>
+            <td>Small UI caches</td>
+            <td>
+              Keys that remember a dismissed &ldquo;install app&rdquo; prompt, recently used emoji, and a guest practice
+              nickname. They never leave your device and are not used to identify you.
+            </td>
+          </tr>
         </tbody>
       </table>
 
@@ -121,7 +129,8 @@ export default function CookiePolicyPage() {
       <h2>3. What we do not use</h2>
       <p>
         We do not use cookies to serve third-party advertising, and we do not sell data collected through cookies. We do
-        not run optional analytics for visitors who have declined or who have not yet made a choice.
+        not run optional analytics for visitors who have declined or who have not yet made a choice. We do not use
+        cookies to build a hiring profile, because the Service has no employer or recruitment features.
       </p>
 
       <h2>4. How to control cookies</h2>
@@ -149,9 +158,10 @@ export default function CookiePolicyPage() {
 
       <h2>5. Third-party technologies</h2>
       <p>
-        Some cookies are set by providers we rely on — for example our authentication and database provider, and, if you
-        consent, an analytics provider. Those providers process information under their own policies. See Section 8 of
-        our <Link href="/privacy">Privacy Policy</Link> for the providers we use.
+        Some cookies are set by providers we rely on — for example our authentication and database provider, the service
+        that carries live room audio, and, if you consent, an analytics provider. Those providers process information
+        under their own policies. See Section 6 of our <Link href="/privacy">Privacy Policy</Link> for the providers we
+        use.
       </p>
 
       <h2>6. Changes to this policy</h2>
