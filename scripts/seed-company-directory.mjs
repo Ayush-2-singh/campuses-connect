@@ -102,6 +102,40 @@ const COMPANIES = [
     website: 'https://www.flipkart.com',
     description: 'Indian e-commerce marketplace headquartered in Bengaluru.',
   },
+  // ── Mass recruiters ────────────────────────────────────────────────
+  // The companies freshers actually search for during placement season
+  // (TCS/Infosys/Accenture clusters are where the volume is). Same rule as
+  // above: public facts only, no partner claim.
+  {
+    slug: 'tcs',
+    name: 'TCS',
+    industry: 'it-services',
+    hq_location: 'Mumbai, MH',
+    company_size: '500+',
+    founded_year: 1968,
+    website: 'https://www.tcs.com',
+    description: 'Tata Consultancy Services — Indian IT services and consulting company.',
+  },
+  {
+    slug: 'infosys',
+    name: 'Infosys',
+    industry: 'it-services',
+    hq_location: 'Bengaluru, KA',
+    company_size: '500+',
+    founded_year: 1981,
+    website: 'https://www.infosys.com',
+    description: 'Indian IT services company; campus hiring runs through its InfyTQ platform.',
+  },
+  {
+    slug: 'accenture',
+    name: 'Accenture',
+    industry: 'it-services',
+    hq_location: 'Dublin, Ireland',
+    company_size: '500+',
+    founded_year: 1989,
+    website: 'https://www.accenture.com',
+    description: 'Global professional-services company; hires freshers at zonal campus drives in India.',
+  },
   {
     slug: 'razorpay',
     name: 'Razorpay',

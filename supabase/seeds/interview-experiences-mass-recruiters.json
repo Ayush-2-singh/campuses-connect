@@ -1,0 +1,56 @@
+{
+  "notes": "Mass-recruiter coverage (TCS, Infosys, Accenture) — the companies Indian students actually search for during placement season. Every summary below was written after reading the linked public write-up; nothing is invented, and the source URL, platform, author credit and publication date travel with each row. Import with: node scripts/seed-verified-experiences.mjs --json supabase/seeds/interview-experiences-mass-recruiters.json --apply --create-companies",
+  "records": [
+    {
+      "source_title": "TCS Interview Experience — NQT, technical interview and HR round",
+      "company": "TCS",
+      "role": "Assistant System Engineer",
+      "round_count": 3,
+      "result": "pending",
+      "difficulty": "medium",
+      "experience_date": "2018-11-23",
+      "short_summary": "Three rounds. Round 1 was the online test: an easy English MCQ section, an aptitude section with both easy and tough questions, then technical MCQs on C, data structures and algorithms (longest common subsequence, knapsack, time complexity, sorting) plus a coding question that combined two or more series. Round 2 was a 45-minute Skype interview that began with the resume — the panel noticed R, Python and a machine-learning minor project and dug in: why ML, the candidate's role in the project, Big Data, regression, clustering, k-means and classification, then a program in C and in R to check whether a year is a leap year. It closed with favourite subjects in class 12, willingness to relocate, and what happens if another company offers a higher package. Round 3 was a group HR round that scanned mark sheets for gaps in marks and asked the eight candidates to name the four people the panel should hire.",
+      "tips": "Know your minor project end to end — most of the technical conversation came from it. Do not finish an answer in one word, and steer the discussion towards what you actually know. Prepare for a real HR round: the panel scans mark sheets and asks you to defend them.",
+      "topics": ["Aptitude", "C", "Data Structures", "Algorithms", "Machine Learning", "HR"],
+      "source_platform": "GeeksforGeeks",
+      "source_url": "https://www.geeksforgeeks.org/interview-experiences/tcs-interview-experience/",
+      "source_author": null,
+      "source_credit": "GeeksforGeeks contributor",
+      "source_type": "public write-up"
+    },
+    {
+      "source_title": "Infosys Interview Experience — InfyTQ online test and HR interview",
+      "company": "Infosys",
+      "role": "Systems Engineer",
+      "round_count": 2,
+      "result": "pending",
+      "difficulty": "easy",
+      "experience_date": "2019-06-29",
+      "short_summary": "Two rounds. Round 1 was the online exam, with the syllabus published in the InfyTQ app: two parts, MCQs and two programming questions, no aptitude section, and marks awarded per test case — 65% is the qualifying percentage. Clearing the test leads to an HR interview. Round 2 was behavioural: the panel checked the candidate's behaviour and asked about the resume, family background, interests and the project rather than technical questions.",
+      "tips": "Follow the InfyTQ syllabus exactly rather than generic aptitude prep; the paper is scored per test case, so a program that passes most cases still earns marks. For the HR round, be ready to talk about your family background, interests and project as freely as your technical work.",
+      "topics": ["InfyTQ", "Programming", "MCQs", "HR"],
+      "source_platform": "GeeksforGeeks",
+      "source_url": "https://www.geeksforgeeks.org/interview-experiences/infosys-interview-experience/",
+      "source_author": null,
+      "source_credit": "GeeksforGeeks contributor",
+      "source_type": "public write-up"
+    },
+    {
+      "source_title": "Accenture Interview Experience — zonal cognitive, coding and interview",
+      "company": "Accenture",
+      "role": "Associate Software Engineer",
+      "round_count": 2,
+      "result": "selected",
+      "difficulty": "easy",
+      "experience_date": "2020-11-13",
+      "short_summary": "Accenture recruited at the zonal level this year, with the offer decided on that performance. Eligibility: 60% or 6.0 CGPA, B.Tech, 2020/2021 pass-out, no gap over a year. Round 1 combined the cognitive and technical assessments in one elimination stage — 90 questions in 90 minutes. Cognitive covered quantitative aptitude, reasoning and verbal ability; technical covered MS Office and common applications, pseudo-code, and cloud and network security fundamentals. Sectional and sub-sectional cut-offs both had to be cleared. A separate coding round followed: two questions in 45 minutes (sum of odds and evens in a number, and maximum product of a multidimensional array), where solving one was enough to progress. The Pearson Versant communication assessment, about 20 minutes, came after that. Round 2 was a virtual interview with a two-member panel on the projects and basic HR questions, and the candidate was selected for Associate Software Engineer.",
+      "tips": "Clear every sectional and sub-sectional cut-off, not just the overall paper — that is what eliminated candidates at the zonal stage. Practice pseudo-code and cloud/network security basics alongside aptitude, and expect project questions plus a short communication test before the interview.",
+      "topics": ["Aptitude", "Reasoning", "Verbal", "Pseudo-code", "Coding", "Cloud basics", "HR"],
+      "source_platform": "GeeksforGeeks",
+      "source_url": "https://www.geeksforgeeks.org/interview-experiences/accenture-interview-experience/",
+      "source_author": null,
+      "source_credit": "GeeksforGeeks contributor",
+      "source_type": "public write-up"
+    }
+  ]
+}
