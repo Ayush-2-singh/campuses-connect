@@ -72,7 +72,9 @@ export const ACCENT_BY_ROUTE: Record<string, AccentName> = {
 
   '/meetings': 'blue',
 
-  '/compete': 'green',
+  // Compete is the brand's blue CTA + gold accent pair — the site's two
+  // colours. The networking green belonged to /talent and /teams.
+  '/compete': 'gold',
   '/opportunities': 'cyan',
   '/polls': 'cyan',
 
