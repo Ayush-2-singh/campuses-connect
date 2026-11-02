@@ -246,7 +246,7 @@ function CompetePageInner() {
   return (
     <Layout user={user} profile={profile}>
       <ErrorBoundary pageName="compete">
-        <div className="ambient ss-wrap">
+        <div className="ambient ss-wrap compete-accent">
           {/* Header strip — the shared section-shell chrome (same frame the
               Jobs / Talent / Leaderboard pages use). */}
           <div className="ss-head hc-reveal">

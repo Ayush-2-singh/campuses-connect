@@ -316,6 +316,21 @@
   --accent-border: color-mix(in srgb, var(--accent-blue) 45%, white);
 }
 
+/* Compete reads a deeper sage green than the app-wide networking green: the
+   bright #4cbf7a shouted on the section's dark shell, and the live-rooms tile
+   everyone liked is this muted shade. Only the accent family is redefined —
+   `--accent-text` (the headings) keeps its tuned step, per the brand note. */
+.compete-accent {
+  --accent: #3f7352;
+  --accent-light: color-mix(in srgb, var(--accent) 18%, transparent);
+  --accent-border: color-mix(in srgb, var(--accent) 45%, transparent);
+  --accent-glow: 0 0 22px color-mix(in srgb, var(--accent) 22%, transparent);
+}
+[data-theme='light'] .compete-accent {
+  --accent-light: color-mix(in srgb, var(--accent) 13%, white);
+  --accent-border: color-mix(in srgb, var(--accent) 45%, white);
+}
+
 /* ───────────────────────── 6. CONTEXTUAL GRADIENTS & AMBIENT ───────────────────────── */
 
 /* Subtle ambient accent glow behind heroes / section headers. Use sparingly. */
