@@ -32,10 +32,15 @@ const CommandPalette = dynamic(() => import('@/components/CommandPalette'), { ss
 // Warmed right after mount — first click on any destination is instant.
 const PREFETCH_ROUTES = ['/live-voice-chat', '/experiences', '/compete', '/messages', '/profile']
 
+// The "+" sheet is the home for destinations the phone bar has no room for.
+// Search is NOT one of them — the bar's magnifier was removed, and Cmd/Ctrl+K
+// still opens the palette on desktop.
 const FAB_ACTIONS = [
-  { label: 'Ask ConnectToCampus', desc: 'Search, shortcuts & questions', icon: 'sparkles', action: 'cmd' as const },
+  { label: 'Host a Live Battle', desc: 'Create a room, share the code', icon: 'gamepad', href: '/compete/live' },
+  { label: 'Question bank', desc: 'Write or import quiz questions', icon: 'notebook', href: '/compete/live/questions' },
+  { label: 'Leaderboard', desc: 'See where you stand this season', icon: 'trophy', href: '/leaderboard' },
+  { label: 'Notifications', desc: 'Requests, replies and results', icon: 'bell', href: '/notifications' },
   { label: 'Read experiences', desc: 'Interview rounds and companies', icon: 'pencil', href: '/experiences' },
-  { label: 'Join a room', desc: 'Study live with your batch', icon: 'mic', href: '/live-voice-chat' },
 ]
 
 export default function Layout({ children, user, profile }: { children: React.ReactNode; user?: any; profile?: any }) {
@@ -251,24 +256,6 @@ export default function Layout({ children, user, profile }: { children: React.Re
                 flexShrink: 0,
               }}
             >
-              <button
-                onClick={() => setCmdOpen(true)}
-                aria-label="Search"
-                style={{
-                  width: 40,
-                  height: 40,
-                  borderRadius: '50%',
-                  border: '1px solid var(--border)',
-                  background: 'var(--bg)',
-                  color: 'var(--text-secondary)',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  cursor: 'pointer',
-                }}
-              >
-                <Icon name="search" size={17} />
-              </button>
               {/* Decorative theme-synced logo badge — the mobile bar already
                   shows the brand logo on the left, so this duplicate is hidden
                   here (globals.css `.mobile-hide-logo`). It took 42px of the
@@ -410,7 +397,8 @@ export default function Layout({ children, user, profile }: { children: React.Re
               border: '1px solid var(--border)',
               borderRadius: 'var(--radius-lg)',
               boxShadow: 'var(--shadow-lg)',
-              overflow: 'hidden',
+              overflowY: 'auto',
+              maxHeight: 'min(62vh, 420px)',
               width: 250,
               padding: 6,
             }}
@@ -421,8 +409,7 @@ export default function Layout({ children, user, profile }: { children: React.Re
                 role="menuitem"
                 onClick={() => {
                   setFabOpen(false)
-                  if ('action' in a && a.action === 'cmd') setCmdOpen(true)
-                  else router.push((a as any).href)
+                  router.push(a.href)
                 }}
                 style={{
                   display: 'flex',
