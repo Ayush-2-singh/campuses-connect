@@ -105,8 +105,13 @@ export default function CookiePolicyPage() {
       <h3>2.3 Analytics (optional — only with your consent)</h3>
       <p>
         If you accept analytics, we may load a measurement tool to understand how the Service is used — for example
-        which pages are visited and how features perform. Nothing is loaded and nothing is measured before you accept,
-        and nothing is measured if you decline.
+        which pages are visited and how features perform. Nothing is measured before you accept, and nothing is measured
+        if you decline.
+      </p>
+      <p>
+        One detail worth being precise about: the Google Analytics loader tag is present in the page so that Google can
+        verify the site, but it starts with consent denied for analytics and advertising storage, and no measurement
+        request is sent until you press &ldquo;Accept all&rdquo;. Declining leaves it permanently inert.
       </p>
       <table className="legal-table">
         <thead>

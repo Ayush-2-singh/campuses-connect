@@ -235,6 +235,28 @@ const appJsonLd = {
   ],
 }
 
+/**
+ * GOOGLE ANALYTICS — loaded in <head>, measured only after consent.
+ *
+ * Search Console's "Google Analytics" ownership check fetches the homepage and
+ * looks for the gtag.js snippet in the RAW HTML. A script injected from a
+ * component after hydration — which is what this site used to do, so nothing
+ * was measured until the cookie banner was accepted — is invisible to that
+ * check.
+ *
+ * So the loader ships in <head>, but it is deliberately inert until someone
+ * accepts: Consent Mode is initialised with `analytics_storage: 'denied'` (and
+ * the ad signals denied), and `gtag('config', …)` is NOT called here. GA4 then
+ * sends no hits and writes no analytics cookies until src/components/Analytics
+ * receives an "Accept all" and updates consent. Nothing in the cookie policy's
+ * "nothing is measured before you accept" promise changes.
+ *
+ * The measurement id is an env var, never a literal: NEXT_PUBLIC_GA_MEASURE_ID
+ * (Vercel → Settings → Environment Variables). Absent it, no tag is rendered.
+ */
+const GA_ID = process.env.NEXT_PUBLIC_GA_MEASURE_ID
+const gaConsentBootstrap = `window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments)};window.gtag=gtag;gtag('consent','default',{ad_storage:'denied',ad_user_data:'denied',ad_personalization:'denied',analytics_storage:'denied'});gtag('js',new Date());`
+
 // Apply the saved theme before first paint to avoid a flash.
 // DEFAULT IS LIGHT: the product now leads with a light, warm-neutral surface
 // (dark remains a first-class option via the toggle, stored under 'cc-theme').
@@ -266,6 +288,15 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         {/* Preconnect to Supabase — only external API actually called from client.
             The project ref is never hardcoded here: it belongs in NEXT_PUBLIC_SUPABASE_URL. */}
         {process.env.NEXT_PUBLIC_SUPABASE_URL && <link rel="preconnect" href={process.env.NEXT_PUBLIC_SUPABASE_URL} />}
+
+        {/* Google Analytics loader — present for verification, inert until
+            consent (see gaConsentBootstrap above). */}
+        {GA_ID ? (
+          <>
+            <script dangerouslySetInnerHTML={{ __html: gaConsentBootstrap }} />
+            <script async src={`https://www.googletagmanager.com/gtag/js?id=${GA_ID}`} />
+          </>
+        ) : null}
 
         {/* JSON-LD Structured Data */}
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />

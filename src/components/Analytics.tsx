@@ -16,6 +16,12 @@ import { getCookieConsent, CONSENT_EVENT } from '@/components/CookieConsent'
  *   NEXT_PUBLIC_PLAUSIBLE_DOMAIN=connecttocampus.com   (Plausible, recommended)
  *   NEXT_PUBLIC_GA_MEASURE_ID=G-XXXXXXXXXX             (Google Analytics 4)
  * If both are set, both load; if neither, this is a silent no-op.
+ *
+ * GA4 is special: its loader is already in <head> (that is what the Search
+ * Console ownership check reads), initialised with Consent Mode denied and
+ * without `config`. This component therefore does not re-inject the script —
+ * it only flips consent to granted and calls `config`, which is the moment the
+ * first hit is sent.
  */
 export default function Analytics() {
   const [consent, setConsent] = useState<'granted' | 'denied' | null>(null)
@@ -45,16 +51,24 @@ export default function Analytics() {
     }
 
     if (gaId) {
-      const s = document.createElement('script')
-      s.async = true
-      s.src = `https://www.googletagmanager.com/gtag/js?id=${gaId}`
-      document.head.appendChild(s)
-      added.push(s)
-      const w = window as unknown as { dataLayer: unknown[] }
-      w.dataLayer = w.dataLayer || []
-      const gtag = (...args: unknown[]) => w.dataLayer.push(args)
-      gtag('js', new Date())
-      gtag('config', gaId, { anonymize_ip: true })
+      const w = window as unknown as { dataLayer: unknown[]; gtag?: (...args: unknown[]) => void }
+      // The <head> loader (app/layout.tsx) defines gtag and the dataLayer. If it
+      // is missing — env var added after a cached page was served — inject the
+      // script here so accepting still measures.
+      if (!w.gtag) {
+        const s = document.createElement('script')
+        s.async = true
+        s.src = `https://www.googletagmanager.com/gtag/js?id=${gaId}`
+        document.head.appendChild(s)
+        added.push(s)
+        w.dataLayer = w.dataLayer || []
+        w.gtag = (...args: unknown[]) => w.dataLayer.push(args)
+        w.gtag('js', new Date())
+      }
+      // Consent Mode: this is the first moment analytics storage may be used,
+      // so it is also the first moment a hit is sent.
+      w.gtag('consent', 'update', { analytics_storage: 'granted' })
+      w.gtag('config', gaId, { anonymize_ip: true })
     }
 
     return () => {
