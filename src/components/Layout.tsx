@@ -3,6 +3,7 @@ import React from 'react'
 import dynamic from 'next/dynamic'
 
 import { createClient } from '@/lib/supabase/client'
+import Link from 'next/link'
 import { useRouter, usePathname } from 'next/navigation'
 import ThemeToggle from '@/components/ThemeToggle'
 import LogoToggle, { getLogoSrc } from '@/components/LogoToggle'
@@ -207,25 +208,22 @@ export default function Layout({ children, user, profile }: { children: React.Re
             {/* flex 1 1 auto: the brand absorbs all the shrink (ellipsis) and
                 the controls keep their full touch size. */}
             <div style={{ display: 'flex', alignItems: 'center', gap: 8, minWidth: 0, flex: '1 1 auto' }}>
-              {/* The mark is the way home on a phone — it was a bare <img>, so a
-                  tap did nothing. The button keeps the 30px art but gets a
-                  proper touch target and an accessible name. */}
-              <button
-                type="button"
-                onClick={() => navigate('/')}
+              {/* The mark is the way home on a phone. A real anchor, not a
+                  click handler: it works even before hydration (or when a
+                  cached service-worker bundle is still in play). */}
+              <Link
+                href="/"
                 aria-label="ConnectToCampus home"
                 style={{
                   display: 'inline-flex',
                   flexShrink: 0,
                   padding: 0,
-                  border: 'none',
-                  background: 'none',
-                  cursor: 'pointer',
                   borderRadius: 9,
+                  lineHeight: 0,
                 }}
               >
                 <img src={logoSrc} alt="" width={30} height={30} style={{ borderRadius: 9, display: 'block' }} />
-              </button>
+              </Link>
               <h1
                 style={{
                   fontSize: 17,
