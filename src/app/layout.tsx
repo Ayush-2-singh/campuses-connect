@@ -150,6 +150,12 @@ export const metadata: Metadata = {
     statusBarStyle: 'black-translucent',
     title: 'ConnectToCampus',
   },
+  // Google Search Console ownership check. Emitted by Next into <head> as
+  // <meta name="google-site-verification" …> on every route (it lives on the
+  // root layout, so a static file is not needed and it cannot drift).
+  verification: {
+    google: '_s7lB6ywxQIYMHPlTrItHr2UrSVXC0ETbhf00R3zoZs',
+  },
   robots: {
     index: true,
     follow: true,
