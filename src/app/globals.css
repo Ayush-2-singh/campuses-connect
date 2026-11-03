@@ -590,6 +590,26 @@ img.avatar-img {
   scrollbar-width: none;
 }
 
+/* One-line emoji strip (the call's reactions). The scrollbar is deliberately
+   drawn at the bottom of the row and kept thin — it is the affordance that
+   tells people there are more emojis past the right edge. */
+.emoji-strip {
+  scrollbar-width: thin;
+  scrollbar-color: var(--border-strong) transparent;
+  -webkit-overflow-scrolling: touch;
+}
+.emoji-strip::-webkit-scrollbar {
+  height: 6px;
+}
+.emoji-strip::-webkit-scrollbar-thumb {
+  background: var(--border-strong);
+  border: none;
+  border-radius: 6px;
+}
+.emoji-strip::-webkit-scrollbar-track {
+  background: transparent;
+}
+
 *::-webkit-scrollbar {
   width: 10px;
   height: 10px;

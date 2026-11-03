@@ -1267,7 +1267,7 @@ function CallBar({
       <div ref={emojiButtonRef} style={{ position: 'relative' }}>
         {emojiOpen && (
           <div ref={emojiRef} style={{ position: 'absolute', bottom: 48, right: 0, zIndex: 5 }}>
-            <EmojiPicker label="Send an emoji reaction" onPick={sendReaction} onClose={closeEmoji} />
+            <EmojiPicker label="Send an emoji reaction" onPick={sendReaction} onClose={closeEmoji} strip />
           </div>
         )}
         <button
@@ -2914,7 +2914,7 @@ function Controls({
             ref={emojiRef}
             style={{ position: 'absolute', bottom: 64, left: '50%', transform: 'translateX(-50%)', zIndex: 6 }}
           >
-            <EmojiPicker label="Send an emoji reaction" onPick={sendReaction} onClose={closeEmoji} />
+            <EmojiPicker label="Send an emoji reaction" onPick={sendReaction} onClose={closeEmoji} strip />
           </div>
         )}
         <button

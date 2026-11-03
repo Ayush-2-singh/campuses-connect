@@ -60,12 +60,20 @@ export default function EmojiPicker({
   onPick,
   onClose,
   label = 'Pick an emoji',
+  strip = false,
 }: {
   /** Called for every tap — the caller decides whether that sends or inserts. */
   onPick: (emoji: string) => void
   onClose: () => void
   /** Screen-reader name for the sheet; the two callers say different things. */
   label?: string
+  /**
+   * ONE LINE instead of a grid — Telegram's reaction bar. The row scrolls
+   * sideways and its scrollbar sits at the bottom (globals.css draws it), so
+   * it is obvious that there are more emojis past the edge. Used by the call's
+   * reaction button; the message composer keeps the grid.
+   */
+  strip?: boolean
 }) {
   const panelRef = useRef<HTMLElement>(null)
   const [groupKey, setGroupKey] = useState(EMOJI_GROUPS[0].key)
@@ -160,17 +168,32 @@ export default function EmojiPicker({
         ))}
       </div>
 
-      {/* ── Grid ── */}
+      {/* ── Emojis — one scrollable line (call) or the full grid (composer) ── */}
       <div
-        style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(8, 1fr)',
-          gap: 2,
-          maxHeight: '42vh',
-          overflowY: 'auto',
-          overscrollBehavior: 'contain',
-          padding: 2,
-        }}
+        className={strip ? 'emoji-strip' : undefined}
+        style={
+          strip
+            ? {
+                display: 'flex',
+                flexWrap: 'nowrap',
+                gap: 2,
+                overflowX: 'auto',
+                overflowY: 'hidden',
+                overscrollBehavior: 'contain',
+                // Room for the horizontal scrollbar, which is the affordance:
+                // it says "there are more emojis this side".
+                paddingBottom: 4,
+              }
+            : {
+                display: 'grid',
+                gridTemplateColumns: 'repeat(8, 1fr)',
+                gap: 2,
+                maxHeight: '42vh',
+                overflowY: 'auto',
+                overscrollBehavior: 'contain',
+                padding: 2,
+              }
+        }
       >
         {shown.map((emoji, i) => (
           <button
@@ -186,7 +209,10 @@ export default function EmojiPicker({
               background: 'transparent',
               border: 'none',
               borderRadius: 8,
-              padding: '5px 0',
+              // A strip cell keeps its full width while the row scrolls under
+              // it; a grid cell just fills its column.
+              padding: strip ? '5px 6px' : '5px 0',
+              flex: strip ? '0 0 auto' : undefined,
               cursor: 'pointer',
               fontFamily: 'inherit',
             }}
