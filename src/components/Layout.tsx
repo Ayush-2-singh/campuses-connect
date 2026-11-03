@@ -36,6 +36,8 @@ const PREFETCH_ROUTES = ['/live-voice-chat', '/experiences', '/compete', '/messa
 // Search is NOT one of them — the bar's magnifier was removed, and Cmd/Ctrl+K
 // still opens the palette on desktop.
 const FAB_ACTIONS = [
+  // First item, so it sits right above the "+" the moment the sheet opens.
+  { label: 'Library', desc: 'Notes, PYQs and study material', icon: 'book', href: '/notes' },
   { label: 'Host a Live Battle', desc: 'Create a room, share the code', icon: 'gamepad', href: '/compete/live' },
   { label: 'Question bank', desc: 'Write or import quiz questions', icon: 'notebook', href: '/compete/live/questions' },
   { label: 'Leaderboard', desc: 'See where you stand this season', icon: 'trophy', href: '/leaderboard' },

@@ -37,6 +37,9 @@ const NAV: NavEntry[] = [
   { label: 'Rooms', href: '/live-voice-chat', icon: 'mic' },
   { label: 'Experiences', href: '/experiences', icon: 'pencil' },
   { label: 'Compete', href: '/compete', icon: 'zap' },
+  // The student Library (notes / PYQs / study material). Same destination as
+  // the phone's "+" sheet entry — the sheet is the only way in on mobile.
+  { label: 'Library', href: '/notes', icon: 'book' },
   // Requests + 1:1 DMs. Re-enabled with the student network (see
   // src/lib/featureGates.ts) — the only part of the old social plane that
   // came back, because it is how a campus directory becomes useful.
