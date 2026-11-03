@@ -91,7 +91,7 @@ export default function CallSurface() {
   }, [callUrl, router])
 
   const participants = useParticipants()
-  const { localParticipant, isMicrophoneEnabled, isCameraEnabled } = useLocalParticipant()
+  const { localParticipant, isMicrophoneEnabled } = useLocalParticipant()
   const { emojiEvents, sendReaction } = useReactions(localParticipant?.identity, callId)
 
   // ── IN-CALL MESSAGES ───────────────────────────────────────────────────
@@ -168,11 +168,6 @@ export default function CallSurface() {
   /** The roster panel: per-person playback volume for everyone, host mute
    *  for an owner/admin/co-admin. */
   const [peopleOpen, setPeopleOpen] = useState(false)
-  /** The floating self-view can be dismissed — until the camera goes off. */
-  const [selfPreviewHidden, setSelfPreviewHidden] = useState(false)
-  useEffect(() => {
-    if (!isCameraEnabled) setSelfPreviewHidden(false)
-  }, [isCameraEnabled])
   const [musicKey, setMusicKey] = useState(DEFAULT_MUSIC_KEY)
   const [musicAuto, setMusicAuto] = useState(false)
   /** The flavour *I* have shared with the call, or null. */
@@ -693,9 +688,6 @@ export default function CallSurface() {
         {/* Meet-style: every reaction rises from the bottom of the call screen
             carrying the sender's name, instead of hiding inside one tile. */}
         <ReactionRise events={emojiEvents} participants={participants} localIdentity={localParticipant?.identity} />
-        {/* Meet's floating self-view: your camera, draggable, always clear of
-            the control bar. Only while the camera is on. */}
-        {isCameraEnabled && !selfPreviewHidden && <SelfPreview onClose={() => setSelfPreviewHidden(true)} />}
         <Controls
           callId={callId}
           onLeave={leave}
@@ -2528,160 +2520,6 @@ function CallPeoplePanel({
           )
         })}
       </ul>
-    </section>
-  )
-}
-
-import {
-  PANEL_MARGIN,
-  clampPanelPosition,
-  movePanelByKey,
-  movePanelPosition,
-  readPanelPosition,
-  savePanelPosition,
-} from '@/lib/floatingPanel'
-
-/**
- * SELF-VIEW PREVIEW — your own camera as a small floating window, Meet-style.
- *
- * It rides the call screen instead of competing with the stage for tiles, it
- * can be dragged anywhere (and moved with the arrow keys), and it always
- * lands inside the viewport and ABOVE the control bar — that maths lives in
- * lib/floatingPanel.ts, next to the chat panel's, and is unit-tested there.
- * ✕ hides it until the camera goes off and on again, so it never fights the
- * person for screen space.
- */
-/** Size of the floating self-view: a 16:9 picture plus its grip bar. */
-const SELF_PREVIEW_BOX = { width: 176, height: 132 }
-
-function SelfPreview({ onClose }: { onClose: () => void }) {
-  const camRefs = useTracks([Track.Source.Camera])
-  const camRef = camRefs.find((r) => r.participant.isLocal)
-  const viewport = () => ({ width: window.innerWidth, height: window.innerHeight })
-  /** sessionStorage key: where the person last parked their own preview. */
-  const storageKey = 'cc-self-preview'
-
-  const [point, setPoint] = useState(() => {
-    let stored: string | null = null
-    try {
-      stored = window.sessionStorage.getItem(storageKey)
-    } catch {
-      /* private browsing — just dock it */
-    }
-    // Saved spot wins; otherwise bottom-left, just above the control bar.
-    return stored
-      ? readPanelPosition(window.sessionStorage, storageKey, SELF_PREVIEW_BOX, viewport())
-      : clampPanelPosition({ x: PANEL_MARGIN, y: window.innerHeight }, SELF_PREVIEW_BOX, viewport())
-  })
-
-  // The window can shrink under it (rotate, half-screen): keep it reachable.
-  useEffect(() => {
-    const onResize = () => setPoint((p) => clampPanelPosition(p, SELF_PREVIEW_BOX, viewport()))
-    window.addEventListener('resize', onResize)
-    return () => window.removeEventListener('resize', onResize)
-  }, [])
-
-  const drag = useRef<{ x: number; y: number; origin: { x: number; y: number } } | null>(null)
-
-  if (!camRef) return null
-
-  return (
-    <section
-      aria-label="Your camera preview"
-      style={{
-        position: 'fixed',
-        left: point.x,
-        top: point.y,
-        width: SELF_PREVIEW_BOX.width,
-        borderRadius: 14,
-        overflow: 'hidden',
-        border: '1px solid var(--border)',
-        background: '#000',
-        boxShadow: '0 12px 34px rgba(0, 0, 0, 0.45)',
-        zIndex: 20,
-      }}
-    >
-      {/* The grip is the drag surface: dragging the VIDEO must not steal the
-          preview from under a stray thumb. */}
-      <div
-        onPointerDown={(e) => {
-          drag.current = { x: e.clientX, y: e.clientY, origin: point }
-          e.currentTarget.setPointerCapture(e.pointerId)
-        }}
-        onPointerMove={(e) => {
-          const d = drag.current
-          if (!d) return
-          setPoint(
-            movePanelPosition(d.origin, { x: e.clientX - d.x, y: e.clientY - d.y }, SELF_PREVIEW_BOX, viewport())
-          )
-        }}
-        onPointerUp={(e) => {
-          if (!drag.current) return
-          drag.current = null
-          e.currentTarget.releasePointerCapture(e.pointerId)
-          setPoint((p) => {
-            savePanelPosition(window.sessionStorage, storageKey, p)
-            return p
-          })
-        }}
-        onPointerCancel={() => {
-          drag.current = null
-        }}
-        onKeyDown={(e) => {
-          const next = movePanelByKey(point, e.key, SELF_PREVIEW_BOX, viewport())
-          if (!next) return
-          e.preventDefault()
-          setPoint(next)
-        }}
-        role="button"
-        tabIndex={0}
-        aria-label="Move your camera preview"
-        title="Drag to move — arrow keys work too"
-        style={{
-          display: 'flex',
-          alignItems: 'center',
-          gap: 6,
-          padding: '4px 6px',
-          background: 'rgba(0, 0, 0, 0.55)',
-          color: '#fff',
-          cursor: 'grab',
-          touchAction: 'none',
-          userSelect: 'none',
-        }}
-      >
-        <Icon name="grip" size={14} strokeWidth={2.2} />
-        <span style={{ flex: 1, fontSize: 11, fontWeight: 700, whiteSpace: 'nowrap' }}>You</span>
-        <button
-          onClick={onClose}
-          aria-label="Hide your camera preview"
-          style={{
-            width: 22,
-            height: 22,
-            borderRadius: 7,
-            border: 'none',
-            background: 'rgba(255, 255, 255, 0.16)',
-            color: '#fff',
-            display: 'inline-flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            cursor: 'pointer',
-          }}
-        >
-          <Icon name="x" size={13} strokeWidth={2.4} />
-        </button>
-      </div>
-      <VideoTrack
-        trackRef={camRef}
-        muted
-        style={{
-          display: 'block',
-          width: '100%',
-          height: SELF_PREVIEW_BOX.height - 28,
-          objectFit: 'cover',
-          // Meet-style: your own camera is a mirror.
-          transform: 'scaleX(-1)',
-        }}
-      />
     </section>
   )
 }
