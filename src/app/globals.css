@@ -905,6 +905,15 @@ a,
     bottom: calc(84px + env(safe-area-inset-bottom)) !important;
   }
 
+  /* A minimized call parks its pill in the SAME row as the + button (both
+     bottom: 84px). The pill is centred and wide, so the button moves ABOVE it
+     (pill height + gap) instead of disappearing for the rest of the call —
+     it is the only way into Library, Live Battle, Question bank and the like.
+     The broadcast card is out of the way by then (it hides while in a call). */
+  .fab-wrap[data-callbar='1'] {
+    bottom: calc(146px + env(safe-area-inset-bottom)) !important;
+  }
+
   /* The live-voice broadcast pill parks in the SAME corner as the FAB
      (right: 16px, bottom: 84px) — on phones it would sit underneath the
      + button and its upward menu. Stack it above the FAB (52px button +

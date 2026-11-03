@@ -14,7 +14,7 @@ import { Icon } from '@/components/icons'
 import { accentForPath } from '@/theme/colors'
 import BrandName from '@/components/BrandName'
 import TopNav from '@/components/TopNav'
-import { useCall } from '@/components/voice/callContext'
+import { callScreenPath, useCall } from '@/components/voice/callContext'
 
 // PROFESSIONAL PATTERN: Lazy-load heavy components (Vercel/Linear/Notion).
 // CommandPalette is only needed when user presses Cmd+K — no point loading
@@ -52,6 +52,11 @@ export default function Layout({ children, user, profile }: { children: React.Re
   // call is running it owns that space — the create button would sit on top of
   // the mic / leave controls at exactly the moment they matter most.
   const { session: callSession } = useCall()
+  // The create sheet is only suppressed while the FULL call screen owns the
+  // bottom-right corner. A minimized call leaves the app usable, and the sheet
+  // is the only way to reach Library, Live Battle, Question bank and the rest —
+  // hiding it for the whole call stranded people on whatever page they were on.
+  const onCallScreen = !!callSession && pathname === callScreenPath(callSession.groupId)
   const [unreadCount, setUnreadCount] = React.useState(0)
   const [cmdOpen, setCmdOpen] = React.useState(false)
   const [fabOpen, setFabOpen] = React.useState(false)
@@ -396,7 +401,13 @@ export default function Layout({ children, user, profile }: { children: React.Re
       />
 
       {/* ── Mobile floating action button ── */}
-      <div className="fab-wrap" role="menu" aria-label="Create" data-hidden={callSession ? '1' : '0'}>
+      <div
+        className="fab-wrap"
+        role="menu"
+        aria-label="Create"
+        data-hidden={onCallScreen ? '1' : '0'}
+        data-callbar={callSession && !onCallScreen ? '1' : '0'}
+      >
         {fabOpen && (
           <div
             style={{

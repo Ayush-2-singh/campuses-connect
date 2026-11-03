@@ -169,11 +169,18 @@ describe('the other live-room card gets out of the way', () => {
     expect(card).toMatch(/if \(session \|\| !state\.active/)
   })
 
-  it('hides the create button, which shares the call bar\u2019s corner on a phone', () => {
+  it('hides the create button only while the full call screen owns the corner', () => {
     const layout = read('src/components/Layout.tsx')
     expect(layout).toMatch(/const \{ session: callSession \} = useCall\(\)/)
-    expect(layout).toMatch(/data-hidden=\{callSession \? '1' : '0'\}/)
+    expect(layout).toMatch(/const onCallScreen = .*callScreenPath\(callSession\.groupId\)/)
+    expect(layout).toMatch(/data-hidden=\{onCallScreen \? '1' : '0'\}/)
     expect(css).toMatch(/\.fab-wrap\[data-hidden='1'\] \{[\s\S]*?display: none !important;/)
+  })
+
+  it('brings the create button back above the minimized call bar', () => {
+    const layout = read('src/components/Layout.tsx')
+    expect(layout).toMatch(/data-callbar=\{callSession && !onCallScreen \? '1' : '0'\}/)
+    expect(css).toMatch(/\.fab-wrap\[data-callbar='1'\] \{[\s\S]*?bottom: calc\(146px/)
   })
 
   it('never blocks the page underneath the layer', () => {
