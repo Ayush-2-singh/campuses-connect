@@ -37,21 +37,25 @@ export function CountUpStat({
   label,
   sub,
   value,
-  color,
-  bg,
-  border,
+  color = 'var(--text-primary)',
+  bg = 'var(--bg-secondary)',
+  border = 'var(--border)',
 }: {
   label: string
   sub?: string
   value: number
-  color: string
-  bg: string
-  border: string
+  /** Optional tone overrides — both profile pages default to the neutral tile. */
+  color?: string
+  bg?: string
+  border?: string
 }) {
   const animated = useCountUp(value)
+  const labelText = sub ? `${label}, ${sub}: ${value}` : `${label}: ${value}`
   return (
     <div
       className="profile-stat"
+      role="group"
+      aria-label={labelText}
       style={{
         background: bg,
         border: `1px solid ${border}`,
@@ -60,22 +64,31 @@ export function CountUpStat({
         textAlign: 'center',
       }}
     >
-      <p style={{ fontSize: 17, fontWeight: 800, color, margin: 0, letterSpacing: '-0.02em' }}>
-        {value > 0 ? animated : '—'}
+      {/* A zero renders as 0, not a dash: "—" was read out as "dash" and hid
+          the fact that the counter works. */}
+      <p style={{ fontSize: 18, fontWeight: 800, color, margin: 0, letterSpacing: '-0.02em' }} aria-hidden="true">
+        {animated}
       </p>
+      {/* 11px + text-secondary instead of 10px text-muted: the old label sat at
+          roughly 3.7:1 on the tile. */}
       <p
         style={{
-          fontSize: 10,
+          fontSize: 11,
           fontWeight: 700,
-          color: 'var(--text-muted)',
+          color: 'var(--text-secondary)',
           margin: '2px 0 0',
           textTransform: 'uppercase',
           letterSpacing: '0.04em',
         }}
+        aria-hidden="true"
       >
         {label}
       </p>
-      {sub && <p style={{ fontSize: 9, color: 'var(--text-muted)', margin: 0, opacity: 0.8 }}>{sub}</p>}
+      {sub && (
+        <p style={{ fontSize: 11, color: 'var(--text-secondary)', margin: 0 }} aria-hidden="true">
+          {sub}
+        </p>
+      )}
     </div>
   )
 }

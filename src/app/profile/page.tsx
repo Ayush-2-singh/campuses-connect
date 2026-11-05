@@ -286,22 +286,39 @@ export default function ProfilePage() {
     if (v && !form.skills.includes(v)) setForm((f) => ({ ...f, skills: [...f.skills, v], skillsInput: '' }))
   }
 
-  const badgeStyle = (bg: string, text: string) => ({
-    fontSize: 11,
-    padding: '3px 8px',
+  // Two badge tones only: neutral for role, accent for the one verified signal.
+  // Colour is never the only cue — each badge keeps its icon and its label.
+  const badgeStyle = (tone: 'neutral' | 'accent') => ({
+    display: 'inline-flex',
+    alignItems: 'center',
+    gap: 5,
+    fontSize: 12,
+    padding: '3px 9px',
     borderRadius: 20,
-    background: bg,
-    color: text,
     fontWeight: 600,
+    ...(tone === 'accent'
+      ? {
+          background: 'var(--accent-light)',
+          color: 'var(--accent-text)',
+          border: '1px solid var(--accent-border)',
+        }
+      : {
+          background: 'var(--bg-secondary)',
+          color: 'var(--text-secondary)',
+          border: '1px solid var(--border)',
+        }),
   })
 
+  // No `outline: none` here — it used to kill the global :focus-visible ring on
+  // every field. The border is mixed from --text-secondary so the field edge
+  // clears 3:1 against the card in both themes (WCAG 1.4.11), and 11px of
+  // vertical padding keeps the field at the 44px touch minimum.
   const inputStyle = {
     width: '100%',
-    border: '1px solid var(--border)',
+    border: '1px solid color-mix(in srgb, var(--text-secondary) 55%, transparent)',
     borderRadius: 10,
-    padding: '10px 14px',
+    padding: '11px 14px',
     fontSize: 14,
-    outline: 'none',
     fontFamily: 'inherit',
     color: 'var(--text-primary)',
     background: 'var(--bg)',
@@ -316,14 +333,17 @@ export default function ProfilePage() {
     )
 
   return (
-    <div data-accent="gold" style={{ minHeight: 'var(--app-vh)', paddingBottom: 80 }}>
-      <div
+    // One accent — the product blue — and neutrals everywhere else. The gold
+    // section override this page used to set made /profile the only screen in a
+    // second brand colour, and orange-on-dark reads weaker than the blue.
+    <div style={{ minHeight: 'var(--app-vh)', paddingBottom: 80 }}>
+      <header
         style={{
           position: 'sticky',
           top: 0,
           background: 'var(--bg)',
           borderBottom: '1px solid var(--border)',
-          padding: '13px 16px',
+          padding: '10px 16px',
           zIndex: 30,
         }}
       >
@@ -343,7 +363,7 @@ export default function ProfilePage() {
               style={{
                 background: 'none',
                 border: 'none',
-                color: 'var(--text-muted)',
+                color: 'var(--text-secondary)',
                 cursor: 'pointer',
                 fontSize: 18,
                 width: 44,
@@ -358,35 +378,38 @@ export default function ProfilePage() {
             >
               ←
             </button>
-            <h1 style={{ fontSize: 17, fontWeight: 700, margin: 0, color: 'var(--text-primary)' }}>Profile</h1>
+            <h1 style={{ fontSize: 18, fontWeight: 700, margin: 0, color: 'var(--text-primary)' }}>Profile</h1>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
             <button
               onClick={() => (editing ? handleSave() : setEditing(true))}
               disabled={saving}
+              aria-label={editing ? 'Save profile changes' : 'Edit profile'}
               style={{
-                background: editing ? 'var(--accent)' : 'var(--bg)',
-                color: editing ? 'var(--on-accent)' : 'var(--accent)',
-                border: '1px solid var(--accent)',
-                padding: '7px 16px',
-                borderRadius: 8,
-                fontSize: 13,
+                background: editing ? 'var(--accent)' : 'transparent',
+                color: editing ? 'var(--on-accent)' : 'var(--accent-text)',
+                border: `1px solid ${editing ? 'var(--accent)' : 'var(--accent-border)'}`,
+                padding: '0 18px',
+                minHeight: 40,
+                borderRadius: 10,
+                fontSize: 13.5,
                 fontWeight: 600,
-                cursor: 'pointer',
+                cursor: saving ? 'wait' : 'pointer',
                 fontFamily: 'inherit',
               }}
             >
-              {saving ? 'Saving...' : editing ? 'Save' : 'Edit'}
+              {saving ? 'Saving…' : editing ? 'Save' : 'Edit profile'}
             </button>
             <button
               onClick={() => setMenuOpen((o) => !o)}
               aria-label={menuOpen ? 'Close menu' : 'Open menu'}
               aria-expanded={menuOpen}
               style={{
-                width: 30,
-                height: 30,
-                borderRadius: '50%',
-                border: menuOpen ? '1px solid var(--accent)' : '1px solid var(--border)',
+                width: 40,
+                height: 40,
+                flexShrink: 0,
+                borderRadius: 10,
+                border: `1px solid ${menuOpen ? 'var(--accent-border)' : 'var(--border)'}`,
                 background: menuOpen ? 'var(--accent-light)' : 'var(--bg)',
                 color: menuOpen ? 'var(--accent-text)' : 'var(--text-secondary)',
                 display: 'flex',
@@ -395,13 +418,13 @@ export default function ProfilePage() {
                 cursor: 'pointer',
               }}
             >
-              <Icon name="menu" size={15} />
+              <Icon name="menu" size={16} />
             </button>
           </div>
         </div>
-      </div>
+      </header>
 
-      <div style={{ maxWidth: 640, margin: '0 auto', padding: 16, display: 'flex', flexDirection: 'column', gap: 14 }}>
+      <main style={{ maxWidth: 640, margin: '0 auto', padding: 16, display: 'flex', flexDirection: 'column', gap: 14 }}>
         {/* ── Stat tiles — the identity numbers, animated count-up ── */}
         <ProfileStats
           aura={profile?.aura_points || 0}
@@ -409,7 +432,7 @@ export default function ProfilePage() {
           streak={profile?.streak_days || 0}
           connections={connections.length}
         />
-        {/* ── Premium Profile Card with gradient banner ── */}
+        {/* ── Identity card ── */}
         <div
           style={{
             background: 'var(--bg)',
@@ -419,38 +442,16 @@ export default function ProfilePage() {
             boxShadow: 'var(--shadow-sm)',
           }}
         >
-          {/* Gradient banner — the accent family, not three raw hues. A gold→cyan
-              →purple ramp fought every other surface on the page; one accent at
-              three strengths reads as depth instead of decoration. */}
+          {/* Header band — one flat neutral wash. The gradient, the glow and the
+              dot grid were three decorative layers competing with the face
+              sitting on top of them. */}
           <div
+            aria-hidden="true"
             style={{
-              height: 'clamp(64px, 14vw, 96px)',
-              background:
-                'linear-gradient(120deg, color-mix(in srgb, var(--accent) 26%, var(--bg)) 0%, color-mix(in srgb, var(--accent) 10%, var(--bg)) 55%, var(--bg) 100%)',
-              position: 'relative',
-              overflow: 'hidden',
+              height: 'clamp(56px, 12vw, 84px)',
+              background: 'linear-gradient(180deg, var(--bg-secondary) 0%, var(--bg) 100%)',
             }}
-          >
-            <div
-              style={{
-                position: 'absolute',
-                inset: 0,
-                background:
-                  'radial-gradient(320px 120px at 82% 8%, color-mix(in srgb, var(--accent) 34%, transparent), transparent 70%)',
-              }}
-            />
-            {/* Faint dot grid: gives the empty band texture without a second hue. */}
-            <div
-              style={{
-                position: 'absolute',
-                inset: 0,
-                opacity: 0.35,
-                backgroundImage:
-                  'radial-gradient(color-mix(in srgb, var(--accent) 30%, transparent) 1px, transparent 1px)',
-                backgroundSize: '16px 16px',
-              }}
-            />
-          </div>
+          />
 
           <div style={{ padding: '0 20px 20px' }}>
             <div
@@ -465,16 +466,15 @@ export default function ProfilePage() {
                 position: 'relative',
               }}
             >
-              {/* The photo sits in its own surface ring so it stays legible over
-                  the banner in BOTH themes — previously the avatar's edge melted
-                  into the gradient on dark. */}
+              {/* The photo sits on its own surface ring (neutral, one hairline)
+                  so it stays legible over the band in BOTH themes — the old
+                  accent glow melted into the gradient on dark. */}
               <div
                 style={{
                   padding: 4,
                   borderRadius: '50%',
                   background: 'var(--bg)',
-                  boxShadow:
-                    '0 0 0 2px color-mix(in srgb, var(--accent) 45%, transparent), 0 6px 18px -6px rgba(0,0,0,0.35)',
+                  border: '1px solid var(--border-strong)',
                   display: 'inline-flex',
                   flexShrink: 0,
                 }}
@@ -494,10 +494,10 @@ export default function ProfilePage() {
                     disabled={uploading}
                     style={{
                       position: 'absolute',
-                      left: 52,
+                      left: 54,
                       bottom: 0,
-                      width: 30,
-                      height: 30,
+                      width: 36,
+                      height: 36,
                       borderRadius: '50%',
                       background: 'var(--accent)',
                       color: 'var(--on-accent)',
@@ -506,13 +506,13 @@ export default function ProfilePage() {
                       alignItems: 'center',
                       justifyContent: 'center',
                       cursor: uploading ? 'wait' : 'pointer',
-                      boxShadow: 'var(--shadow)',
+                      boxShadow: 'var(--shadow-sm)',
                     }}
                     aria-label="Upload photo"
                   >
-                    <Icon name={uploading ? 'more' : 'plus'} size={14} />
+                    <Icon name={uploading ? 'more' : 'plus'} size={16} />
                   </button>
-                  <p style={{ fontSize: 12.5, color: 'var(--text-muted)', margin: '0 0 4px' }}>
+                  <p style={{ fontSize: 12.5, color: 'var(--text-secondary)', margin: '0 0 4px' }}>
                     {uploading ? 'Uploading…' : 'Tap the + to add a photo'}
                   </p>
                 </>
@@ -524,47 +524,64 @@ export default function ProfilePage() {
                     value={form.full_name}
                     onChange={(e) => setForm((f) => ({ ...f, full_name: e.target.value }))}
                     placeholder="Full name"
+                    aria-label="Full name"
                     style={{ ...inputStyle, marginBottom: 6 }}
                   />
                 ) : (
-                  <p
+                  <h2
                     style={{
-                      fontSize: 20,
-                      fontWeight: 800,
+                      fontSize: 21,
+                      fontWeight: 700,
                       color: 'var(--text-primary)',
                       margin: '0 0 2px',
                       letterSpacing: '-0.02em',
+                      overflowWrap: 'anywhere',
                     }}
                   >
                     {profile?.full_name || 'No name'}
-                  </p>
+                  </h2>
                 )}
-                <p style={{ fontSize: 13, color: 'var(--text-muted)', margin: 0 }}>
+                <p style={{ fontSize: 13, color: 'var(--text-secondary)', margin: 0 }}>
                   @{profile?.username || 'no username'}
                 </p>
               </div>
             </div>
 
             <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 12 }}>
-              {isAdmin && <span style={badgeStyle('var(--danger-light)', 'var(--danger)')}>Admin</span>}
+              {isAdmin && (
+                <span style={badgeStyle('neutral')}>
+                  <Icon name="shield" size={12} style={{ verticalAlign: '-1px' }} /> Admin
+                </span>
+              )}
               {profile?.college_email_verified && (
-                <span style={badgeStyle('var(--accent-light)', 'var(--accent)')}>
-                  <Icon name="check" size={11} style={{ verticalAlign: '-1px' }} /> College Verified
+                <span style={badgeStyle('accent')}>
+                  <Icon name="check" size={12} style={{ verticalAlign: '-1px' }} /> College verified
                 </span>
               )}
             </div>
 
-            {/* Headline (new) */}
+            {/* Headline — reads as body copy, not as accent-coloured text: at
+                13.5px the accent was the weakest contrast on the card. */}
             {editing ? (
               <input
                 type="text"
                 value={form.headline}
                 onChange={(e) => setForm((f) => ({ ...f, headline: e.target.value }))}
-                placeholder="Headline — e.g. Full-stack dev · SIH Finalist · DSA 500+"
+                placeholder="Full-stack dev · SIH finalist · DSA 500+"
+                aria-label="Headline"
                 style={{ ...inputStyle, marginBottom: 10, fontWeight: 600 }}
               />
             ) : profile?.headline ? (
-              <p style={{ fontSize: 13.5, fontWeight: 600, color: 'var(--accent-text)', margin: '0 0 10px' }}>
+              <p
+                style={{
+                  fontSize: 14,
+                  fontWeight: 600,
+                  color: 'var(--text-primary)',
+                  margin: '0 0 10px',
+                  lineHeight: 1.5,
+                  overflowWrap: 'anywhere',
+                }}
+              >
                 {profile.headline}
               </p>
             ) : null}
@@ -574,13 +591,22 @@ export default function ProfilePage() {
               <textarea
                 value={form.bio}
                 onChange={(e) => setForm((f) => ({ ...f, bio: e.target.value }))}
-                placeholder="Write something about yourself — your skills, projects, what you're looking for..."
-                rows={3}
-                style={{ ...inputStyle, resize: 'none', marginBottom: 10 }}
+                placeholder="Your skills, projects, what you're looking for…"
+                aria-label="Bio"
+                rows={4}
+                style={{ ...inputStyle, resize: 'vertical', marginBottom: 10, lineHeight: 1.6 }}
               />
             ) : (
               profile?.bio && (
-                <p style={{ fontSize: 14, color: 'var(--text-secondary)', lineHeight: 1.6, margin: '0 0 12px' }}>
+                <p
+                  style={{
+                    fontSize: 14.5,
+                    color: 'var(--text-secondary)',
+                    lineHeight: 1.65,
+                    margin: '0 0 14px',
+                    overflowWrap: 'anywhere',
+                  }}
+                >
                   {profile.bio}
                 </p>
               )
@@ -592,7 +618,7 @@ export default function ProfilePage() {
                 style={{
                   fontSize: 12,
                   fontWeight: 700,
-                  color: 'var(--text-muted)',
+                  color: 'var(--text-secondary)',
                   textTransform: 'uppercase',
                   letterSpacing: 0.6,
                   margin: '0 0 8px',
@@ -605,7 +631,7 @@ export default function ProfilePage() {
               </p>
               {editing ? (
                 <div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                     <input
                       type="text"
                       value={form.skillsInput}
@@ -617,22 +643,25 @@ export default function ProfilePage() {
                         }
                       }}
                       placeholder="e.g. React, Python, Figma — Enter to add"
+                      aria-label="Add a skill"
                       style={{ ...inputStyle, flex: 1 }}
                     />
                     <button
                       onClick={addSkill}
                       style={{
-                        background: 'var(--bg-tertiary)',
-                        color: 'var(--text-secondary)',
-                        border: '1px solid var(--border)',
+                        background: 'var(--bg-secondary)',
+                        color: 'var(--text-primary)',
+                        border: '1px solid color-mix(in srgb, var(--text-secondary) 55%, transparent)',
                         borderRadius: 10,
-                        padding: '10px 14px',
+                        padding: '0 16px',
+                        minHeight: 44,
                         fontSize: 13,
+                        fontWeight: 600,
                         cursor: 'pointer',
                         fontFamily: 'inherit',
                       }}
                     >
-                      + Add
+                      Add
                     </button>
                   </div>
                   {form.skills.length > 0 && (
@@ -644,12 +673,12 @@ export default function ProfilePage() {
                             display: 'inline-flex',
                             alignItems: 'center',
                             gap: 6,
-                            fontSize: 12,
+                            fontSize: 12.5,
                             fontWeight: 600,
-                            color: 'var(--accent-text)',
-                            background: 'var(--accent-light)',
-                            border: '1px solid var(--accent-border)',
-                            padding: '3px 10px',
+                            color: 'var(--text-primary)',
+                            background: 'var(--bg-secondary)',
+                            border: '1px solid var(--border)',
+                            padding: '4px 10px',
                             borderRadius: 20,
                           }}
                         >
@@ -660,10 +689,10 @@ export default function ProfilePage() {
                             style={{
                               background: 'none',
                               border: 'none',
-                              color: 'inherit',
+                              color: 'var(--text-secondary)',
                               cursor: 'pointer',
-                              padding: 0,
-                              fontSize: 14,
+                              padding: '0 2px',
+                              fontSize: 15,
                               lineHeight: 1,
                               fontFamily: 'inherit',
                             }}
@@ -681,12 +710,12 @@ export default function ProfilePage() {
                     <span
                       key={s}
                       style={{
-                        fontSize: 12,
+                        fontSize: 12.5,
                         fontWeight: 600,
-                        color: 'var(--text-secondary)',
+                        color: 'var(--text-primary)',
                         background: 'var(--bg-secondary)',
                         border: '1px solid var(--border)',
-                        padding: '3px 10px',
+                        padding: '4px 10px',
                         borderRadius: 20,
                       }}
                     >
@@ -695,8 +724,8 @@ export default function ProfilePage() {
                   ))}
                 </div>
               ) : (
-                <p style={{ fontSize: 13, color: 'var(--text-muted)', margin: 0 }}>
-                  No skills yet. Add skills to get sharper AI matches on opportunities.{' '}
+                <p style={{ fontSize: 13, color: 'var(--text-secondary)', margin: 0, lineHeight: 1.55 }}>
+                  No skills yet — add a few and opportunities get matched to them.{' '}
                   <Icon name="sparkles" size={12} style={{ verticalAlign: '-2px' }} />
                 </p>
               )}
@@ -709,23 +738,33 @@ export default function ProfilePage() {
           className="profile-reveal-2"
           style={{
             background: 'var(--bg)',
-            borderRadius: 14,
+            borderRadius: 16,
             border: '1px solid var(--border)',
             padding: 20,
             boxShadow: 'var(--shadow-sm)',
           }}
         >
-          <h3 style={{ fontSize: 14, fontWeight: 700, color: 'var(--text-primary)', margin: '0 0 14px' }}>
-            <Icon name="users" size={14} style={{ verticalAlign: '-2px', marginRight: 6 }} /> Connections
-          </h3>
+          <h2
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 8,
+              fontSize: 15,
+              fontWeight: 700,
+              color: 'var(--text-primary)',
+              margin: '0 0 14px',
+            }}
+          >
+            <Icon name="users" size={15} style={{ color: 'var(--text-secondary)' }} /> Connections
+          </h2>
 
           {connRequests.length > 0 && (
             <>
               <p
                 style={{
-                  fontSize: 11,
+                  fontSize: 12,
                   fontWeight: 700,
-                  color: 'var(--accent)',
+                  color: 'var(--text-secondary)',
                   textTransform: 'uppercase',
                   letterSpacing: 0.6,
                   margin: '0 0 4px',
@@ -754,17 +793,22 @@ export default function ProfilePage() {
                     <p style={{ fontSize: 13.5, fontWeight: 600, color: 'var(--text-primary)', margin: 0 }}>
                       {r.profile?.full_name || 'Student'}
                     </p>
-                    <p style={{ fontSize: 12, color: 'var(--text-muted)', margin: 0 }}>@{r.profile?.username}</p>
+                    <p style={{ fontSize: 12.5, color: 'var(--text-secondary)', margin: 0 }}>@{r.profile?.username}</p>
                   </div>
+                  {/* One filled action per row (accept, the accent) and one
+                      neutral outline. The labels carry the meaning — green +
+                      red were a second colour system for the same two choices. */}
                   <button
                     onClick={() => respondConnection(r.id, true)}
+                    aria-label={`Accept connection request from ${r.profile?.full_name || 'this student'}`}
                     style={{
-                      padding: '7px 14px',
-                      borderRadius: 8,
-                      border: 'none',
-                      background: 'var(--success)',
+                      padding: '0 14px',
+                      minHeight: 40,
+                      borderRadius: 10,
+                      border: '1px solid var(--accent)',
+                      background: 'var(--accent)',
                       color: 'var(--on-accent)',
-                      fontSize: 12.5,
+                      fontSize: 13,
                       fontWeight: 600,
                       cursor: 'pointer',
                       fontFamily: 'inherit',
@@ -774,13 +818,15 @@ export default function ProfilePage() {
                   </button>
                   <button
                     onClick={() => respondConnection(r.id, false)}
+                    aria-label={`Decline connection request from ${r.profile?.full_name || 'this student'}`}
                     style={{
-                      padding: '7px 14px',
-                      borderRadius: 8,
-                      border: '1px solid var(--danger-border)',
+                      padding: '0 14px',
+                      minHeight: 40,
+                      borderRadius: 10,
+                      border: '1px solid var(--border)',
                       background: 'var(--bg)',
-                      color: 'var(--danger)',
-                      fontSize: 12.5,
+                      color: 'var(--text-secondary)',
+                      fontSize: 13,
                       fontWeight: 600,
                       cursor: 'pointer',
                       fontFamily: 'inherit',
@@ -795,9 +841,9 @@ export default function ProfilePage() {
 
           <p
             style={{
-              fontSize: 11,
+              fontSize: 12,
               fontWeight: 700,
-              color: 'var(--text-muted)',
+              color: 'var(--text-secondary)',
               textTransform: 'uppercase',
               letterSpacing: 0.6,
               margin: '14px 0 4px',
@@ -806,7 +852,7 @@ export default function ProfilePage() {
             Your connections ({connections.length})
           </p>
           {connections.length === 0 ? (
-            <p style={{ fontSize: 13, color: 'var(--text-muted)', margin: 0, lineHeight: 1.5 }}>
+            <p style={{ fontSize: 13, color: 'var(--text-secondary)', margin: 0, lineHeight: 1.55 }}>
               No connections yet. Requests appear here once someone connects with you.
             </p>
           ) : (
@@ -831,18 +877,20 @@ export default function ProfilePage() {
                   <p style={{ fontSize: 13.5, fontWeight: 600, color: 'var(--text-primary)', margin: 0 }}>
                     {c.profile?.full_name || 'Student'}
                   </p>
-                  <p style={{ fontSize: 12, color: 'var(--text-muted)', margin: 0 }}>@{c.profile?.username}</p>
+                  <p style={{ fontSize: 12.5, color: 'var(--text-secondary)', margin: 0 }}>@{c.profile?.username}</p>
                 </div>
                 {c.profile?.username && (
                   <button
                     onClick={() => router.push(`/profile/${c.profile.username}`)}
+                    aria-label={`View ${c.profile?.full_name || 'this student'}'s profile`}
                     style={{
-                      padding: '7px 14px',
-                      borderRadius: 8,
+                      padding: '0 14px',
+                      minHeight: 40,
+                      borderRadius: 10,
                       border: '1px solid var(--border)',
                       background: 'var(--bg-secondary)',
                       color: 'var(--text-secondary)',
-                      fontSize: 12.5,
+                      fontSize: 13,
                       fontWeight: 600,
                       cursor: 'pointer',
                       fontFamily: 'inherit',
@@ -861,15 +909,15 @@ export default function ProfilePage() {
           className="profile-reveal-3"
           style={{
             background: 'var(--bg)',
-            borderRadius: 14,
+            borderRadius: 16,
             border: '1px solid var(--border)',
             padding: 20,
             boxShadow: 'var(--shadow-sm)',
           }}
         >
-          <h3 style={{ fontSize: 14, fontWeight: 700, color: 'var(--text-primary)', margin: '0 0 14px' }}>
-            Campus Info
-          </h3>
+          <h2 style={{ fontSize: 15, fontWeight: 700, color: 'var(--text-primary)', margin: '0 0 14px' }}>
+            Campus info
+          </h2>
           {/* `minmax(0, 1fr)` + `.mg-stack`: a bare `1fr` track cannot shrink
               below its content, so a long email address (one unbreakable
               token) widened both columns and the whole page to 425px on a
@@ -890,15 +938,15 @@ export default function ProfilePage() {
                 key={item.label}
                 style={{ background: 'var(--bg-secondary)', borderRadius: 10, padding: '10px 14px' }}
               >
-                <p style={{ fontSize: 11, color: 'var(--text-muted)', margin: '0 0 3px', fontWeight: 500 }}>
+                <p style={{ fontSize: 12, color: 'var(--text-secondary)', margin: '0 0 3px', fontWeight: 500 }}>
                   {item.label}
                 </p>
                 <p
                   style={{
-                    fontSize: 13,
+                    fontSize: 13.5,
                     color: 'var(--text-primary)',
                     margin: 0,
-                    fontWeight: 500,
+                    fontWeight: 600,
                     overflowWrap: 'anywhere',
                   }}
                 >
@@ -914,17 +962,26 @@ export default function ProfilePage() {
           <div
             style={{
               background: 'var(--bg)',
-              borderRadius: 14,
+              borderRadius: 16,
               border: '1px solid var(--accent-border)',
               padding: 20,
               boxShadow: 'var(--shadow-sm)',
             }}
           >
-            <h3 style={{ fontSize: 14, fontWeight: 700, color: 'var(--text-primary)', margin: '0 0 4px' }}>
-              <Icon name="grad" size={14} style={{ verticalAlign: '-2px', marginRight: 6 }} /> You&apos;re at the Global
-              Campus
-            </h3>
-            <p style={{ fontSize: 12.5, color: 'var(--text-muted)', margin: '0 0 14px' }}>
+            <h2
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 8,
+                fontSize: 15,
+                fontWeight: 700,
+                color: 'var(--text-primary)',
+                margin: '0 0 6px',
+              }}
+            >
+              <Icon name="grad" size={15} style={{ color: 'var(--accent-text)' }} /> You&apos;re at the Global Campus
+            </h2>
+            <p style={{ fontSize: 13, color: 'var(--text-secondary)', margin: '0 0 14px', lineHeight: 1.55 }}>
               Anyone can join the Global Campus. When your college goes live, move to your own campus — your posts and
               profile stay with you.
             </p>
@@ -973,8 +1030,9 @@ export default function ProfilePage() {
                   color: 'var(--on-accent)',
                   border: 'none',
                   borderRadius: 10,
+                  minHeight: 48,
                   padding: '11px',
-                  fontSize: 13.5,
+                  fontSize: 14,
                   fontWeight: 600,
                   cursor: 'pointer',
                   fontFamily: 'inherit',
@@ -991,13 +1049,13 @@ export default function ProfilePage() {
           className="profile-reveal-4"
           style={{
             background: 'var(--bg)',
-            borderRadius: 14,
+            borderRadius: 16,
             border: '1px solid var(--border)',
             padding: 20,
             boxShadow: 'var(--shadow-sm)',
           }}
         >
-          <h3 style={{ fontSize: 14, fontWeight: 700, color: 'var(--text-primary)', margin: '0 0 14px' }}>Links</h3>
+          <h2 style={{ fontSize: 15, fontWeight: 700, color: 'var(--text-primary)', margin: '0 0 14px' }}>Links</h2>
           {editing ? (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
               {[
@@ -1007,10 +1065,16 @@ export default function ProfilePage() {
                 { key: 'twitter_url', label: 'Twitter/X', placeholder: 'https://twitter.com/username' },
               ].map((link) => (
                 <div key={link.key}>
-                  <label style={{ fontSize: 12, color: 'var(--text-muted)', display: 'block', marginBottom: 5 }}>
+                  {/* Real label/input pairing: the label used to be decoration,
+                      so a screen reader announced four unnamed URL fields. */}
+                  <label
+                    htmlFor={`profile-${link.key}`}
+                    style={{ fontSize: 12.5, color: 'var(--text-secondary)', display: 'block', marginBottom: 5 }}
+                  >
                     {link.label}
                   </label>
                   <input
+                    id={`profile-${link.key}`}
                     type="url"
                     value={(form as any)[link.key]}
                     onChange={(e) => setForm((f) => ({ ...f, [link.key]: e.target.value }))}
@@ -1035,23 +1099,55 @@ export default function ProfilePage() {
                     href={link.url}
                     target="_blank"
                     rel="noopener noreferrer"
+                    aria-label={`${link.label} — ${link.url} (opens in a new tab)`}
                     style={{
                       display: 'flex',
                       alignItems: 'center',
-                      gap: 10,
+                      gap: 12,
                       background: 'var(--bg-secondary)',
+                      border: '1px solid var(--border)',
                       borderRadius: 10,
-                      padding: '10px 14px',
+                      padding: '10px 12px',
                       textDecoration: 'none',
+                      minHeight: 56,
                     }}
                   >
-                    <Icon name={link.icon} size={15} filled={link.filled} style={{ color: 'var(--accent-text)' }} />
-                    <span style={{ fontSize: 13, color: 'var(--accent)' }}>{link.url}</span>
+                    <span
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        width: 32,
+                        height: 32,
+                        flexShrink: 0,
+                        borderRadius: 8,
+                        background: 'var(--bg)',
+                        border: '1px solid var(--border)',
+                        color: 'var(--text-secondary)',
+                      }}
+                    >
+                      <Icon name={link.icon} size={15} filled={link.filled} />
+                    </span>
+                    <span style={{ minWidth: 0, flex: 1 }}>
+                      <span style={{ display: 'block', fontSize: 13.5, fontWeight: 600, color: 'var(--text-primary)' }}>
+                        {link.label}
+                      </span>
+                      <span
+                        style={{
+                          display: 'block',
+                          fontSize: 12.5,
+                          color: 'var(--text-secondary)',
+                          overflowWrap: 'anywhere',
+                        }}
+                      >
+                        {link.url}
+                      </span>
+                    </span>
                   </a>
                 ))}
-              {!profile?.github_url && !profile?.linkedin_url && !profile?.portfolio_url && (
-                <p style={{ fontSize: 13, color: 'var(--text-muted)', margin: 0 }}>
-                  No links added. Click Edit to add.
+              {!profile?.github_url && !profile?.linkedin_url && !profile?.portfolio_url && !profile?.twitter_url && (
+                <p style={{ fontSize: 13, color: 'var(--text-secondary)', margin: 0, lineHeight: 1.55 }}>
+                  No links added yet — use Edit profile to add GitHub, LinkedIn, your portfolio or X.
                 </p>
               )}
             </div>
@@ -1063,16 +1159,26 @@ export default function ProfilePage() {
           className="profile-reveal-5"
           style={{
             background: 'var(--bg)',
-            borderRadius: 14,
+            borderRadius: 16,
             border: '1px solid var(--border)',
             padding: 20,
             boxShadow: 'var(--shadow-sm)',
           }}
         >
-          <h3 style={{ fontSize: 14, fontWeight: 700, color: 'var(--text-primary)', margin: '0 0 4px' }}>
-            <Icon name="lock" size={14} style={{ verticalAlign: '-2px', marginRight: 6 }} /> Who can connect with you?
-          </h3>
-          <p style={{ fontSize: 12.5, color: 'var(--text-muted)', margin: '0 0 12px' }}>
+          <h2
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 8,
+              fontSize: 15,
+              fontWeight: 700,
+              color: 'var(--text-primary)',
+              margin: '0 0 6px',
+            }}
+          >
+            <Icon name="lock" size={15} style={{ color: 'var(--text-secondary)' }} /> Who can connect with you?
+          </h2>
+          <p style={{ fontSize: 13, color: 'var(--text-secondary)', margin: '0 0 12px', lineHeight: 1.55 }}>
             Choose who can send you connect requests and start chats with you.
           </p>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
@@ -1101,18 +1207,23 @@ export default function ProfilePage() {
                   onClick={() => {
                     if (!active) updateInteraction(opt.val)
                   }}
+                  // The current choice is exposed to assistive tech, not just
+                  // painted: aria-pressed + a check icon + the border ring.
+                  aria-pressed={active}
                   style={{
                     display: 'flex',
                     alignItems: 'center',
                     gap: 12,
                     textAlign: 'left',
                     padding: '12px 14px',
+                    minHeight: 56,
                     borderRadius: 12,
                     cursor: 'pointer',
                     fontFamily: 'inherit',
-                    border: active ? '1.5px solid var(--accent)' : '1px solid var(--border)',
+                    border: `1px solid ${active ? 'var(--accent)' : 'var(--border)'}`,
                     background: active ? 'var(--accent-light)' : 'var(--bg-secondary)',
                     color: 'var(--text-primary)',
+                    boxShadow: active ? '0 0 0 1px var(--accent)' : 'none',
                   }}
                 >
                   <span
@@ -1125,10 +1236,12 @@ export default function ProfilePage() {
                     <Icon name={opt.icon} size={20} />
                   </span>
                   <span style={{ flex: 1 }}>
-                    <span style={{ display: 'block', fontSize: 13.5, fontWeight: 700 }}>
-                      {opt.title} {active && <Icon name="check" size={12} style={{ verticalAlign: '-1px' }} />}
+                    <span style={{ display: 'block', fontSize: 14, fontWeight: 700 }}>
+                      {opt.title} {active && <Icon name="check" size={13} style={{ verticalAlign: '-2px' }} />}
                     </span>
-                    <span style={{ display: 'block', fontSize: 12, color: 'var(--text-muted)' }}>{opt.desc}</span>
+                    <span style={{ display: 'block', fontSize: 12.5, color: 'var(--text-secondary)', marginTop: 2 }}>
+                      {opt.desc}
+                    </span>
                   </span>
                 </button>
               )
@@ -1143,17 +1256,29 @@ export default function ProfilePage() {
             style={{
               background: 'var(--bg)',
               border: '1px solid var(--border)',
-              borderRadius: 14,
+              borderRadius: 16,
               padding: '16px 20px',
               textAlign: 'left',
               cursor: 'pointer',
               boxShadow: 'var(--shadow-sm)',
             }}
           >
-            <p style={{ fontSize: 14, fontWeight: 700, color: 'var(--text-primary)', margin: '0 0 2px' }}>
-              <Icon name="wrench" size={14} style={{ verticalAlign: '-2px', marginRight: 6 }} /> Admin Panel
+            <p
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 8,
+                fontSize: 14,
+                fontWeight: 700,
+                color: 'var(--text-primary)',
+                margin: '0 0 2px',
+              }}
+            >
+              <Icon name="wrench" size={15} style={{ color: 'var(--text-secondary)' }} /> Admin panel
             </p>
-            <p style={{ fontSize: 12, color: 'var(--text-muted)', margin: 0 }}>Manage users, posts and colleges</p>
+            <p style={{ fontSize: 12.5, color: 'var(--text-secondary)', margin: 0 }}>
+              Manage users, posts and colleges
+            </p>
           </button>
         )}
 
@@ -1165,19 +1290,20 @@ export default function ProfilePage() {
           style={{
             background: 'var(--bg)',
             border: '1px solid var(--danger-border)',
-            borderRadius: 14,
+            borderRadius: 16,
+            minHeight: 48,
             padding: '14px',
             fontSize: 14,
             fontWeight: 600,
-            color: 'var(--danger)',
+            color: 'var(--danger-text)',
             cursor: 'pointer',
             fontFamily: 'inherit',
             boxShadow: 'var(--shadow-sm)',
           }}
         >
-          Sign Out
+          Sign out
         </button>
-      </div>
+      </main>
 
       <MobileBottomNav pathname={pathname} onNavigate={(href) => router.push(href)} />
       <MobileMenu
@@ -1193,8 +1319,11 @@ export default function ProfilePage() {
 
 /**
  * STAT TILES — Aura / Karma / Streak / Connections, each a count-up number.
- * The zero state still renders (subtle dash) — a fresh student sees the four
- * dials of progression, not an empty row.
+ *
+ * All four share ONE neutral surface and one text colour: the numbers are the
+ * information, not the four hues (blue/yellow/orange/green) the tiles used to
+ * wear. Rank comes from position and size, so nothing relies on colour alone,
+ * and the value reads at full text-primary contrast in both themes.
  */
 function ProfileStats({
   aura,
@@ -1210,41 +1339,14 @@ function ProfileStats({
   return (
     <div
       className="profile-reveal mg-2"
-      style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 8 }}
-      aria-label="Profile statistics"
+      role="group"
+      aria-label="Your profile statistics"
+      style={{ display: 'grid', gridTemplateColumns: 'repeat(4, minmax(0, 1fr))', gap: 8 }}
     >
-      <CountUpStat
-        label="Aura"
-        sub="season"
-        value={aura}
-        color="var(--accent-text)"
-        bg="var(--accent-light)"
-        border="var(--accent-border)"
-      />
-      <CountUpStat
-        label="Karma"
-        sub="lifetime"
-        value={karma}
-        color="var(--yellow-text)"
-        bg="var(--yellow-light)"
-        border="var(--warning-border)"
-      />
-      <CountUpStat
-        label="Streak"
-        sub="days"
-        value={streak}
-        color="var(--orange-text)"
-        bg="var(--orange-light)"
-        border="var(--orange-border)"
-      />
-      <CountUpStat
-        label="Friends"
-        sub="connected"
-        value={connections}
-        color="var(--blue-text)"
-        bg="var(--blue-light, var(--bg-secondary))"
-        border="var(--blue-border, var(--border))"
-      />
+      <CountUpStat label="Aura" value={aura} />
+      <CountUpStat label="Karma" value={karma} />
+      <CountUpStat label="Streak" value={streak} />
+      <CountUpStat label="Friends" value={connections} />
     </div>
   )
 }
