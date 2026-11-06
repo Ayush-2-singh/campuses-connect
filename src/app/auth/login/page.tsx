@@ -9,6 +9,7 @@ import { useRouter } from 'next/navigation'
 import PasswordField from '@/components/PasswordField'
 import GoogleSignInButton from '@/components/GoogleSignInButton'
 import AuthShell from '@/components/auth/AuthShell'
+import BackButton from '@/components/BackButton'
 
 export default function LoginPage() {
   const [email, setEmail] = useState('')
@@ -58,6 +59,14 @@ export default function LoginPage() {
     window.history.replaceState(null, '', window.location.pathname)
   }, [])
 
+  // Return the visitor to wherever they came from (normally the landing page).
+  // A direct link has no history to go back to, so fall back to `/` rather than
+  // leaving a dead button.
+  const handleBack = () => {
+    if (typeof window !== 'undefined' && window.history.length > 1) router.back()
+    else router.push('/')
+  }
+
   const handleLogin = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
     const normalizedEmail = email.trim().toLowerCase()
@@ -80,6 +89,9 @@ export default function LoginPage() {
 
   return (
     <AuthShell eyebrow="Welcome back" title="Sign in" subtitle="Continue to your ConnectToCampus account.">
+      <div style={{ marginBottom: 12 }}>
+        <BackButton onClick={handleBack} label="Back" />
+      </div>
       <GoogleSignInButton />
       <div className="au-divider">
         <span>or with email</span>

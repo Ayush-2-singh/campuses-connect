@@ -244,7 +244,10 @@ export default function OrbitHero() {
             <span className="orbit-hub-sub">Your profile ↗</span>
           </Link>
         ) : (
-          <Link className="orbit-hub orbit-hub--viewer" href="/profile" aria-label="Your profile">
+          // Signed out, the hub IS the sign-in call to action, so it must open
+          // the login page directly — /profile only redirects there after it
+          // mounts, which read as a dead link.
+          <Link className="orbit-hub orbit-hub--viewer" href="/auth/login?redirect=%2Fprofile" aria-label="Sign in">
             <span className="orbit-hub-initial" aria-hidden="true">
               <Icon name="user" size={30} strokeWidth={1.8} />
             </span>

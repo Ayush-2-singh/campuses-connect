@@ -65,10 +65,25 @@ export default function UserProfilePage() {
   }, [pathname])
 
   useEffect(() => {
+    // /profile/a -> /profile/b reuses this component, so every field still
+    // holds the previous person until the new rows land. Clear them and show
+    // the skeleton straight away, and ignore any in-flight response for the
+    // username we just left (a slower earlier request used to overwrite the
+    // profile that was already on screen).
+    let cancelled = false
+    setLoading(true)
+    setProfile(null)
+    setPosts([])
+    setNotes([])
+    setConnState('none')
+    setConnId(null)
+    setConnBusy(false)
+
     const load = async () => {
       const {
         data: { user },
       } = await supabase.auth.getUser()
+      if (cancelled) return
       if (user) {
         setUser(user)
         // The interaction-scope switch lives on MY profile; the target carries
@@ -79,6 +94,7 @@ export default function UserProfilePage() {
           .select('id, interaction_scope, campus_id')
           .eq('id', user.id)
           .maybeSingle()
+        if (cancelled) return
         setMyProfile(me)
       }
 
@@ -87,8 +103,10 @@ export default function UserProfilePage() {
         .select('*, colleges(name), campuses(name), departments(name, short_name)')
         .eq('username', username)
         .single()
+      if (cancelled) return
 
       if (!prof) {
+        setLoading(false)
         router.push('/')
         return
       }
@@ -104,6 +122,7 @@ export default function UserProfilePage() {
           .limit(10),
       ])
 
+      if (cancelled) return
       setPosts(postsRes.data || [])
       setNotes(notesRes.data || [])
 
@@ -125,12 +144,16 @@ export default function UserProfilePage() {
             : state === 'pending_received'
               ? list.find((r) => r.receiver_id === user.id)
               : list[0]
+        if (cancelled) return
         if (state !== 'none' && row) setConnId(row.id)
       }
 
       setLoading(false)
     }
     load()
+    return () => {
+      cancelled = true
+    }
   }, [username])
 
   const handleConnect = async () => {
@@ -214,7 +237,10 @@ export default function UserProfilePage() {
     event: { bg: 'var(--orange-light)', text: 'var(--orange-text)', label: 'Event' },
   }
 
-  if (loading)
+  // The effect above runs after the first paint, so also treat a profile whose
+  // username does not match the URL as loading — otherwise the previous person
+  // flashes for a frame before the skeleton replaces them.
+  if (loading || (profile && profile.username !== username))
     return (
       <div style={{ minHeight: 'var(--app-vh)', padding: '24px 16px', maxWidth: 640, margin: '0 auto' }}>
         <CardSkeleton rows={3} />
