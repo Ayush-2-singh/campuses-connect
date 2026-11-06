@@ -23,8 +23,10 @@ import { createClient, getBootUser } from '@/lib/supabase/client'
  */
 
 /**
- * Four destinations, not fourteen. Blog is a subsection of Experiences now, so
- * it does not get its own link.
+ * Five destinations, not fourteen. Blog is a subsection of Experiences now, so
+ * it does not get its own link. Library leads: notes, PYQs and study material
+ * are the reason most students open the site, so it is the first thing the
+ * landing header offers.
  *
  * Auth-aware: the header starts as the guest version (the landing is static, so
  * the server cannot know who is reading it) and swaps "Sign in / Get started"
@@ -32,6 +34,9 @@ import { createClient, getBootUser } from '@/lib/supabase/client'
  * Without that, a logged-in visitor kept being offered Sign in.
  */
 export const PUBLIC_NAV = [
+  // The student Library (notes / PYQs / study material) — same destination as
+  // the signed-in top nav and the phone's create sheet.
+  { label: 'Library', href: '/notes', icon: 'book' },
   { label: 'Rooms', href: '/live-voice-chat', icon: 'mic' },
   { label: 'Experiences', href: '/experiences', icon: 'pencil' },
   { label: 'Compete', href: '/compete', icon: 'zap' },
