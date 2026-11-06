@@ -37,6 +37,7 @@ const NAV: NavEntry[] = [
   { label: 'Rooms', href: '/live-voice-chat', icon: 'mic' },
   { label: 'Experiences', href: '/experiences', icon: 'pencil' },
   { label: 'Compete', href: '/compete', icon: 'zap' },
+  { label: 'Quizzes', href: '/quizzes', icon: 'notebook' },
   // The student Library (notes / PYQs / study material). Same destination as
   // the phone's "+" sheet entry — the sheet is the only way in on mobile.
   { label: 'Library', href: '/notes', icon: 'book' },

@@ -32,6 +32,7 @@ export const MOBILE_MENU_NAV = [
   { label: 'Live Rooms', href: '/live-voice-chat', icon: 'mic' },
   { label: 'Experiences', href: '/experiences', icon: 'pencil' },
   { label: 'Compete', href: '/compete', icon: 'zap' },
+  { label: 'Quizzes', href: '/quizzes', icon: 'notebook' },
   // ── Account ─────────────────────────────────────────────────
   { label: 'Messages', href: '/messages', icon: 'message' },
   { label: 'Notifications', href: '/notifications', icon: 'bell' },

@@ -9,7 +9,8 @@ export const metadata: Metadata = {
   description: 'Host a live quiz for your stream and let students compete in real time.',
 }
 
-export default async function LiveBattlePage() {
+export default async function LiveBattlePage({ searchParams }: { searchParams: Promise<{ quiz?: string }> }) {
+  const { quiz } = await searchParams
   const supabase = await createClient()
   const {
     data: { user },
@@ -19,7 +20,7 @@ export default async function LiveBattlePage() {
 
   return (
     <>
-      <LiveHub user={{ id: user.id, email: user.email }} />
+      <LiveHub user={{ id: user.id, email: user.email }} initialQuizId={quiz} />
       <p style={{ textAlign: 'center', fontSize: 12, color: 'var(--text-muted)', padding: '0 16px 24px' }}>
         Need more questions first? <Link href="/compete/live/questions">Open the question bank →</Link>
       </p>

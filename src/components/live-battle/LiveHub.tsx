@@ -14,6 +14,7 @@ import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { Icon } from '@/components/icons'
+import { listQuizDetail, startCompetitionFromQuiz } from '@/lib/quizzes/client'
 
 type BankQuestion = { id: string; question_text: string; difficulty: string; subject: string; marks: number }
 type MyRoom = {
@@ -44,9 +45,12 @@ const fieldLabel: React.CSSProperties = {
   marginBottom: 4,
 }
 
-export default function LiveHub({ user }: { user: any }) {
+export default function LiveHub({ user, initialQuizId }: { user: any; initialQuizId?: string }) {
   const supabase = createClient()
   const router = useRouter()
+  // Set when the room is started from the quiz library instead of a hand
+  // picked set of bank questions.
+  const quizId = initialQuizId ?? ''
 
   const [bank, setBank] = useState<BankQuestion[]>([])
   const [rooms, setRooms] = useState<MyRoom[]>([])
@@ -95,6 +99,24 @@ export default function LiveHub({ user }: { user: any }) {
     load()
   }, [load])
 
+  // Prefill the room form from the quiz the caller arrived with.
+  useEffect(() => {
+    if (!quizId) return
+    let cancelled = false
+
+    listQuizDetail(quizId)
+      .then((detail) => {
+        if (cancelled || !detail?.ok) return
+        setTitle((prev) => prev || detail.quiz.title)
+        setCategory(detail.quiz.subject || 'General')
+      })
+      .catch(() => null)
+
+    return () => {
+      cancelled = true
+    }
+  }, [quizId])
+
   const toggle = (id: string) =>
     setSelected((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]))
 
@@ -104,11 +126,11 @@ export default function LiveHub({ user }: { user: any }) {
   }
 
   const create = async () => {
-    if (!title.trim()) {
+    if (!title.trim() && !quizId) {
       setError('Give the competition a title first.')
       return
     }
-    if (selected.length === 0) {
+    if (!quizId && selected.length === 0) {
       setError('Pick at least one question from your bank.')
       return
     }
@@ -116,6 +138,22 @@ export default function LiveHub({ user }: { user: any }) {
     setError('')
     setNotice('')
     try {
+      // A quiz is snapshotted by its own RPC; the hand-picked path is untouched.
+      if (quizId) {
+        const room = await startCompetitionFromQuiz({
+          quizId,
+          title: title.trim() || undefined,
+          timerSeconds: timer,
+          maxParticipants,
+          visibility,
+        })
+        if (!room?.room_code) throw new Error('The room was created without a code — try again.')
+        setCreated({ id: room.id, room_code: room.room_code, question_count: room.question_count ?? 0 })
+        setNotice('Room created from your quiz. Share the code with your viewers.')
+        setSelected([])
+        load()
+        return
+      }
       const { data, error: rpcError } = await supabase.rpc('live_quiz_create', {
         p_title: title.trim(),
         p_question_ids: selected,

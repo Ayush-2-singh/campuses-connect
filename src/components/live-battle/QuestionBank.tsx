@@ -1,5 +1,7 @@
 'use client'
 
+import AddToQuizButton from '@/components/quizzes/AddToQuizButton'
+
 /**
  * QUESTION BANK — the authoring surface behind every Live Battle.
  *
@@ -847,6 +849,7 @@ export default function QuestionBank({ user }: { user: any; profile?: any }) {
                     </span>
                   ))}
                   <span className="hc-spacer" />
+                  <AddToQuizButton questionId={q.id} />
                   <button className="hc-chip" type="button" onClick={() => openEdit(q)} aria-label="Edit question">
                     <Icon name="pencil" size={12} /> Edit
                   </button>
