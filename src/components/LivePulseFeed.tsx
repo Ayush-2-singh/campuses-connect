@@ -253,7 +253,7 @@ export default function LivePulseFeed({ userId }: { userId: string | null }) {
           kind: 'aura',
           text: `${g.winner_nickname} just won a game — ${g.winner_score} pts`,
           detail: 'Think you can beat that? The arena is open',
-          href: '/games',
+          href: '/compete?tab=games',
           at: new Date(g.won_at).getTime(),
         })
       }

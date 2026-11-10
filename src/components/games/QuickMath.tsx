@@ -15,6 +15,7 @@ import { mathChallengePayload, shareChallenge } from '@/lib/games/challenge'
 import GameLobby from './GameLobby'
 import GamePlay from './GamePlay'
 import GameResults from './GameResults'
+import SoloRun from './SoloRun'
 
 export default function QuickMath({
   initialRoomCode,
@@ -60,6 +61,13 @@ export default function QuickMath({
   const [loading, setLoading] = useState(false)
   const [countdown, setCountdown] = useState(0)
   const [authUserId, setAuthUserId] = useState<string | null>(null)
+  /**
+   * A solo run needs no room and no opponent, which is the one thing a guest
+   * opening this page alone cannot currently get past (`MIN_PLAYERS: 2`).
+   * It is a separate surface rather than a phase so the realtime room is never
+   * subscribed for it.
+   */
+  const [solo, setSolo] = useState(false)
   const ROUNDS_OPTIONS = [5, 10, 20, 30, 50]
 
   // Signed-in players carry their profile id so a win awards Aura to them.
@@ -348,6 +356,10 @@ export default function QuickMath({
 
   // ── Render ─────────────────────────────────────────────────────────────
 
+  if (solo) {
+    return <SoloRun difficulty={difficulty} rounds={totalRounds} nickname={nickname} onExit={() => setSolo(false)} />
+  }
+
   return (
     <div>
       {/* ═══ ENTRY PHASE ═══ */}
@@ -450,6 +462,26 @@ export default function QuickMath({
               ))}
             </div>
           </div>
+
+          {/* Play now — first, because it is the only action that works alone.
+              The bot difficulty follows the selector above. */}
+          <button
+            onClick={() => setSolo(true)}
+            style={{
+              width: '100%',
+              background: 'var(--accent-light)',
+              color: 'var(--accent-text)',
+              border: '1px solid var(--accent)',
+              borderRadius: 14,
+              padding: '14px',
+              fontSize: 15,
+              fontWeight: 800,
+              cursor: 'pointer',
+              fontFamily: 'inherit',
+            }}
+          >
+            🤖 Play solo vs bot — no room needed
+          </button>
 
           {/* Create Game */}
           <button

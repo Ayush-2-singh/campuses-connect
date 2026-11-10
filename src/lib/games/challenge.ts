@@ -78,13 +78,18 @@ export interface ChallengeQuestion {
  * Generated locally on purpose: the multiplayer generator lives behind
  * create_game_room(), and a challenge must not need a room at all.
  */
-export function challengeQuestions(seed: string, difficulty: Difficulty = 'medium'): ChallengeQuestion[] {
+export function challengeQuestions(
+  seed: string,
+  difficulty: Difficulty = 'medium',
+  /** How many questions the run needs — a daily set is not always 10. */
+  count: number = GAME_CONFIG.TOTAL_ROUNDS
+): ChallengeQuestion[] {
   const rand = mulberry32(seedFromString(`${seed}:${difficulty}`))
   const ops: string[] = difficulty === 'easy' ? ['+', '−'] : ['+', '−', '×', '÷']
   const range = difficulty === 'easy' ? 20 : difficulty === 'medium' ? 50 : 99
   const out: ChallengeQuestion[] = []
 
-  for (let i = 0; i < GAME_CONFIG.TOTAL_ROUNDS; i++) {
+  for (let i = 0; i < count; i++) {
     const op = ops[Math.floor(rand() * ops.length)]
     let text = ''
     let answer = 0
@@ -183,8 +188,10 @@ export function decodeChallenge(raw: string | null | undefined): ChallengePayloa
 
 export function buildChallengeUrl(payload: ChallengePayload, origin?: string): string {
   const base = origin || (typeof window !== 'undefined' ? window.location.origin : 'https://www.connecttocampus.com')
-  const path = payload.g === 'typing' ? '/games/typing' : '/games/math'
-  return `${base}${path}?beat=${encodeChallenge(payload)}`
+  // `/games` is retired, so the old `/games/math?beat=…` links landed on a
+  // redirect. `/compete/play` is the live receiver — it reads the payload and
+  // mounts the right engine from the `g` field inside it.
+  return `${base}/compete/play?beat=${encodeChallenge(payload)}`
 }
 
 /** A fresh seed for a new challenge (both players run the identical round). */

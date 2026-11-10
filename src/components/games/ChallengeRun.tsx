@@ -65,7 +65,7 @@ function InvalidCard() {
       <p style={{ fontSize: 13, color: 'var(--text-muted)', margin: '0 0 16px' }}>
         Ask your friend to send it again — it may have been cut off by the chat app.
       </p>
-      <a href="/games" style={{ ...primaryButton, display: 'inline-block', textDecoration: 'none' }}>
+      <a href="/compete?tab=games" style={{ ...primaryButton, display: 'inline-block', textDecoration: 'none' }}>
         Go to Games
       </a>
     </div>
@@ -354,7 +354,7 @@ function ChallengePlay({ payload }: { payload: ChallengePayload }) {
         {copied ? 'Link copied!' : 'Challenge back'}
       </button>
       <a
-        href="/games"
+        href="/compete?tab=games"
         style={{
           fontSize: 13,
           fontWeight: 600,

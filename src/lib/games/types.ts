@@ -25,7 +25,8 @@ export interface GameRoom {
 
 export interface MathQuestion {
   text: string
-  answer: number
+  /** Absent in room state — the server withholds it and scores answers itself. */
+  answer?: number
   operation: string
   time_limit_ms: number
 }

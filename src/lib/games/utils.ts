@@ -93,7 +93,9 @@ export async function copyToClipboard(text: string): Promise<boolean> {
  */
 function buildShareUrl(roomCode: string): string {
   const base = typeof window !== 'undefined' ? window.location.origin : 'https://www.connecttocampus.com'
-  return `${base}/games/room/${roomCode}`
+  // The `/games/room/:code` route is archived; `/compete/play` is where a
+  // shared room code now lands.
+  return `${base}/compete/play?game=math&room=${roomCode}`
 }
 
 /**

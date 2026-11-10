@@ -253,6 +253,51 @@ export default function GamesTab() {
             </div>
           </div>
         ))}
+
+        {/* The daily set: no room code, no opponent, one board a day. */}
+        <a
+          href="/compete/daily-math"
+          style={{
+            background: 'var(--bg)',
+            border: '1px dashed var(--border-strong, var(--border))',
+            borderRadius: 16,
+            padding: '20px 22px',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: 10,
+            textDecoration: 'none',
+          }}
+        >
+          <div
+            style={{
+              width: 44,
+              height: 44,
+              borderRadius: 12,
+              background: 'var(--accent-light)',
+              color: 'var(--accent-text)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+            }}
+          >
+            <Icon name="trophy" size={21} />
+          </div>
+          <h4 style={{ fontSize: 15, fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>Daily Quick Math</h4>
+          <p style={{ fontSize: 13, color: 'var(--text-secondary)', margin: 0, lineHeight: 1.55 }}>
+            Ten questions, one set for everyone today. Play solo, then see where you land on your campus board.
+          </p>
+          <span
+            style={{
+              marginTop: 'auto',
+              paddingTop: 6,
+              fontSize: 13.5,
+              fontWeight: 700,
+              color: 'var(--accent-text)',
+            }}
+          >
+            Play today&rsquo;s set →
+          </span>
+        </a>
       </div>
     </div>
   )
