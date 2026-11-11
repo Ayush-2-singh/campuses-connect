@@ -5,9 +5,15 @@
 // (/jobs, /more, /integrations) and never cached the Next.js chunks those
 // pages load, so an offline reload showed an unstyled shell. Bumping drops the
 // stale caches on activate.
-const STATIC_CACHE = 'campus-static-v10'
-const DYNAMIC_CACHE = 'campus-dynamic-v10'
-const RSC_CACHE = 'campus-rsc-v10'
+// v11: the worker no longer calls clients.claim(). Claiming took control of
+// already-open tabs, which fired `controllerchange` and (via the old page
+// script) reloaded them — repeatedly, on every deploy and re-install. Without
+// claim, a new worker activates in the background and simply serves the NEXT
+// navigation; nobody's page is yanked. Bumping the names drops the old caches
+// so the shell that referenced clients.claim cannot be served again.
+const STATIC_CACHE = 'campus-static-v11'
+const DYNAMIC_CACHE = 'campus-dynamic-v11'
+const RSC_CACHE = 'campus-rsc-v11'
 const KEEP_CACHES = [STATIC_CACHE, DYNAMIC_CACHE, RSC_CACHE]
 
 // Public pages to pre-cache for offline access. NOTE: auth pages (/auth/*) are
@@ -102,13 +108,18 @@ self.addEventListener('install', event => {
   )
 })
 
-// Activate: clean old caches
+// Activate: clean old caches.
+//
+// Deliberately NO self.clients.claim(). Claiming hands the new worker control
+// of pages that are already open, firing `controllerchange` in each of them.
+// That is what made the site reload on its own (see the v11 note above). A new
+// worker serves the next navigation instead, which is when a fresh bundle is
+// wanted anyway.
 self.addEventListener('activate', event => {
   event.waitUntil(
     caches
       .keys()
       .then(keys => Promise.all(keys.filter(k => !KEEP_CACHES.includes(k)).map(k => caches.delete(k))))
-      .then(() => self.clients.claim())
   )
 })
 

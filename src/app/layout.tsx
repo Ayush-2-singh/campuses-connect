@@ -263,17 +263,25 @@ const gaConsentBootstrap = `window.dataLayer=window.dataLayer||[];function gtag(
 const themeScript = `(function(){try{var t=localStorage.getItem('cc-theme');document.documentElement.setAttribute('data-theme',t==='dark'?'dark':'light');}catch(e){}})();`
 
 // Register the service worker (installable PWA).
-// Also: when a NEW service worker takes control (a deploy just activated), we
-// reload once so the client runs the fresh bundle instead of the old cached
-// one. Without it, a shipped nav change can stay invisible on an
-// already-installed PWA until the user manually clears site data. We also ask
-// for an update on load and hourly, since browsers otherwise re-check sw.js
-// only on a cold navigation.
+//
+// The worker must NEVER reload the page on its own. An earlier version did, on
+// every `controllerchange`: combined with clients.claim() in sw.js that meant
+// every deploy (and every re-install) yanked the page out from under whoever
+// was reading it — sometimes seconds after load, mid-form. Pages are already
+// network-first, so a fresh bundle arrives on the next navigation on its own.
+// The listener below therefore only exists for the one case where a reload is
+// safe: a page that loaded WITHOUT a controller (first-ever install) and got
+// claimed before the user did anything. `hadController` is snapshotted at load
+// so an already-controlled page can never be reloaded, and the reload can fire
+// at most once per document.
 const swScript = `(function(){
   if(!('serviceWorker' in navigator)) return;
-  var refreshing=false;
+  var hadController=!!navigator.serviceWorker.controller;
+  var reloaded=false;
   navigator.serviceWorker.addEventListener('controllerchange',function(){
-    if(refreshing) return; refreshing=true; window.location.reload();
+    if(hadController||reloaded) return;
+    hadController=true; reloaded=true;
+    window.location.reload();
   });
   navigator.serviceWorker.register('/sw.js').then(function(reg){
     if(reg.update) reg.update();
