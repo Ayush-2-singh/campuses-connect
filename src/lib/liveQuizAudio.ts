@@ -39,6 +39,7 @@ let bedEl: HTMLAudioElement | null = null
 let bedFileFailed = false
 let bedFilePlaying = false
 let bedWanted = false
+let audioUnlocked = false
 
 function audioCtor(): typeof AudioContext | null {
   if (typeof window === 'undefined') return null
@@ -77,7 +78,7 @@ function ensureContext(): AudioContext | null {
   if (!ctx) {
     ctx = new Ctor()
     master = ctx.createGain()
-    master.gain.value = 0.32
+    master.gain.value = 0.5
     master.connect(ctx.destination)
   }
   return ctx
@@ -148,10 +149,10 @@ export function playLiveSfx(name: LiveSfx): void {
 function synthStep(): void {
   const f = BED_NOTES[bedStep % BED_NOTES.length]
   bedStep += 1
-  note(f, 0, 0.36, 'sine', 0.045)
-  note(f * 1.5, 0, 0.28, 'triangle', 0.018)
+  note(f, 0, 0.36, 'sine', 0.075)
+  note(f * 1.5, 0, 0.28, 'triangle', 0.03)
   // A gentle pulse on the bar, not a drone: it keeps time without humming.
-  if (bedStep % 3 === 1) note(130.81, 0, 0.14, 'sine', 0.03)
+  if (bedStep % 3 === 1) note(130.81, 0, 0.14, 'sine', 0.05)
   bedTimer = setTimeout(synthStep, 560)
 }
 
@@ -191,7 +192,18 @@ export function startMatchMusic(): void {
   if (liveAudioMuted()) return
   bedWanted = true
   const c = ensureContext()
-  if (c?.state === 'suspended') void c.resume()
+  if (!c) return
+
+  // Before the first gesture, a file `play()` can only be refused and the
+  // refusal is indistinguishable from a missing file. Start the synth bed
+  // (it schedules silently) and let the gesture start the real one.
+  if (!audioUnlocked) {
+    if (c.state === 'suspended') void c.resume()
+    startSynthBed()
+    return
+  }
+
+  if (c.state === 'suspended') void c.resume()
 
   const el = bedElement()
   if (el && !bedFileFailed) {
@@ -231,11 +243,27 @@ export function stopMatchMusic(): void {
 
 /** Call from a real user gesture (tap/click) to satisfy autoplay policy. */
 export function unlockLiveAudio(): void {
+  audioUnlocked = true
   const c = ensureContext()
   if (!c) return
   if (c.state === 'suspended') void c.resume()
   // A bed requested before the first gesture could only be refused; retry now.
   if (bedWanted && !bedFilePlaying && !liveAudioMuted()) startMatchMusic()
+}
+
+// Any first interaction unlocks audio, even if the button that caused it was
+// not one of ours — a player tapping an answer option is still a gesture.
+if (typeof window !== 'undefined') {
+  const unlockOnce = () => unlockLiveAudio()
+  window.addEventListener('pointerdown', unlockOnce, { once: true, capture: true })
+  window.addEventListener('keydown', unlockOnce, { once: true, capture: true })
+}
+
+// iOS suspends a context when the tab is backgrounded; resume it on return.
+if (typeof document !== 'undefined') {
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'visible' && bedWanted && !liveAudioMuted()) unlockLiveAudio()
+  })
 }
 
 /**

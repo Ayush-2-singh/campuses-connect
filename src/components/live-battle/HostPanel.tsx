@@ -114,7 +114,8 @@ export default function HostPanel({ competitionId }: { competitionId: string }) 
       return
     }
     setRoom(roomData)
-    setQuestion(questionRes.data as QuestionPayload | null)
+    const questionData = questionRes.data as QuestionPayload | null
+    setQuestion(questionData)
 
     const boardData = boardRes.data as { ok: boolean; top: BoardEntry[] } | null
     setBoard(boardData?.ok ? (boardData.top ?? []) : [])
@@ -123,7 +124,11 @@ export default function HostPanel({ competitionId }: { competitionId: string }) 
     setRoster(rosterData?.ok ? (rosterData.rows ?? []) : [])
 
     // The host may read the key once the window is closed — never before.
-    if (roomData.status !== 'live') {
+    // The window closes on the deadline, not when the host presses Next, so
+    // `status === 'live'` alone used to hide the correct option afterwards.
+    const windowOver =
+      Boolean(questionData?.deadline) && new Date(questionData!.deadline as string).getTime() <= Date.now()
+    if (roomData.status !== 'live' || windowOver) {
       const revealRes = await supabase.rpc('live_quiz_reveal', { p_competition_id: competitionId })
       const revealData = revealRes.data as {
         ok: boolean
@@ -179,6 +184,17 @@ export default function HostPanel({ competitionId }: { competitionId: string }) 
   }, [])
 
   const podiumPlayed = useRef(false)
+  // The countdown hitting zero should reveal the key immediately, not on the
+  // next 4-second poll.
+  const expiryRef = useRef('')
+  useEffect(() => {
+    if (room?.status !== 'live' || !question?.deadline) return
+    const key = `${question.position}:${question.deadline}`
+    if (expiryRef.current === key) return
+    if (new Date(question.deadline).getTime() > now) return
+    expiryRef.current = key
+    void refresh()
+  }, [now, question?.deadline, question?.position, room?.status, refresh])
   useEffect(() => {
     if (room?.status !== 'completed' || podiumPlayed.current) return
     podiumPlayed.current = true
