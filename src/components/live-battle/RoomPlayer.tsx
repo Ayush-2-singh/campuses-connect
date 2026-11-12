@@ -546,7 +546,9 @@ export default function RoomPlayer({ code }: { code: string }) {
 
   const pick = (position: number) => {
     if (!online) return
-    if (!question || question.answered || answerResult === 'accepted' || reveal) return
+    // `submitting` covers the in-flight window before `answerResult` lands: a
+    // second tap then must not repaint the choice the server already scored.
+    if (!question || question.answered || submitting || answerResult === 'accepted' || reveal) return
     const multiple = question.question?.type === 'multiple'
     if (multiple) {
       // Several options can be correct, so a tap can only ever toggle here.
