@@ -238,10 +238,15 @@ export default function RoomPlayer({ code }: { code: string }) {
       // A paused room is still inside its window (the clock is frozen), so the
       // request is skipped rather than being refused.
       const questionKey = `${questionData?.position ?? -1}:${questionData?.deadline ?? ''}`
+      // Never ask for a key before the host starts. The server refuses it now
+      // too, but the waiting room must not even make the request: question 0 is
+      // already loaded there, so this used to hand out the first answer.
       if (
         questionData?.question &&
         questionData.status !== 'live' &&
         questionData.status !== 'paused' &&
+        questionData.status !== 'waiting' &&
+        questionData.status !== 'draft' &&
         revealedFor.current !== questionKey
       ) {
         const revealRes = await supabase.rpc('live_quiz_reveal', { p_competition_id: competitionId })
