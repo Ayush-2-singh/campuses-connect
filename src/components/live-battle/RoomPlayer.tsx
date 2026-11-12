@@ -513,8 +513,8 @@ export default function RoomPlayer({ code }: { code: string }) {
     tickedFor.current = -1
   }, [question?.position])
 
-  const submit = async () => {
-    if (!room || !question || selected.length === 0 || submitting) return
+  const submit = async (positions: number[] = selected) => {
+    if (!room || !question || positions.length === 0 || submitting) return
     // No point burning a round trip while the socket is down, and a failure
     // here would read as "wrong answer" instead of "no connection".
     if (!online) {
@@ -525,7 +525,7 @@ export default function RoomPlayer({ code }: { code: string }) {
     try {
       const { data, error: rpcError } = await supabase.rpc('live_quiz_answer', {
         p_competition_id: room.id,
-        p_positions: selected,
+        p_positions: positions,
       })
       if (rpcError) throw rpcError
       const result = data as { ok: boolean; error?: string }
@@ -548,9 +548,15 @@ export default function RoomPlayer({ code }: { code: string }) {
     if (!online) return
     if (!question || question.answered || answerResult === 'accepted' || reveal) return
     const multiple = question.question?.type === 'multiple'
-    setSelected((prev) =>
-      multiple ? (prev.includes(position) ? prev.filter((p) => p !== position) : [...prev, position]) : [position]
-    )
+    if (multiple) {
+      // Several options can be correct, so a tap can only ever toggle here.
+      setSelected((prev) => (prev.includes(position) ? prev.filter((p) => p !== position) : [...prev, position]))
+      return
+    }
+    // One tap is the answer. There is no confirm step and no second button:
+    // the tick appears and the server scores it immediately.
+    setSelected([position])
+    void submit([position])
   }
 
   const windowOpen = Boolean(deadlineMs) && remaining > 0 && room?.status === 'live'
@@ -785,7 +791,7 @@ export default function RoomPlayer({ code }: { code: string }) {
 
           <ol style={{ margin: 0, paddingLeft: 18, fontSize: 12.5, color: 'var(--text-secondary)', lineHeight: 1.7 }}>
             <li>The question shows up here with a countdown.</li>
-            <li>Tap the answer within the time limit — faster correct answers score more.</li>
+            <li>One tap sends your answer — faster correct answers score more.</li>
             <li>Your rank updates after every question.</li>
           </ol>
         </section>
@@ -890,39 +896,52 @@ export default function RoomPlayer({ code }: { code: string }) {
                       {OPTION_LETTERS[index] ?? index + 1}
                     </span>
                     <span style={{ minWidth: 0, overflowWrap: 'anywhere' }}>{option.text}</span>
-                    {reveal && (
-                      <span
-                        style={{
-                          marginLeft: 'auto',
-                          fontSize: 11.5,
-                          fontWeight: 800,
-                          color: 'var(--text-muted)',
-                          fontVariantNumeric: 'tabular-nums',
-                        }}
-                      >
-                        {reveal.distribution?.find((d) => d.position === option.position)?.count ?? 0}
-                      </span>
-                    )}
+                    <span style={{ marginLeft: 'auto', display: 'inline-flex', alignItems: 'center', gap: 8 }}>
+                      {chosen && !reveal && !showWrong && (
+                        <span style={{ display: 'inline-flex', color: 'var(--success-text)' }} aria-hidden="true">
+                          <Icon name="check" size={16} />
+                        </span>
+                      )}
+                      {reveal && (
+                        <span
+                          style={{
+                            fontSize: 11.5,
+                            fontWeight: 800,
+                            color: 'var(--text-muted)',
+                            fontVariantNumeric: 'tabular-nums',
+                          }}
+                        >
+                          {reveal.distribution?.find((d) => d.position === option.position)?.count ?? 0}
+                        </span>
+                      )}
+                    </span>
                   </button>
                 )
               })}
             </div>
 
-            {!question.answered && !reveal && (
-              <button
-                className="hc-btn hc-btn--primary hc-btn--block"
-                type="button"
-                onClick={submit}
-                disabled={selected.length === 0 || submitting || !windowOpen || !online}
-              >
-                <Icon name="send" size={14} />
-                {!online ? 'Offline' : windowOpen ? (submitting ? 'Submitting…' : 'Lock answer') : 'Time is up'}
-              </button>
+            {/* Only multi-select needs a confirm: with one right option a tap is
+                the whole answer, so the button would just be an extra step. */}
+            {!question.answered && !reveal && question.question?.type === 'multiple' && (
+              <>
+                <p className="hc-note" style={{ margin: 0 }}>
+                  Select every correct option, then submit.
+                </p>
+                <button
+                  className="hc-btn hc-btn--primary hc-btn--block"
+                  type="button"
+                  onClick={() => void submit()}
+                  disabled={selected.length === 0 || submitting || !windowOpen || !online}
+                >
+                  <Icon name="send" size={14} />
+                  {!online ? 'Offline' : windowOpen ? (submitting ? 'Submitting…' : 'Submit answers') : 'Time is up'}
+                </button>
+              </>
             )}
 
             {(question.answered || answerResult) && !reveal && (
               <p className="hc-note" style={{ margin: 0 }} role="status">
-                <Icon name="lock" size={12} /> Answer locked. Correctness is revealed when the host moves on.
+                <Icon name="lock" size={12} /> Answer sent — the correct option appears when the timer ends.
               </p>
             )}
 
