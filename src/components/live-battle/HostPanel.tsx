@@ -11,10 +11,12 @@
  * and `cancel` abandons the room.
  */
 
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
 import { Icon } from '@/components/icons'
+import { playLiveSfx, startLobbyMusic, stopLobbyMusic, unlockLiveAudio, useLiveAudio } from '@/lib/liveQuizAudio'
+import AudioToggle from './AudioToggle'
 
 type Room = {
   ok: boolean
@@ -27,6 +29,7 @@ type Room = {
   position: number
   participants: number
   is_host: boolean
+  join_locked?: boolean
   error?: string
 }
 
@@ -42,7 +45,16 @@ type QuestionPayload = {
   error?: string
 }
 
-type BoardEntry = { rank: number; display_name: string; score: number; correct_count: number; answered_count: number }
+type BoardEntry = {
+  participant_id?: string | null
+  rank: number
+  prev_rank?: number | null
+  streak?: number
+  display_name: string
+  score: number
+  correct_count: number
+  answered_count: number
+}
 
 type RosterEntry = {
   participant_id: string
@@ -70,6 +82,10 @@ export default function HostPanel({ competitionId }: { competitionId: string }) 
   const [loading, setLoading] = useState(true)
   const [copied, setCopied] = useState(false)
   const [now, setNow] = useState(Date.now())
+  const { muted } = useLiveAudio()
+  const [distribution, setDistribution] = useState<{ position: number; count: number }[]>([])
+  const [answeredCount, setAnsweredCount] = useState(0)
+  const [lockBusy, setLockBusy] = useState(false)
 
   const refresh = useCallback(async () => {
     const [roomRes, questionRes, boardRes, rosterRes] = await Promise.all([
@@ -102,10 +118,19 @@ export default function HostPanel({ competitionId }: { competitionId: string }) 
     // The host may read the key once the window is closed — never before.
     if (roomData.status !== 'live') {
       const revealRes = await supabase.rpc('live_quiz_reveal', { p_competition_id: competitionId })
-      const revealData = revealRes.data as { ok: boolean; correct_positions?: number[] } | null
+      const revealData = revealRes.data as {
+        ok: boolean
+        correct_positions?: number[]
+        distribution?: { position: number; count: number }[]
+        answered_count?: number
+      } | null
       setKey(revealData?.ok ? (revealData.correct_positions ?? []) : null)
+      setDistribution(revealData?.ok ? (revealData.distribution ?? []) : [])
+      setAnsweredCount(revealData?.ok ? (revealData.answered_count ?? 0) : 0)
     } else {
       setKey(null)
+      setDistribution([])
+      setAnsweredCount(0)
     }
 
     setLoading(false)
@@ -124,6 +149,33 @@ export default function HostPanel({ competitionId }: { competitionId: string }) 
     }
   }, [refresh])
 
+  // Lobby bed while people join; silence the moment the room goes live.
+  useEffect(() => {
+    if ((room?.status === 'draft' || room?.status === 'waiting') && !muted) startLobbyMusic()
+    else stopLobbyMusic()
+    return () => stopLobbyMusic()
+  }, [muted, room?.status])
+
+  // A context can only resume inside a gesture, and the host's first click is
+  // usually "Start" — so unlock on any interaction.
+  useEffect(() => {
+    const unlock = () => unlockLiveAudio()
+    window.addEventListener('pointerdown', unlock, { once: true })
+    window.addEventListener('keydown', unlock, { once: true })
+    return () => {
+      window.removeEventListener('pointerdown', unlock)
+      window.removeEventListener('keydown', unlock)
+    }
+  }, [])
+
+  const podiumPlayed = useRef(false)
+  useEffect(() => {
+    if (room?.status !== 'completed' || podiumPlayed.current) return
+    podiumPlayed.current = true
+    stopLobbyMusic()
+    playLiveSfx('podium')
+  }, [room?.status])
+
   const act = async (action: Action) => {
     if (busy) return
     if (action === 'end' && !window.confirm('End the competition now and publish the final ranking?')) return
@@ -138,6 +190,7 @@ export default function HostPanel({ competitionId }: { competitionId: string }) 
       if (rpcError) throw rpcError
       const result = data as { ok: boolean; error?: string }
       if (!result?.ok) setError(result?.error ? `Host action failed: ${result.error}` : 'Host action failed.')
+      else if (action === 'start' || action === 'next') playLiveSfx('start')
       await refresh()
     } catch (err: any) {
       setError(err?.message || 'Host action failed.')
@@ -170,6 +223,28 @@ export default function HostPanel({ competitionId }: { competitionId: string }) 
       setError(err?.message || 'Could not remove that participant.')
     } finally {
       setKicking(null)
+    }
+  }
+
+  const toggleLock = async () => {
+    if (!room || lockBusy) return
+    setLockBusy(true)
+    setError('')
+    try {
+      const { data, error: rpcError } = await supabase.rpc('live_quiz_set_join_lock', {
+        p_competition_id: competitionId,
+        p_locked: !room.join_locked,
+      })
+      if (rpcError) throw rpcError
+      const result = data as { ok: boolean; error?: string } | null
+      if (!result?.ok) {
+        setError(result?.error === 'room_over' ? 'This room is already over.' : 'Could not change joining.')
+      }
+      await refresh()
+    } catch {
+      setError('Could not change joining — this server build may not have the control yet.')
+    } finally {
+      setLockBusy(false)
     }
   }
 
@@ -232,6 +307,7 @@ export default function HostPanel({ competitionId }: { competitionId: string }) 
             {room.status}
           </span>
           <span className="hc-tag">{room.participants} joined</span>
+          {room.join_locked && <span className="hc-tag hc-tag--warn">joining locked</span>}
           <span className="hc-tag">
             {room.question_count
               ? `${Math.min(room.position + 1, room.question_count)} / ${room.question_count}`
@@ -312,6 +388,43 @@ export default function HostPanel({ competitionId }: { competitionId: string }) 
               )
             })}
           </ol>
+          {key && distribution.length > 0 && (
+            <div aria-label="How the room answered" style={{ display: 'grid', gap: 5 }}>
+              <p className="hc-note" style={{ margin: 0 }}>
+                {answeredCount} of {room.participants} answered
+              </p>
+              {distribution.map((bar) => {
+                const max = Math.max(1, ...distribution.map((d) => d.count))
+                const correct = key.includes(bar.position)
+                return (
+                  <div key={bar.position} style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 12 }}>
+                    <span style={{ width: 14, fontWeight: 800, color: 'var(--text-muted)' }}>
+                      {OPTION_LETTERS[bar.position] ?? bar.position + 1}
+                    </span>
+                    <span
+                      style={{
+                        flex: 1,
+                        height: 8,
+                        borderRadius: 999,
+                        background: 'var(--bg-secondary)',
+                        overflow: 'hidden',
+                      }}
+                    >
+                      <span
+                        style={{
+                          display: 'block',
+                          height: '100%',
+                          width: `${Math.round((bar.count / max) * 100)}%`,
+                          background: correct ? 'var(--success-text)' : 'var(--accent)',
+                        }}
+                      />
+                    </span>
+                    <span style={{ width: 22, textAlign: 'right', fontWeight: 700 }}>{bar.count}</span>
+                  </div>
+                )
+              })}
+            </div>
+          )}
           {!key && (
             <p className="hc-note" style={{ margin: 0 }}>
               The answer key stays hidden while answers are open.
@@ -383,7 +496,19 @@ export default function HostPanel({ competitionId }: { competitionId: string }) 
               <Icon name="trophy" size={14} /> View final board
             </Link>
           )}
+          {!isOver && typeof room.join_locked === 'boolean' && (
+            <button className="hc-btn" type="button" onClick={() => void toggleLock()} disabled={lockBusy}>
+              <Icon name="lock" size={13} />
+              {lockBusy ? 'Saving…' : room.join_locked ? 'Unlock joining' : 'Lock joining'}
+            </button>
+          )}
+          <AudioToggle />
         </div>
+        {room.join_locked && (
+          <p className="hc-note" style={{ margin: 0 }}>
+            New players are turned away with the same message as a closed room. People already in keep their seats.
+          </p>
+        )}
       </section>
 
       {/* Final standings — the host's own copy of the winner list, shown the
@@ -415,10 +540,19 @@ export default function HostPanel({ competitionId }: { competitionId: string }) 
                 {board[0].score.toLocaleString()} points · {board[0].correct_count ?? 0}/{board[0].answered_count ?? 0}{' '}
                 correct · {room.participants} {room.participants === 1 ? 'player' : 'players'} in the room
               </p>
-              <ol style={{ margin: 0, paddingLeft: 18, display: 'grid', gap: 3 }}>
-                {board.slice(0, 3).map((entry) => (
-                  <li key={`final-${entry.rank}-${entry.display_name}`} style={{ fontSize: 13 }}>
-                    <strong>{entry.display_name}</strong> — {entry.score.toLocaleString()} points
+              <ol style={{ margin: 0, paddingLeft: 0, listStyle: 'none', display: 'grid', gap: 5 }}>
+                {board.slice(0, 3).map((entry, index) => (
+                  <li
+                    key={entry.participant_id ?? `final-${entry.rank}-${entry.display_name}`}
+                    style={{ fontSize: 13, display: 'flex', alignItems: 'center', gap: 8 }}
+                  >
+                    <span aria-hidden="true" style={{ fontSize: 17 }}>
+                      {['🥇', '🥈', '🥉'][index] ?? ''}
+                    </span>
+                    <strong style={{ flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                      {entry.display_name}
+                    </strong>
+                    <span style={{ fontWeight: 800 }}>{entry.score.toLocaleString()}</span>
                   </li>
                 ))}
               </ol>
@@ -512,7 +646,7 @@ export default function HostPanel({ competitionId }: { competitionId: string }) 
           <div className="hc-grid hc-grid--list" style={{ gap: 6 }}>
             {board.map((entry) => (
               <div
-                key={`${entry.rank}-${entry.display_name}`}
+                key={entry.participant_id ?? `${entry.rank}-${entry.display_name}`}
                 className="hc-card"
                 style={{ flexDirection: 'row', alignItems: 'center', gap: 10, padding: '9px 13px' }}
               >
@@ -543,6 +677,25 @@ export default function HostPanel({ competitionId }: { competitionId: string }) 
                 <span style={{ fontSize: 11, color: 'var(--text-muted)' }}>
                   {entry.correct_count ?? 0}/{entry.answered_count ?? 0}
                 </span>
+                {(entry.prev_rank ?? entry.rank) - entry.rank !== 0 && (
+                  <span
+                    style={{
+                      fontSize: 11,
+                      fontWeight: 700,
+                      color:
+                        (entry.prev_rank ?? entry.rank) - entry.rank > 0 ? 'var(--success-text)' : 'var(--danger-text)',
+                    }}
+                  >
+                    {(entry.prev_rank ?? entry.rank) - entry.rank > 0
+                      ? `▲${(entry.prev_rank ?? entry.rank) - entry.rank}`
+                      : `▼${Math.abs((entry.prev_rank ?? entry.rank) - entry.rank)}`}
+                  </span>
+                )}
+                {(entry.streak ?? 0) >= 2 && (
+                  <span style={{ fontSize: 11, fontWeight: 700, color: 'var(--accent-text)' }}>
+                    <Icon name="flame" size={11} /> {entry.streak}
+                  </span>
+                )}
                 <span style={{ fontSize: 13, fontWeight: 800, color: 'var(--accent-text)' }}>{entry.score}</span>
               </div>
             ))}
