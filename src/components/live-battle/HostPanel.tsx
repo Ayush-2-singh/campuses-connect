@@ -66,6 +66,13 @@ type RosterEntry = {
 }
 
 const OPTION_LETTERS = ['A', 'B', 'C', 'D']
+
+/** Second, first, third — podium layout, not ranking order. */
+const FINAL_PODIUM = [
+  { place: 2, height: 64, background: 'linear-gradient(180deg,#9aa4b2,#6b7280)', medal: '🥈', label: 'Second place' },
+  { place: 1, height: 90, background: 'linear-gradient(180deg,#f5c542,#d99a06)', medal: '🥇', label: 'First place' },
+  { place: 3, height: 48, background: 'linear-gradient(180deg,#c98b5e,#9a5b2f)', medal: '🥉', label: 'Third place' },
+]
 type Action = 'start' | 'next' | 'pause' | 'resume' | 'end' | 'cancel'
 
 export default function HostPanel({ competitionId }: { competitionId: string }) {
@@ -511,11 +518,11 @@ export default function HostPanel({ competitionId }: { competitionId: string }) 
         )}
       </section>
 
-      {/* Final standings — the host's own copy of the winner list, shown the
-          moment the room is over. `board` is the same server ranking the
-          players see; the host never has to leave this page to read it. */}
-      {isOver && room.status === 'completed' && (
-        <section className="hc-card hc-reveal" aria-label="Final standings" style={{ marginBottom: 14 }}>
+      {/* Final leaderboard — the host's own copy of the finished room: the
+          podium and then EVERY ranked row, not just the top three, so the host
+          never has to open the player page to read the result. */}
+      {room.status === 'completed' && (
+        <section className="hc-card hc-reveal" aria-label="Final leaderboard" style={{ marginBottom: 14, gap: 10 }}>
           <span
             style={{
               fontSize: 11,
@@ -525,11 +532,11 @@ export default function HostPanel({ competitionId }: { competitionId: string }) 
               color: 'var(--text-muted)',
             }}
           >
-            Final result
+            Final leaderboard
           </span>
           {board.length === 0 ? (
             <p className="hc-note" style={{ margin: 0 }}>
-              Nobody answered before the room ended, so there is no winner to show.
+              Nobody answered before the room ended, so there is no ranking to show.
             </p>
           ) : (
             <>
@@ -538,21 +545,98 @@ export default function HostPanel({ competitionId }: { competitionId: string }) 
               </p>
               <p className="hc-note" style={{ margin: 0 }}>
                 {board[0].score.toLocaleString()} points · {board[0].correct_count ?? 0}/{board[0].answered_count ?? 0}{' '}
-                correct · {room.participants} {room.participants === 1 ? 'player' : 'players'} in the room
+                correct · {board.length} ranked · {room.participants} {room.participants === 1 ? 'player' : 'players'}{' '}
+                in the room
               </p>
-              <ol style={{ margin: 0, paddingLeft: 0, listStyle: 'none', display: 'grid', gap: 5 }}>
-                {board.slice(0, 3).map((entry, index) => (
+
+              <div
+                style={{
+                  display: 'flex',
+                  alignItems: 'flex-end',
+                  justifyContent: 'center',
+                  gap: 8,
+                  margin: '2px 0 4px',
+                }}
+              >
+                {FINAL_PODIUM.map((slot) => {
+                  const entry = board[slot.place - 1]
+                  if (!entry) return null
+                  return (
+                    <div key={entry.participant_id ?? `podium-${entry.rank}`} style={{ flex: '0 1 31%', minWidth: 0 }}>
+                      <div style={{ display: 'grid', gap: 2, marginBottom: 6 }}>
+                        <span
+                          style={{
+                            fontSize: 11,
+                            color: 'var(--text-muted)',
+                            overflow: 'hidden',
+                            textOverflow: 'ellipsis',
+                            whiteSpace: 'nowrap',
+                          }}
+                        >
+                          {entry.display_name}
+                        </span>
+                        <span style={{ fontSize: 13, fontWeight: 800 }}>{entry.score.toLocaleString()}</span>
+                      </div>
+                      <div
+                        style={{
+                          height: slot.height,
+                          borderRadius: '10px 10px 0 0',
+                          background: slot.background,
+                          display: 'grid',
+                          placeItems: 'center',
+                          fontSize: 21,
+                        }}
+                        aria-label={slot.label}
+                      >
+                        <span aria-hidden="true">{slot.medal}</span>
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+
+              <ol style={{ margin: 0, paddingLeft: 0, listStyle: 'none', display: 'grid', gap: 0 }}>
+                {board.map((entry) => (
                   <li
                     key={entry.participant_id ?? `final-${entry.rank}-${entry.display_name}`}
-                    style={{ fontSize: 13, display: 'flex', alignItems: 'center', gap: 8 }}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 8,
+                      fontSize: 13,
+                      padding: '6px 0',
+                      borderTop: '1px solid var(--border)',
+                    }}
                   >
-                    <span aria-hidden="true" style={{ fontSize: 17 }}>
-                      {['🥇', '🥈', '🥉'][index] ?? ''}
+                    <span
+                      style={{
+                        width: 22,
+                        textAlign: 'center',
+                        fontWeight: 800,
+                        color: 'var(--text-muted)',
+                        fontVariantNumeric: 'tabular-nums',
+                      }}
+                    >
+                      {entry.rank}
                     </span>
-                    <strong style={{ flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                    <span
+                      style={{
+                        flex: 1,
+                        minWidth: 0,
+                        fontWeight: 650,
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis',
+                        whiteSpace: 'nowrap',
+                      }}
+                    >
                       {entry.display_name}
-                    </strong>
-                    <span style={{ fontWeight: 800 }}>{entry.score.toLocaleString()}</span>
+                    </span>
+                    <span style={{ fontSize: 11, color: 'var(--text-muted)' }}>
+                      {entry.correct_count ?? 0}/{entry.answered_count ?? 0}
+                    </span>
+                    <span style={{ fontWeight: 800, fontVariantNumeric: 'tabular-nums' }}>
+                      {entry.score.toLocaleString()}
+                    </span>
                   </li>
                 ))}
               </ol>
@@ -624,84 +708,89 @@ export default function HostPanel({ competitionId }: { competitionId: string }) 
         )}
       </section>
 
-      {/* Live board */}
-      <section className="hc-reveal" aria-label="Live board">
-        <h2
-          style={{
-            fontSize: 12,
-            fontWeight: 700,
-            letterSpacing: '0.08em',
-            textTransform: 'uppercase',
-            color: 'var(--text-muted)',
-            margin: '0 0 8px',
-          }}
-        >
-          Live standings
-        </h2>
-        {board.length === 0 ? (
-          <p className="hc-empty-s" style={{ margin: 0 }}>
-            No answers yet.
-          </p>
-        ) : (
-          <div className="hc-grid hc-grid--list" style={{ gap: 6 }}>
-            {board.map((entry) => (
-              <div
-                key={entry.participant_id ?? `${entry.rank}-${entry.display_name}`}
-                className="hc-card"
-                style={{ flexDirection: 'row', alignItems: 'center', gap: 10, padding: '9px 13px' }}
-              >
-                <span
-                  style={{
-                    width: 24,
-                    textAlign: 'center',
-                    fontWeight: 800,
-                    fontSize: 12.5,
-                    color: 'var(--text-muted)',
-                  }}
+      {/* Live board — during play only. Once the room completes, the final
+          leaderboard above is the single authoritative list. */}
+      {room.status !== 'completed' && (
+        <section className="hc-reveal" aria-label="Live board">
+          <h2
+            style={{
+              fontSize: 12,
+              fontWeight: 700,
+              letterSpacing: '0.08em',
+              textTransform: 'uppercase',
+              color: 'var(--text-muted)',
+              margin: '0 0 8px',
+            }}
+          >
+            Live standings
+          </h2>
+          {board.length === 0 ? (
+            <p className="hc-empty-s" style={{ margin: 0 }}>
+              No answers yet.
+            </p>
+          ) : (
+            <div className="hc-grid hc-grid--list" style={{ gap: 6 }}>
+              {board.map((entry) => (
+                <div
+                  key={entry.participant_id ?? `${entry.rank}-${entry.display_name}`}
+                  className="hc-card"
+                  style={{ flexDirection: 'row', alignItems: 'center', gap: 10, padding: '9px 13px' }}
                 >
-                  {entry.rank}
-                </span>
-                <span
-                  style={{
-                    flex: 1,
-                    minWidth: 0,
-                    fontSize: 13,
-                    fontWeight: 650,
-                    overflow: 'hidden',
-                    textOverflow: 'ellipsis',
-                    whiteSpace: 'nowrap',
-                  }}
-                >
-                  {entry.display_name}
-                </span>
-                <span style={{ fontSize: 11, color: 'var(--text-muted)' }}>
-                  {entry.correct_count ?? 0}/{entry.answered_count ?? 0}
-                </span>
-                {(entry.prev_rank ?? entry.rank) - entry.rank !== 0 && (
                   <span
                     style={{
-                      fontSize: 11,
-                      fontWeight: 700,
-                      color:
-                        (entry.prev_rank ?? entry.rank) - entry.rank > 0 ? 'var(--success-text)' : 'var(--danger-text)',
+                      width: 24,
+                      textAlign: 'center',
+                      fontWeight: 800,
+                      fontSize: 12.5,
+                      color: 'var(--text-muted)',
                     }}
                   >
-                    {(entry.prev_rank ?? entry.rank) - entry.rank > 0
-                      ? `▲${(entry.prev_rank ?? entry.rank) - entry.rank}`
-                      : `▼${Math.abs((entry.prev_rank ?? entry.rank) - entry.rank)}`}
+                    {entry.rank}
                   </span>
-                )}
-                {(entry.streak ?? 0) >= 2 && (
-                  <span style={{ fontSize: 11, fontWeight: 700, color: 'var(--accent-text)' }}>
-                    <Icon name="flame" size={11} /> {entry.streak}
+                  <span
+                    style={{
+                      flex: 1,
+                      minWidth: 0,
+                      fontSize: 13,
+                      fontWeight: 650,
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis',
+                      whiteSpace: 'nowrap',
+                    }}
+                  >
+                    {entry.display_name}
                   </span>
-                )}
-                <span style={{ fontSize: 13, fontWeight: 800, color: 'var(--accent-text)' }}>{entry.score}</span>
-              </div>
-            ))}
-          </div>
-        )}
-      </section>
+                  <span style={{ fontSize: 11, color: 'var(--text-muted)' }}>
+                    {entry.correct_count ?? 0}/{entry.answered_count ?? 0}
+                  </span>
+                  {(entry.prev_rank ?? entry.rank) - entry.rank !== 0 && (
+                    <span
+                      style={{
+                        fontSize: 11,
+                        fontWeight: 700,
+                        color:
+                          (entry.prev_rank ?? entry.rank) - entry.rank > 0
+                            ? 'var(--success-text)'
+                            : 'var(--danger-text)',
+                      }}
+                    >
+                      {(entry.prev_rank ?? entry.rank) - entry.rank > 0
+                        ? `▲${(entry.prev_rank ?? entry.rank) - entry.rank}`
+                        : `▼${Math.abs((entry.prev_rank ?? entry.rank) - entry.rank)}`}
+                    </span>
+                  )}
+                  {(entry.streak ?? 0) >= 2 && (
+                    <span style={{ fontSize: 11, fontWeight: 700, color: 'var(--accent-text)' }}>
+                      <Icon name="flame" size={11} /> {entry.streak}
+                    </span>
+                  )}
+                  <span style={{ fontSize: 13, fontWeight: 800, color: 'var(--accent-text)' }}>{entry.score}</span>
+                </div>
+              ))}
+            </div>
+          )}
+        </section>
+      )}
     </div>
   )
 }
