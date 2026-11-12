@@ -184,6 +184,22 @@ export default function HostPanel({ competitionId }: { competitionId: string }) 
   }, [])
 
   const podiumPlayed = useRef(false)
+  // Completion always triggers one direct board read, regardless of which
+  // action ended the room or which tab pressed it.
+  const finalBoardFor = useRef('')
+  useEffect(() => {
+    if (room?.status !== 'completed') return
+    if (finalBoardFor.current === competitionId) return
+    finalBoardFor.current = competitionId
+    void (async () => {
+      const { data } = await supabase.rpc('live_quiz_leaderboard', {
+        p_competition_id: competitionId,
+        p_limit: 50,
+      })
+      const payload = data as { ok: boolean; top: BoardEntry[] } | null
+      if (payload?.ok) setBoard(payload.top ?? [])
+    })()
+  }, [competitionId, room?.status, supabase])
   // The countdown hitting zero should reveal the key immediately, not on the
   // next 4-second poll.
   const expiryRef = useRef('')
@@ -214,9 +230,13 @@ export default function HostPanel({ competitionId }: { competitionId: string }) 
         p_action: action,
       })
       if (rpcError) throw rpcError
-      const result = data as { ok: boolean; error?: string }
+      const result = data as { ok: boolean; error?: string; top?: BoardEntry[] }
       if (!result?.ok) setError(result?.error ? `Host action failed: ${result.error}` : 'Host action failed.')
       else if (action === 'start' || action === 'next') playLiveSfx('start')
+      // `end`/last `next` return the finalisation's own ranking. Seeding it
+      // here means the host sees the result even if the follow-up board read
+      // is slow or fails.
+      if (Array.isArray(result?.top) && result.top.length > 0) setBoard(result.top)
       await refresh()
     } catch (err: any) {
       setError(err?.message || 'Host action failed.')
