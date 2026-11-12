@@ -44,6 +44,15 @@ type QuestionPayload = {
 
 type BoardEntry = { rank: number; display_name: string; score: number; correct_count: number; answered_count: number }
 
+type RosterEntry = {
+  participant_id: string
+  display_name: string
+  score: number
+  correct_count: number
+  answered_count: number
+  is_kicked: boolean
+}
+
 const OPTION_LETTERS = ['A', 'B', 'C', 'D']
 type Action = 'start' | 'next' | 'pause' | 'resume' | 'end' | 'cancel'
 
@@ -54,6 +63,8 @@ export default function HostPanel({ competitionId }: { competitionId: string }) 
   const [question, setQuestion] = useState<QuestionPayload | null>(null)
   const [key, setKey] = useState<number[] | null>(null)
   const [board, setBoard] = useState<BoardEntry[]>([])
+  const [roster, setRoster] = useState<RosterEntry[]>([])
+  const [kicking, setKicking] = useState<string | null>(null)
   const [busy, setBusy] = useState<Action | null>(null)
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(true)
@@ -61,10 +72,11 @@ export default function HostPanel({ competitionId }: { competitionId: string }) 
   const [now, setNow] = useState(Date.now())
 
   const refresh = useCallback(async () => {
-    const [roomRes, questionRes, boardRes] = await Promise.all([
+    const [roomRes, questionRes, boardRes, rosterRes] = await Promise.all([
       supabase.rpc('live_quiz_room', { p_competition_id: competitionId }),
       supabase.rpc('live_quiz_question', { p_competition_id: competitionId }),
       supabase.rpc('live_quiz_leaderboard', { p_competition_id: competitionId, p_limit: 50 }),
+      supabase.rpc('live_quiz_roster', { p_competition_id: competitionId }),
     ])
 
     const roomData = roomRes.data as Room | null
@@ -83,6 +95,9 @@ export default function HostPanel({ competitionId }: { competitionId: string }) 
 
     const boardData = boardRes.data as { ok: boolean; top: BoardEntry[] } | null
     setBoard(boardData?.ok ? (boardData.top ?? []) : [])
+
+    const rosterData = rosterRes.data as { ok: boolean; rows: RosterEntry[] } | null
+    setRoster(rosterData?.ok ? (rosterData.rows ?? []) : [])
 
     // The host may read the key once the window is closed — never before.
     if (roomData.status !== 'live') {
@@ -128,6 +143,33 @@ export default function HostPanel({ competitionId }: { competitionId: string }) 
       setError(err?.message || 'Host action failed.')
     } finally {
       setBusy(null)
+    }
+  }
+
+  const kick = async (entry: RosterEntry) => {
+    if (kicking) return
+    if (!window.confirm(`Remove ${entry.display_name} from the room? They will not be able to rejoin.`)) return
+    setKicking(entry.participant_id)
+    setError('')
+    try {
+      const { data, error: rpcError } = await supabase.rpc('live_quiz_kick', {
+        p_competition_id: competitionId,
+        p_participant_id: entry.participant_id,
+      })
+      if (rpcError) throw rpcError
+      const result = data as { ok: boolean; error?: string }
+      if (!result?.ok) {
+        setError(
+          result?.error === 'not_found'
+            ? 'That participant is no longer in the room.'
+            : 'Could not remove that participant.'
+        )
+      }
+      await refresh()
+    } catch (err: any) {
+      setError(err?.message || 'Could not remove that participant.')
+    } finally {
+      setKicking(null)
     }
   }
 
@@ -342,6 +384,110 @@ export default function HostPanel({ competitionId }: { competitionId: string }) 
             </Link>
           )}
         </div>
+      </section>
+
+      {/* Final standings — the host's own copy of the winner list, shown the
+          moment the room is over. `board` is the same server ranking the
+          players see; the host never has to leave this page to read it. */}
+      {isOver && room.status === 'completed' && (
+        <section className="hc-card hc-reveal" aria-label="Final standings" style={{ marginBottom: 14 }}>
+          <span
+            style={{
+              fontSize: 11,
+              fontWeight: 700,
+              letterSpacing: '0.08em',
+              textTransform: 'uppercase',
+              color: 'var(--text-muted)',
+            }}
+          >
+            Final result
+          </span>
+          {board.length === 0 ? (
+            <p className="hc-note" style={{ margin: 0 }}>
+              Nobody answered before the room ended, so there is no winner to show.
+            </p>
+          ) : (
+            <>
+              <p style={{ margin: 0, fontSize: 19, fontWeight: 800, display: 'flex', alignItems: 'center', gap: 8 }}>
+                <Icon name="trophy" size={19} /> {board[0].display_name} wins
+              </p>
+              <p className="hc-note" style={{ margin: 0 }}>
+                {board[0].score.toLocaleString()} points · {board[0].correct_count ?? 0}/{board[0].answered_count ?? 0}{' '}
+                correct · {room.participants} {room.participants === 1 ? 'player' : 'players'} in the room
+              </p>
+              <ol style={{ margin: 0, paddingLeft: 18, display: 'grid', gap: 3 }}>
+                {board.slice(0, 3).map((entry) => (
+                  <li key={`final-${entry.rank}-${entry.display_name}`} style={{ fontSize: 13 }}>
+                    <strong>{entry.display_name}</strong> — {entry.score.toLocaleString()} points
+                  </li>
+                ))}
+              </ol>
+            </>
+          )}
+        </section>
+      )}
+
+      {/* Participants — the roster is host-only, and removal is the only
+          moderation control. A kicked row cannot rejoin (the join RPC refuses
+          it), so this sticks even if the player reloads. */}
+      <section className="hc-reveal" aria-label="Participants" style={{ marginBottom: 14 }}>
+        <h2
+          style={{
+            fontSize: 12,
+            fontWeight: 700,
+            letterSpacing: '0.08em',
+            textTransform: 'uppercase',
+            color: 'var(--text-muted)',
+            margin: '0 0 8px',
+          }}
+        >
+          Participants · {room.participants}
+        </h2>
+        {roster.length === 0 ? (
+          <p className="hc-empty-s" style={{ margin: 0 }}>
+            Nobody has joined yet — share the code.
+          </p>
+        ) : (
+          <div className="hc-grid hc-grid--list" style={{ gap: 6 }}>
+            {roster.map((entry) => (
+              <div
+                key={entry.participant_id}
+                className="hc-card"
+                style={{ flexDirection: 'row', alignItems: 'center', gap: 10, padding: '9px 13px' }}
+              >
+                <span
+                  style={{
+                    flex: 1,
+                    minWidth: 0,
+                    fontSize: 13,
+                    fontWeight: 650,
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
+                    whiteSpace: 'nowrap',
+                  }}
+                >
+                  {entry.display_name}
+                </span>
+                <span style={{ fontSize: 11, color: 'var(--text-muted)' }}>
+                  {entry.score} pts · {entry.correct_count}/{entry.answered_count}
+                </span>
+                {entry.is_kicked ? (
+                  <span className="hc-tag hc-tag--ghost">removed</span>
+                ) : (
+                  <button
+                    className="hc-chip"
+                    type="button"
+                    onClick={() => kick(entry)}
+                    disabled={Boolean(kicking)}
+                    aria-label={`Remove ${entry.display_name}`}
+                  >
+                    <Icon name="x" size={12} /> {kicking === entry.participant_id ? 'Removing…' : 'Remove'}
+                  </button>
+                )}
+              </div>
+            ))}
+          </div>
+        )}
       </section>
 
       {/* Live board */}

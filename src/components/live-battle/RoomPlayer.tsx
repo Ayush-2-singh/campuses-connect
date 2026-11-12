@@ -34,6 +34,7 @@ type Room = {
   is_host: boolean
   joined: boolean
   my_score: number
+  is_kicked: boolean
   error?: string
 }
 
@@ -61,6 +62,30 @@ type BoardEntry = {
 
 const OPTION_LETTERS = ['A', 'B', 'C', 'D']
 
+type JoinResult = {
+  ok: boolean
+  competition_id?: string
+  status?: string
+  error?: string
+  throttled?: boolean
+  retry_after_s?: number
+  is_host?: boolean
+  participant_id?: string | null
+  rejoined?: boolean
+}
+
+/** Precise copy for the per-reason codes older server builds still return. */
+const JOIN_ERROR_MESSAGES: Record<string, string> = {
+  room_not_found: 'No room with that code. Check the six digits with your host.',
+  room_closed: 'This room has closed.',
+  room_finished: 'This room has already finished.',
+  late_join_disabled: 'This room is already running and late joining is off.',
+  room_full: 'This room is full.',
+}
+
+/** The hardened join uses one generic code for every room-state failure. */
+const GENERIC_JOIN_ERRORS = new Set(['invalid_or_unavailable'])
+
 export default function RoomPlayer({ code }: { code: string }) {
   const supabase = createClient()
 
@@ -71,13 +96,79 @@ export default function RoomPlayer({ code }: { code: string }) {
   const [selected, setSelected] = useState<number[]>([])
   const [submitting, setSubmitting] = useState(false)
   const [answerResult, setAnswerResult] = useState<'accepted' | 'duplicate' | 'closed' | null>(null)
-  const [error, setError] = useState('')
+  const [joinError, setJoinError] = useState('')
+  const [notice, setNotice] = useState('')
+  const [retryingIn, setRetryingIn] = useState(0)
+  const [awaitingRole, setAwaitingRole] = useState(false)
   const [loading, setLoading] = useState(true)
   const [now, setNow] = useState(Date.now())
   const revealedFor = useRef<string>('')
   // Joining is idempotent server-side, but there is no reason to repeat it on
   // every poll — the room id is stable for the life of the page.
   const competitionIdRef = useRef<string>('')
+  // One pending retry/reload at a time, plus caps so a dead room cannot spin.
+  const retryTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const refreshTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const autoRetries = useRef(0)
+  const networkRetries = useRef(0)
+  const refreshRef = useRef<() => Promise<void>>(async () => {})
+  // Which question's time-up transition already refreshed the board.
+  const boardFor = useRef('')
+
+  const deadlineMs = question?.deadline ? new Date(question.deadline).getTime() : 0
+  const remaining = deadlineMs ? Math.max(0, Math.ceil((deadlineMs - now) / 1000)) : 0
+
+  /** One pending timed retry, clamped so the countdown stays readable. */
+  const scheduleRetry = useCallback((seconds: number) => {
+    if (retryTimer.current) clearTimeout(retryTimer.current)
+    const wait = Math.max(1, Math.min(Math.round(Number(seconds)) || 1, 30))
+    setRetryingIn(wait)
+    retryTimer.current = setTimeout(() => {
+      retryTimer.current = null
+      setRetryingIn(0)
+      void refreshRef.current()
+    }, wait * 1000)
+  }, [])
+
+  /** Coalesce a burst of room events into a single reload. */
+  const scheduleRefresh = useCallback(() => {
+    if (refreshTimer.current) clearTimeout(refreshTimer.current)
+    refreshTimer.current = setTimeout(() => {
+      refreshTimer.current = null
+      void refreshRef.current()
+    }, 400)
+  }, [])
+
+  /**
+   * Fetch the answer key for the question on screen. The server refuses while
+   * the window is still open, so a refusal just means "not yet".
+   */
+  const loadReveal = useCallback(async () => {
+    const competitionId = competitionIdRef.current
+    if (!competitionId) return
+    const key = `${question?.position ?? -1}:${question?.deadline ?? ''}`
+    if (revealedFor.current === key) return
+    const { data } = await supabase.rpc('live_quiz_reveal', { p_competition_id: competitionId })
+    const payload = data as { ok: boolean; correct_positions?: number[]; explanation?: string | null } | null
+    if (!payload?.ok) return
+    revealedFor.current = key
+    setReveal({
+      correct_positions: payload.correct_positions ?? [],
+      explanation: payload.explanation ?? null,
+    })
+  }, [question?.deadline, question?.position, supabase])
+
+  /** Leaderboard fetch that the time-up transition can call on its own. */
+  const loadBoard = useCallback(async () => {
+    const competitionId = competitionIdRef.current
+    if (!competitionId) return
+    const { data } = await supabase.rpc('live_quiz_leaderboard', {
+      p_competition_id: competitionId,
+      p_limit: 10,
+    })
+    const payload = data as { ok: boolean; top: BoardEntry[]; me: BoardEntry | null } | null
+    if (payload?.ok) setBoard({ top: payload.top ?? [], me: payload.me ?? null })
+  }, [supabase])
 
   /** Re-read room + question + board + (when allowed) the answer key. */
   const loadState = useCallback(
@@ -103,8 +194,15 @@ export default function RoomPlayer({ code }: { code: string }) {
 
       // The key is only fetchable once the window for this question has closed;
       // the RPC refuses while it is open, so this is a request, not a claim.
-      const questionKey = `${questionData?.position ?? -1}:${roomData?.status ?? ''}`
-      if (questionData?.question && questionData.status !== 'live' && revealedFor.current !== questionKey) {
+      // A paused room is still inside its window (the clock is frozen), so the
+      // request is skipped rather than being refused.
+      const questionKey = `${questionData?.position ?? -1}:${questionData?.deadline ?? ''}`
+      if (
+        questionData?.question &&
+        questionData.status !== 'live' &&
+        questionData.status !== 'paused' &&
+        revealedFor.current !== questionKey
+      ) {
         const revealRes = await supabase.rpc('live_quiz_reveal', { p_competition_id: competitionId })
         const revealData = revealRes.data as { ok: boolean; correct_positions?: number[]; explanation?: string | null }
         if (revealData?.ok) {
@@ -127,39 +225,130 @@ export default function RoomPlayer({ code }: { code: string }) {
       return
     }
 
-    const { data: joined, error: joinError } = await supabase.rpc('live_quiz_join', { p_room_code: code })
-    if (joinError) {
-      setError('Could not reach the room. Check your connection.')
+    const { data: joined, error: rpcError } = await supabase.rpc('live_quiz_join', { p_room_code: code })
+
+    // A dropped request says nothing about the room, so retry it on a timer
+    // before telling the player anything is wrong.
+    if (rpcError) {
       setLoading(false)
+      setJoinError('Could not reach the room — retrying…')
+      const attempt = (networkRetries.current += 1)
+      if (attempt <= 4) scheduleRetry(attempt * 2)
+      else setJoinError('Could not reach the room. Check your connection, then reload this page.')
       return
     }
-    const joinResult = joined as { ok: boolean; competition_id?: string; error?: string }
-    if (!joinResult?.ok || !joinResult.competition_id) {
-      const reason = joinResult?.error
-      setError(
-        reason === 'room_not_found'
-          ? 'No room with that code. Check the six digits with your host.'
-          : reason === 'room_closed' || reason === 'room_finished'
-            ? 'This room has closed.'
-            : reason === 'late_join_disabled'
-              ? 'This room is already running and late joining is off.'
-              : reason === 'room_full'
-                ? 'This room is full.'
-                : 'Could not join this room.'
+
+    const result = joined as JoinResult | null
+
+    if (!result?.ok || !result.competition_id) {
+      setLoading(false)
+
+      // The server reports its own rate limit (and how long it lasts), which
+      // is a fact about this browser, not about the room — so a timed retry is
+      // safe and needs nothing from the player.
+      if (result?.throttled) {
+        if (autoRetries.current < 20) {
+          autoRetries.current += 1
+          setJoinError('Too many room-code attempts on this network — retrying automatically…')
+          scheduleRetry(Number(result.retry_after_s ?? 0))
+        } else {
+          setJoinError('Too many attempts on this network. Wait a few minutes, then reload to join.')
+        }
+        return
+      }
+
+      if (result?.error === 'kicked') {
+        setJoinError('The host removed you from this room.')
+        return
+      }
+
+      const reason = result?.error
+      setJoinError(
+        reason && !GENERIC_JOIN_ERRORS.has(reason) && JOIN_ERROR_MESSAGES[reason]
+          ? JOIN_ERROR_MESSAGES[reason]
+          : 'This code is not joinable right now. Check the six digits with your host — the room may have closed, started without late joining, or be full.'
       )
+      return
+    }
+
+    autoRetries.current = 0
+    networkRetries.current = 0
+    setJoinError('')
+    if (retryTimer.current) {
+      clearTimeout(retryTimer.current)
+      retryTimer.current = null
+    }
+    setRetryingIn(0)
+
+    // The room's creator decides here, once, whether this visit is hosting or
+    // playing. Nobody else is ever offered the host side, and `host_id` itself
+    // never changes — this only decides whether a participant row is created.
+    if (result.is_host && !result.participant_id) {
+      const { data: roomData } = await supabase.rpc('live_quiz_room', { p_competition_id: result.competition_id })
+      const preview = roomData as Room | null
+      if (preview?.ok) setRoom(preview)
+      setAwaitingRole(true)
       setLoading(false)
       return
     }
 
-    competitionIdRef.current = joinResult.competition_id
-    await loadState(joinResult.competition_id)
-  }, [code, loadState, supabase])
+    competitionIdRef.current = result.competition_id
+    await loadState(result.competition_id)
+  }, [code, loadState, scheduleRetry, supabase])
+
+  /** Creator chose the player side: create the participant row explicitly. */
+  const joinAsParticipant = useCallback(async () => {
+    const competitionId = room?.id ?? competitionIdRef.current
+    if (!competitionId) return
+    setAwaitingRole(false)
+    setLoading(true)
+    const { data, error: rpcError } = await supabase.rpc('live_quiz_join', {
+      p_room_code: code,
+      p_as_participant: true,
+    })
+    const result = data as JoinResult | null
+    if (rpcError || !result?.ok || !result.competition_id) {
+      setJoinError(rpcError ? 'Could not reach the room — try again.' : 'Could not join as a player.')
+      setLoading(false)
+      return
+    }
+    competitionIdRef.current = result.competition_id
+    await loadState(result.competition_id)
+  }, [code, loadState, room?.id, supabase])
 
   useEffect(() => {
     refresh()
   }, [refresh])
 
-  // Realtime: any event in this room means "re-read the state".
+  // The retry/reload timers call the latest refresh without re-running effects.
+  useEffect(() => {
+    refreshRef.current = refresh
+  }, [refresh])
+
+  useEffect(
+    () => () => {
+      if (retryTimer.current) clearTimeout(retryTimer.current)
+      if (refreshTimer.current) clearTimeout(refreshTimer.current)
+    },
+    []
+  )
+
+  const retrying = retryingIn > 0
+  useEffect(() => {
+    if (!retrying) return
+    const timer = setInterval(() => setRetryingIn((s) => Math.max(0, s - 1)), 1000)
+    return () => clearInterval(timer)
+  }, [retrying])
+
+  /**
+   * Realtime — the room's event log is the push channel.
+   *
+   * `participant_joined` only changes the head count, so it is applied from the
+   * event payload with NO refetch: otherwise every join makes every connected
+   * player reload the room, which is quadratic and is exactly what an
+   * audience-sized join rush trips over. Everything else is coalesced into one
+   * debounced reload, so a burst of events costs a single round trip.
+   */
   useEffect(() => {
     if (!room?.id) return
     const channel = supabase
@@ -167,34 +356,82 @@ export default function RoomPlayer({ code }: { code: string }) {
       .on(
         'postgres_changes',
         { event: 'INSERT', schema: 'public', table: 'competition_events', filter: `competition_id=eq.${room.id}` },
-        () => {
-          refresh()
+        (event) => {
+          const row = event.new as { event_type?: string; payload?: { participants?: number } } | undefined
+          const count = row?.payload?.participants
+          if (row?.event_type === 'participant_joined') {
+            if (typeof count === 'number') {
+              setRoom((prev) => (prev ? { ...prev, participants: count } : prev))
+            }
+            return
+          }
+          if (row?.event_type === 'participant_kicked') {
+            // The removed player has to re-read the room to find out; it is one
+            // event per kick, so this stays cheap.
+            if (typeof count === 'number') {
+              setRoom((prev) => (prev ? { ...prev, participants: count } : prev))
+            }
+            scheduleRefresh()
+            return
+          }
+          scheduleRefresh()
         }
       )
       .subscribe()
     return () => {
       supabase.removeChannel(channel)
     }
-  }, [room?.id, refresh, supabase])
+  }, [room?.id, scheduleRefresh, supabase])
 
-  // Poll fallback (and a clock for the countdown).
+  // Poll fallback (and a clock for the countdown). Jitter spreads a waiting
+  // room's clients instead of having them refresh in lockstep, and a hidden tab
+  // does not poll at all.
   useEffect(() => {
     const tick = setInterval(() => setNow(Date.now()), 500)
+    const period = 5000 + Math.floor(Math.random() * 2000)
     const poll = setInterval(() => {
-      if (room?.status === 'waiting' || room?.status === 'live' || room?.status === 'paused') refresh()
-    }, 5000)
+      if (typeof document !== 'undefined' && document.visibilityState !== 'visible') return
+      if (room?.status === 'waiting' || room?.status === 'live' || room?.status === 'paused') {
+        void refreshRef.current()
+      }
+    }, period)
     return () => {
       clearInterval(tick)
       clearInterval(poll)
     }
-  }, [refresh, room?.status])
+  }, [room?.status])
+
+  // The countdown reaching zero closes the window even though the room is still
+  // "live". That gap — before the host opens the next question — is when the
+  // correct option and the refreshed board appear, so both are fetched here
+  // instead of waiting for a status change that never happens.
+  useEffect(() => {
+    if (!deadlineMs || room?.status !== 'live' || !question?.question) return
+    if (remaining > 0) return
+    void loadReveal()
+    const key = `${question.position}:${question.deadline ?? ''}`
+    if (boardFor.current === key) return
+    boardFor.current = key
+    void loadBoard()
+  }, [
+    deadlineMs,
+    loadBoard,
+    loadReveal,
+    question?.deadline,
+    question?.position,
+    question?.question,
+    remaining,
+    room?.status,
+  ])
 
   // A new question arrives → clear the previous answer state.
   useEffect(() => {
     setSelected([])
     setAnswerResult(null)
     setReveal(null)
+    setNotice('')
     revealedFor.current = ''
+    boardFor.current = ''
   }, [question?.position])
 
   const submit = async () => {
@@ -210,10 +447,13 @@ export default function RoomPlayer({ code }: { code: string }) {
       if (result?.ok) setAnswerResult('accepted')
       else if (result?.error === 'already_answered') setAnswerResult('duplicate')
       else if (result?.error === 'window_closed') setAnswerResult('closed')
-      else setError('Your answer was not accepted. Try again.')
+      else if (result?.error === 'not_live') setNotice('The host paused or ended this question.')
+      else if (result?.error === 'not_in_room') setNotice('You are no longer in this room.')
+      else setNotice('Your answer was not accepted. Try again.')
       refresh()
     } catch {
-      setError('Could not submit — check your connection and try again.')
+      // A failed submit is a message, never a reason to throw away the room.
+      setNotice('Could not submit — check your connection and try again.')
     } finally {
       setSubmitting(false)
     }
@@ -227,8 +467,6 @@ export default function RoomPlayer({ code }: { code: string }) {
     )
   }
 
-  const deadlineMs = question?.deadline ? new Date(question.deadline).getTime() : 0
-  const remaining = deadlineMs ? Math.max(0, Math.ceil((deadlineMs - now) / 1000)) : 0
   const windowOpen = Boolean(deadlineMs) && remaining > 0 && room?.status === 'live'
 
   if (loading) {
@@ -240,7 +478,7 @@ export default function RoomPlayer({ code }: { code: string }) {
     )
   }
 
-  if (error || !room) {
+  if (!room) {
     return (
       <div className="hc-page">
         <div className="hc-empty">
@@ -248,7 +486,72 @@ export default function RoomPlayer({ code }: { code: string }) {
             <Icon name="alert" size={30} strokeWidth={1.6} />
           </div>
           <p className="hc-empty-t">Room not available</p>
-          <p className="hc-empty-s">{error || 'That room could not be loaded.'}</p>
+          <p className="hc-empty-s" role="status">
+            {joinError || 'That room could not be loaded.'}
+          </p>
+          {retryingIn > 0 ? (
+            <p className="hc-note" style={{ margin: 0 }} role="status">
+              Retrying in {retryingIn}s…
+            </p>
+          ) : (
+            <button
+              className="hc-btn hc-btn--primary"
+              type="button"
+              onClick={() => {
+                setJoinError('')
+                setLoading(true)
+                void refresh()
+              }}
+            >
+              <Icon name="chevron" size={14} /> Try again
+            </button>
+          )}
+          <Link className="hc-btn" href="/compete/live" style={{ textDecoration: 'none' }}>
+            Back to Live Battle
+          </Link>
+        </div>
+      </div>
+    )
+  }
+
+  if (awaitingRole) {
+    return (
+      <div className="hc-page">
+        <div className="hc-page-head hc-reveal">
+          <span className="hc-eyebrow">Room {room.room_code}</span>
+          <h1 className="hc-h1">{room.title}</h1>
+        </div>
+        <section className="hc-card hc-reveal" style={{ gap: 12 }}>
+          <p style={{ margin: 0, fontSize: 15, fontWeight: 700 }}>You created this room.</p>
+          <p className="hc-note" style={{ margin: 0 }}>
+            Only you are its host, and that does not change. Choose how you want to enter.
+          </p>
+          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+            <Link
+              className="hc-btn hc-btn--primary"
+              href={`/compete/live/host/${room.id}`}
+              style={{ textDecoration: 'none' }}
+            >
+              <Icon name="gamepad" size={14} /> Host this room
+            </Link>
+            <button className="hc-btn" type="button" onClick={() => void joinAsParticipant()}>
+              <Icon name="users" size={14} /> Join as a player
+            </button>
+          </div>
+        </section>
+      </div>
+    )
+  }
+
+  if (room.is_kicked) {
+    return (
+      <div className="hc-page">
+        <div className="hc-empty">
+          <div className="hc-empty-ic">
+            <Icon name="lock" size={30} strokeWidth={1.6} />
+          </div>
+          <p className="hc-empty-t">Removed from this room</p>
+          <p className="hc-empty-s">The host removed you from this competition, so you can no longer answer.</p>
           <Link className="hc-btn hc-btn--primary" href="/compete/live" style={{ textDecoration: 'none' }}>
             Back to Live Battle
           </Link>
@@ -273,6 +576,12 @@ export default function RoomPlayer({ code }: { code: string }) {
           {myRank ? ` · you are #${myRank.rank}` : ''}
         </p>
       </div>
+
+      {notice && (
+        <div className="hc-alert" role="status" style={{ marginBottom: 12 }}>
+          {notice}
+        </div>
+      )}
 
       {/* Waiting room */}
       {(room.status === 'waiting' || room.status === 'draft') && (
@@ -423,6 +732,12 @@ export default function RoomPlayer({ code }: { code: string }) {
                 <strong>Answer:</strong> {reveal.correct_positions.map((p) => OPTION_LETTERS[p] ?? p + 1).join(', ')}
                 {reveal.explanation ? ` — ${reveal.explanation}` : ''}
               </div>
+            )}
+
+            {reveal && room.status === 'live' && remaining === 0 && (
+              <p className="hc-note" style={{ margin: 0 }} role="status">
+                <Icon name="clock" size={12} /> Waiting for the host to open the next question…
+              </p>
             )}
           </div>
         </section>
