@@ -90,6 +90,12 @@ const PODIUM_ORDER = [
   { place: 3, height: 48, background: 'linear-gradient(180deg,#c98b5e,#9a5b2f)', medal: '🥉' },
 ]
 
+type LobbyEntry = {
+  participant_id: string
+  display_name: string
+  is_me?: boolean
+}
+
 type JoinResult = {
   ok: boolean
   competition_id?: string
@@ -127,6 +133,8 @@ export default function RoomPlayer({ code }: { code: string }) {
   // screen is the server's, which is the clock that actually closes windows.
   const [skewMs, setSkewMs] = useState(0)
   const [selected, setSelected] = useState<number[]>([])
+  // Player-facing guest list for the waiting room (names only, no scores).
+  const [lobby, setLobby] = useState<LobbyEntry[]>([])
   const [submitting, setSubmitting] = useState(false)
   const [answerResult, setAnswerResult] = useState<'accepted' | 'duplicate' | 'closed' | null>(null)
   const [joinError, setJoinError] = useState('')
@@ -223,6 +231,14 @@ export default function RoomPlayer({ code }: { code: string }) {
         }
       }
       setQuestion(questionData)
+
+      // The queue is the one place players should see each other. Only the
+      // waiting room needs it, so it is not fetched during play.
+      if (roomData?.ok && (roomData.status === 'waiting' || roomData.status === 'draft')) {
+        const lobbyRes = await supabase.rpc('live_quiz_lobby', { p_competition_id: competitionId })
+        const lobbyData = lobbyRes.data as { ok: boolean; rows?: LobbyEntry[] } | null
+        setLobby(lobbyData?.ok ? (lobbyData.rows ?? []) : [])
+      }
 
       if (roomData?.status === 'live' || roomData?.status === 'paused' || roomData?.status === 'completed') {
         const boardRes = await supabase.rpc('live_quiz_leaderboard', {
@@ -406,11 +422,22 @@ export default function RoomPlayer({ code }: { code: string }) {
         'postgres_changes',
         { event: 'INSERT', schema: 'public', table: 'competition_events', filter: `competition_id=eq.${room.id}` },
         (event) => {
-          const row = event.new as { event_type?: string; payload?: { participants?: number } } | undefined
+          const row = event.new as
+            { event_type?: string; payload?: { participants?: number; display_name?: string } } | undefined
           const count = row?.payload?.participants
+          const joinedName = row?.payload?.display_name
           if (row?.event_type === 'participant_joined') {
             if (typeof count === 'number') {
               setRoom((prev) => (prev ? { ...prev, participants: count } : prev))
+            }
+            // Append from the payload instead of refetching: a join rush must
+            // stay one event per player, not one reload per player.
+            if (joinedName) {
+              setLobby((prev) =>
+                prev.some((p) => p.display_name === joinedName && !p.participant_id.startsWith('local:'))
+                  ? prev
+                  : [...prev, { participant_id: `local:${joinedName}:${prev.length}`, display_name: joinedName }]
+              )
             }
             return
           }
@@ -724,6 +751,38 @@ export default function RoomPlayer({ code }: { code: string }) {
               </p>
             </div>
           </div>
+          {/* The queue — players see each other before the first question,
+              which is the social half of a live quiz. */}
+          {lobby.length > 0 && (
+            <div aria-label="Players in the queue">
+              <p
+                style={{
+                  margin: '0 0 6px',
+                  fontSize: 11,
+                  fontWeight: 700,
+                  letterSpacing: '0.08em',
+                  textTransform: 'uppercase',
+                  color: 'var(--text-muted)',
+                }}
+              >
+                In the queue · {room.participants}
+              </p>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+                {lobby.slice(0, 24).map((entry) => (
+                  <span
+                    key={entry.participant_id}
+                    className={entry.is_me ? 'hc-tag hc-tag--accent' : 'hc-tag'}
+                    style={{ maxWidth: '100%', overflow: 'hidden', textOverflow: 'ellipsis' }}
+                  >
+                    {entry.display_name}
+                    {entry.is_me ? ' (you)' : ''}
+                  </span>
+                ))}
+                {lobby.length > 24 && <span className="hc-tag">+{lobby.length - 24} more</span>}
+              </div>
+            </div>
+          )}
+
           <ol style={{ margin: 0, paddingLeft: 18, fontSize: 12.5, color: 'var(--text-secondary)', lineHeight: 1.7 }}>
             <li>The question shows up here with a countdown.</li>
             <li>Tap the answer within the time limit — faster correct answers score more.</li>
