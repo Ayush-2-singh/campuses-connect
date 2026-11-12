@@ -30,6 +30,9 @@ type Room = {
   participants: number
   is_host: boolean
   join_locked?: boolean
+  /** Set by finalise/cancel; lets the panel show the result even if the
+   *  cached status lags behind the write. */
+  ended_at?: string | null
   error?: string
 }
 
@@ -342,6 +345,9 @@ export default function HostPanel({ competitionId }: { competitionId: string }) 
   const isPaused = room.status === 'paused'
   const isOver = room.status === 'completed' || room.status === 'cancelled'
   const canStart = room.status === 'draft' || room.status === 'waiting'
+  // A completed room always has `ended_at`; trusting either signal means a
+  // stale `status` can never hide the result from the host.
+  const finished = room.status === 'completed' || (room.status !== 'cancelled' && Boolean(room.ended_at))
 
   return (
     <div className="hc-page" style={{ paddingBottom: 90 }}>
@@ -560,7 +566,7 @@ export default function HostPanel({ competitionId }: { competitionId: string }) 
       {/* Final leaderboard — the host's own copy of the finished room: the
           podium and then EVERY ranked row, not just the top three, so the host
           never has to open the player page to read the result. */}
-      {room.status === 'completed' && (
+      {finished && (
         <section className="hc-card hc-reveal" aria-label="Final leaderboard" style={{ marginBottom: 14, gap: 10 }}>
           <span
             style={{
@@ -574,9 +580,14 @@ export default function HostPanel({ competitionId }: { competitionId: string }) 
             Final leaderboard
           </span>
           {board.length === 0 ? (
-            <p className="hc-note" style={{ margin: 0 }}>
-              Nobody answered before the room ended, so there is no ranking to show.
-            </p>
+            <>
+              <p className="hc-note" style={{ margin: 0 }}>
+                No ranking loaded yet. If players answered, reload the result.
+              </p>
+              <button className="hc-btn" type="button" onClick={() => void refresh()}>
+                <Icon name="trophy" size={13} /> Reload result
+              </button>
+            </>
           ) : (
             <>
               <p style={{ margin: 0, fontSize: 19, fontWeight: 800, display: 'flex', alignItems: 'center', gap: 8 }}>
@@ -749,7 +760,7 @@ export default function HostPanel({ competitionId }: { competitionId: string }) 
 
       {/* Live board — during play only. Once the room completes, the final
           leaderboard above is the single authoritative list. */}
-      {room.status !== 'completed' && (
+      {!finished && (
         <section className="hc-reveal" aria-label="Live board">
           <h2
             style={{
