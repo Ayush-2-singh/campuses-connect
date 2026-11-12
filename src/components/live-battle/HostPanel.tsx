@@ -15,7 +15,7 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
 import { Icon } from '@/components/icons'
-import { playLiveSfx, startLobbyMusic, stopLobbyMusic, unlockLiveAudio, useLiveAudio } from '@/lib/liveQuizAudio'
+import { playLiveSfx, startMatchMusic, stopMatchMusic, unlockLiveAudio, useLiveAudio } from '@/lib/liveQuizAudio'
 import AudioToggle from './AudioToggle'
 
 type Room = {
@@ -156,12 +156,15 @@ export default function HostPanel({ competitionId }: { competitionId: string }) 
     }
   }, [refresh])
 
-  // Lobby bed while people join; silence the moment the room goes live.
+  // One bed for the whole match — waiting, question and pause — same as the
+  // player screen, so the host's stream never drops into silence.
+  const matchMusicOn =
+    room?.status === 'waiting' || room?.status === 'draft' || room?.status === 'live' || room?.status === 'paused'
   useEffect(() => {
-    if ((room?.status === 'draft' || room?.status === 'waiting') && !muted) startLobbyMusic()
-    else stopLobbyMusic()
-    return () => stopLobbyMusic()
-  }, [muted, room?.status])
+    if (matchMusicOn && !muted) startMatchMusic()
+    else stopMatchMusic()
+    return () => stopMatchMusic()
+  }, [matchMusicOn, muted])
 
   // A context can only resume inside a gesture, and the host's first click is
   // usually "Start" — so unlock on any interaction.
@@ -179,7 +182,7 @@ export default function HostPanel({ competitionId }: { competitionId: string }) 
   useEffect(() => {
     if (room?.status !== 'completed' || podiumPlayed.current) return
     podiumPlayed.current = true
-    stopLobbyMusic()
+    stopMatchMusic()
     playLiveSfx('podium')
   }, [room?.status])
 

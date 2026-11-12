@@ -21,7 +21,7 @@ import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
 import { Icon } from '@/components/icons'
 import { useOnlineStatus } from '@/hooks/useMobile'
-import { playLiveSfx, startLobbyMusic, stopLobbyMusic, unlockLiveAudio, useLiveAudio } from '@/lib/liveQuizAudio'
+import { playLiveSfx, startMatchMusic, stopMatchMusic, unlockLiveAudio, useLiveAudio } from '@/lib/liveQuizAudio'
 import AudioToggle from './AudioToggle'
 
 type Room = {
@@ -564,13 +564,15 @@ export default function RoomPlayer({ code }: { code: string }) {
   const windowOpen = Boolean(deadlineMs) && remaining > 0 && room?.status === 'live'
 
   // ── Sound ──────────────────────────────────────────────────────────────
-  // The waiting-room bed belongs to the waiting room only; anywhere else it
-  // would talk over the question. Muting stops it immediately.
+  // One bed for the whole match — waiting, question and pause — so the room
+  // never drops into silence between questions. It stops on the podium.
+  const matchMusicOn =
+    room?.status === 'waiting' || room?.status === 'draft' || room?.status === 'live' || room?.status === 'paused'
   useEffect(() => {
-    if ((room?.status === 'waiting' || room?.status === 'draft') && !muted) startLobbyMusic()
-    else stopLobbyMusic()
-    return () => stopLobbyMusic()
-  }, [muted, room?.status])
+    if (matchMusicOn && !muted) startMatchMusic()
+    else stopMatchMusic()
+    return () => stopMatchMusic()
+  }, [matchMusicOn, muted])
 
   // Autoplay policy: a context can only resume inside a real gesture.
   useEffect(() => {
@@ -609,7 +611,7 @@ export default function RoomPlayer({ code }: { code: string }) {
   useEffect(() => {
     if (room?.status !== 'completed' || podiumPlayed.current) return
     podiumPlayed.current = true
-    stopLobbyMusic()
+    stopMatchMusic()
     playLiveSfx('podium')
   }, [room?.status])
 
