@@ -13,6 +13,7 @@ import { useToast } from '@/components/Toast'
 import { CountUpStat } from '@/components/CountUpStat'
 import CollegeSearch from '@/components/CollegeSearch'
 import { isNativePlatform } from '@/lib/native'
+import CompeteRating from '@/components/CompeteRating'
 
 const AVATAR_BUCKET = 'avatars'
 
@@ -432,6 +433,9 @@ export default function ProfilePage() {
           streak={profile?.streak_days || 0}
           connections={connections.length}
         />
+
+        {/* Match-derived standing — same numbers as the Compete board */}
+        {user && <CompeteRating userId={user.id} />}
         {/* ── Identity card ── */}
         <div
           style={{

@@ -30,6 +30,7 @@ import { useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { useRouter, useParams, usePathname } from 'next/navigation'
 import { CountUpStat } from '@/components/CountUpStat'
+import CompeteRating from '@/components/CompeteRating'
 
 import MobileBottomNav from '@/components/MobileBottomNav'
 import MobileMenu from '@/components/MobileMenu'
@@ -641,6 +642,11 @@ export default function UserProfilePage() {
                 bg="var(--blue-light, var(--bg-secondary))"
                 border="var(--blue-border, var(--border))"
               />
+            </div>
+
+            {/* Match-derived standing — same numbers as the Compete board */}
+            <div style={{ marginTop: 12 }}>
+              <CompeteRating userId={profile.id} />
             </div>
 
             {(profile.github_url || profile.linkedin_url || profile.portfolio_url) && (
