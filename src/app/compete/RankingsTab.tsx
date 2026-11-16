@@ -103,11 +103,14 @@ function RankGlyph({ pos, size = 22 }: { pos: number; size?: number }) {
 type Zone = 'overall' | 'live' | 'typing' | 'maths'
 type MeRow = { rank: number; points: number; wins: number; played: number; accuracy: number }
 
-const ZONES: { key: Zone; label: string }[] = [
-  { key: 'overall', label: 'Overall' },
-  { key: 'live', label: 'Live battle' },
-  { key: 'typing', label: 'Typing' },
-  { key: 'maths', label: 'Quick maths' },
+/** A compact per-mode dashboard: my standing plus who is leading that mode. */
+type Dash = { top: LeaderEntry[]; me: MeRow | null }
+
+const ZONES: { key: Zone; label: string; hint: string }[] = [
+  { key: 'overall', label: 'Combined', hint: 'Live battle quiz + typing + maths' },
+  { key: 'live', label: 'Live battle quiz', hint: 'Points from finished live rooms' },
+  { key: 'typing', label: 'Typing battle', hint: '100 per typing battle won' },
+  { key: 'maths', label: 'Quick maths', hint: '90 per maths battle won' },
 ]
 
 const LEADERBOARD_LIMIT = 50
@@ -140,6 +143,7 @@ export default function RankingsTab({
   const [loading, setLoading] = useState(true)
   const [zone, setZone] = useState<Zone>('overall')
   const [scope, setScope] = useState<RankScope>('global')
+  const [dash, setDash] = useState<Partial<Record<Zone, Dash>>>({})
 
   const load = useCallback(async () => {
     setLoading(true)
@@ -160,24 +164,40 @@ export default function RankingsTab({
         ]
       }
 
-      const { data, error } = await supabase.rpc('match_leaderboard', {
-        p_zone: zone,
+      const params = (z: Zone, limit: number) => ({
+        p_zone: z,
         p_campus_id: scope === 'campus' ? profile?.campus_id || null : null,
         p_friend_ids: friendIds,
         p_since: season?.starts_at || null,
-        p_limit: LEADERBOARD_LIMIT,
+        p_limit: limit,
       })
-      const payload = data as { ok?: boolean; rows?: LeaderEntry[]; me?: MeRow | null } | null
-      if (error || !payload?.ok) {
-        setRows([])
-        setMe(null)
-      } else {
-        setRows(payload.rows ?? [])
-        setMe(payload.me ?? null)
+
+      // One full board for the selected mode, plus a three-row dashboard for
+      // every mode (combined included) so each has its own standing at a glance.
+      const [boardRes, ...zoneRes] = await Promise.all([
+        supabase.rpc('match_leaderboard', params(zone, LEADERBOARD_LIMIT)),
+        ...ZONES.map((z) => supabase.rpc('match_leaderboard', params(z.key, 3))),
+      ])
+
+      const unpack = (res: any): Dash => {
+        const payload = res?.data as { ok?: boolean; rows?: LeaderEntry[]; me?: MeRow | null } | null
+        if (res?.error || !payload?.ok) return { top: [], me: null }
+        return { top: payload.rows ?? [], me: payload.me ?? null }
       }
+
+      const board = unpack(boardRes)
+      setRows(board.top)
+      setMe(board.me)
+
+      const next: Partial<Record<Zone, Dash>> = {}
+      ZONES.forEach((z, i) => {
+        next[z.key] = unpack(zoneRes[i])
+      })
+      setDash(next)
     } catch {
       setRows([])
       setMe(null)
+      setDash({})
     }
     setLoading(false)
   }, [supabase, zone, scope, profile?.campus_id, season?.starts_at, user])
@@ -248,6 +268,64 @@ export default function RankingsTab({
         )}
       </div>
 
+      {/* One dashboard per mode — typing, maths, live battle quiz, and combined */}
+      <div
+        style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(158px, 1fr))',
+          gap: 10,
+          marginBottom: 16,
+        }}
+      >
+        {ZONES.map((z) => {
+          const mine = dash[z.key]?.me ?? null
+          const leader = dash[z.key]?.top?.[0]
+          const isActive = zone === z.key
+          return (
+            <button
+              key={z.key}
+              type="button"
+              onClick={() => setZone(z.key)}
+              aria-pressed={isActive}
+              title={z.hint}
+              style={{
+                textAlign: 'left',
+                fontFamily: 'inherit',
+                cursor: 'pointer',
+                borderRadius: 12,
+                padding: '12px 14px',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: 3,
+                border: isActive ? '2px solid var(--accent)' : '1px solid var(--border)',
+                background: isActive ? 'var(--accent-light)' : 'var(--bg)',
+                boxShadow: 'var(--shadow-sm)',
+              }}
+            >
+              <span style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-secondary)' }}>{z.label}</span>
+              <span style={{ fontSize: 19, fontWeight: 800, color: 'var(--accent-text)', lineHeight: 1.15 }}>
+                {(mine?.points ?? 0).toLocaleString()}
+                <span style={{ fontSize: 10, fontWeight: 600, color: 'var(--text-muted)' }}> pts</span>
+              </span>
+              <span style={{ fontSize: 10.5, color: 'var(--text-muted)' }}>
+                {mine ? `#${mine.rank} · ${mine.wins}W/${mine.played} · ${mine.accuracy}%` : 'No matches yet'}
+              </span>
+              <span
+                style={{
+                  fontSize: 10.5,
+                  color: 'var(--text-muted)',
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis',
+                  whiteSpace: 'nowrap',
+                }}
+              >
+                {leader ? `Top: @${leader.username} · ${leader.points.toLocaleString()}` : '—'}
+              </span>
+            </button>
+          )
+        })}
+      </div>
+
       {/* Your position */}
       {user && me && (
         <div
@@ -310,28 +388,9 @@ export default function RankingsTab({
           flexWrap: 'wrap',
         }}
       >
-        <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap' }} role="group" aria-label="Point zone">
-          {ZONES.map((z) => (
-            <button
-              key={z.key}
-              onClick={() => setZone(z.key)}
-              aria-pressed={zone === z.key}
-              style={{
-                padding: '7px 14px',
-                borderRadius: 20,
-                fontSize: 12.5,
-                fontWeight: 600,
-                cursor: 'pointer',
-                fontFamily: 'inherit',
-                border: zone === z.key ? 'none' : '1px solid var(--border)',
-                background: zone === z.key ? 'var(--accent)' : 'var(--bg)',
-                color: zone === z.key ? 'var(--on-accent)' : 'var(--text-secondary)',
-              }}
-            >
-              {z.label}
-            </button>
-          ))}
-        </div>
+        <p style={{ margin: 0, fontSize: 11.5, color: 'var(--text-muted)' }}>
+          Pick a dashboard above to open its full board
+        </p>
         <div style={{ display: 'flex', gap: 4 }} role="group" aria-label="Leaderboard scope">
           {(['global', 'campus', 'friends'] as const).map((s) => {
             if (s === 'campus' && !profile?.campus_id) return null
