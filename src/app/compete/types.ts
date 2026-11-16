@@ -1,6 +1,6 @@
 // Shared types for compete page tab components
 
-export type Tab = 'rankings' | 'contributors' | 'challenge' | 'clash' | 'games'
+export type Tab = 'rankings' | 'contributors' | 'challenge' | 'games'
 
 export type Problem = {
   id: string
@@ -22,19 +22,28 @@ export type Submission = {
   runtime_ms?: number
 }
 
+/**
+ * One row of the Compete leaderboard. Every number here comes from finished
+ * matches (live rooms, typing battles, quick-maths battles) — never from
+ * profile counters like karma or aura.
+ */
 export type LeaderEntry = {
+  rank: number
   user_id: string
-  full_name: string
-  username: string
+  display_name: string
+  username: string | null
   avatar_url: string | null
-  karma_points: number
-  aura_points: number
-  streak_days: number
-  department?: string
-  combined_score: number
-  github_contributions: number
-  leetcode_solved: number
-  leetcode_rating: number
+  department: string | null
+  points: number
+  wins: number
+  played: number
+  accuracy: number
+  live_points: number
+  typing_points: number
+  maths_points: number
+  live_wins: number
+  typing_wins: number
+  maths_wins: number
 }
 
 export type SeasonInfo = {

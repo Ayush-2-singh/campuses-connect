@@ -1,11 +1,19 @@
 'use client'
 
 // ═══════════════════════════════════════════════════════════════════════════
-// RankingsTab — Leaderboard with podium, filters, parallel metadata
-// Extracted from compete/page.tsx for maintainability
+// RankingsTab — the Compete leaderboard, computed from matches only.
+//
+// Every point on this board comes from a finished match (live battle room,
+// typing battle, quick-maths battle) through `match_leaderboard`:
+//
+//   match_points = round(100 × mode × (0.6 × accuracy + 0.4 × 1/place))
+//
+// Live rooms score every participant on their real accuracy and placement;
+// typing / quick-maths record the winner, so a win is 100 / 90. Profile
+// counters (karma, aura), GitHub and LeetCode stats are not read here at all.
 // ═══════════════════════════════════════════════════════════════════════════
 
-import { useEffect, useMemo, useState, useCallback } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
 import Avatar from '@/components/Avatar'
@@ -22,19 +30,6 @@ const BoltGlyph = ({ size = 12 }: { size?: number }) => (
     style={{ verticalAlign: '-1px' }}
   >
     <path d="M13 2 4 14h6l-1 8 9-12h-6z" />
-  </svg>
-)
-
-const StarGlyph = ({ size = 12 }: { size?: number }) => (
-  <svg
-    width={size}
-    height={size}
-    viewBox="0 0 24 24"
-    fill="currentColor"
-    aria-hidden="true"
-    style={{ verticalAlign: '-1px' }}
-  >
-    <path d="m12 2 2.9 6.26L21.5 9.3l-4.75 4.4L18 20.5l-6-3.5-6 3.5 1.25-6.8L2.5 9.3l6.6-1.04L12 2Z" />
   </svg>
 )
 
@@ -105,7 +100,16 @@ function RankGlyph({ pos, size = 22 }: { pos: number; size?: number }) {
   )
 }
 
-const RANK_SORTS = ['aura', 'karma'] as const
+type Zone = 'overall' | 'live' | 'typing' | 'maths'
+type MeRow = { rank: number; points: number; wins: number; played: number; accuracy: number }
+
+const ZONES: { key: Zone; label: string }[] = [
+  { key: 'overall', label: 'Overall' },
+  { key: 'live', label: 'Live battle' },
+  { key: 'typing', label: 'Typing' },
+  { key: 'maths', label: 'Quick maths' },
+]
+
 const LEADERBOARD_LIMIT = 50
 
 function seasonWeek(season: SeasonInfo | null): string | null {
@@ -123,7 +127,6 @@ export default function RankingsTab({
   user,
   profile,
   season,
-  karma,
 }: {
   user: any
   profile: any
@@ -132,109 +135,60 @@ export default function RankingsTab({
 }) {
   const supabase = createClient()
   const router = useRouter()
-  const [leaders, setLeaders] = useState<LeaderEntry[]>([])
+  const [rows, setRows] = useState<LeaderEntry[]>([])
+  const [me, setMe] = useState<MeRow | null>(null)
   const [loading, setLoading] = useState(true)
-  const [sortBy, setSortBy] = useState<'aura' | 'karma'>('aura')
-  const [filterScope, setFilterScope] = useState<RankScope>('global')
-  const [totalRanked, setTotalRanked] = useState(0)
-  const [myRank, setMyRank] = useState<number | null>(null)
+  const [zone, setZone] = useState<Zone>('overall')
+  const [scope, setScope] = useState<RankScope>('global')
 
-  const loadRankings = useCallback(async () => {
+  const load = useCallback(async () => {
     setLoading(true)
     try {
-      const campusId = filterScope === 'campus' ? profile?.campus_id || null : null
-      const { data, error } = await supabase.rpc('get_enhanced_leaderboard', {
-        p_campus_id: campusId,
+      // Friends is a set of ids, not a board the database knows about.
+      let friendIds: string[] | null = null
+      if (scope === 'friends' && user) {
+        const { data: conns } = await supabase
+          .from('connections')
+          .select('requester_id, receiver_id')
+          .or(`requester_id.eq.${user.id},receiver_id.eq.${user.id}`)
+          .eq('status', 'accepted')
+        friendIds = [
+          ...new Set([
+            ...(conns || []).map((c: any) => (c.requester_id === user.id ? c.receiver_id : c.requester_id)),
+            user.id,
+          ]),
+        ]
+      }
+
+      const { data, error } = await supabase.rpc('match_leaderboard', {
+        p_zone: zone,
+        p_campus_id: scope === 'campus' ? profile?.campus_id || null : null,
+        p_friend_ids: friendIds,
+        p_since: season?.starts_at || null,
         p_limit: LEADERBOARD_LIMIT,
-        p_sort: sortBy,
       })
-      if (error || !data || (data as any[]).length === 0) {
-        let query = supabase
-          .from('profiles')
-          .select(
-            'id, full_name, username, avatar_url, karma_points, aura_points, streak_days, departments(short_name)'
-          )
-          .eq('is_public', true)
-          .eq('status', 'active')
-        if (filterScope === 'campus' && profile?.campus_id) query = query.eq('campus_id', profile.campus_id)
-        if (filterScope === 'friends' && user) {
-          const { data: conns } = await supabase
-            .from('connections')
-            .select('requester_id, receiver_id')
-            .or(`requester_id.eq.${user.id},receiver_id.eq.${user.id}`)
-            .eq('status', 'accepted')
-          const friendIds = (conns || []).map((c: any) => (c.requester_id === user.id ? c.receiver_id : c.requester_id))
-          query = friendIds.length > 0 ? query.in('id', friendIds) : query.in('id', [user.id])
-        }
-        const col = sortBy === 'aura' ? 'aura_points' : 'karma_points'
-        const { data: rows } = await query.order(col, { ascending: false }).limit(LEADERBOARD_LIMIT)
-        setLeaders(
-          (rows || []).map((r: any) => ({
-            user_id: r.id,
-            full_name: r.full_name,
-            username: r.username,
-            avatar_url: r.avatar_url,
-            karma_points: r.karma_points || 0,
-            aura_points: r.aura_points || 0,
-            streak_days: r.streak_days || 0,
-            department: r.departments?.short_name,
-            combined_score: 0,
-            github_contributions: 0,
-            leetcode_solved: 0,
-            leetcode_rating: 0,
-          }))
-        )
+      const payload = data as { ok?: boolean; rows?: LeaderEntry[]; me?: MeRow | null } | null
+      if (error || !payload?.ok) {
+        setRows([])
+        setMe(null)
       } else {
-        setLeaders(data as any[])
+        setRows(payload.rows ?? [])
+        setMe(payload.me ?? null)
       }
     } catch {
-      setLeaders([])
+      setRows([])
+      setMe(null)
     }
     setLoading(false)
-  }, [sortBy, filterScope, profile?.campus_id, user, supabase])
+  }, [supabase, zone, scope, profile?.campus_id, season?.starts_at, user])
 
   useEffect(() => {
-    loadRankings()
-  }, [loadRankings])
+    load()
+  }, [load])
 
-  // PROFESSIONAL PATTERN: Parallel metadata queries
-  useEffect(() => {
-    if (!user) return
-    const loadMeta = async () => {
-      try {
-        const meCol = sortBy === 'aura' ? 'aura_points' : 'karma_points'
-        // Fire count + my value + ahead count in parallel
-        const [countRes, meRes, aheadRes] = await Promise.all([
-          supabase
-            .from('profiles')
-            .select('id', { count: 'exact', head: true })
-            .eq('is_public', true)
-            .eq('status', 'active'),
-          supabase.from('profiles').select(meCol).eq('id', user.id).single(),
-          // We'll compute ahead after getting my value
-          Promise.resolve(null),
-        ])
-        setTotalRanked(countRes.count || 0)
-        const myVal = (meRes.data as any)?.[meCol] || 0
-        const { count: ahead } = await supabase
-          .from('profiles')
-          .select('id', { count: 'exact', head: true })
-          .eq('is_public', true)
-          .eq('status', 'active')
-          .gt(meCol, myVal)
-        setMyRank((ahead || 0) + 1)
-      } catch {
-        /* best-effort */
-      }
-    }
-    loadMeta()
-  }, [user, sortBy, supabase])
-
-  const sorted = leaders
-  const myPosition = useMemo(() => (user ? sorted.findIndex((l) => l.user_id === user.id) : -1), [sorted, user])
-  const myEntry = myPosition >= 0 ? sorted[myPosition] : null
-  const top3 = sorted.slice(0, 3)
-  const rest = sorted.slice(3)
+  const top3 = rows.slice(0, 3)
+  const rest = rows.slice(3)
+  const zoneLabel = ZONES.find((z) => z.key === zone)?.label ?? 'Overall'
 
   if (loading)
     return (
@@ -244,38 +198,8 @@ export default function RankingsTab({
       </div>
     )
 
-  if (sorted.length === 0) {
-    const scopeMsg =
-      filterScope === 'friends'
-        ? 'Add connections to see where you stand.'
-        : filterScope === 'campus'
-          ? 'No ranked students from your campus yet — be the first!'
-          : 'Be the first to win a Compete game and earn Aura!'
-    return (
-      <div className="hc-empty hc-reveal">
-        <div className="hc-empty-ic">
-          <svg
-            width={40}
-            height={40}
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth={1.6}
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            aria-hidden="true"
-          >
-            <path d="M4 19h16M4 19 2.5 8l5.5 4L12 4l4 8 5.5-4L20 19" />
-          </svg>
-        </div>
-        <p className="hc-empty-t">Rankings are getting ready</p>
-        <p className="hc-empty-s">{scopeMsg}</p>
-      </div>
-    )
-  }
-
   const scopeLabel =
-    filterScope === 'campus' ? 'Your campus' : filterScope === 'friends' ? 'Your connections' : 'All of ConnectToCampus'
+    scope === 'campus' ? 'Your campus' : scope === 'friends' ? 'Your connections' : 'All of ConnectToCampus'
 
   return (
     <div>
@@ -313,19 +237,19 @@ export default function RankingsTab({
           </p>
           <p style={{ fontSize: 11, color: 'var(--text-muted)', margin: 0 }}>
             {seasonWeek(season) ? `${seasonWeek(season)} · ` : ''}
-            {sortBy === 'aura' ? 'Aura = points from winning games' : 'Karma = lifetime earned points'}
+            {zoneLabel} points from finished matches only
           </p>
         </div>
-        {myRank !== null && (
+        {me && (
           <div style={{ textAlign: 'right' }}>
-            <p style={{ fontSize: 18, fontWeight: 800, color: 'var(--accent)', margin: 0 }}>#{myRank}</p>
+            <p style={{ fontSize: 18, fontWeight: 800, color: 'var(--accent)', margin: 0 }}>#{me.rank}</p>
             <p style={{ fontSize: 10, color: 'var(--text-muted)', margin: 0 }}>your rank</p>
           </div>
         )}
       </div>
 
-      {/* Your Position */}
-      {user && (myEntry || myRank !== null) && (
+      {/* Your position */}
+      {user && me && (
         <div
           style={{
             background: 'linear-gradient(135deg, var(--accent-light), var(--bg))',
@@ -354,7 +278,7 @@ export default function RankingsTab({
               flexShrink: 0,
             }}
           >
-            #{myEntry ? myPosition + 1 : (myRank ?? '—')}
+            #{me.rank}
           </div>
           <Avatar name={profile?.full_name || 'You'} avatarUrl={profile?.avatar_url} size={40} />
           <div style={{ flex: 1, minWidth: 0 }}>
@@ -362,31 +286,20 @@ export default function RankingsTab({
               {profile?.full_name || 'You'}
             </p>
             <p style={{ fontSize: 11, color: 'var(--text-muted)', margin: 0 }}>
-              {sortBy === 'aura' ? 'Game rank · Aura from wins' : 'Lifetime rank · all-time Karma'}
-            </p>
-            <p style={{ fontSize: 12, color: 'var(--text-muted)', margin: 0 }}>
-              @{profile?.username || 'you'}
-              {myEntry?.department ? ` · ${myEntry.department}` : ''}
+              @{profile?.username || 'you'} · {me.wins} {me.wins === 1 ? 'win' : 'wins'} in {me.played}{' '}
+              {me.played === 1 ? 'match' : 'matches'} · {me.accuracy}% accuracy
             </p>
           </div>
-          <div style={{ display: 'flex', gap: 16, alignItems: 'center' }}>
-            <div style={{ textAlign: 'center' }}>
-              <p style={{ fontSize: 16, fontWeight: 800, color: 'var(--accent-text)', margin: 0 }}>
-                <BoltGlyph /> {myEntry ? myEntry.aura_points : (karma?.aura ?? 0)}
-              </p>
-              <p style={{ fontSize: 10, color: 'var(--text-muted)', margin: 0 }}>Aura</p>
-            </div>
-            <div style={{ textAlign: 'center' }}>
-              <p style={{ fontSize: 16, fontWeight: 800, color: 'var(--yellow-text)', margin: 0 }}>
-                <StarGlyph /> {myEntry ? myEntry.karma_points : (karma?.lifetime ?? 0)}
-              </p>
-              <p style={{ fontSize: 10, color: 'var(--text-muted)', margin: 0 }}>Karma</p>
-            </div>
+          <div style={{ textAlign: 'center' }}>
+            <p style={{ fontSize: 16, fontWeight: 800, color: 'var(--accent-text)', margin: 0 }}>
+              <BoltGlyph /> {me.points.toLocaleString()}
+            </p>
+            <p style={{ fontSize: 10, color: 'var(--text-muted)', margin: 0 }}>{zoneLabel} points</p>
           </div>
         </div>
       )}
 
-      {/* Filters */}
+      {/* Zone + scope filters */}
       <div
         style={{
           display: 'flex',
@@ -397,33 +310,25 @@ export default function RankingsTab({
           flexWrap: 'wrap',
         }}
       >
-        <div style={{ display: 'flex', gap: 4 }} role="group" aria-label="Ranking metric">
-          {RANK_SORTS.map((m) => (
+        <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap' }} role="group" aria-label="Point zone">
+          {ZONES.map((z) => (
             <button
-              key={m}
-              onClick={() => setSortBy(m)}
-              aria-pressed={sortBy === m}
+              key={z.key}
+              onClick={() => setZone(z.key)}
+              aria-pressed={zone === z.key}
               style={{
-                padding: '7px 16px',
+                padding: '7px 14px',
                 borderRadius: 20,
                 fontSize: 12.5,
                 fontWeight: 600,
                 cursor: 'pointer',
                 fontFamily: 'inherit',
-                border: sortBy === m ? 'none' : '1px solid var(--border)',
-                background: sortBy === m ? 'var(--accent)' : 'var(--bg)',
-                color: sortBy === m ? 'var(--on-accent)' : 'var(--text-secondary)',
+                border: zone === z.key ? 'none' : '1px solid var(--border)',
+                background: zone === z.key ? 'var(--accent)' : 'var(--bg)',
+                color: zone === z.key ? 'var(--on-accent)' : 'var(--text-secondary)',
               }}
             >
-              {m === 'aura' ? (
-                <>
-                  <BoltGlyph /> Aura
-                </>
-              ) : (
-                <>
-                  <StarGlyph /> Karma
-                </>
-              )}
+              {z.label}
             </button>
           ))}
         </div>
@@ -434,8 +339,8 @@ export default function RankingsTab({
             return (
               <button
                 key={s}
-                onClick={() => setFilterScope(s)}
-                aria-pressed={filterScope === s}
+                onClick={() => setScope(s)}
+                aria-pressed={scope === s}
                 style={{
                   padding: '5px 12px',
                   borderRadius: 20,
@@ -443,9 +348,9 @@ export default function RankingsTab({
                   fontWeight: 600,
                   cursor: 'pointer',
                   fontFamily: 'inherit',
-                  border: filterScope === s ? 'none' : '1px solid var(--border)',
-                  background: filterScope === s ? 'var(--accent)' : 'var(--bg)',
-                  color: filterScope === s ? 'var(--on-accent)' : 'var(--text-secondary)',
+                  border: scope === s ? 'none' : '1px solid var(--border)',
+                  background: scope === s ? 'var(--accent)' : 'var(--bg)',
+                  color: scope === s ? 'var(--on-accent)' : 'var(--text-secondary)',
                 }}
               >
                 {s === 'global' ? (
@@ -467,217 +372,226 @@ export default function RankingsTab({
         </div>
       </div>
 
-      {/* Top 3 Podium — proper stepped podium design */}
-      {top3.length >= 3 && (
-        <div style={{ marginBottom: 24, padding: '0 4px' }}>
-          <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'center', gap: 0 }}>
-            {[1, 0, 2].map((pos) => {
-              const p = top3[pos]
-              const isChampion = pos === 0
-              const barH = isChampion ? 100 : pos === 1 ? 72 : 52
-              const avatarSize = isChampion ? 60 : 48
-              const medalSize = isChampion ? 36 : 28
-              const grad = isChampion
-                ? 'linear-gradient(180deg, #fde68a 0%, #fd8f01 60%, #d97706 100%)'
-                : pos === 1
-                  ? 'linear-gradient(180deg, #e5e7eb 0%, #9ca3af 60%, #6b7280 100%)'
-                  : 'linear-gradient(180deg, #fed7aa 0%, #f97316 60%, #c2410c 100%)'
-              const shadow = isChampion
-                ? '0 0 20px rgba(245, 158, 11, 0.3), 0 -4px 12px rgba(245, 158, 11, 0.15)'
-                : pos === 1
-                  ? '0 0 12px rgba(156, 163, 175, 0.2)'
-                  : '0 0 12px rgba(249, 115, 22, 0.2)'
+      {rows.length === 0 ? (
+        <div className="hc-empty hc-reveal">
+          <div className="hc-empty-ic">
+            <svg
+              width={40}
+              height={40}
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth={1.6}
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              aria-hidden="true"
+            >
+              <path d="M4 19h16M4 19 2.5 8l5.5 4L12 4l4 8 5.5-4L20 19" />
+            </svg>
+          </div>
+          <p className="hc-empty-t">No {zoneLabel.toLowerCase()} points yet</p>
+          <p className="hc-empty-s">
+            {scope === 'friends'
+              ? 'Play a match with your connections to start this board.'
+              : scope === 'campus'
+                ? 'Nobody from your campus has finished a match here yet — be the first.'
+                : 'Finish a live room, typing battle or quick-maths battle and your result lands here.'}
+          </p>
+        </div>
+      ) : (
+        <>
+          {/* Top 3 podium */}
+          {top3.length >= 3 && (
+            <div style={{ marginBottom: 24, padding: '0 4px' }}>
+              <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'center', gap: 0 }}>
+                {[1, 0, 2].map((pos) => {
+                  const p = top3[pos]
+                  const isChampion = pos === 0
+                  const barH = isChampion ? 100 : pos === 1 ? 72 : 52
+                  const avatarSize = isChampion ? 60 : 48
+                  const medalSize = isChampion ? 36 : 28
+                  const grad = isChampion
+                    ? 'linear-gradient(180deg, #fde68a 0%, #fd8f01 60%, #d97706 100%)'
+                    : pos === 1
+                      ? 'linear-gradient(180deg, #e5e7eb 0%, #9ca3af 60%, #6b7280 100%)'
+                      : 'linear-gradient(180deg, #fed7aa 0%, #f97316 60%, #c2410c 100%)'
+                  const shadow = isChampion
+                    ? '0 0 20px rgba(245, 158, 11, 0.3), 0 -4px 12px rgba(245, 158, 11, 0.15)'
+                    : pos === 1
+                      ? '0 0 12px rgba(156, 163, 175, 0.2)'
+                      : '0 0 12px rgba(249, 115, 22, 0.2)'
 
-              return (
-                <div
-                  key={p.user_id}
-                  onClick={() => router.push(`/profile/${p.username}`)}
-                  role="link"
-                  tabIndex={0}
-                  onKeyDown={(e) => (e.key === 'Enter' || e.key === ' ') && router.push(`/profile/${p.username}`)}
-                  style={{
-                    flex: 1,
-                    display: 'flex',
-                    flexDirection: 'column',
-                    alignItems: 'center',
-                    cursor: 'pointer',
-                    maxWidth: 140,
-                  }}
-                >
-                  {/* Person info — sits ON TOP of the bar */}
-                  <div style={{ textAlign: 'center', marginBottom: 8, padding: '0 4px' }}>
-                    <Avatar name={p.full_name} avatarUrl={p.avatar_url} size={avatarSize} />
-                    <p
+                  return (
+                    <div
+                      key={p.user_id}
+                      onClick={() => router.push(`/profile/${p.username}`)}
+                      role="link"
+                      tabIndex={0}
+                      onKeyDown={(e) => (e.key === 'Enter' || e.key === ' ') && router.push(`/profile/${p.username}`)}
                       style={{
-                        fontSize: medalSize,
-                        margin: '2px 0',
-                        lineHeight: 1,
+                        flex: 1,
+                        display: 'flex',
+                        flexDirection: 'column',
+                        alignItems: 'center',
+                        cursor: 'pointer',
+                        maxWidth: 140,
                       }}
                     >
-                      <RankGlyph pos={pos} size={medalSize} />
-                    </p>
+                      <div style={{ textAlign: 'center', marginBottom: 8, padding: '0 4px' }}>
+                        <Avatar name={p.display_name} avatarUrl={p.avatar_url} size={avatarSize} />
+                        <p style={{ fontSize: medalSize, margin: '2px 0', lineHeight: 1 }}>
+                          <RankGlyph pos={pos} size={medalSize} />
+                        </p>
+                        <p
+                          style={{
+                            fontSize: isChampion ? 13 : 12,
+                            fontWeight: isChampion ? 700 : 600,
+                            color: 'var(--text-primary)',
+                            margin: '0 0 1px',
+                            overflow: 'hidden',
+                            textOverflow: 'ellipsis',
+                            whiteSpace: 'nowrap',
+                            maxWidth: 110,
+                          }}
+                        >
+                          {p.display_name?.split(' ')[0] || 'Anon'}
+                        </p>
+                        <p
+                          style={{
+                            fontSize: 10,
+                            color: isChampion ? 'var(--accent)' : 'var(--text-muted)',
+                            margin: 0,
+                            fontWeight: isChampion ? 600 : 400,
+                          }}
+                        >
+                          @{p.username}
+                        </p>
+                        <p
+                          style={{
+                            fontSize: isChampion ? 15 : 13,
+                            fontWeight: 800,
+                            color: 'var(--accent-text)',
+                            margin: '3px 0 0',
+                          }}
+                        >
+                          <BoltGlyph /> {p.points.toLocaleString()}
+                        </p>
+                        <p style={{ fontSize: 9.5, color: 'var(--text-muted)', margin: 0 }}>
+                          {p.wins}W · {p.played} played
+                        </p>
+                      </div>
+
+                      <div
+                        style={{
+                          width: '100%',
+                          height: barH,
+                          background: grad,
+                          borderRadius: isChampion ? '12px 12px 4px 4px' : '8px 8px 4px 4px',
+                          boxShadow: shadow,
+                          position: 'relative',
+                          overflow: 'hidden',
+                        }}
+                      >
+                        <div
+                          style={{
+                            position: 'absolute',
+                            top: 0,
+                            left: 0,
+                            right: 0,
+                            height: '40%',
+                            background: 'linear-gradient(180deg, rgba(255,255,255,0.25) 0%, transparent 100%)',
+                            borderRadius: 'inherit',
+                          }}
+                        />
+                        <div
+                          style={{
+                            position: 'absolute',
+                            bottom: 8,
+                            left: '50%',
+                            transform: 'translateX(-50%)',
+                            fontSize: isChampion ? 22 : 18,
+                            fontWeight: 900,
+                            color: 'rgba(0,0,0,0.25)',
+                            letterSpacing: '-0.02em',
+                          }}
+                        >
+                          {pos === 0 ? '#1' : pos === 1 ? '#2' : '#3'}
+                        </div>
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+            </div>
+          )}
+
+          {/* Rows */}
+          <div className="hc-grid hc-grid--list" style={{ gap: 6 }} role="list" aria-label="Leaderboard">
+            {rest.map((entry) => {
+              const isMe = user && entry.user_id === user.id
+              return (
+                <div
+                  key={entry.user_id}
+                  role="listitem"
+                  onClick={() => router.push(`/profile/${entry.username}`)}
+                  className="hc-card hc-card--link"
+                  style={{
+                    flexDirection: 'row',
+                    background: isMe ? 'var(--accent-light)' : 'var(--bg)',
+                    border: isMe ? '2px solid var(--accent)' : '1px solid var(--border)',
+                    borderRadius: 12,
+                    padding: '12px 14px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 10,
+                    cursor: 'pointer',
+                    boxShadow: 'var(--shadow-sm)',
+                  }}
+                >
+                  <div style={{ width: 28, textAlign: 'center', flexShrink: 0 }}>
+                    <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--text-muted)' }}>{entry.rank}</span>
+                  </div>
+                  <Avatar name={entry.display_name} avatarUrl={entry.avatar_url} size={36} />
+                  <div style={{ flex: 1, minWidth: 0 }}>
                     <p
                       style={{
-                        fontSize: isChampion ? 13 : 12,
-                        fontWeight: isChampion ? 700 : 600,
+                        fontSize: 13,
+                        fontWeight: 600,
                         color: 'var(--text-primary)',
-                        margin: '0 0 1px',
+                        margin: 0,
                         overflow: 'hidden',
                         textOverflow: 'ellipsis',
                         whiteSpace: 'nowrap',
-                        maxWidth: 110,
                       }}
                     >
-                      {p.full_name?.split(' ')[0] || 'Anon'}
-                    </p>
-                    <p
-                      style={{
-                        fontSize: 10,
-                        color: isChampion ? 'var(--accent)' : 'var(--text-muted)',
-                        margin: 0,
-                        fontWeight: isChampion ? 600 : 400,
-                      }}
-                    >
-                      @{p.username}
-                    </p>
-                    <p
-                      style={{
-                        fontSize: isChampion ? 15 : 13,
-                        fontWeight: 800,
-                        color: 'var(--accent-text)',
-                        margin: '3px 0 0',
-                      }}
-                    >
-                      {sortBy === 'aura' ? (
-                        <>
-                          <BoltGlyph /> {p.aura_points}
-                        </>
-                      ) : (
-                        <>
-                          <StarGlyph /> {p.karma_points}
-                        </>
+                      {entry.display_name || 'Anonymous'}
+                      {isMe && (
+                        <span style={{ fontSize: 10, color: 'var(--accent)', marginLeft: 6, fontWeight: 700 }}>
+                          (you)
+                        </span>
                       )}
                     </p>
+                    <p style={{ fontSize: 11, color: 'var(--text-muted)', margin: 0 }}>
+                      @{entry.username}
+                      {entry.department ? ` · ${entry.department}` : ''} · {entry.wins}W · {entry.played} played ·{' '}
+                      {entry.accuracy}%
+                    </p>
                   </div>
-
-                  {/* Podium bar — the stepped platform */}
-                  <div
-                    style={{
-                      width: '100%',
-                      height: barH,
-                      background: grad,
-                      borderRadius: isChampion ? '12px 12px 4px 4px' : '8px 8px 4px 4px',
-                      boxShadow: shadow,
-                      position: 'relative',
-                      overflow: 'hidden',
-                    }}
-                  >
-                    {/* Shine effect on the bar */}
-                    <div
-                      style={{
-                        position: 'absolute',
-                        top: 0,
-                        left: 0,
-                        right: 0,
-                        height: '40%',
-                        background: 'linear-gradient(180deg, rgba(255,255,255,0.25) 0%, transparent 100%)',
-                        borderRadius: 'inherit',
-                      }}
-                    />
-                    {/* Rank number on the bar */}
-                    <div
-                      style={{
-                        position: 'absolute',
-                        bottom: 8,
-                        left: '50%',
-                        transform: 'translateX(-50%)',
-                        fontSize: isChampion ? 22 : 18,
-                        fontWeight: 900,
-                        color: 'rgba(0,0,0,0.25)',
-                        letterSpacing: '-0.02em',
-                      }}
-                    >
-                      {pos === 0 ? '#1' : pos === 1 ? '#2' : '#3'}
-                    </div>
-                  </div>
+                  <p style={{ fontSize: 15, fontWeight: 800, color: 'var(--accent-text)', margin: 0, flexShrink: 0 }}>
+                    <BoltGlyph /> {entry.points.toLocaleString()}
+                  </p>
                 </div>
               )
             })}
           </div>
-        </div>
+        </>
       )}
 
-      {/* Leaderboard Rows */}
-      <div className="hc-grid hc-grid--list" style={{ gap: 6 }} role="list" aria-label="Leaderboard">
-        {rest.map((entry, idx) => {
-          const rank = idx + 4
-          const isMe = user && entry.user_id === user.id
-          return (
-            <div
-              key={entry.user_id}
-              role="listitem"
-              onClick={() => router.push(`/profile/${entry.username}`)}
-              className="hc-card hc-card--link"
-              style={{
-                flexDirection: 'row',
-                background: isMe ? 'var(--accent-light)' : 'var(--bg)',
-                border: isMe ? '2px solid var(--accent)' : '1px solid var(--border)',
-                borderRadius: 12,
-                padding: '12px 14px',
-                display: 'flex',
-                alignItems: 'center',
-                gap: 10,
-                cursor: 'pointer',
-                boxShadow: 'var(--shadow-sm)',
-              }}
-            >
-              <div style={{ width: 28, textAlign: 'center', flexShrink: 0 }}>
-                <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--text-muted)' }}>{rank}</span>
-              </div>
-              <Avatar name={entry.full_name} avatarUrl={entry.avatar_url} size={36} />
-              <div style={{ flex: 1, minWidth: 0 }}>
-                <p
-                  style={{
-                    fontSize: 13,
-                    fontWeight: 600,
-                    color: 'var(--text-primary)',
-                    margin: 0,
-                    overflow: 'hidden',
-                    textOverflow: 'ellipsis',
-                    whiteSpace: 'nowrap',
-                  }}
-                >
-                  {entry.full_name || 'Anonymous'}
-                  {isMe && (
-                    <span style={{ fontSize: 10, color: 'var(--accent)', marginLeft: 6, fontWeight: 700 }}>(you)</span>
-                  )}
-                </p>
-                <p style={{ fontSize: 11, color: 'var(--text-muted)', margin: 0 }}>
-                  @{entry.username}
-                  {entry.department ? ` · ${entry.department}` : ''}
-                </p>
-              </div>
-              <div style={{ display: 'flex', alignItems: 'baseline', gap: 12, flexShrink: 0 }}>
-                <p style={{ fontSize: 15, fontWeight: 800, color: 'var(--accent-text)', margin: 0 }}>
-                  <BoltGlyph /> {entry.aura_points}
-                </p>
-                <p
-                  className="hide-mobile-soft"
-                  style={{ fontSize: 12, fontWeight: 600, color: 'var(--yellow-text)', margin: 0 }}
-                >
-                  <StarGlyph /> {entry.karma_points}
-                </p>
-              </div>
-            </div>
-          )
-        })}
-      </div>
-
-      {!loading && filterScope === 'global' && totalRanked > sorted.length && sorted.length > 0 && (
-        <p style={{ textAlign: 'center', fontSize: 11.5, color: 'var(--text-muted)', marginTop: 14 }}>
-          Top {sorted.length} of {totalRanked} ranked students
-        </p>
-      )}
+      <p className="hc-note" style={{ marginTop: 14 }}>
+        Points come from finished matches only: <strong>100 × mode × (0.6 × accuracy + 0.4 × 1/place)</strong>. Live
+        battle and typing are ×1.0, quick maths ×0.9 — so a perfect live win is 100, a second place is 70 and a maths
+        win is 90. Profile karma, aura, GitHub and LeetCode stats are never read here.
+      </p>
 
       {!user && (
         <div
@@ -685,7 +599,7 @@ export default function RankingsTab({
           style={{ textAlign: 'center', alignItems: 'center', marginTop: 20, padding: 16 }}
         >
           <p className="hc-title">Join the competition!</p>
-          <p className="hc-sub">Sign up to earn Aura and climb the rankings.</p>
+          <p className="hc-sub">Sign up, finish a match and climb the rankings.</p>
           <button className="hc-btn hc-btn--primary" onClick={() => router.push('/auth/login')}>
             Get started
           </button>
