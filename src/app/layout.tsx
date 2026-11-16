@@ -135,9 +135,9 @@ export const metadata: Metadata = {
     creator: '@connecttocampus',
   },
   icons: {
-    // Tab icon: the transparent "CTC" mark. The PNG/app icons stay as they
-    // are — a home-screen icon needs a solid plate, a tab icon must not have
-    // one.
+    // Tab icon: the CTC monogram, transparent, with the "C" inked per scheme
+    // (see the media-qualified links in <head>). The PNG/app icons stay as
+    // they are — a home-screen icon still needs its own solid plate.
     icon: [
       { url: '/favicon.ico', sizes: '16x16 32x32 48x48' },
       { url: '/favicon-ctc.png', sizes: '64x64', type: 'image/png' },
@@ -310,9 +310,19 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(appJsonLd) }} />
 
-        {/* Favicons & App Icons */}
+        {/* Favicons & App Icons (CTC monogram)
+            The mark is transparent, so its "C" needs an ink that survives the
+            chrome behind it: brand ink on a light tab bar, white on a dark one.
+            Browsers that ignore `media` on icons fall back to the .ico. */}
         <link rel="shortcut icon" href="/favicon.ico" />
-        <link rel="icon" href="/favicon-ctc.png" type="image/png" sizes="64x64" />
+        <link rel="icon" href="/favicon-ctc.png" type="image/png" sizes="64x64" media="(prefers-color-scheme: light)" />
+        <link
+          rel="icon"
+          href="/favicon-ctc-dark.png"
+          type="image/png"
+          sizes="64x64"
+          media="(prefers-color-scheme: dark)"
+        />
         <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
         <link rel="manifest" href="/manifest.webmanifest" />
         {/* theme-color is emitted by the `viewport` export above (light/dark
