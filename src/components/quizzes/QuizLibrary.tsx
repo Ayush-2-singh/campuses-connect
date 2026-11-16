@@ -146,7 +146,7 @@ export default function QuizLibrary({ user }: { user: { id: string; email?: stri
         setError('Could not create that quiz.')
         return
       }
-      router.push(`/quizzes/${result.quiz_id}`)
+      router.push(`/compete/quizzes/${result.quiz_id}`)
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Could not create that quiz.')
     } finally {
@@ -195,11 +195,11 @@ export default function QuizLibrary({ user }: { user: { id: string; email?: stri
 
       {!user && (
         <p style={{ fontSize: 14, color: 'var(--text-muted)' }}>
-          <Link href="/auth/login?redirect=/quizzes">Sign in</Link> to create quizzes and track your attempts.
+          <Link href="/auth/login?redirect=/compete/quizzes">Sign in</Link> to create quizzes and track your attempts.
         </p>
       )}
 
-      {aiOpen && user && <AiQuizWizard onDone={(quizId) => router.push(`/quizzes/${quizId}`)} />}
+      {aiOpen && user && <AiQuizWizard onDone={(quizId) => router.push(`/compete/quizzes/${quizId}`)} />}
 
       {creating && user && (
         <section style={{ ...card, gap: 12 }}>
@@ -309,7 +309,7 @@ export default function QuizLibrary({ user }: { user: { id: string; email?: stri
           {shown.map((quiz) => (
             <Link
               key={quiz.id}
-              href={`/quizzes/${quiz.id}`}
+              href={`/compete/quizzes/${quiz.id}`}
               style={{ ...card, textDecoration: 'none', color: 'inherit' }}
             >
               <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>

@@ -72,6 +72,17 @@ const nextConfig: NextConfig = {
   // Compress responses
   compress: true,
 
+  // The quiz library moved under Compete — it is one of that section's
+  // playable surfaces, not a top-level destination. Bookmarks, shared links
+  // and the live-battle hub still point at /quizzes, so those URLs redirect
+  // permanently instead of 404ing.
+  async redirects() {
+    return [
+      { source: '/quizzes', destination: '/compete/quizzes', permanent: true },
+      { source: '/quizzes/:id', destination: '/compete/quizzes/:id', permanent: true },
+    ]
+  },
+
   // Optimize images
   images: {
     formats: ['image/avif', 'image/webp'],

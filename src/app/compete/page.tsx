@@ -11,11 +11,10 @@ import { Icon } from '@/components/icons'
 import RankingsTab from './RankingsTab'
 import ContributorsTab from './ContributorsTab'
 import ChallengeTab from './ChallengeTab'
-import ClashTab from './ClashTab'
 import GamesTab from './GamesTab'
 import type { Tab, Problem, Submission, SeasonInfo } from './types'
 
-const TABS: { key: Tab; label: string; icon: string; d: string }[] = [
+const TABS: { key: Tab | 'quizzes'; label: string; icon: string; d: string; href?: string }[] = [
   { key: 'rankings', label: 'Rankings', icon: 'trophy', d: 'M4 19h16M4 19 2.5 8l5.5 4L12 4l4 8 5.5-4L20 19' },
   {
     key: 'contributors',
@@ -24,11 +23,17 @@ const TABS: { key: Tab; label: string; icon: string; d: string }[] = [
     d: 'M12 20h9M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z',
   },
   { key: 'challenge', label: 'Daily Challenge', icon: 'code', d: 'm16 18 6-6-6-6M8 6l-6 6 6 6' },
+  // Quizzes takes the slot Campus Clash used to occupy: the quiz library is
+  // where the section's question content lives, so it belongs in the tab row
+  // rather than in its own top-level destination. The tab opens the library's
+  // own route under this section (/compete/quizzes) — one implementation of
+  // the library, not a second copy inside this page.
   {
-    key: 'clash',
-    label: 'Campus Clash',
-    icon: 'gamepad',
-    d: 'M6 12h4M8 10v4M15 11h.01M18 13h.01M17.32 5H6.68a4 4 0 0 0-3.978 3.59c-.006.052-.01.101-.017.152C2.604 9.416 2 14.456 2 16a3 3 0 0 0 3 3c1 0 1.5-.5 2-1l1.414-1.414A2 2 0 0 1 9.828 16h4.344a2 2 0 0 1 1.414.586L17 18c.5.5 1 1 2 1a3 3 0 0 0 3-3c0-1.544-.604-6.584-.685-7.258a4 4 0 0 0-3.995-3.742Z',
+    key: 'quizzes',
+    label: 'Quizzes',
+    icon: 'notebook',
+    d: 'M4 19.5V6a2 2 0 0 1 2-2h13v16H6a2 2 0 0 0-2 2Z',
+    href: '/compete/quizzes',
   },
   // Typing Battle and Quick Math, played here rather than on the retired
   // /games routes. Same components the voice rooms use for in-call games.
@@ -41,8 +46,6 @@ const TAB_FROM_URL: Record<string, Tab> = {
   creators: 'contributors',
   daily: 'challenge',
   'daily-challenge': 'challenge',
-  clash: 'clash',
-  'campus-clash': 'clash',
   games: 'games',
 }
 
@@ -50,7 +53,6 @@ const TAB_URL: Record<Tab, string> = {
   rankings: 'rankings',
   contributors: 'contributors',
   challenge: 'daily',
-  clash: 'clash',
   games: 'games',
 }
 
@@ -74,9 +76,16 @@ function CompetePageInner() {
    */
   useEffect(() => {
     const urlTab = new URLSearchParams(window.location.search).get('tab') || ''
+    // Quizzes is a route, not a panel. `?tab=clash` is the URL shape that used
+    // to open the Campus Clash panel in this slot; those links now land on the
+    // quiz library instead of falling through to Rankings.
+    if (urlTab === 'quizzes' || urlTab === 'clash' || urlTab === 'campus-clash') {
+      router.replace('/compete/quizzes')
+      return
+    }
     const fromUrl = TAB_FROM_URL[urlTab]
     if (fromUrl && fromUrl !== 'rankings') setTab(fromUrl)
-  }, [])
+  }, [router])
 
   // challenge state
   const [daily, setDaily] = useState<Problem | null>(null)
@@ -89,18 +98,6 @@ function CompetePageInner() {
   const [error, setError] = useState<string | null>(null)
   const [karma, setKarma] = useState<{ lifetime: number; aura: number; daily: number; season: string } | null>(null)
   const [season, setSeason] = useState<SeasonInfo | null>(null)
-
-  // clash state
-  const [contest, setContest] = useState<any>(null)
-  const [registered, setRegistered] = useState(false)
-  const [now, setNow] = useState(Date.now())
-
-  // Countdown timer — only runs when clash tab is active
-  useEffect(() => {
-    if (tab !== 'clash' || !contest) return
-    const t = setInterval(() => setNow(Date.now()), 1000)
-    return () => clearInterval(t)
-  }, [tab, contest])
 
   const changeTab = useCallback(
     (t: Tab) => {
@@ -116,7 +113,7 @@ function CompetePageInner() {
     const load = async () => {
       try {
         // Fire auth + all data queries SIMULTANEOUSLY
-        const [authRes, seasonRes, dcRes, problemsRes, , contestsRes] = await Promise.all([
+        const [authRes, seasonRes, dcRes, problemsRes] = await Promise.all([
           supabase.auth.getUser(),
           supabase
             .from('seasons')
@@ -135,7 +132,6 @@ function CompetePageInner() {
             .order('difficulty'),
           // We'll load submissions after auth
           Promise.resolve({ data: null }),
-          supabase.from('contests').select('*').order('starts_at', { ascending: true }).limit(5),
         ])
 
         if (cancelled) return
@@ -179,19 +175,6 @@ function CompetePageInner() {
 
         const sum = rest[0]?.data
         if (sum && sum[0]) setKarma(sum[0])
-
-        // Contest
-        const next = (contestsRes.data || []).find((c: any) => new Date(c.ends_at).getTime() > Date.now())
-        if (next) {
-          setContest(next)
-          const { data: regs } = await supabase
-            .from('contest_registrations')
-            .select('user_id')
-            .eq('contest_id', next.id)
-            .eq('user_id', user.id)
-            .maybeSingle()
-          if (!cancelled) setRegistered(!!regs)
-        }
       } catch {
         /* empty state */
       }
@@ -231,24 +214,6 @@ function CompetePageInner() {
     }
   }
 
-  const register = async () => {
-    if (!user) {
-      router.push('/auth/login?redirect=/compete?tab=clash')
-      return
-    }
-    if (!contest) return
-    try {
-      const { error: regErr } = await supabase
-        .from('contest_registrations')
-        .insert({ contest_id: contest.id, user_id: user.id })
-      if (regErr) throw regErr
-      setRegistered(true)
-    } catch {
-      // duplicate registration is fine — treat as registered
-      setRegistered(true)
-    }
-  }
-
   const selectProblem = (p: Problem) => {
     setDaily(p)
     setCode(p.starter_code?.[lang] || '')
@@ -271,7 +236,7 @@ function CompetePageInner() {
               <h1 className="ss-title">
                 Rank. Play. Win. <em className="hc-em">Earn aura.</em>
               </h1>
-              <p className="ss-sub">Timed DSA practice, campus clashes and leaderboards — scored on the server.</p>
+              <p className="ss-sub">Timed DSA practice, quizzes and leaderboards — scored on the server.</p>
             </div>
             <div className="ss-actions">
               <button className="hc-btn hc-btn--primary" type="button" onClick={() => router.push('/compete/live')}>
@@ -282,27 +247,19 @@ function CompetePageInner() {
               </button>
             </div>
             <span className="ss-spacer" />
-            {(contest || problems.length > 0) && (
+            {problems.length > 0 && (
               <div className="ss-stats">
-                {contest && (
-                  <span className="ss-stat">
-                    <span className="ss-stat-v">{registered ? 'In' : 'Open'}</span>
-                    <span className="ss-stat-l">Clash</span>
-                  </span>
-                )}
-                {problems.length > 0 && (
-                  <span className="ss-stat">
-                    <span className="ss-stat-v">{problems.length}</span>
-                    <span className="ss-stat-l">Problems</span>
-                  </span>
-                )}
+                <span className="ss-stat">
+                  <span className="ss-stat-v">{problems.length}</span>
+                  <span className="ss-stat-l">Problems</span>
+                </span>
               </div>
             )}
           </div>
 
           {/* Crawlable intro + real <a> links. This is the content a search
               result can quote, and the links are how the crawler reaches the
-              clash, games and Live Battle surfaces from /compete. */}
+              quiz library, games and Live Battle surfaces from /compete. */}
           <p
             style={{
               fontSize: 14,
@@ -312,9 +269,10 @@ function CompetePageInner() {
               textAlign: 'left',
             }}
           >
-            Compete is the practice side of ConnectToCampus: a daily DSA challenge scored on the server,
-            campus-vs-campus clashes, a contributor board for interview write-ups, and typing and quick-maths battles
-            for a break. Every submission is timed and graded server-side, so a score means the same thing for everyone.
+            Compete is the practice side of ConnectToCampus: a daily DSA challenge scored on the server, a quiz library
+            you can practise solo or run live with your campus, a contributor board for interview write-ups, and typing
+            and quick-maths battles for a break. Every submission is timed and graded server-side, so a score means the
+            same thing for everyone.
           </p>
           <div
             style={{
@@ -328,7 +286,7 @@ function CompetePageInner() {
           >
             {[
               { href: '/compete?tab=daily', label: 'Daily DSA challenge' },
-              { href: '/compete?tab=clash', label: 'Campus clash' },
+              { href: '/compete/quizzes', label: 'Quiz library' },
               { href: '/compete?tab=games', label: 'Typing & maths battles' },
               { href: '/compete/live', label: 'Host a live quiz' },
               { href: '/leaderboard', label: 'Leaderboard' },
@@ -360,7 +318,7 @@ function CompetePageInner() {
             {TABS.map((t) => (
               <button
                 key={t.key}
-                onClick={() => changeTab(t.key)}
+                onClick={() => (t.href ? router.push(t.href) : changeTab(t.key as Tab))}
                 role="tab"
                 aria-selected={tab === t.key}
                 style={{
@@ -414,9 +372,6 @@ function CompetePageInner() {
                   onSubmit={submit}
                   onSelectProblem={selectProblem}
                 />
-              )}
-              {tab === 'clash' && (
-                <ClashTab contest={contest} registered={registered} now={now} onRegister={register} />
               )}
               {tab === 'games' && <GamesTab />}
             </>

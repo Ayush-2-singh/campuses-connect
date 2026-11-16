@@ -137,7 +137,7 @@ export default function QuizDetail({ quizId, user }: { quizId: string; user: { i
         setError('Could not copy that quiz.')
         return
       }
-      router.push(`/quizzes/${result.quiz_id}`)
+      router.push(`/compete/quizzes/${result.quiz_id}`)
     })
 
   const remove = () =>
@@ -148,7 +148,7 @@ export default function QuizDetail({ quizId, user }: { quizId: string; user: { i
         setNotice('This quiz has been played, so it was archived instead of deleted.')
         return
       }
-      router.push('/quizzes')
+      router.push('/compete/quizzes')
     })
 
   const openAdd = async () => {
@@ -197,7 +197,7 @@ export default function QuizDetail({ quizId, user }: { quizId: string; user: { i
         <p role="alert" style={{ color: '#b91c1c' }}>
           {error || 'That quiz is not available.'}
         </p>
-        <Link href="/quizzes">← Back to quizzes</Link>
+        <Link href="/compete/quizzes">← Back to quizzes</Link>
       </div>
     )
   }
@@ -208,7 +208,7 @@ export default function QuizDetail({ quizId, user }: { quizId: string; user: { i
 
   return (
     <div style={{ display: 'grid', gap: 16, padding: '0 16px 40px', maxWidth: 900, margin: '0 auto' }}>
-      <Link href="/quizzes" style={{ fontSize: 13, color: 'var(--text-muted)', textDecoration: 'none' }}>
+      <Link href="/compete/quizzes" style={{ fontSize: 13, color: 'var(--text-muted)', textDecoration: 'none' }}>
         ← All quizzes
       </Link>
 

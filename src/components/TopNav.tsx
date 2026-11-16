@@ -36,8 +36,20 @@ type NavEntry = { label: string; href: string; icon: string; items?: NavLeaf[] }
 const NAV: NavEntry[] = [
   { label: 'Rooms', href: '/live-voice-chat', icon: 'mic' },
   { label: 'Experiences', href: '/experiences', icon: 'pencil' },
-  { label: 'Compete', href: '/compete', icon: 'zap' },
-  { label: 'Quizzes', href: '/quizzes', icon: 'notebook' },
+  // Quizzes belongs to Compete: the section owns every playable surface
+  // (rankings, daily challenge, quizzes, games), so the library lives at
+  // /compete/quizzes — a child route, not a sixth top-level destination.
+  {
+    label: 'Compete',
+    href: '/compete',
+    icon: 'zap',
+    items: [
+      { label: 'Quizzes', href: '/compete/quizzes', icon: 'notebook' },
+      { label: 'Daily Challenge', href: '/compete?tab=daily', icon: 'code' },
+      { label: 'Live Battle', href: '/compete/live', icon: 'gamepad' },
+      { label: 'Rankings', href: '/compete?tab=rankings', icon: 'trophy' },
+    ],
+  },
   // The student Library (notes / PYQs / study material). Same destination as
   // the phone's "+" sheet entry — the sheet is the only way in on mobile.
   { label: 'Library', href: '/notes', icon: 'book' },
