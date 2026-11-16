@@ -19,8 +19,9 @@ import { Icon } from '@/components/icons'
 
 const TypingBattle = dynamic(() => import('@/components/games/TypingBattle'), { ssr: false })
 const QuickMath = dynamic(() => import('@/components/games/QuickMath'), { ssr: false })
+const CodeSprint = dynamic(() => import('@/components/games/CodeSprint'), { ssr: false })
 
-type GameKey = 'typing' | 'math'
+type GameKey = 'typing' | 'math' | 'code'
 
 const GAMES: {
   key: GameKey
@@ -42,6 +43,13 @@ const GAMES: {
     desc: 'Solve faster, beat the clock. Pick a difficulty, then duel a classmate round by round.',
     icon: 'zap',
     chips: ['Easy', 'Medium', 'Hard'],
+  },
+  {
+    key: 'code',
+    title: 'Code Sprint 60',
+    desc: 'One minute, real code. Same snippets for everyone today, scored on net WPM — punctuation and symbols included.',
+    icon: 'code',
+    chips: ['60 seconds', 'Net WPM', 'Daily board'],
   },
 ]
 
@@ -99,7 +107,13 @@ export default function GamesTab() {
           </button>
         </div>
 
-        {game === 'typing' ? <TypingBattle initialRoomCode={mountCode} /> : <QuickMath initialRoomCode={mountCode} />}
+        {game === 'typing' ? (
+          <TypingBattle initialRoomCode={mountCode} />
+        ) : game === 'math' ? (
+          <QuickMath initialRoomCode={mountCode} />
+        ) : (
+          <CodeSprint />
+        )}
       </div>
     )
   }
@@ -111,7 +125,7 @@ export default function GamesTab() {
           Play with your batch
         </h3>
         <p style={{ fontSize: 13, color: 'var(--text-muted)', margin: 0 }}>
-          Two quick games, no account needed. Share a room code to play together.
+          Typing, maths and 60-second code sprints — no account needed. Share a room code to play together.
         </p>
       </div>
 
@@ -232,24 +246,26 @@ export default function GamesTab() {
               >
                 Play
               </button>
-              <button
-                onClick={() => start(g.key, roomCode)}
-                disabled={roomCode.length !== 6}
-                style={{
-                  flex: 1,
-                  background: 'var(--bg)',
-                  color: roomCode.length === 6 ? 'var(--text-primary)' : 'var(--text-muted)',
-                  border: '1px solid var(--border)',
-                  borderRadius: 10,
-                  padding: '11px 14px',
-                  fontSize: 13.5,
-                  fontWeight: 600,
-                  cursor: roomCode.length === 6 ? 'pointer' : 'default',
-                  fontFamily: 'inherit',
-                }}
-              >
-                Join room
-              </button>
+              {g.key !== 'code' && (
+                <button
+                  onClick={() => start(g.key, roomCode)}
+                  disabled={roomCode.length !== 6}
+                  style={{
+                    flex: 1,
+                    background: 'var(--bg)',
+                    color: roomCode.length === 6 ? 'var(--text-primary)' : 'var(--text-muted)',
+                    border: '1px solid var(--border)',
+                    borderRadius: 10,
+                    padding: '11px 14px',
+                    fontSize: 13.5,
+                    fontWeight: 600,
+                    cursor: roomCode.length === 6 ? 'pointer' : 'default',
+                    fontFamily: 'inherit',
+                  }}
+                >
+                  Join room
+                </button>
+              )}
             </div>
           </div>
         ))}
