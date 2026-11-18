@@ -17,6 +17,7 @@ import { createClient } from '@/lib/supabase/client'
 import { Icon } from '@/components/icons'
 import { playLiveSfx, startMatchMusic, stopMatchMusic, unlockLiveAudio, useLiveAudio } from '@/lib/liveQuizAudio'
 import AudioToggle from './AudioToggle'
+import { parseImportFile, toBankRows, validRows, type ImportPreview } from '@/lib/liveBattle/questionImport'
 
 type Room = {
   ok: boolean
@@ -96,6 +97,12 @@ export default function HostPanel({ competitionId }: { competitionId: string }) 
   const [distribution, setDistribution] = useState<{ position: number; count: number }[]>([])
   const [answeredCount, setAnsweredCount] = useState(0)
   const [lockBusy, setLockBusy] = useState(false)
+
+  // Question set swap — only meaningful before the first question opens.
+  const [swapPreview, setSwapPreview] = useState<ImportPreview | null>(null)
+  const [swapFileName, setSwapFileName] = useState('')
+  const [swapBusy, setSwapBusy] = useState<'import' | 'swap' | null>(null)
+  const swapFileRef = useRef<HTMLInputElement | null>(null)
 
   const refresh = useCallback(async () => {
     const [roomRes, questionRes, boardRes, rosterRes] = await Promise.all([
@@ -220,6 +227,89 @@ export default function HostPanel({ competitionId }: { competitionId: string }) 
     stopMatchMusic()
     playLiveSfx('podium')
   }, [room?.status])
+
+  /** Write parsed rows into the bank in chunks; returns the new ids in file order. */
+  const importRows = async (rows: ReturnType<typeof validRows>) => {
+    const { data: authData } = await supabase.auth.getUser()
+    const uid = authData.user?.id
+    if (!uid) throw new Error('You need to be signed in to import questions.')
+
+    const CHUNK = 20
+    const ids: string[] = []
+    for (let i = 0; i < rows.length; i += CHUNK) {
+      const chunk = rows.slice(i, i + CHUNK)
+      const payloads = chunk.map((r) => toBankRows(r.draft, uid))
+      const { data, error: insErr } = await supabase
+        .from('question_bank')
+        .insert(payloads.map((p) => p.question))
+        .select('id')
+      if (insErr) throw insErr
+      const chunkIds = (data ?? []).map((d: { id: string }) => d.id)
+      if (chunkIds.length !== chunk.length) {
+        throw new Error('The import stopped early — check your bank before running it again.')
+      }
+      const optionRows = payloads.flatMap((p, idx) => p.options.map((o) => ({ ...o, question_id: chunkIds[idx] })))
+      const { error: optErr } = await supabase.from('question_bank_options').insert(optionRows)
+      if (optErr) throw optErr
+      ids.push(...chunkIds)
+    }
+    return ids
+  }
+
+  const onSwapFile = async (file: File | null) => {
+    if (!file) return
+    setError('')
+    setSwapFileName(file.name)
+    if (file.size > 2 * 1024 * 1024) {
+      setSwapPreview({ rows: [], fileError: 'That file is larger than 2 MB. Split it into smaller files.' })
+      return
+    }
+    setSwapPreview(parseImportFile(file.name, await file.text()))
+  }
+
+  const clearSwap = () => {
+    setSwapPreview(null)
+    setSwapFileName('')
+    if (swapFileRef.current) swapFileRef.current.value = ''
+  }
+
+  /**
+   * Import the valid rows, then either swap them into this room or only add
+   * them to the bank. The swap RPC refuses once the quiz has started, so the
+   * UI state is a convenience, not the guard.
+   */
+  const runSwap = async (mode: 'import' | 'swap') => {
+    if (!swapPreview) return
+    const rows = validRows(swapPreview)
+    if (rows.length === 0) return
+    setSwapBusy(mode)
+    setError('')
+    try {
+      const ids = await importRows(rows)
+      if (mode === 'swap') {
+        const { data, error: rpcError } = await supabase.rpc('live_quiz_replace_questions', {
+          p_competition_id: competitionId,
+          p_question_ids: ids,
+        })
+        if (rpcError) throw rpcError
+        const result = data as { ok: boolean; error?: string; question_count?: number } | null
+        if (!result?.ok) {
+          setError(
+            result?.error === 'already_started'
+              ? 'This room has already started — its question set can no longer be replaced.'
+              : 'Could not replace the questions in this room.'
+          )
+          return
+        }
+      }
+      clearSwap()
+      await refresh()
+    } catch (err: any) {
+      setError(err?.message || 'Import failed.')
+    } finally {
+      setSwapBusy(null)
+    }
+  }
 
   const act = async (action: Action) => {
     if (busy) return
@@ -349,6 +439,10 @@ export default function HostPanel({ competitionId }: { competitionId: string }) 
   // stale `status` can never hide the result from the host.
   const finished = room.status === 'completed' || (room.status !== 'cancelled' && Boolean(room.ended_at))
 
+  const swapRows = swapPreview ? validRows(swapPreview) : []
+  const swapValid = swapRows.length
+  const swapInvalid = swapPreview ? swapPreview.rows.length - swapValid : 0
+
   return (
     <div className="hc-page" style={{ paddingBottom: 90 }}>
       <div className="hc-page-head hc-reveal">
@@ -410,6 +504,101 @@ export default function HostPanel({ competitionId }: { competitionId: string }) 
         <p className="hc-note" style={{ margin: 0 }}>
           Announce the code on your stream — students open connecttocampus.com/live/{room.room_code}.
         </p>
+      </section>
+
+      {/* Question set — the room keeps its code; the snapshot can be replaced
+          only while nothing has been played. */}
+      <section className="hc-card hc-reveal" aria-label="Question set" style={{ marginBottom: 14 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+          <Icon name="notebook" size={16} />
+          <strong style={{ fontSize: 14 }}>Question set</strong>
+          <span className="hc-spacer" />
+          <span className="hc-tag">{room.question_count} questions</span>
+        </div>
+
+        {!canStart ? (
+          <p className="hc-note" style={{ margin: 0 }}>
+            {isOver
+              ? 'This room is over — its questions stay exactly as they were played.'
+              : 'The set is frozen once the quiz starts, so a scored room keeps the questions it scored.'}
+          </p>
+        ) : (
+          <>
+            <p className="hc-note" style={{ margin: 0 }}>
+              Import a CSV/JSON to replace every question in this room before you press start. The room code and the
+              people already waiting stay as they are, and the new rows also land in your bank.
+            </p>
+            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+              <button className="hc-btn" type="button" onClick={() => swapFileRef.current?.click()}>
+                <Icon name="plus" size={14} /> Choose CSV / JSON
+              </button>
+              <input
+                ref={swapFileRef}
+                type="file"
+                accept=".csv,.json,text/csv,application/json"
+                onChange={(e) => onSwapFile(e.target.files?.[0] ?? null)}
+                style={{ display: 'none' }}
+              />
+            </div>
+
+            {swapPreview && (
+              <div
+                style={{
+                  border: '1px solid var(--border)',
+                  borderRadius: 10,
+                  padding: '10px 12px',
+                  background: 'var(--bg-secondary)',
+                  display: 'grid',
+                  gap: 8,
+                }}
+              >
+                <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
+                  <strong style={{ fontSize: 13, minWidth: 0, overflowWrap: 'anywhere' }}>{swapFileName}</strong>
+                  <span className="hc-spacer" />
+                  {swapValid > 0 && <span className="hc-tag hc-tag--success">{swapValid} ready</span>}
+                  {swapInvalid > 0 && <span className="hc-tag hc-tag--danger">{swapInvalid} skipped</span>}
+                </div>
+
+                {swapPreview.fileError ? (
+                  <p className="hc-alert" style={{ margin: 0 }}>
+                    {swapPreview.fileError}
+                  </p>
+                ) : (
+                  <>
+                    <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                      <button
+                        className="hc-btn hc-btn--primary"
+                        type="button"
+                        onClick={() => runSwap('swap')}
+                        disabled={swapValid === 0 || Boolean(swapBusy)}
+                      >
+                        <Icon name="zap" size={14} />
+                        {swapBusy === 'swap' ? 'Replacing…' : `Import ${swapValid} & replace room questions`}
+                      </button>
+                      <button
+                        className="hc-btn"
+                        type="button"
+                        onClick={() => runSwap('import')}
+                        disabled={swapValid === 0 || Boolean(swapBusy)}
+                      >
+                        <Icon name="check" size={13} />
+                        {swapBusy === 'import' ? 'Importing…' : 'Add to bank only'}
+                      </button>
+                      <button className="hc-btn" type="button" onClick={clearSwap} disabled={Boolean(swapBusy)}>
+                        Cancel
+                      </button>
+                    </div>
+                    {swapInvalid > 0 && (
+                      <p className="hc-note" style={{ margin: 0 }}>
+                        Rows with errors are skipped — fix them in the file and import again.
+                      </p>
+                    )}
+                  </>
+                )}
+              </div>
+            )}
+          </>
+        )}
       </section>
 
       {/* Current question */}

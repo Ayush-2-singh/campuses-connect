@@ -72,6 +72,20 @@ export const CSV_TEMPLATE = `${CSV_HEADERS.join(',')}
 "Python is an interpreted language.","True","False","","","A","CPython compiles to bytecode and runs it on a virtual machine.","easy","Python","Basics","",100,15,true_false,
 `
 
+/** One-click sample set so a host can try a room before writing their own file. */
+export const DEMO_CSV = `${CSV_HEADERS.join(',')}
+"Which data structure does BFS use to visit nodes level by level?","Stack","Queue","Priority queue","Hash map","B","BFS visits level by level, so it needs a FIFO queue.","easy","DSA","Graphs","graphs,bfs",100,20,single,
+"What is the worst-case time complexity of Quick Sort?","O(n log n)","O(n)","O(n^2)","O(log n)","C","A bad pivot split degrades Quick Sort to O(n^2).","medium","DSA","Sorting","sorting,quick sort",100,25,single,
+"Which of these is NOT a linear data structure?","Array","Queue","Tree","Stack","C","A tree is hierarchical; the other three store elements in a sequence.","easy","DSA","Basics","basics",100,20,single,
+"A stack removes elements in which order?","FIFO","LIFO","Random","Sorted","B","Last in, first out: the newest push is the first pop.","easy","DSA","Stack","stack",100,15,single,
+"Which traversal of a binary search tree visits keys in sorted order?","Pre-order","Post-order","In-order","Level-order","C","In-order visits left subtree, node, then right subtree.","medium","DSA","Trees","trees,bst",100,20,single,
+"What is the time complexity of binary search on a sorted array?","O(1)","O(log n)","O(n)","O(n log n)","B","Each step halves the remaining search space.","easy","DSA","Searching","searching",100,15,single,
+"What is the average-case lookup time in a hash table?","O(1)","O(log n)","O(n)","O(n^2)","A","With a good hash function and a low load factor, lookup is constant on average.","medium","DSA","Hashing","hashing",100,20,single,
+"Which edge type breaks Dijkstra's algorithm?","Zero-weight edges","Negative-weight edges","Duplicate edges","Self loops","B","Dijkstra assumes every edge weight is non-negative.","medium","DSA","Graphs","graphs,dijkstra",100,25,single,
+"What is the maximum number of nodes in a binary tree of height h?","2^h","2^(h+1) - 1","2h + 1","h^2","B","Every level full: 1 + 2 + ... + 2^h = 2^(h+1) - 1.","hard","DSA","Trees","trees",100,30,single,
+"Which sorting algorithm is stable by default?","Quick sort","Heap sort","Merge sort","Selection sort","C","Merge sort keeps equal elements in their original relative order.","medium","DSA","Sorting","sorting,merge sort",100,25,single,
+`
+
 export const JSON_TEMPLATE = `${JSON.stringify(
   [
     {

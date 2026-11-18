@@ -9,12 +9,20 @@
  * question content is decided in the browser.
  */
 
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { Icon } from '@/components/icons'
 import { listQuizDetail, startCompetitionFromQuiz } from '@/lib/quizzes/client'
+import {
+  CSV_TEMPLATE,
+  DEMO_CSV,
+  parseImportFile,
+  toBankRows,
+  validRows,
+  type ImportPreview,
+} from '@/lib/liveBattle/questionImport'
 
 type BankQuestion = { id: string; question_text: string; difficulty: string; subject: string; marks: number }
 type MyRoom = {
@@ -33,6 +41,16 @@ const STATUS_TONE: Record<string, string> = {
   paused: 'hc-tag--warn',
   completed: 'hc-tag--ghost',
   cancelled: 'hc-tag--danger',
+}
+
+function download(fileName: string, content: string, type: string) {
+  const blob = new Blob([content], { type })
+  const url = URL.createObjectURL(blob)
+  const a = document.createElement('a')
+  a.href = url
+  a.download = fileName
+  a.click()
+  URL.revokeObjectURL(url)
 }
 
 const fieldLabel: React.CSSProperties = {
@@ -69,6 +87,12 @@ export default function LiveHub({ user, initialQuizId }: { user: any; initialQui
   const [selected, setSelected] = useState<string[]>([])
   const [creating, setCreating] = useState(false)
   const [created, setCreated] = useState<{ id: string; room_code: string; question_count: number } | null>(null)
+
+  // Quick start — a CSV/JSON file becomes a pre-selected set (or a room) in one pass.
+  const [quickPreview, setQuickPreview] = useState<ImportPreview | null>(null)
+  const [quickFileName, setQuickFileName] = useState('')
+  const [quickBusy, setQuickBusy] = useState<'import' | 'start' | null>(null)
+  const quickFileRef = useRef<HTMLInputElement | null>(null)
 
   const [joinCode, setJoinCode] = useState('')
   const [copied, setCopied] = useState('')
@@ -125,6 +149,115 @@ export default function LiveHub({ user, initialQuizId }: { user: any; initialQui
     setSelected(shuffled.slice(0, count).map((q) => q.id))
   }
 
+  const selectAll = () => setSelected(bank.map((q) => q.id))
+
+  /** Newest first, which is the order the bank is loaded in. */
+  const selectTop = (count: number) => setSelected(bank.slice(0, count).map((q) => q.id))
+
+  /** Write parsed rows into the bank in chunks; returns the new ids in file order. */
+  const importRows = async (rows: ReturnType<typeof validRows>) => {
+    const CHUNK = 20
+    const ids: string[] = []
+    for (let i = 0; i < rows.length; i += CHUNK) {
+      const chunk = rows.slice(i, i + CHUNK)
+      const payloads = chunk.map((r) => toBankRows(r.draft, user.id))
+      const { data, error: insErr } = await supabase
+        .from('question_bank')
+        .insert(payloads.map((p) => p.question))
+        .select('id')
+      if (insErr) throw insErr
+      const chunkIds = (data ?? []).map((d: { id: string }) => d.id)
+      if (chunkIds.length !== chunk.length) {
+        throw new Error('The import stopped early — check your bank before running it again.')
+      }
+      const optionRows = payloads.flatMap((p, idx) => p.options.map((o) => ({ ...o, question_id: chunkIds[idx] })))
+      const { error: optErr } = await supabase.from('question_bank_options').insert(optionRows)
+      if (optErr) throw optErr
+      ids.push(...chunkIds)
+    }
+    return ids
+  }
+
+  /** One room from an explicit question list — used by the form and by the CSV fast path. */
+  const createRoom = async (questionIds: string[], roomTitle: string) => {
+    const { data, error: rpcError } = await supabase.rpc('live_quiz_create', {
+      p_title: roomTitle,
+      p_question_ids: questionIds,
+      p_category: category,
+      p_timer_seconds: timer,
+      p_points_correct: points,
+      p_max_speed_bonus: bonus,
+      p_max_participants: maxParticipants,
+      p_allow_late_join: allowLate,
+      p_visibility: visibility,
+    })
+    if (rpcError) throw rpcError
+    const room = Array.isArray(data) ? data[0] : data
+    if (!room?.room_code) throw new Error('The room was created without a code — try again.')
+    return {
+      id: room.id as string,
+      room_code: room.room_code as string,
+      question_count: (room.question_count ?? questionIds.length) as number,
+    }
+  }
+
+  const onQuickFile = async (file: File | null) => {
+    if (!file) return
+    setError('')
+    setNotice('')
+    setQuickFileName(file.name)
+    if (file.size > 2 * 1024 * 1024) {
+      setQuickPreview({ rows: [], fileError: 'That file is larger than 2 MB. Split it into smaller files.' })
+      return
+    }
+    setQuickPreview(parseImportFile(file.name, await file.text()))
+  }
+
+  const clearQuick = () => {
+    setQuickPreview(null)
+    setQuickFileName('')
+    if (quickFileRef.current) quickFileRef.current.value = ''
+  }
+
+  /**
+   * Import the valid rows and pre-select them. `start` also creates the room
+   * with exactly those questions and opens the host controls.
+   */
+  const runQuick = async (mode: 'import' | 'start') => {
+    if (!quickPreview) return
+    const rows = validRows(quickPreview)
+    if (rows.length === 0) {
+      setError('No importable rows in that file.')
+      return
+    }
+    setQuickBusy(mode)
+    setError('')
+    setNotice('')
+    try {
+      const ids = await importRows(rows)
+      setSelected(ids)
+      await load()
+      if (mode === 'start') {
+        const fallbackTitle = quickFileName.replace(/\.[^.]+$/, '').trim()
+        const roomTitle = (title.trim() || fallbackTitle || 'Live Battle').slice(0, 140)
+        const room = await createRoom(ids, roomTitle)
+        if (!title.trim()) setTitle(roomTitle)
+        setNotice(`${ids.length} questions imported — opening host controls…`)
+        clearQuick()
+        router.push(`/compete/live/host/${room.id}`)
+        return
+      }
+      setNotice(
+        `${ids.length} question${ids.length === 1 ? '' : 's'} imported and selected — press "Create room & get code".`
+      )
+      clearQuick()
+    } catch (err: any) {
+      setError(err?.message || 'Import failed.')
+    } finally {
+      setQuickBusy(null)
+    }
+  }
+
   const create = async () => {
     if (!title.trim() && !quizId) {
       setError('Give the competition a title first.')
@@ -154,21 +287,8 @@ export default function LiveHub({ user, initialQuizId }: { user: any; initialQui
         load()
         return
       }
-      const { data, error: rpcError } = await supabase.rpc('live_quiz_create', {
-        p_title: title.trim(),
-        p_question_ids: selected,
-        p_category: category,
-        p_timer_seconds: timer,
-        p_points_correct: points,
-        p_max_speed_bonus: bonus,
-        p_max_participants: maxParticipants,
-        p_allow_late_join: allowLate,
-        p_visibility: visibility,
-      })
-      if (rpcError) throw rpcError
-      const room = Array.isArray(data) ? data[0] : data
-      if (!room?.room_code) throw new Error('The room was created without a code — try again.')
-      setCreated({ id: room.id, room_code: room.room_code, question_count: room.question_count ?? selected.length })
+      const room = await createRoom(selected, title.trim())
+      setCreated(room)
       setNotice('Room created. Share the code with your viewers.')
       setTitle('')
       setSelected([])
@@ -202,6 +322,11 @@ export default function LiveHub({ user, initialQuizId }: { user: any; initialQui
   const joinUrl = created
     ? `${typeof window !== 'undefined' ? window.location.origin : ''}/live/${created.room_code}`
     : ''
+
+  const quickRows = quickPreview ? validRows(quickPreview) : []
+  const quickValid = quickRows.length
+  const quickInvalid = quickPreview ? quickPreview.rows.length - quickValid : 0
+  const firstIssue = quickPreview?.rows.find((r) => r.errors.length)?.errors[0] ?? ''
 
   return (
     <div className="hc-page">
@@ -309,6 +434,102 @@ export default function LiveHub({ user, initialQuizId }: { user: any; initialQui
         </section>
       )}
 
+      {/* Quick start — CSV in, room out */}
+      <section className="hc-card hc-reveal" aria-label="Import questions from a file" style={{ marginBottom: 16 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <Icon name="notebook" size={16} />
+          <strong style={{ fontSize: 14 }}>Fast track: CSV → room</strong>
+        </div>
+        <p className="hc-note" style={{ margin: 0 }}>
+          Pick a CSV (or JSON) and its valid questions are imported into your bank and pre-selected. “Import &amp;
+          start” creates the room with exactly those questions using the settings below.
+        </p>
+        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+          <button className="hc-btn hc-btn--primary" type="button" onClick={() => quickFileRef.current?.click()}>
+            <Icon name="plus" size={14} /> Choose CSV / JSON
+          </button>
+          <button
+            className="hc-btn"
+            type="button"
+            onClick={() => download('live-battle-questions.csv', CSV_TEMPLATE, 'text/csv')}
+          >
+            <Icon name="copy" size={13} /> CSV template
+          </button>
+          <button
+            className="hc-btn"
+            type="button"
+            onClick={() => download('live-battle-demo-dsa.csv', DEMO_CSV, 'text/csv')}
+          >
+            <Icon name="sparkles" size={13} /> Demo CSV (10 DSA)
+          </button>
+          <input
+            ref={quickFileRef}
+            type="file"
+            accept=".csv,.json,text/csv,application/json"
+            onChange={(e) => onQuickFile(e.target.files?.[0] ?? null)}
+            style={{ display: 'none' }}
+          />
+        </div>
+
+        {quickPreview && (
+          <div
+            style={{
+              border: '1px solid var(--border)',
+              borderRadius: 10,
+              padding: '10px 12px',
+              background: 'var(--bg-secondary)',
+              display: 'grid',
+              gap: 8,
+            }}
+          >
+            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
+              <strong style={{ fontSize: 13, minWidth: 0, overflowWrap: 'anywhere' }}>{quickFileName}</strong>
+              <span className="hc-spacer" />
+              {quickValid > 0 && <span className="hc-tag hc-tag--success">{quickValid} ready</span>}
+              {quickInvalid > 0 && <span className="hc-tag hc-tag--danger">{quickInvalid} skipped</span>}
+            </div>
+
+            {quickPreview.fileError ? (
+              <p className="hc-alert" style={{ margin: 0 }}>
+                {quickPreview.fileError}
+              </p>
+            ) : (
+              <>
+                {quickInvalid > 0 && (
+                  <p className="hc-note" style={{ margin: 0 }}>
+                    Rows with errors are skipped — fix them in the file and import again.
+                    {firstIssue ? ` First problem: “${firstIssue}”.` : ''}
+                  </p>
+                )}
+                <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                  <button
+                    className="hc-btn hc-btn--primary"
+                    type="button"
+                    onClick={() => runQuick('start')}
+                    disabled={quickValid === 0 || Boolean(quickBusy)}
+                  >
+                    <Icon name="zap" size={14} />
+                    {quickBusy === 'start' ? 'Starting…' : `Import ${quickValid} & start room`}
+                  </button>
+                  <button
+                    className="hc-btn"
+                    type="button"
+                    onClick={() => runQuick('import')}
+                    disabled={quickValid === 0 || Boolean(quickBusy)}
+                  >
+                    <Icon name="check" size={13} />
+                    {quickBusy === 'import' ? 'Importing…' : 'Import & select only'}
+                  </button>
+                  <button className="hc-btn" type="button" onClick={clearQuick} disabled={Boolean(quickBusy)}>
+                    Cancel
+                  </button>
+                </div>
+              </>
+            )}
+          </div>
+        )}
+      </section>
+
       {/* Create */}
       <section className="hc-form hc-reveal" aria-label="Create a room">
         <h2 className="hc-form-title">New competition</h2>
@@ -386,6 +607,15 @@ export default function LiveHub({ user, initialQuizId }: { user: any; initialQui
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
             <span style={{ ...fieldLabel, marginBottom: 0 }}>Questions · {selected.length} selected</span>
             <span className="hc-spacer" />
+            <button className="hc-chip" type="button" onClick={selectAll} disabled={bank.length === 0}>
+              Select all
+            </button>
+            <button className="hc-chip" type="button" onClick={() => selectTop(30)} disabled={bank.length === 0}>
+              Top 30
+            </button>
+            <button className="hc-chip" type="button" onClick={() => selectTop(10)} disabled={bank.length === 0}>
+              Top 10
+            </button>
             <button className="hc-chip" type="button" onClick={() => pickRandom(10)} disabled={bank.length === 0}>
               Random 10
             </button>
