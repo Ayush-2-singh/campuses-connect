@@ -147,14 +147,32 @@ function CompetePageInner() {
         setSeason((seasonRes.data as SeasonInfo) || null)
         setProblems(problemsRes.data || [])
 
-        // Load daily challenge problem if exists
-        const dc = dcRes.data
-        if (dc) {
-          const p = problemsRes.data?.find((prob) => prob.id === dc.problem_id)
-          if (p) {
-            setDaily(p)
-            setCode(p.starter_code?.['python'] || '')
+        // Daily challenge. The schedule is normally kept full by
+        // `ensure_daily_challenge` (daily cron), but a project without cron, a
+        // day past the prefilled window or a deactivated problem would leave
+        // this tab empty. Resolving once here heals it before the first paint,
+        // so "No challenge scheduled today" only appears when there are truly
+        // no active problems.
+        const pickDaily = (row: { problem_id: string } | null) =>
+          row ? ((problemsRes.data ?? []).find((prob) => prob.id === row.problem_id) ?? null) : null
+
+        let dailyProblem = pickDaily(dcRes.data)
+
+        if (!dailyProblem) {
+          const { data: ensured } = await supabase.rpc('ensure_daily_challenge')
+          if ((ensured as { ok?: boolean } | null)?.ok) {
+            const { data: fresh } = await supabase
+              .from('daily_challenges')
+              .select('problem_id, day')
+              .eq('day', new Date().toISOString().slice(0, 10))
+              .maybeSingle()
+            dailyProblem = pickDaily(fresh)
           }
+        }
+
+        if (dailyProblem) {
+          setDaily(dailyProblem)
+          setCode(dailyProblem.starter_code?.['python'] || '')
         }
 
         // Now load user-specific data in parallel
