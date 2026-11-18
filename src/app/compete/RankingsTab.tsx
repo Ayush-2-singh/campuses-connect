@@ -110,7 +110,7 @@ const ZONES: { key: Zone; label: string; hint: string }[] = [
   { key: 'overall', label: 'Combined', hint: 'Live battle quiz + typing + maths' },
   { key: 'live', label: 'Live battle quiz', hint: 'Points from finished live rooms' },
   { key: 'typing', label: 'Typing battle', hint: '100 per typing battle won' },
-  { key: 'maths', label: 'Quick maths', hint: '90 per maths battle won' },
+  { key: 'maths', label: 'Quick maths', hint: '90 per maths battle or daily set won' },
 ]
 
 const LEADERBOARD_LIMIT = 50
@@ -649,7 +649,8 @@ export default function RankingsTab({
       <p className="hc-note" style={{ marginTop: 14 }}>
         Points come from finished matches only: <strong>100 × mode × (0.6 × accuracy + 0.4 × 1/place)</strong>. Live
         battle and typing are ×1.0, quick maths ×0.9 — so a perfect live win is 100, a second place is 70 and a maths
-        win is 90. Profile karma, aura, GitHub and LeetCode stats are never read here.
+        win is 90. A Daily Quick Math set counts in the maths zone, placed against everyone who played that day. Profile
+        karma, aura, GitHub and LeetCode stats are never read here.
       </p>
 
       {!user && (
