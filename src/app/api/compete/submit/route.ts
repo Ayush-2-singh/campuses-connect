@@ -1,6 +1,8 @@
 import { createServerClient } from '@supabase/ssr'
 import { cookies } from 'next/headers'
 import { NextResponse } from 'next/server'
+import { LANG_MAP, StoredVerdict, Verdict, outputsMatch, runCode } from '@/lib/compete/judge'
+import { contractFromStarter, wrapForJudge } from '@/lib/compete/harness'
 
 // Judge uses the SERVICE ROLE client (server-only) so hidden test_cases
 // bypass RLS. The public anon client is used for user-scoped writes.
@@ -8,63 +10,43 @@ import { NextResponse } from 'next/server'
 function serviceClient() {
   const key = process.env.SUPABASE_SERVICE_ROLE_KEY
   if (!key) throw new Error('SUPABASE_SERVICE_ROLE_KEY is not configured')
-  return createServerClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, key, { cookies: { getAll: () => [], setAll: () => {} } })
+  return createServerClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, key, {
+    cookies: { getAll: () => [], setAll: () => {} },
+  })
 }
 
 async function userClient() {
   const cookieStore = await cookies()
-  return createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    {
-      cookies: {
-        getAll() { return cookieStore.getAll() },
-        setAll(cookiesToSet) {
-          try { cookiesToSet.forEach(({ name, value, options }) => cookieStore.set(name, value, options)) } catch {}
-        },
+  return createServerClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!, {
+    cookies: {
+      getAll() {
+        return cookieStore.getAll()
       },
-    }
-  )
+      setAll(cookiesToSet) {
+        try {
+          cookiesToSet.forEach(({ name, value, options }) => cookieStore.set(name, value, options))
+        } catch {}
+      },
+    },
+  })
 }
 
-// ─── Judge endpoints ───────────────────────────────────────────────
-// Piston: free public code-execution sandbox (no API key needed).
-//
-// CONTRACT (CodeChef-style): the user's program reads input from
-// stdin and prints the answer to stdout. The judge feeds each hidden
-// test case as stdin and compares stdout. No function-wrapping, so any
-// language/format works and the contract is the same for every problem.
+// ─── Submit ────────────────────────────────────────────────────────────────
+// Runs the solution against ALL hidden cases (a compile error stops the run),
+// so every passing case is graded and counted — a single wrong case no longer
+// hides the work done on the others. Records the submission and returns a
+// per-case summary. Hidden inputs are never returned.
 //
 // Anti-abuse:
 //   • hidden test cases never leave the server
 //   • 12 submissions/problem/hour cap (dsa_rate_limit RPC)
 //   • first accepted solve is the only one rewarded (UNIQUE ledger ref)
-//   • output compare with float tolerance; time limit enforced
-const PISTON_URL = 'https://emkc.org/api/v2/piston/execute'
-const LANG_MAP: Record<string, { language: string }> = {
-  python: { language: 'python' },
-  javascript: { language: 'javascript' },
-  cpp: { language: 'c++' },
-  java: { language: 'java' },
-}
-
-function normalize(input: string): string {
-  return input.trim().replace(/\s+/g, ' ')
-}
-
-function outputsMatch(a: string, b: string): boolean {
-  const na = normalize(a)
-  const nb = normalize(b)
-  if (na === nb) return true
-  const fa = parseFloat(na)
-  const fb = parseFloat(nb)
-  if (!isNaN(fa) && !isNaN(fb) && Math.abs(fa - fb) < 1e-4) return true
-  return false
-}
-
+//   • a judge outage returns internal_error and writes no submission
 export async function POST(req: Request) {
   const supabase = await userClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
   const judge = serviceClient()
@@ -99,83 +81,104 @@ export async function POST(req: Request) {
   try {
     const res = await judge
       .from('dsa_problems')
-      .select('id, slug, difficulty, test_cases, time_limit_ms')
+      .select('id, slug, difficulty, test_cases, time_limit_ms, starter_code')
       .eq('id', problemId)
       .single()
     problemData = res.data ?? null
-  } catch { problemData = null }
-  if (!problemData || !Array.isArray(problemData.test_cases)) return NextResponse.json({ error: 'Problem not found' }, { status: 404 })
+  } catch {
+    problemData = null
+  }
+  if (!problemData || !Array.isArray(problemData.test_cases)) {
+    return NextResponse.json({ error: 'Problem not found' }, { status: 404 })
+  }
 
   const tests = problemData.test_cases as { input: string; output: string }[]
   if (tests.length === 0) return NextResponse.json({ error: 'Problem has no test cases' }, { status: 500 })
 
   // ── Contest window check ──
+  // An unknown contest id must not be silently accepted: the row would be
+  // recorded against a contest that does not exist and could be rewarded.
   if (contestId) {
-    const { data: contest } = await judge.from('contests').select('starts_at, ends_at').eq('id', contestId).single()
-    if (contest) {
-      const now = Date.now()
-      if (now < new Date(contest.starts_at).getTime() || now > new Date(contest.ends_at).getTime()) {
-        return NextResponse.json({ error: 'Contest is not live right now' }, { status: 403 })
-      }
+    const { data: contest, error: contestError } = await judge
+      .from('contests')
+      .select('starts_at, ends_at')
+      .eq('id', contestId)
+      .maybeSingle()
+    if (contestError) {
+      return NextResponse.json({ error: 'Could not verify the contest right now' }, { status: 503 })
+    }
+    if (!contest) return NextResponse.json({ error: 'Contest not found' }, { status: 404 })
+
+    const now = Date.now()
+    if (now < new Date(contest.starts_at).getTime() || now > new Date(contest.ends_at).getTime()) {
+      return NextResponse.json({ error: 'Contest is not live right now' }, { status: 403 })
     }
   }
 
+  // ── LeetCode-style wrapper ──
+  // Hidden driver is appended server-side; the student's submission stays
+  // the solution function only. Problems without a contract (legacy rows) run
+  // their code unchanged on the stdin/stdout contract.
+  const contract = contractFromStarter(problemData.starter_code)
+  const program = contract ? wrapForJudge(language as 'python' | 'javascript' | 'cpp' | 'java', contract, code) : code
+
   // ── Execute against ALL hidden cases ──
+  const timeLimit = problemData.time_limit_ms || 3000
   let passed = 0
-  let firstFail = ''
-  let verdict: string = 'accepted'
+  let verdict: StoredVerdict = 'accepted'
   let runtime = 0
+  let compileOutput: string | null = null
+  let stderr: string | null = null
+  const cases: { index: number; status: Verdict; passed: boolean; time_ms: number }[] = []
 
-  for (const t of tests) {
-    const started = Date.now()
-    let res: any
-    try {
-      const r = await fetch(PISTON_URL, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          language: LANG_MAP[language].language,
-          files: [{ name: 'main', content: code }],
-          stdin: t.input,
-          compile_timeout: 10000,
-          run_timeout: Math.max(problemData.time_limit_ms || 3000, 3000),
-        }),
-        signal: AbortSignal.timeout(15000),
-      })
-      res = await r.json()
-    } catch {
-      verdict = 'runtime_error'
-      firstFail = t.input.slice(0, 80)
-      break
+  for (let i = 0; i < tests.length; i++) {
+    const t = tests[i]
+    const res = await runCode({ language, code: program, stdin: t.input, timeLimitMs: timeLimit })
+
+    // Judge outage: no verdict, no submission, no rate-limit consumed.
+    if (!res.ok) {
+      return NextResponse.json(
+        { error: 'The judge is unavailable right now — your attempt was not counted.', verdict: 'internal_error' },
+        { status: 503 }
+      )
     }
-    runtime = Math.max(runtime, Date.now() - started)
 
-    if (res.compile?.stderr) {
+    runtime = Math.max(runtime, res.timeMs)
+
+    if (res.compileOutput.trim()) {
       verdict = 'compile_error'
-      firstFail = (res.compile.stderr || '').slice(0, 120)
+      compileOutput = res.compileOutput.trim()
+      cases.push({ index: i + 1, status: verdict, passed: false, time_ms: res.timeMs })
       break
     }
-    if (res.stderr) {
-      verdict = 'runtime_error'
-      firstFail = (res.stderr || '').slice(0, 120)
-      break
+
+    if (res.timedOut) {
+      if (verdict === 'accepted') verdict = 'time_limit'
+      cases.push({ index: i + 1, status: 'time_limit', passed: false, time_ms: res.timeMs })
+      continue
     }
-    if (res.run?.signal === 'SIGKILL' || (res.run?.time as number) >= (problemData.time_limit_ms || 3000) / 1000) {
-      verdict = 'time_limit'
-      firstFail = t.input.slice(0, 80)
-      break
+
+    if (res.stderr.trim() || res.exitCode !== 0) {
+      if (verdict === 'accepted') verdict = 'runtime_error'
+      stderr = res.stderr.trim() || `Exited with code ${res.exitCode}`
+      cases.push({ index: i + 1, status: 'runtime_error', passed: false, time_ms: res.timeMs })
+      continue
     }
-    if (outputsMatch(res.run?.output ?? '', t.output)) {
+
+    if (outputsMatch(res.stdout, t.output)) {
       passed++
-    } else {
-      verdict = 'wrong_answer'
-      firstFail = t.input.slice(0, 80)
-      break
+      cases.push({ index: i + 1, status: 'accepted', passed: true, time_ms: res.timeMs })
+      continue
     }
+
+    if (verdict === 'accepted') verdict = 'wrong_answer'
+    cases.push({ index: i + 1, status: 'wrong_answer', passed: false, time_ms: res.timeMs })
   }
 
   // ── Record submission (judge inserts; clients cannot insert) ──
-  await judge.from('dsa_submissions').insert({
+  // A failed write must never look like a graded attempt: report it and skip
+  // the reward, otherwise the UI shows a verdict for a row that does not exist.
+  const { error: insertError } = await judge.from('dsa_submissions').insert({
     user_id: user.id,
     problem_id: problemId,
     contest_id: contestId,
@@ -186,6 +189,12 @@ export async function POST(req: Request) {
     total: tests.length,
     runtime_ms: runtime,
   })
+  if (insertError) {
+    return NextResponse.json(
+      { error: 'Your submission could not be saved, so it was not counted. Please try again.' },
+      { status: 500 }
+    )
+  }
 
   // ── Reward via the validated wrapper (idempotent, ungameable) ──
   if (verdict === 'accepted') {
@@ -197,6 +206,8 @@ export async function POST(req: Request) {
     passed,
     total: tests.length,
     runtime_ms: runtime,
-    first_fail_input: verdict === 'accepted' ? null : firstFail,
+    cases,
+    compile_output: compileOutput,
+    stderr,
   })
 }

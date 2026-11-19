@@ -4513,3 +4513,42 @@ html.nav-hidden .fab-wrap {
     animation: none;
   }
 }
+
+/* ── Solve workspace: statement | divider | editor ───────────────────────
+   A two-pane judge layout. The left width is a CSS variable set by the
+   component (and persisted in localStorage); the divider is draggable and
+   keyboard-resizable. Phones collapse to one column and drop the divider. */
+.cc-solve {
+  display: grid;
+  grid-template-columns: minmax(0, var(--cc-left, 46%)) 7px minmax(0, 1fr);
+  align-items: stretch;
+}
+.cc-solve__divider {
+  cursor: col-resize;
+  touch-action: none;
+  border-radius: 3px;
+  background: var(--border);
+  margin: 0 2px;
+  min-height: 120px;
+}
+.cc-solve__divider:hover,
+.cc-solve__divider:focus-visible {
+  background: var(--accent);
+  outline: none;
+}
+.cc-solve__statement {
+  max-height: min(78vh, 900px);
+  overflow: auto;
+}
+@media (max-width: 980px) {
+  .cc-solve {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 14px;
+  }
+  .cc-solve__divider {
+    display: none;
+  }
+  .cc-solve__statement {
+    max-height: none;
+  }
+}

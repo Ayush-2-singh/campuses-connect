@@ -12,7 +12,7 @@ import RankingsTab from './RankingsTab'
 import ContributorsTab from './ContributorsTab'
 import ChallengeTab from './ChallengeTab'
 import GamesTab from './GamesTab'
-import type { Tab, Problem, Submission, SeasonInfo } from './types'
+import type { Tab, Problem, RunResult, Submission, SeasonInfo } from './types'
 
 const TABS: { key: Tab | 'quizzes'; label: string; icon: string; d: string; href?: string }[] = [
   { key: 'rankings', label: 'Rankings', icon: 'trophy', d: 'M4 19h16M4 19 2.5 8l5.5 4L12 4l4 8 5.5-4L20 19' },
@@ -56,6 +56,34 @@ const TAB_URL: Record<Tab, string> = {
   games: 'games',
 }
 
+// ─── Drafts ────────────────────────────────────────────────────────────────
+// Each problem keeps a draft per language, so switching language (or opening a
+// different problem and coming back) restores what was typed instead of the
+// starter snippet. Keyed by problem id, not title, so renames don't orphan it.
+// v2: the workspace grades a function now. Drafts saved against the old
+// stdin/stdout starter would run as broken programs, so they are retired
+// (and pruned) instead of silently restored.
+const DRAFT_PREFIX = 'cc.draft.v2.'
+const draftKey = (problemId: string, language: string) => `${DRAFT_PREFIX}${problemId}.${language}`
+
+function readDraft(problemId: string, language: string): string | null {
+  try {
+    return window.localStorage.getItem(draftKey(problemId, language))
+  } catch {
+    return null
+  }
+}
+
+function writeDraft(problemId: string, language: string, value: string) {
+  try {
+    const key = draftKey(problemId, language)
+    if (value.trim()) window.localStorage.setItem(key, value)
+    else window.localStorage.removeItem(key)
+  } catch {
+    /* private mode / quota — the in-memory draft still works */
+  }
+}
+
 function CompetePageInner() {
   const supabase = createClient()
   const router = useRouter()
@@ -93,9 +121,19 @@ function CompetePageInner() {
   const [solved, setSolved] = useState<Record<string, boolean>>({})
   const [lang, setLang] = useState('python')
   const [code, setCode] = useState('')
+  // Badge on the Submissions tab; refreshed when a submit is recorded.
+  const [submissionCount, setSubmissionCount] = useState(0)
   const [running, setRunning] = useState(false)
   const [result, setResult] = useState<Submission | null>(null)
   const [error, setError] = useState<string | null>(null)
+  // Run vs Submit: Run only ever touches the public examples, so it gets its
+  // own result state and never counts as a submission.
+  const [runningRun, setRunningRun] = useState(false)
+  const [runResult, setRunResult] = useState<RunResult | null>(null)
+  const [runError, setRunError] = useState<string | null>(null)
+  const [lastAction, setLastAction] = useState<'run' | 'submit' | null>(null)
+  // Bumped after every recorded submission so the Submissions tab refetches.
+  const [submissionNonce, setSubmissionNonce] = useState(0)
   const [karma, setKarma] = useState<{ lifetime: number; aura: number; daily: number; season: string } | null>(null)
   const [season, setSeason] = useState<SeasonInfo | null>(null)
 
@@ -172,7 +210,7 @@ function CompetePageInner() {
 
         if (dailyProblem) {
           setDaily(dailyProblem)
-          setCode(dailyProblem.starter_code?.['python'] || '')
+          setCode(readDraft(dailyProblem.id, 'python') ?? dailyProblem.starter_code?.['python'] ?? '')
         }
 
         // Now load user-specific data in parallel
@@ -204,11 +242,34 @@ function CompetePageInner() {
     }
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
+  const run = async () => {
+    if (!daily || runningRun) return
+    setRunningRun(true)
+    setRunError(null)
+    setRunResult(null)
+    setLastAction('run')
+    try {
+      const res = await fetch('/api/compete/run', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', credentials: 'include' },
+        body: JSON.stringify({ problem_id: daily.id, code, language: lang }),
+      })
+      const data = await res.json()
+      if (!res.ok) setRunError(data?.error || 'Run failed')
+      else setRunResult(data)
+    } catch {
+      setRunError('Network error — try again')
+    } finally {
+      setRunningRun(false)
+    }
+  }
+
   const submit = async () => {
     if (!daily || running) return
     setRunning(true)
     setError(null)
     setResult(null)
+    setLastAction('submit')
     try {
       const res = await fetch('/api/compete/submit', {
         method: 'POST',
@@ -219,6 +280,7 @@ function CompetePageInner() {
       if (!res.ok) setError(data?.error || 'Submission failed')
       else {
         setResult(data)
+        setSubmissionNonce((n) => n + 1)
         if (data.verdict === 'accepted') {
           setSolved((s) => ({ ...s, [daily.id]: true }))
           const { data: sum } = await supabase.rpc('my_karma_summary')
@@ -232,11 +294,115 @@ function CompetePageInner() {
     }
   }
 
-  const selectProblem = (p: Problem) => {
-    setDaily(p)
-    setCode(p.starter_code?.[lang] || '')
+  const changeLang = (next: string) => {
+    // Park the current edits before swapping languages. Without this, the
+    // starter snippet for the new language would overwrite unsaved work.
+    if (daily) writeDraft(daily.id, lang, code)
+    setLang(next)
+    if (daily) setCode(readDraft(daily.id, next) ?? daily.starter_code?.[next] ?? '')
+    // A verdict for the previous language would be misleading here.
+    setRunResult(null)
+    setRunError(null)
     setResult(null)
+    setError(null)
+    setLastAction(null)
   }
+
+  /** Load a past attempt back into the editor without resetting to starter code. */
+  const loadSubmission = (nextCode: string, nextLanguage: string) => {
+    const nextLang = ['python', 'javascript', 'cpp', 'java'].includes(nextLanguage) ? nextLanguage : 'python'
+    setLang(nextLang)
+    setCode(nextCode)
+    // A loaded attempt becomes the working draft for that language.
+    if (daily) writeDraft(daily.id, nextLang, nextCode)
+    setResult(null)
+    setRunResult(null)
+    setRunError(null)
+    setError(null)
+    setLastAction(null)
+  }
+
+  /** Drop this language's draft and put the starter snippet back. */
+  const clearDraft = () => {
+    if (!daily) return
+    try {
+      window.localStorage.removeItem(draftKey(daily.id, lang))
+    } catch {
+      /* nothing stored to clear */
+    }
+    setCode(daily.starter_code?.[lang] ?? '')
+    setResult(null)
+    setRunResult(null)
+    setRunError(null)
+    setError(null)
+    setLastAction(null)
+  }
+
+  const selectProblem = (p: Problem) => {
+    if (daily) writeDraft(daily.id, lang, code)
+    setDaily(p)
+    setCode(readDraft(p.id, lang) ?? p.starter_code?.[lang] ?? '')
+    setResult(null)
+    setRunResult(null)
+    setRunError(null)
+    setError(null)
+    setLastAction(null)
+  }
+
+  // Keep the draft current while typing, without a localStorage write per key.
+  useEffect(() => {
+    if (!daily) return
+    const timer = window.setTimeout(() => writeDraft(daily.id, lang, code), 400)
+    return () => window.clearTimeout(timer)
+  }, [code, daily, lang])
+
+  // Drop drafts for problems that no longer exist so the key space doesn't
+  // grow forever across seeds/renames. Keys are `cc.draft.<uuid>.<language>`.
+  useEffect(() => {
+    if (!problems.length) return
+    const liveIds = new Set(problems.map((p) => p.id))
+    try {
+      const stale: string[] = []
+      for (let i = 0; i < window.localStorage.length; i++) {
+        const key = window.localStorage.key(i)
+        if (!key || !key.startsWith('cc.draft.')) continue
+        if (!key.startsWith(DRAFT_PREFIX)) {
+          stale.push(key)
+          continue
+        }
+        const problemId = key.slice(DRAFT_PREFIX.length).split('.')[0]
+        if (!liveIds.has(problemId)) stale.push(key)
+      }
+      stale.forEach((key) => window.localStorage.removeItem(key))
+    } catch {
+      /* storage unavailable — nothing to prune */
+    }
+  }, [problems])
+
+  // Count for the Submissions tab badge. head:true means no rows travel.
+  useEffect(() => {
+    if (!user || !daily) {
+      setSubmissionCount(0)
+      return
+    }
+    let cancelled = false
+    const loadCount = async () => {
+      try {
+        const { count } = await supabase
+          .from('dsa_submissions')
+          .select('id', { count: 'exact', head: true })
+          .eq('problem_id', daily.id)
+          .eq('user_id', user.id)
+        if (!cancelled) setSubmissionCount(count ?? 0)
+      } catch {
+        /* badge is optional — never break the workspace over it */
+      }
+    }
+    loadCount()
+    return () => {
+      cancelled = true
+    }
+  }, [daily, user, submissionNonce]) // eslint-disable-line react-hooks/exhaustive-deps
 
   return (
     <Layout user={user} profile={profile}>
@@ -381,7 +547,7 @@ function CompetePageInner() {
                   problems={problems}
                   solved={solved}
                   lang={lang}
-                  setLang={setLang}
+                  setLang={changeLang}
                   code={code}
                   setCode={setCode}
                   running={running}
@@ -389,6 +555,16 @@ function CompetePageInner() {
                   error={error}
                   onSubmit={submit}
                   onSelectProblem={selectProblem}
+                  runResult={runResult}
+                  runError={runError}
+                  runningRun={runningRun}
+                  onRun={run}
+                  lastAction={lastAction}
+                  userId={user?.id ?? null}
+                  onLoadSubmission={loadSubmission}
+                  submissionNonce={submissionNonce}
+                  submissionCount={submissionCount}
+                  onClearDraft={clearDraft}
                 />
               )}
               {tab === 'games' && <GamesTab />}

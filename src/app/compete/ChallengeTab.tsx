@@ -1,13 +1,21 @@
 'use client'
 
 // ═══════════════════════════════════════════════════════════════════════════
-// ChallengeTab — Daily DSA challenge + code editor + problem list
-// Extracted from compete/page.tsx for maintainability
+// ChallengeTab — the solve workspace: statement + examples on the left,
+// editor + verdict panel on the right, with a draggable divider on desktop
+// and a single stacked column on phones.
+//
+// Run executes against the PUBLIC examples and shows input/expected/actual.
+// Submit is the only path that touches hidden cases and awards karma.
 // ═══════════════════════════════════════════════════════════════════════════
 
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import dynamic from 'next/dynamic'
-import type { Problem, Submission } from './types'
+import type { CSSProperties } from 'react'
+import type { Problem, RunResult, Submission } from './types'
+import ResultPanel from './ResultPanel'
+import SubmissionsTab from './SubmissionsTab'
+import TopAskedPanel from './TopAskedPanel'
 
 const CodeEditor = dynamic(() => import('@/components/games/CodeEditor'), { ssr: false })
 
@@ -41,6 +49,37 @@ const DiffDot = ({ d }: { d: string }) => (
   />
 )
 
+/**
+ * Statement text: newlines preserved, `backticked` spans rendered as inline
+ * code — the way LeetCode statements name their parameters.
+ */
+function StatementText({ text }: { text: string }) {
+  return (
+    <p style={{ fontSize: 13, color: 'var(--text-secondary)', lineHeight: 1.7, margin: 0, whiteSpace: 'pre-wrap' }}>
+      {text.split(/(`[^`]+`)/g).map((part, i) =>
+        part.length > 2 && part.startsWith('`') && part.endsWith('`') ? (
+          <code
+            key={i}
+            style={{
+              fontFamily: mono,
+              fontSize: '0.9em',
+              padding: '1px 5px',
+              borderRadius: 4,
+              border: '1px solid var(--border)',
+              background: 'var(--bg-tertiary)',
+              color: 'var(--text-primary)',
+            }}
+          >
+            {part.slice(1, -1)}
+          </code>
+        ) : (
+          <span key={i}>{part}</span>
+        )
+      )}
+    </p>
+  )
+}
+
 /** Small SVG checkmark used in the accepted-verdict line (replaces ✅ emoji). */
 const CheckGlyph = ({ size = 13 }: { size?: number }) => (
   <svg
@@ -59,6 +98,120 @@ const CheckGlyph = ({ size = 13 }: { size?: number }) => (
   </svg>
 )
 
+const mono = 'ui-monospace, SFMono-Regular, Menlo, monospace'
+
+/** Example with copyable input, like the statement blocks people know. */
+function ExampleBlock({
+  n,
+  example,
+}: {
+  n: number
+  example: { input: string; output: string; input_display?: string; explanation?: string }
+}) {
+  const [copied, setCopied] = useState(false)
+
+  const copy = async () => {
+    try {
+      await navigator.clipboard.writeText(example.input)
+      setCopied(true)
+      window.setTimeout(() => setCopied(false), 1200)
+    } catch {
+      /* clipboard blocked — the input is still selectable */
+    }
+  }
+
+  return (
+    <div style={{ marginTop: 14 }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+        <p style={{ fontSize: 12.5, fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>Example {n}</p>
+        <button
+          type="button"
+          onClick={copy}
+          style={{
+            fontSize: 10.5,
+            fontWeight: 600,
+            padding: '2px 8px',
+            borderRadius: 12,
+            border: '1px solid var(--border)',
+            background: 'transparent',
+            color: 'var(--text-muted)',
+            cursor: 'pointer',
+            fontFamily: 'inherit',
+          }}
+        >
+          {copied ? 'Copied' : 'Copy input'}
+        </button>
+      </div>
+
+      <p
+        style={{
+          fontSize: 10.5,
+          fontWeight: 700,
+          letterSpacing: '.04em',
+          textTransform: 'uppercase',
+          color: 'var(--text-muted)',
+          margin: '8px 0 4px',
+        }}
+      >
+        Input
+      </p>
+      <pre
+        style={{
+          margin: 0,
+          padding: '8px 10px',
+          borderRadius: 8,
+          background: 'var(--bg-tertiary)',
+          border: '1px solid var(--border)',
+          fontSize: 11.5,
+          lineHeight: 1.55,
+          fontFamily: mono,
+          color: 'var(--text-primary)',
+          whiteSpace: 'pre-wrap',
+          wordBreak: 'break-word',
+        }}
+      >
+        {example.input_display ?? example.input}
+      </pre>
+
+      <p
+        style={{
+          fontSize: 10.5,
+          fontWeight: 700,
+          letterSpacing: '.04em',
+          textTransform: 'uppercase',
+          color: 'var(--text-muted)',
+          margin: '8px 0 4px',
+        }}
+      >
+        Output
+      </p>
+      <pre
+        style={{
+          margin: 0,
+          padding: '8px 10px',
+          borderRadius: 8,
+          background: 'var(--bg-tertiary)',
+          border: '1px solid var(--border)',
+          fontSize: 11.5,
+          lineHeight: 1.55,
+          fontFamily: mono,
+          color: 'var(--text-primary)',
+          whiteSpace: 'pre-wrap',
+          wordBreak: 'break-word',
+        }}
+      >
+        {example.output}
+      </pre>
+
+      {example.explanation && (
+        <p style={{ fontSize: 12, color: 'var(--text-secondary)', lineHeight: 1.6, margin: '8px 0 0' }}>
+          {example.explanation}
+        </p>
+      )}
+    </div>
+  )
+}
+
 export default function ChallengeTab({
   daily,
   problems,
@@ -72,6 +225,16 @@ export default function ChallengeTab({
   error,
   onSubmit,
   onSelectProblem,
+  runResult,
+  runError,
+  runningRun,
+  onRun,
+  lastAction,
+  userId,
+  onLoadSubmission,
+  submissionNonce,
+  submissionCount,
+  onClearDraft,
 }: {
   daily: Problem | null
   problems: Problem[]
@@ -85,16 +248,79 @@ export default function ChallengeTab({
   error: string | null
   onSubmit: () => void
   onSelectProblem: (p: Problem) => void
+  runResult: RunResult | null
+  runError: string | null
+  runningRun: boolean
+  onRun: () => void
+  lastAction: 'run' | 'submit' | null
+  userId: string | null
+  onLoadSubmission: (code: string, language: string) => void
+  submissionNonce: number
+  submissionCount: number
+  onClearDraft: () => void
 }) {
   const [diffFilter, setDiffFilter] = useState<'all' | 'easy' | 'medium' | 'hard'>('all')
+  const [leftTab, setLeftTab] = useState<'description' | 'submissions'>('description')
+  const [judgeOk, setJudgeOk] = useState<boolean | null>(null)
+  const [leftPct, setLeftPct] = useState(46)
+  const dragging = useRef(false)
+  const wrapRef = useRef<HTMLDivElement | null>(null)
+
+  useEffect(() => {
+    const saved = Number(window.localStorage.getItem('cc.solve.split'))
+    if (saved >= 30 && saved <= 65) setLeftPct(saved)
+  }, [])
+
+  // A dead runner must not look like a wrong answer. Probe on mount and keep
+  // re-checking every 20s while it is down, so Run and Submit re-enable on
+  // their own once the judge recovers instead of staying dead until reload.
+  useEffect(() => {
+    let cancelled = false
+    let timer: ReturnType<typeof setTimeout> | undefined
+
+    const probe = async () => {
+      try {
+        const res = await fetch('/api/compete/judge/health', { cache: 'no-store' })
+        const data = await res.json().catch(() => null)
+        if (cancelled) return
+        const up = Boolean(data?.ok)
+        setJudgeOk(up)
+        if (!up) timer = setTimeout(probe, 20000)
+      } catch {
+        if (cancelled) return
+        setJudgeOk(false)
+        timer = setTimeout(probe, 20000)
+      }
+    }
+
+    probe()
+    return () => {
+      cancelled = true
+      if (timer) clearTimeout(timer)
+    }
+  }, [])
+
+  const commitSplit = (pct: number) => {
+    const clamped = Math.min(65, Math.max(30, pct))
+    setLeftPct(clamped)
+    try {
+      window.localStorage.setItem('cc.solve.split', String(Math.round(clamped)))
+    } catch {}
+  }
 
   const filteredProblems = diffFilter === 'all' ? problems : problems.filter((p) => p.difficulty === diffFilter)
   const solvedCount = problems.filter((p) => solved[p.id]).length
 
+  // page.tsx owns the code: switching language loads that language's draft.
   const changeLang = (l: string) => {
     setLang(l)
-    if (daily) setCode(daily.starter_code?.[l] || '')
   }
+
+  // A dead runner must not look like a disabled feature with no explanation;
+  // `busy` greys both actions and blocks the keyboard shortcut while the
+  // health banner is up.
+  const judgeDown = judgeOk === false
+  const busy = running || runningRun || judgeDown
 
   if (!daily) {
     return (
@@ -115,197 +341,449 @@ export default function ChallengeTab({
     )
   }
 
+  const shownVerdict = lastAction === 'run' ? runResult?.verdict : result?.verdict
+  const panel =
+    lastAction === 'run' && runResult ? (
+      <ResultPanel
+        kind="run"
+        verdict={runResult.verdict}
+        passed={runResult.passed}
+        total={runResult.total}
+        runtimeMs={runResult.runtime_ms}
+        cases={runResult.cases}
+      />
+    ) : lastAction === 'submit' && result ? (
+      <ResultPanel
+        kind="submit"
+        verdict={result.verdict}
+        passed={result.passed}
+        total={result.total}
+        runtimeMs={result.runtime_ms}
+        cases={result.cases}
+        compileOutput={result.compile_output}
+        stderr={result.stderr}
+      />
+    ) : null
+
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-      {/* Problem card */}
-      <div
-        style={{
-          background: 'var(--bg)',
-          border: '1px solid var(--border)',
-          borderRadius: 14,
-          padding: '18px 20px',
-          boxShadow: 'var(--shadow-sm)',
-        }}
-      >
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 8, flexWrap: 'wrap' }}>
-          <h3 style={{ fontSize: 17, fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>{daily.title}</h3>
-          <span
-            style={{
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: 6,
-              fontSize: 11,
-              fontWeight: 700,
-              padding: '3px 10px',
-              borderRadius: 20,
-              background: 'var(--bg-tertiary)',
-              color: diffColor[daily.difficulty],
-            }}
-          >
-            <DiffDot d={daily.difficulty} />
-            {daily.difficulty}
-          </span>
-          {solved[daily.id] && (
-            <span
-              style={{
-                fontSize: 11,
-                fontWeight: 700,
-                padding: '3px 10px',
-                borderRadius: 20,
-                background: 'var(--success-light)',
-                color: 'var(--success-text)',
-              }}
-            >
-              ✓ Solved
-            </span>
-          )}
-        </div>
-        <p style={{ fontSize: 13, color: 'var(--text-secondary)', lineHeight: 1.7, margin: 0, whiteSpace: 'pre-wrap' }}>
-          {daily.description}
-        </p>
-        {(daily.topics || []).length > 0 && (
-          <div style={{ display: 'flex', gap: 6, marginTop: 10, flexWrap: 'wrap' }}>
-            {daily.topics.map((t) => (
-              <span
-                key={t}
-                style={{
-                  fontSize: 10.5,
-                  color: 'var(--text-muted)',
-                  background: 'var(--bg-tertiary)',
-                  padding: '3px 9px',
-                  borderRadius: 20,
-                }}
-              >
-                #{t}
-              </span>
-            ))}
-          </div>
-        )}
-      </div>
-
-      {/* Code Editor — CodeMirror with syntax highlighting */}
-      <div
-        style={{
-          background: 'var(--bg)',
-          border: '1px solid var(--border)',
-          borderRadius: 14,
-          overflow: 'hidden',
-          boxShadow: 'var(--shadow-sm)',
-        }}
-      >
-        {/* Language tabs + Submit */}
+      {judgeOk === false && (
         <div
+          role="status"
           style={{
             display: 'flex',
-            alignItems: 'center',
-            gap: 6,
-            padding: '10px 14px',
-            borderBottom: '1px solid var(--border)',
-            flexWrap: 'wrap',
+            alignItems: 'flex-start',
+            gap: 8,
+            padding: '10px 12px',
+            borderRadius: 10,
+            border: '1px solid var(--border)',
+            background: 'var(--bg-tertiary)',
+            color: 'var(--warning-text)',
+            fontSize: 12.5,
+            lineHeight: 1.55,
           }}
         >
-          {LANGUAGES.map((l) => (
+          <span aria-hidden="true">⚠</span>
+          <span>
+            The code runner is unreachable right now. Run and Submit will fail until it is back — your draft is safe in
+            the editor.
+          </span>
+        </div>
+      )}
+
+      {/* ── Split solve workspace ───────────────────────────────────────── */}
+      <div ref={wrapRef} className="cc-solve" style={{ '--cc-left': `${leftPct}%` } as CSSProperties}>
+        {/* Statement + examples */}
+        <section
+          className="cc-solve__statement"
+          style={{
+            background: 'var(--bg)',
+            border: '1px solid var(--border)',
+            borderRadius: 14,
+            padding: '18px 20px',
+            boxShadow: 'var(--shadow-sm)',
+            minWidth: 0,
+          }}
+        >
+          <div
+            role="tablist"
+            aria-label="Problem panels"
+            style={{
+              display: 'flex',
+              gap: 4,
+              marginBottom: 14,
+              borderBottom: '1px solid var(--border)',
+              paddingBottom: 8,
+            }}
+          >
+            {(
+              [
+                ['description', 'Description'],
+                ['submissions', 'Submissions'],
+              ] as const
+            ).map(([key, label]) => (
+              <button
+                key={key}
+                role="tab"
+                aria-selected={leftTab === key}
+                aria-label={
+                  key === 'submissions' && submissionCount > 0
+                    ? `Submissions, ${submissionCount} attempt${submissionCount === 1 ? '' : 's'}`
+                    : undefined
+                }
+                onClick={() => setLeftTab(key)}
+                style={{
+                  padding: '4px 11px',
+                  borderRadius: 7,
+                  fontSize: 11.5,
+                  fontWeight: 700,
+                  cursor: 'pointer',
+                  fontFamily: 'inherit',
+                  border: leftTab === key ? '1px solid var(--accent-border)' : '1px solid transparent',
+                  background: leftTab === key ? 'var(--accent-light)' : 'transparent',
+                  color: leftTab === key ? 'var(--accent-text)' : 'var(--text-muted)',
+                }}
+              >
+                {label}
+                {key === 'submissions' && submissionCount > 0 && (
+                  <span
+                    aria-hidden="true"
+                    style={{
+                      marginLeft: 6,
+                      padding: '1px 6px',
+                      borderRadius: 20,
+                      fontSize: 10,
+                      fontWeight: 800,
+                      lineHeight: 1.5,
+                      background: leftTab === key ? 'var(--bg)' : 'var(--bg-tertiary)',
+                      color: 'var(--text-secondary)',
+                    }}
+                  >
+                    {submissionCount > 99 ? '99+' : submissionCount}
+                  </span>
+                )}
+              </button>
+            ))}
+          </div>
+
+          {leftTab === 'description' ? (
+            <>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 8, flexWrap: 'wrap' }}>
+                <h3 style={{ fontSize: 17, fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>
+                  {daily.title}
+                </h3>
+                <span
+                  style={{
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: 6,
+                    fontSize: 11,
+                    fontWeight: 700,
+                    padding: '3px 10px',
+                    borderRadius: 20,
+                    background: 'var(--bg-tertiary)',
+                    color: diffColor[daily.difficulty],
+                    textTransform: 'capitalize',
+                  }}
+                >
+                  <DiffDot d={daily.difficulty} />
+                  {daily.difficulty}
+                </span>
+                {solved[daily.id] && (
+                  <span
+                    style={{
+                      fontSize: 11,
+                      fontWeight: 700,
+                      padding: '3px 10px',
+                      borderRadius: 20,
+                      background: 'var(--success-light)',
+                      color: 'var(--success-text)',
+                    }}
+                  >
+                    <CheckGlyph size={11} /> Solved
+                  </span>
+                )}
+              </div>
+
+              <StatementText text={daily.description} />
+
+              {(daily.examples || []).map((ex, i) => (
+                <ExampleBlock key={i} n={i + 1} example={ex} />
+              ))}
+
+              {daily.constraints && (
+                <>
+                  <p
+                    style={{
+                      fontSize: 11,
+                      fontWeight: 700,
+                      letterSpacing: '.04em',
+                      textTransform: 'uppercase',
+                      color: 'var(--text-muted)',
+                      margin: '16px 0 4px',
+                    }}
+                  >
+                    Constraints
+                  </p>
+                  <pre
+                    style={{
+                      margin: 0,
+                      padding: '8px 10px',
+                      borderRadius: 8,
+                      background: 'var(--bg-tertiary)',
+                      border: '1px solid var(--border)',
+                      fontSize: 11.5,
+                      lineHeight: 1.6,
+                      fontFamily: mono,
+                      color: 'var(--text-secondary)',
+                      whiteSpace: 'pre-wrap',
+                      wordBreak: 'break-word',
+                    }}
+                  >
+                    {daily.constraints}
+                  </pre>
+                </>
+              )}
+
+              {(daily.topics || []).length > 0 && (
+                <div style={{ display: 'flex', gap: 6, marginTop: 14, flexWrap: 'wrap' }}>
+                  {daily.topics.map((t) => (
+                    <span
+                      key={t}
+                      style={{
+                        fontSize: 10.5,
+                        color: 'var(--text-muted)',
+                        background: 'var(--bg-tertiary)',
+                        padding: '3px 9px',
+                        borderRadius: 20,
+                      }}
+                    >
+                      #{t}
+                    </span>
+                  ))}
+                </div>
+              )}
+            </>
+          ) : (
+            <SubmissionsTab
+              problemId={daily.id}
+              userId={userId}
+              refreshKey={submissionNonce}
+              onLoad={onLoadSubmission}
+            />
+          )}
+        </section>
+
+        {/* Draggable divider (desktop only, hidden by CSS on phones) */}
+        <div
+          className="cc-solve__divider"
+          role="separator"
+          aria-orientation="vertical"
+          aria-label="Resize statement and editor"
+          aria-valuenow={Math.round(leftPct)}
+          aria-valuemin={30}
+          aria-valuemax={65}
+          tabIndex={0}
+          onPointerDown={(e) => {
+            dragging.current = true
+            e.currentTarget.setPointerCapture(e.pointerId)
+          }}
+          onPointerMove={(e) => {
+            if (!dragging.current || !wrapRef.current) return
+            const rect = wrapRef.current.getBoundingClientRect()
+            commitSplit(((e.clientX - rect.left) / rect.width) * 100)
+          }}
+          onPointerUp={() => {
+            dragging.current = false
+          }}
+          onPointerCancel={() => {
+            dragging.current = false
+          }}
+          onKeyDown={(e) => {
+            if (e.key === 'ArrowLeft') {
+              e.preventDefault()
+              commitSplit(leftPct - 3)
+            } else if (e.key === 'ArrowRight') {
+              e.preventDefault()
+              commitSplit(leftPct + 3)
+            }
+          }}
+        />
+
+        {/* Editor + verdict */}
+        <section
+          className="cc-solve__work"
+          style={{
+            background: 'var(--bg)',
+            border: '1px solid var(--border)',
+            borderRadius: 14,
+            overflow: 'hidden',
+            boxShadow: 'var(--shadow-sm)',
+            minWidth: 0,
+            display: 'flex',
+            flexDirection: 'column',
+          }}
+          onKeyDownCapture={(e) => {
+            if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) {
+              e.preventDefault()
+              e.stopPropagation()
+              if (busy) return
+              if (e.shiftKey) onSubmit()
+              else onRun()
+            }
+          }}
+        >
+          {/* Language tabs + actions */}
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 6,
+              padding: '10px 14px',
+              borderBottom: '1px solid var(--border)',
+              flexWrap: 'wrap',
+            }}
+          >
+            {LANGUAGES.map((l) => (
+              <button
+                key={l.key}
+                onClick={() => changeLang(l.key)}
+                style={{
+                  padding: '5px 12px',
+                  borderRadius: 8,
+                  fontSize: 12,
+                  fontWeight: 600,
+                  cursor: 'pointer',
+                  fontFamily: 'inherit',
+                  border: lang === l.key ? '1px solid var(--accent-border)' : '1px solid var(--border)',
+                  background: lang === l.key ? 'var(--accent-light)' : 'var(--bg)',
+                  color: lang === l.key ? 'var(--accent-text)' : 'var(--text-secondary)',
+                }}
+              >
+                {l.label}
+              </button>
+            ))}
+            <div style={{ flex: 1 }} />
             <button
-              key={l.key}
-              onClick={() => changeLang(l.key)}
+              onClick={onClearDraft}
+              title="Reset this language to the starter code"
               style={{
-                padding: '5px 12px',
+                padding: '6px 10px',
                 borderRadius: 8,
-                fontSize: 12,
+                fontSize: 11.5,
                 fontWeight: 600,
                 cursor: 'pointer',
                 fontFamily: 'inherit',
-                border: lang === l.key ? '1px solid var(--accent-border)' : '1px solid var(--border)',
-                background: lang === l.key ? 'var(--accent-light)' : 'var(--bg)',
-                color: lang === l.key ? 'var(--accent-text)' : 'var(--text-secondary)',
+                border: '1px solid transparent',
+                background: 'transparent',
+                color: 'var(--text-muted)',
               }}
             >
-              {l.label}
+              Clear draft
             </button>
-          ))}
-          <span
-            aria-hidden="true"
-            style={{
-              display: 'inline-flex',
-              alignItems: 'center',
-              color: diffColor[daily.difficulty] || 'var(--text-muted)',
-              marginRight: 2,
-            }}
-          >
-            <DiffDot d={daily.difficulty} />
-          </span>
-          <div style={{ flex: 1 }} />
-          <button
-            onClick={onSubmit}
-            disabled={running || !code.trim()}
-            style={{
-              padding: '7px 16px',
-              borderRadius: 8,
-              fontSize: 13,
-              fontWeight: 700,
-              cursor: 'pointer',
-              fontFamily: 'inherit',
-              border: 'none',
-              background: running || !code.trim() ? 'var(--disabled)' : 'var(--accent)',
-              color: running || !code.trim() ? 'var(--text-muted)' : 'var(--on-accent)',
-            }}
-          >
-            {running ? 'Judging…' : '▶ Submit'}
-          </button>
-        </div>
-
-        {/* CodeMirror Editor */}
-        <CodeEditor
-          value={code}
-          onChange={(v) => {
-            setCode(v)
-          }}
-          language={lang}
-        />
-
-        {error && (
-          <div
-            style={{
-              padding: '10px 14px',
-              fontSize: 12.5,
-              color: 'var(--danger)',
-              background: 'var(--danger-light)',
-              borderTop: '1px solid var(--danger-border)',
-            }}
-          >
-            {error}
+            <button
+              onClick={onRun}
+              disabled={busy || !code.trim()}
+              title={judgeDown ? 'The code runner is unreachable right now' : undefined}
+              style={{
+                padding: '7px 14px',
+                borderRadius: 8,
+                fontSize: 13,
+                fontWeight: 700,
+                cursor: busy || !code.trim() ? 'not-allowed' : 'pointer',
+                fontFamily: 'inherit',
+                border: '1px solid var(--border)',
+                background: 'var(--bg)',
+                color: busy || !code.trim() ? 'var(--text-muted)' : 'var(--text-primary)',
+              }}
+            >
+              {runningRun ? 'Running…' : 'Run'}
+            </button>
+            <button
+              onClick={onSubmit}
+              disabled={busy || !code.trim()}
+              title={judgeDown ? 'The code runner is unreachable right now' : undefined}
+              style={{
+                padding: '7px 16px',
+                borderRadius: 8,
+                fontSize: 13,
+                fontWeight: 700,
+                cursor: busy || !code.trim() ? 'not-allowed' : 'pointer',
+                fontFamily: 'inherit',
+                border: 'none',
+                background: busy || !code.trim() ? 'var(--disabled)' : 'var(--accent)',
+                color: busy || !code.trim() ? 'var(--text-muted)' : 'var(--on-accent)',
+              }}
+            >
+              {running ? 'Judging…' : 'Submit'}
+            </button>
           </div>
-        )}
-        {result && (
-          <div
+
+          {/* Editor */}
+          <CodeEditor
+            value={code}
+            onChange={(v) => {
+              setCode(v)
+            }}
+            language={lang}
+          />
+
+          <p
             style={{
-              padding: '12px 14px',
+              margin: 0,
+              padding: '6px 14px',
+              fontSize: 10.5,
+              color: 'var(--text-muted)',
               borderTop: '1px solid var(--border)',
-              fontSize: 13,
-              background: result.verdict === 'accepted' ? 'var(--success-light)' : 'var(--bg-tertiary)',
             }}
           >
-            {result.verdict === 'accepted' ? (
-              <p style={{ margin: 0, color: 'var(--success-text)', fontWeight: 700 }}>
-                <CheckGlyph size={13} /> Accepted — {result.passed}/{result.total} hidden cases passed
-                {result.runtime_ms ? ` · ${result.runtime_ms}ms` : ''} · karma awarded
-              </p>
-            ) : (
-              <p
-                style={{ margin: 0, color: result.verdict === 'time_limit' ? 'var(--warning-text)' : 'var(--danger)' }}
-              >
-                {result.verdict === 'wrong_answer'
-                  ? `Wrong answer on a hidden case: ${result.first_fail_input || ''}`
-                  : result.verdict === 'time_limit'
-                    ? 'Time limit exceeded'
-                    : result.verdict === 'compile_error'
-                      ? 'Compile error'
-                      : 'Runtime error'}{' '}
-                — {result.passed}/{result.total} passed
-              </p>
-            )}
-          </div>
-        )}
+            Complete the function — the driver that reads the tests is hidden. ⌘/Ctrl + Enter to run · add Shift to
+            submit
+          </p>
+
+          {error && (
+            <div
+              style={{
+                padding: '10px 14px',
+                fontSize: 12.5,
+                color: 'var(--danger)',
+                background: 'var(--danger-light)',
+                borderTop: '1px solid var(--danger-border)',
+              }}
+            >
+              {error}
+            </div>
+          )}
+
+          {runError && (
+            <div
+              style={{
+                padding: '10px 14px',
+                fontSize: 12.5,
+                color: 'var(--text-secondary)',
+                background: 'var(--bg-tertiary)',
+                borderTop: '1px solid var(--border)',
+              }}
+            >
+              {runError}
+            </div>
+          )}
+
+          {panel}
+
+          {lastAction === 'run' && shownVerdict === 'passed' && runResult && runResult.passed === runResult.total && (
+            <p
+              style={{
+                margin: 0,
+                padding: '0 14px 12px',
+                fontSize: 11.5,
+                color: 'var(--text-muted)',
+              }}
+            >
+              Examples are not graded — hit Submit to run the hidden cases.
+            </p>
+          )}
+        </section>
       </div>
 
       {/* Problem list with difficulty filter */}
@@ -399,6 +877,10 @@ export default function ChallengeTab({
           ))}
         </div>
       </div>
+
+      {/* Interview-frequency catalogue: in-house problems open here, the rest
+          open on LeetCode. */}
+      <TopAskedPanel problems={problems} onSelectProblem={onSelectProblem} />
     </div>
   )
 }

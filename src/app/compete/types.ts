@@ -10,16 +10,49 @@ export type Problem = {
   topics: string[]
   description: string
   constraints: string
-  examples: { input: string; output: string; explanation?: string }[]
+  examples: {
+    input: string
+    output: string
+    /** LeetCode-style rendering of the arguments; `input` stays the raw stdin. */
+    input_display?: string
+    explanation?: string
+  }[]
   starter_code: Record<string, string>
+}
+
+export type CaseStatus =
+  'passed' | 'accepted' | 'wrong_answer' | 'time_limit' | 'runtime_error' | 'compile_error' | 'internal_error'
+
+/** One row of a Run or Submit result. Run rows carry input/expected/actual. */
+export type CaseResult = {
+  index: number
+  status: CaseStatus
+  passed: boolean
+  time_ms: number
+  input?: string
+  expected?: string
+  actual?: string
+  stderr?: string | null
+  compile_output?: string | null
 }
 
 export type Submission = {
   verdict: string
   passed: number
   total: number
-  first_fail_input: string | null
   runtime_ms?: number
+  cases?: CaseResult[]
+  compile_output?: string | null
+  stderr?: string | null
+}
+
+/** Visit `/api/compete/run` result: public examples only. */
+export type RunResult = {
+  verdict: string
+  passed: number
+  total: number
+  runtime_ms?: number
+  cases: CaseResult[]
 }
 
 /**
