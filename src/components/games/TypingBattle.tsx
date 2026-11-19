@@ -589,6 +589,9 @@ export default function TypingBattle({
         p_duration_ms: durationMs,
         p_correct_chars: correctChars,
         p_total_chars: totalTyped,
+        // Without this the solo run is stored with a null user and can never
+        // reach the Compete typing leaderboard.
+        p_user_id: userId,
       })
       if (e) {
         setError(e.message.includes('impossible_time') ? 'Finish rejected by the server' : 'Could not submit')
@@ -598,7 +601,7 @@ export default function TypingBattle({
       setDailyResult({ wpm: Number(r.wpm), accuracy: Number(r.accuracy), rank: Number(r.rank) })
       setPhase('finished')
     },
-    [supabase, guestId, nickname]
+    [supabase, guestId, nickname, userId]
   )
 
   // ═══ Render ═════════════════════════════════════════════════════════════════
