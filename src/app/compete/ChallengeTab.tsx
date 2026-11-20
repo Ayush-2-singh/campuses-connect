@@ -333,7 +333,33 @@ export default function ChallengeTab({
           textAlign: 'center',
         }}
       >
-        <p style={{ fontSize: 28, margin: '0 0 8px' }}>🧩</p>
+        <span
+          style={{
+            display: 'inline-flex',
+            width: 44,
+            height: 44,
+            borderRadius: 12,
+            alignItems: 'center',
+            justifyContent: 'center',
+            background: 'var(--accent-light)',
+            color: 'var(--accent-text)',
+            marginBottom: 10,
+          }}
+          aria-hidden="true"
+        >
+          <svg
+            width={22}
+            height={22}
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth={1.8}
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          >
+            <path d="M8 2v4M16 2v4M3 10h18M5 4h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2Z" />
+          </svg>
+        </span>
         <p style={{ fontSize: 14, color: 'var(--text-muted)', margin: 0 }}>
           No challenge scheduled for today yet — check back soon.
         </p>
@@ -376,14 +402,28 @@ export default function ChallengeTab({
             gap: 8,
             padding: '10px 12px',
             borderRadius: 10,
-            border: '1px solid var(--border)',
-            background: 'var(--bg-tertiary)',
+            border: '1px solid var(--warning-border)',
+            background: 'var(--warning-light)',
             color: 'var(--warning-text)',
             fontSize: 12.5,
             lineHeight: 1.55,
           }}
         >
-          <span aria-hidden="true">⚠</span>
+          <span style={{ display: 'inline-flex', flexShrink: 0, marginTop: 2 }} aria-hidden="true">
+            <svg
+              width={15}
+              height={15}
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth={2.2}
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <path d="M12 3 2 20h20L12 3Z" />
+              <path d="M12 9v5M12 17h.01" />
+            </svg>
+          </span>
           <span>
             The code runner is unreachable right now. Run and Submit will fail until it is back — your draft is safe in
             the editor.
@@ -813,7 +853,7 @@ export default function ChallengeTab({
                   fontWeight: 600,
                   cursor: 'pointer',
                   fontFamily: 'inherit',
-                  border: diffFilter === d ? 'none' : '1px solid var(--border)',
+                  border: `1px solid ${diffFilter === d ? 'var(--accent)' : 'var(--border)'}`,
                   background: diffFilter === d ? 'var(--accent)' : 'var(--bg)',
                   color: diffFilter === d ? 'var(--on-accent)' : 'var(--text-secondary)',
                   textTransform: 'capitalize',
@@ -829,6 +869,7 @@ export default function ChallengeTab({
             <button
               key={p.id}
               onClick={() => onSelectProblem(p)}
+              className="cc-row"
               style={{
                 display: 'flex',
                 alignItems: 'center',

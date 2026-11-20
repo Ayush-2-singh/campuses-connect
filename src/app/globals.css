@@ -4645,3 +4645,66 @@ html.nav-hidden .fab-wrap {
     max-height: none;
   }
 }
+
+/* ── Compete: leaderboard motion + solve-workspace rows ─────────────────── */
+
+/* Podium columns rise into place once, staggered by the caller's delay. */
+@keyframes lb-podium-rise {
+  from {
+    opacity: 0;
+    transform: translateY(18px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+.lb-podium-col {
+  animation: lb-podium-rise 0.5s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+
+/* Rows lift and take the accent edge on hover, like the mode tiles. */
+.lb-row {
+  border: 1px solid var(--border);
+  background: var(--bg);
+  transition:
+    transform 0.16s ease,
+    border-color 0.16s ease,
+    box-shadow 0.16s ease;
+}
+.lb-row[data-me='true'] {
+  border-color: var(--accent);
+  background: var(--accent-light);
+}
+.lb-row:hover {
+  transform: translateY(-1px);
+  border-color: var(--accent-border);
+  box-shadow: var(--shadow-md);
+}
+
+/* Solve workspace problem rows share the same hover language. */
+.cc-row {
+  transition:
+    transform 0.16s ease,
+    border-color 0.16s ease,
+    box-shadow 0.16s ease;
+}
+.cc-row:hover {
+  transform: translateY(-1px);
+  border-color: var(--accent-border);
+  box-shadow: var(--shadow-md);
+}
+.cc-row:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .lb-podium-col {
+    animation: none;
+  }
+  .lb-row:hover,
+  .cc-row:hover {
+    transform: none;
+  }
+}

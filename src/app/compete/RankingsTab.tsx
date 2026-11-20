@@ -392,7 +392,18 @@ export default function RankingsTab({ user, profile, season }: { user: any; prof
             </p>
           </div>
           <div style={{ textAlign: 'center' }}>
-            <p style={{ fontSize: 16, fontWeight: 800, color: 'var(--accent-text)', margin: 0 }}>
+            <p
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: 4,
+                fontSize: 16,
+                fontWeight: 800,
+                color: 'var(--accent-text)',
+                margin: 0,
+                whiteSpace: 'nowrap',
+              }}
+            >
               <BoltGlyph /> {me.points.toLocaleString()}
             </p>
             <p style={{ fontSize: 10, color: 'var(--text-muted)', margin: 0 }}>{zoneLabel} points</p>
@@ -484,7 +495,7 @@ export default function RankingsTab({ user, profile, season }: { user: any; prof
         <>
           {/* Top 3 podium */}
           {top3.length >= 3 && (
-            <div style={{ marginBottom: 24, padding: '0 4px' }}>
+            <div style={{ marginBottom: 'clamp(16px, 4vw, 24px)', padding: '0 4px' }}>
               <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'center', gap: 0 }}>
                 {[1, 0, 2].map((pos) => {
                   const p = top3[pos]
@@ -501,7 +512,7 @@ export default function RankingsTab({ user, profile, season }: { user: any; prof
                       ? 'linear-gradient(180deg, var(--bg-elevated) 0%, var(--bg-tertiary) 100%)'
                       : 'linear-gradient(180deg, color-mix(in srgb, var(--accent) 26%, var(--bg-tertiary)) 0%, var(--bg-tertiary) 100%)'
                   const shadow = isChampion
-                    ? '0 12px 26px -14px color-mix(in srgb, var(--accent) 75%, transparent)'
+                    ? '0 10px 22px -16px color-mix(in srgb, var(--accent) 70%, transparent)'
                     : 'var(--shadow-sm)'
 
                   return (
@@ -511,13 +522,17 @@ export default function RankingsTab({ user, profile, season }: { user: any; prof
                       role="link"
                       tabIndex={0}
                       onKeyDown={(e) => (e.key === 'Enter' || e.key === ' ') && router.push(`/profile/${p.username}`)}
+                      className="lb-podium-col"
                       style={{
                         flex: 1,
+                        minWidth: 0,
                         display: 'flex',
                         flexDirection: 'column',
                         alignItems: 'center',
                         cursor: 'pointer',
                         maxWidth: 140,
+                        // Stagger follows the visual order: 2nd, 1st, 3rd.
+                        animationDelay: `${pos * 70}ms`,
                       }}
                     >
                       <div style={{ textAlign: 'center', marginBottom: 8, padding: '0 4px' }}>
@@ -551,10 +566,14 @@ export default function RankingsTab({ user, profile, season }: { user: any; prof
                         </p>
                         <p
                           style={{
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: 3,
                             fontSize: isChampion ? 15 : 13,
                             fontWeight: 800,
                             color: 'var(--accent-text)',
                             margin: '3px 0 0',
+                            whiteSpace: 'nowrap',
                           }}
                         >
                           <BoltGlyph /> {p.points.toLocaleString()}
@@ -620,18 +639,16 @@ export default function RankingsTab({ user, profile, season }: { user: any; prof
                   key={entry.user_id}
                   role="listitem"
                   onClick={() => router.push(`/profile/${entry.username}`)}
-                  className="hc-card hc-card--link"
+                  className="hc-card hc-card--link lb-row"
+                  data-me={isMe ? 'true' : undefined}
                   style={{
                     flexDirection: 'row',
-                    background: isMe ? 'var(--accent-light)' : 'var(--bg)',
-                    border: `1px solid ${isMe ? 'var(--accent)' : 'var(--border)'}`,
                     borderRadius: 12,
                     padding: '12px 14px',
                     display: 'flex',
                     alignItems: 'center',
                     gap: 10,
                     cursor: 'pointer',
-                    boxShadow: 'var(--shadow-sm)',
                   }}
                 >
                   <div style={{ width: 32, textAlign: 'center', flexShrink: 0 }}>
@@ -678,7 +695,19 @@ export default function RankingsTab({ user, profile, season }: { user: any; prof
                       {entry.accuracy}%
                     </p>
                   </div>
-                  <p style={{ fontSize: 15, fontWeight: 800, color: 'var(--accent-text)', margin: 0, flexShrink: 0 }}>
+                  <p
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 4,
+                      fontSize: 15,
+                      fontWeight: 800,
+                      color: 'var(--accent-text)',
+                      margin: 0,
+                      flexShrink: 0,
+                      whiteSpace: 'nowrap',
+                    }}
+                  >
                     <BoltGlyph /> {entry.points.toLocaleString()}
                   </p>
                 </div>
