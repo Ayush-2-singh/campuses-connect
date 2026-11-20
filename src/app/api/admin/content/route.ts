@@ -202,10 +202,6 @@ export async function DELETE(request: NextRequest) {
   if (!auth.ok) return auth.response
   const admin = auth.auth
 
-  if (!admin.adminTypes.some((t) => (MODERATOR_ROLES as readonly string[]).includes(t))) {
-    return NextResponse.json({ error: 'Forbidden. Moderator access required.' }, { status: 403 })
-  }
-
   const body = await request.json()
   const { type, ids } = body
 
@@ -218,12 +214,29 @@ export async function DELETE(request: NextRequest) {
     return NextResponse.json({ error: `Invalid type. Must be one of: ${validTypes.join(', ')}` }, { status: 400 })
   }
 
+  const isModerator = admin.adminTypes.some((t) => (MODERATOR_ROLES as readonly string[]).includes(t))
   const { isPlatform, canModerateRow } = scopeFilterFor(admin)
   const table = TABLE_BY_TYPE[type]
   const selectScope = 'id, campus_id, college_id, community_id'
   let allowedIds: string[] = ids
 
-  if (type === 'posts') {
+  if (!isModerator) {
+    // Library contributors may delete their own resources and nothing else.
+    // `notes_delete_own` already says this at the database, but this route
+    // writes with the service role, so the ownership rule is repeated here
+    // rather than relying on RLS being bypassed.
+    if (type !== 'notes') {
+      return NextResponse.json({ error: 'Forbidden. Moderator access required.' }, { status: 403 })
+    }
+
+    const { data, error } = await getSupabaseAdmin().from('notes').select('id, uploaded_by').in('id', ids)
+    if (error) return serverError('admin/content', error)
+
+    allowedIds = (data || []).filter((r: any) => r.uploaded_by === admin.userId).map((r: any) => r.id)
+    if (allowedIds.length === 0) {
+      return NextResponse.json({ error: 'You can only delete resources you posted.' }, { status: 403 })
+    }
+  } else if (type === 'posts') {
     const { data, error } = await getSupabaseAdmin().from('posts').select(selectScope).in('id', ids)
     if (error) return serverError('admin/content', error)
     allowedIds = (data || []).filter(canModerateRow).map((r: any) => r.id)

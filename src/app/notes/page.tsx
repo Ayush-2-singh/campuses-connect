@@ -112,12 +112,17 @@ export default function NotesPage() {
   const deleteNote = async (note: any) => {
     if (!window.confirm(`Delete "${note.title}"? This cannot be undone.`)) return
 
-    await fetch('/api/admin/content', {
+    const res = await fetch('/api/admin/content', {
       method: 'DELETE',
       headers: { 'Content-Type': 'application/json' },
       credentials: 'include',
       body: JSON.stringify({ type: 'notes', ids: [note.id] }),
     })
+    if (!res.ok) {
+      const payload = await res.json().catch(() => null)
+      alert(payload?.error || 'Could not delete this resource.')
+      return
+    }
     const { data } = await supabase
       .from('notes')
       .select('*, profiles!notes_uploaded_by_fkey(full_name, username)')
@@ -1121,23 +1126,6 @@ function NoteRow({
           >
             Link →
           </a>
-        )}
-        {canDelete && (
-          <button
-            onClick={() => onDelete?.(note)}
-            style={{
-              fontSize: 11,
-              padding: '4px 10px',
-              borderRadius: 6,
-              border: '1px solid var(--danger-border)',
-              background: 'var(--danger-light)',
-              color: 'var(--danger-text)',
-              cursor: 'pointer',
-              fontFamily: 'inherit',
-            }}
-          >
-            Delete
-          </button>
         )}
       </div>
     </div>
