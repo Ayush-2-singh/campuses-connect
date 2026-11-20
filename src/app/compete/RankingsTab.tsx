@@ -84,7 +84,14 @@ const UsersGlyph = ({ size = 11 }: { size?: number }) => (
   </svg>
 )
 
-const MEDAL_COLORS = ['#f6c453', '#c7ccd8', '#e09b62']
+// Podium metals follow the section accent instead of fixed gold/silver/bronze:
+// first is the accent itself, second a neutral, third a blend of the two. That
+// keeps the podium correct in both themes and on any section accent.
+const MEDAL_COLORS = [
+  'var(--accent)',
+  'color-mix(in srgb, var(--text-secondary) 55%, white)',
+  'color-mix(in srgb, var(--accent) 42%, white)',
+]
 
 /** Podium medal — SVG circle + ribbon with rank number (replaces 🥇🥈🥉 emoji). */
 function RankGlyph({ pos, size = 22 }: { pos: number; size?: number }) {
@@ -93,7 +100,7 @@ function RankGlyph({ pos, size = 22 }: { pos: number; size?: number }) {
     <svg width={size} height={size} viewBox="0 0 24 24" aria-hidden="true" style={{ verticalAlign: '-4px' }}>
       <path d="M8 1h8l-2.5 7.5h-3L8 1Z" fill={c} opacity={0.75} />
       <circle cx="12" cy="15" r="7.5" fill={c} />
-      <text x="12" y="18.6" textAnchor="middle" fontSize="9.5" fontWeight="800" fill="rgba(0,0,0,0.72)">
+      <text x="12" y="18.6" textAnchor="middle" fontSize="9.5" fontWeight="800" fill="var(--on-accent)">
         {pos + 1}
       </text>
     </svg>
@@ -274,7 +281,7 @@ export default function RankingsTab({ user, profile, season }: { user: any; prof
         </div>
         {me && (
           <div style={{ textAlign: 'right' }}>
-            <p style={{ fontSize: 18, fontWeight: 800, color: 'var(--accent)', margin: 0 }}>#{me.rank}</p>
+            <p style={{ fontSize: 18, fontWeight: 800, color: 'var(--accent-text)', margin: 0 }}>#{me.rank}</p>
             <p style={{ fontSize: 10, color: 'var(--text-muted)', margin: 0 }}>your rank</p>
           </div>
         )}
@@ -309,9 +316,12 @@ export default function RankingsTab({ user, profile, season }: { user: any; prof
                 display: 'flex',
                 flexDirection: 'column',
                 gap: 3,
-                border: isActive ? '2px solid var(--accent)' : '1px solid var(--border)',
+                border: `1px solid ${isActive ? 'var(--accent)' : 'var(--border)'}`,
                 background: isActive ? 'var(--accent-light)' : 'var(--bg)',
-                boxShadow: 'var(--shadow-sm)',
+                boxShadow: isActive
+                  ? '0 0 0 1px var(--accent), 0 6px 18px -12px color-mix(in srgb, var(--accent) 70%, transparent)'
+                  : 'var(--shadow-sm)',
+                transition: 'border-color .18s ease, box-shadow .18s ease, background .18s ease',
               }}
             >
               <span style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-secondary)' }}>{z.label}</span>
@@ -343,7 +353,7 @@ export default function RankingsTab({ user, profile, season }: { user: any; prof
         <div
           style={{
             background: 'linear-gradient(135deg, var(--accent-light), var(--bg))',
-            border: '2px solid var(--accent)',
+            border: '1px solid var(--accent-border)',
             borderRadius: 14,
             padding: '14px 18px',
             marginBottom: 16,
@@ -351,6 +361,7 @@ export default function RankingsTab({ user, profile, season }: { user: any; prof
             alignItems: 'center',
             gap: 14,
             flexWrap: 'wrap',
+            boxShadow: '0 8px 24px -18px color-mix(in srgb, var(--accent) 80%, transparent)',
           }}
         >
           <div
@@ -481,16 +492,17 @@ export default function RankingsTab({ user, profile, season }: { user: any; prof
                   const barH = isChampion ? 100 : pos === 1 ? 72 : 52
                   const avatarSize = isChampion ? 60 : 48
                   const medalSize = isChampion ? 36 : 28
+                  // Winner bar wears the accent; second is a neutral surface,
+                  // third a muted accent. No fixed metals, so the podium sits
+                  // in the same palette as the rest of the section.
                   const grad = isChampion
-                    ? 'linear-gradient(180deg, #fde68a 0%, #fd8f01 60%, #d97706 100%)'
+                    ? 'linear-gradient(180deg, color-mix(in srgb, var(--accent) 72%, white) 0%, var(--accent) 55%, color-mix(in srgb, var(--accent) 72%, black) 100%)'
                     : pos === 1
-                      ? 'linear-gradient(180deg, #e5e7eb 0%, #9ca3af 60%, #6b7280 100%)'
-                      : 'linear-gradient(180deg, #fed7aa 0%, #f97316 60%, #c2410c 100%)'
+                      ? 'linear-gradient(180deg, var(--bg-elevated) 0%, var(--bg-tertiary) 100%)'
+                      : 'linear-gradient(180deg, color-mix(in srgb, var(--accent) 26%, var(--bg-tertiary)) 0%, var(--bg-tertiary) 100%)'
                   const shadow = isChampion
-                    ? '0 0 20px rgba(245, 158, 11, 0.3), 0 -4px 12px rgba(245, 158, 11, 0.15)'
-                    : pos === 1
-                      ? '0 0 12px rgba(156, 163, 175, 0.2)'
-                      : '0 0 12px rgba(249, 115, 22, 0.2)'
+                    ? '0 12px 26px -14px color-mix(in srgb, var(--accent) 75%, transparent)'
+                    : 'var(--shadow-sm)'
 
                   return (
                     <div
@@ -558,6 +570,7 @@ export default function RankingsTab({ user, profile, season }: { user: any; prof
                           height: barH,
                           background: grad,
                           borderRadius: isChampion ? '12px 12px 4px 4px' : '8px 8px 4px 4px',
+                          border: `1px solid ${isChampion ? 'var(--accent-border)' : 'var(--border)'}`,
                           boxShadow: shadow,
                           position: 'relative',
                           overflow: 'hidden',
@@ -582,7 +595,9 @@ export default function RankingsTab({ user, profile, season }: { user: any; prof
                             transform: 'translateX(-50%)',
                             fontSize: isChampion ? 22 : 18,
                             fontWeight: 900,
-                            color: 'rgba(0,0,0,0.25)',
+                            color: isChampion
+                              ? 'color-mix(in srgb, var(--on-accent) 45%, transparent)'
+                              : 'var(--text-muted)',
                             letterSpacing: '-0.02em',
                           }}
                         >
@@ -609,7 +624,7 @@ export default function RankingsTab({ user, profile, season }: { user: any; prof
                   style={{
                     flexDirection: 'row',
                     background: isMe ? 'var(--accent-light)' : 'var(--bg)',
-                    border: isMe ? '2px solid var(--accent)' : '1px solid var(--border)',
+                    border: `1px solid ${isMe ? 'var(--accent)' : 'var(--border)'}`,
                     borderRadius: 12,
                     padding: '12px 14px',
                     display: 'flex',
@@ -619,8 +634,23 @@ export default function RankingsTab({ user, profile, season }: { user: any; prof
                     boxShadow: 'var(--shadow-sm)',
                   }}
                 >
-                  <div style={{ width: 28, textAlign: 'center', flexShrink: 0 }}>
-                    <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--text-muted)' }}>{entry.rank}</span>
+                  <div style={{ width: 32, textAlign: 'center', flexShrink: 0 }}>
+                    <span
+                      style={{
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        minWidth: 24,
+                        padding: '2px 5px',
+                        borderRadius: 7,
+                        fontSize: 12.5,
+                        fontWeight: 700,
+                        background: entry.rank <= 10 ? 'var(--accent-light)' : 'transparent',
+                        color: entry.rank <= 10 ? 'var(--accent-text)' : 'var(--text-muted)',
+                      }}
+                    >
+                      {entry.rank}
+                    </span>
                   </div>
                   <Avatar name={entry.display_name} avatarUrl={entry.avatar_url} size={36} />
                   <div style={{ flex: 1, minWidth: 0 }}>
