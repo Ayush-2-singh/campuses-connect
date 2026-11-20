@@ -35,14 +35,9 @@ type SectionItem = {
 }
 
 export const COMPETE_SECTIONS: SectionItem[] = [
-  {
-    key: 'rankings',
-    label: 'Rankings',
-    shortLabel: 'Rankings',
-    icon: 'trophy',
-    href: '/compete?tab=rankings',
-    panel: true,
-  },
+  // Games leads the row: it is the section's landing panel (see /compete), so
+  // the first thing a visitor sees is something to play, not a board to read.
+  { key: 'games', label: 'Games', shortLabel: 'Games', icon: 'gamepad', href: '/compete?tab=games', panel: true },
   {
     key: 'contributors',
     label: 'Contributors',
@@ -60,7 +55,14 @@ export const COMPETE_SECTIONS: SectionItem[] = [
     panel: true,
   },
   { key: 'quizzes', label: 'Quizzes', shortLabel: 'Quizzes', icon: 'notebook', href: '/compete/quizzes', panel: false },
-  { key: 'games', label: 'Games', shortLabel: 'Games', icon: 'gamepad', href: '/compete?tab=games', panel: true },
+  {
+    key: 'rankings',
+    label: 'Rankings',
+    shortLabel: 'Rankings',
+    icon: 'trophy',
+    href: '/compete?tab=rankings',
+    panel: true,
+  },
   { key: 'live', label: 'Live Battle', shortLabel: 'Live', icon: 'zap', href: '/compete/live', panel: false },
   {
     key: 'bank',

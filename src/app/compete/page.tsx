@@ -66,7 +66,9 @@ function CompetePageInner() {
   const [profile, setProfile] = useState<any>(null)
   const [loading, setLoading] = useState(true)
 
-  const [tab, setTab] = useState<Tab>('rankings')
+  // Games is the landing panel: opening Compete should offer something to
+  // play first. Rankings is one click away (and `?tab=rankings` still wins).
+  const [tab, setTab] = useState<Tab>('games')
 
   /**
    * Deep links (`/compete?tab=clash`) are read AFTER mount instead of through
@@ -85,8 +87,9 @@ function CompetePageInner() {
       router.replace('/compete/quizzes')
       return
     }
+    // Any explicit tab in the URL wins over the Games landing default.
     const fromUrl = TAB_FROM_URL[urlTab]
-    if (fromUrl && fromUrl !== 'rankings') setTab(fromUrl)
+    if (fromUrl) setTab(fromUrl)
   }, [router])
 
   // challenge state
