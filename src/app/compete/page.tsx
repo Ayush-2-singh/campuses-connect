@@ -5,14 +5,19 @@ import { createClient } from '@/lib/supabase/client'
 import Layout from '@/components/Layout'
 import ErrorBoundary from '@/components/ErrorBoundary'
 import { useRouter } from 'next/navigation'
+import dynamic from 'next/dynamic'
 import ScoreHeader from '@/components/ScoreHeader'
 import { Icon } from '@/components/icons'
-import RankingsTab from './RankingsTab'
-import ContributorsTab from './ContributorsTab'
-import ChallengeTab from './ChallengeTab'
 import GamesTab from './GamesTab'
 import CompeteNav from '@/components/compete/CompeteNav'
 import type { Tab, Problem, RunResult, Submission, SeasonInfo } from './types'
+
+// Only the panel a visitor opens is downloaded. The Daily Challenge chunk alone
+// drags the ~74 kB most-asked catalogue along, so shipping every panel with the
+// Games landing made the first visit pay for tabs most people never open.
+const RankingsTab = dynamic(() => import('./RankingsTab'))
+const ContributorsTab = dynamic(() => import('./ContributorsTab'))
+const ChallengeTab = dynamic(() => import('./ChallengeTab'))
 
 const TAB_FROM_URL: Record<string, Tab> = {
   rankings: 'rankings',
@@ -422,8 +427,11 @@ function CompetePageInner() {
               leaderboard, not on this section's scoreboard. */}
           <ScoreHeader userId={user?.id} />
 
-          {/* Loading skeleton */}
-          {loading ? (
+          {/* Games needs no auth, profile or season data, so it paints while
+              those queries are still in flight instead of behind the skeleton. */}
+          {tab === 'games' ? (
+            <GamesTab />
+          ) : loading ? (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
               {[1, 2, 3].map((i) => (
                 <div key={i} className="skeleton" style={{ height: 80, borderRadius: 14 }} />
@@ -459,7 +467,6 @@ function CompetePageInner() {
                   onClearDraft={clearDraft}
                 />
               )}
-              {tab === 'games' && <GamesTab />}
             </>
           )}
         </div>
