@@ -15,9 +15,9 @@ import type { CSSProperties } from 'react'
 import type { Problem, RunResult, Submission } from './types'
 import ResultPanel from './ResultPanel'
 import SubmissionsTab from './SubmissionsTab'
-import TopAskedPanel from './TopAskedPanel'
 
 const CodeEditor = dynamic(() => import('@/components/games/CodeEditor'), { ssr: false })
+const TopAskedPanel = dynamic(() => import('./TopAskedPanel'))
 
 const LANGUAGES = [
   { key: 'python', label: 'Python' },
@@ -879,8 +879,47 @@ export default function ChallengeTab({
       </div>
 
       {/* Interview-frequency catalogue: in-house problems open here, the rest
-          open on LeetCode. */}
-      <TopAskedPanel problems={problems} onSelectProblem={onSelectProblem} />
+          open on LeetCode. It sits below the list, so it is mounted only when
+          the reader scrolls near it — the data is ~75 kB on its own. */}
+      <LazyTopAsked problems={problems} onSelectProblem={onSelectProblem} />
+    </div>
+  )
+}
+
+function LazyTopAsked({ problems, onSelectProblem }: { problems: Problem[]; onSelectProblem: (p: Problem) => void }) {
+  const holder = useRef<HTMLDivElement>(null)
+  const [show, setShow] = useState(false)
+
+  useEffect(() => {
+    const el = holder.current
+    if (!el || show) return
+    if (typeof IntersectionObserver === 'undefined') {
+      setShow(true)
+      return
+    }
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries.some((entry) => entry.isIntersecting)) {
+          setShow(true)
+          observer.disconnect()
+        }
+      },
+      // Start downloading a screen before the reader gets there.
+      { rootMargin: '600px 0px' }
+    )
+    observer.observe(el)
+    return () => observer.disconnect()
+  }, [show])
+
+  return (
+    <div ref={holder}>
+      {show ? (
+        <TopAskedPanel problems={problems} onSelectProblem={onSelectProblem} />
+      ) : (
+        <p style={{ marginTop: 18, fontSize: 11.5, color: 'var(--text-muted)' }} aria-hidden="true">
+          Loading the most-asked catalogue…
+        </p>
+      )}
     </div>
   )
 }

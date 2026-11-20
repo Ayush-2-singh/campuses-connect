@@ -13,7 +13,7 @@
 // counters (karma, aura), GitHub and LeetCode stats are not read here at all.
 // ═══════════════════════════════════════════════════════════════════════════
 
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
 import Avatar from '@/components/Avatar'
@@ -136,7 +136,17 @@ export default function RankingsTab({ user, profile, season }: { user: any; prof
   const [scope, setScope] = useState<RankScope>('global')
   const [dash, setDash] = useState<Partial<Record<Zone, Dash>>>({})
 
+  // The dashboard tiles depend on scope + campus + season, not on which zone is
+  // open, so they are cached and reused when only the zone changes. Before
+  // this, every tap on a mode tile refetched all four boards (6 RPCs).
+  const dashCache = useRef<{ key: string; data: Partial<Record<Zone, Dash>> } | null>(null)
+  // Latest request wins: a slow board for a zone the reader already left must
+  // not overwrite the one on screen.
+  const requestId = useRef(0)
+  const scopeKey = `${scope}|${profile?.campus_id ?? ''}|${season?.starts_at ?? ''}`
+
   const load = useCallback(async () => {
+    const id = ++requestId.current
     setLoading(true)
     try {
       // Friends is a set of ids, not a board the database knows about.
@@ -163,35 +173,46 @@ export default function RankingsTab({ user, profile, season }: { user: any; prof
         p_limit: limit,
       })
 
-      // One full board for the selected mode, plus a three-row dashboard for
-      // every mode (combined included) so each has its own standing at a glance.
-      const [boardRes, ...zoneRes] = await Promise.all([
-        supabase.rpc('match_leaderboard', params(zone, LEADERBOARD_LIMIT)),
-        ...ZONES.map((z) => supabase.rpc('match_leaderboard', params(z.key, 3))),
-      ])
-
       const unpack = (res: any): Dash => {
         const payload = res?.data as { ok?: boolean; rows?: LeaderEntry[]; me?: MeRow | null } | null
         if (res?.error || !payload?.ok) return { top: [], me: null }
         return { top: payload.rows ?? [], me: payload.me ?? null }
       }
 
+      // The open mode's full board is the only thing a zone change needs. Its
+      // three-row dashboard entry is derived from that same response, and the
+      // other modes are fetched once per scope instead of on every tap.
+      const boardRes = await supabase.rpc('match_leaderboard', params(zone, LEADERBOARD_LIMIT))
+      if (id !== requestId.current) return
+
       const board = unpack(boardRes)
       setRows(board.top)
       setMe(board.me)
+      setLoading(false)
 
-      const next: Partial<Record<Zone, Dash>> = {}
-      ZONES.forEach((z, i) => {
+      if (dashCache.current?.key === scopeKey) return
+
+      const others = ZONES.filter((z) => z.key !== zone)
+      const zoneRes = await Promise.all(others.map((z) => supabase.rpc('match_leaderboard', params(z.key, 3))))
+      if (id !== requestId.current) return
+
+      const next: Partial<Record<Zone, Dash>> = {
+        [zone]: { top: board.top.slice(0, 3), me: board.me },
+      }
+      others.forEach((z, i) => {
         next[z.key] = unpack(zoneRes[i])
       })
+      dashCache.current = { key: scopeKey, data: next }
       setDash(next)
     } catch {
+      if (id !== requestId.current) return
       setRows([])
       setMe(null)
       setDash({})
+    } finally {
+      if (id === requestId.current) setLoading(false)
     }
-    setLoading(false)
-  }, [supabase, zone, scope, profile?.campus_id, season?.starts_at, user])
+  }, [supabase, zone, scope, scopeKey, profile?.campus_id, season?.starts_at, user])
 
   useEffect(() => {
     load()
