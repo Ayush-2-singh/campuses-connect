@@ -25,28 +25,30 @@ import type { QuizDetail as QuizDetailData, QuizVisibility } from '@/lib/quizzes
 import PracticePlayer from './PracticePlayer'
 
 const card: React.CSSProperties = {
-  border: '1px solid var(--border, #e5e7eb)',
+  border: '1px solid var(--border)',
   borderRadius: 14,
   padding: 16,
-  background: 'var(--surface, #fff)',
+  background: 'var(--bg)',
+  boxShadow: 'var(--shadow-sm)',
 }
 
 const primary: React.CSSProperties = {
   padding: '9px 16px',
   borderRadius: 10,
   border: 'none',
-  background: 'var(--brand, #2563eb)',
-  color: '#fff',
+  background: 'var(--accent)',
+  color: 'var(--on-accent)',
   fontWeight: 650,
   fontSize: 14,
   cursor: 'pointer',
+  fontFamily: 'inherit',
 }
 
 const ghost: React.CSSProperties = {
   ...primary,
-  background: 'transparent',
-  color: 'inherit',
-  border: '1px solid var(--border, #e5e7eb)',
+  background: 'var(--bg)',
+  color: 'var(--text-secondary)',
+  border: '1px solid var(--border)',
 }
 
 const VISIBILITY_LABEL: Record<QuizVisibility, string> = {
@@ -193,8 +195,8 @@ export default function QuizDetail({ quizId, user }: { quizId: string; user: { i
 
   if (!detail || !quiz) {
     return (
-      <div style={{ padding: '24px 16px', maxWidth: 700, margin: '0 auto' }}>
-        <p role="alert" style={{ color: '#b91c1c' }}>
+      <div style={{ display: 'grid', gap: 12 }}>
+        <p role="alert" style={{ color: 'var(--danger-text)', margin: 0 }}>
           {error || 'That quiz is not available.'}
         </p>
         <Link href="/compete/quizzes">← Back to quizzes</Link>
@@ -207,7 +209,7 @@ export default function QuizDetail({ quizId, user }: { quizId: string; user: { i
   }
 
   return (
-    <div style={{ display: 'grid', gap: 16, padding: '0 16px 40px', maxWidth: 900, margin: '0 auto' }}>
+    <div style={{ display: 'grid', gap: 16 }}>
       <Link href="/compete/quizzes" style={{ fontSize: 13, color: 'var(--text-muted)', textDecoration: 'none' }}>
         ← All quizzes
       </Link>
@@ -254,19 +256,19 @@ export default function QuizDetail({ quizId, user }: { quizId: string; user: { i
             </button>
           )}
           {isOwner && (
-            <button style={{ ...ghost, color: '#b91c1c' }} onClick={remove} disabled={busy === 'delete'}>
+            <button style={{ ...ghost, color: 'var(--danger-text)' }} onClick={remove} disabled={busy === 'delete'}>
               Delete
             </button>
           )}
         </div>
 
         {error && (
-          <p role="alert" style={{ margin: 0, fontSize: 13, color: '#b91c1c' }}>
+          <p role="alert" style={{ margin: 0, fontSize: 13, color: 'var(--danger-text)' }}>
             {error}
           </p>
         )}
         {notice && (
-          <p role="status" style={{ margin: 0, fontSize: 13, color: '#047857' }}>
+          <p role="status" style={{ margin: 0, fontSize: 13, color: 'var(--success-text)' }}>
             {notice}
           </p>
         )}
@@ -335,7 +337,7 @@ export default function QuizDetail({ quizId, user }: { quizId: string; user: { i
                     key={option.position}
                     style={{
                       fontSize: 13,
-                      color: correct ? '#047857' : 'inherit',
+                      color: correct ? 'var(--success-text)' : 'inherit',
                       fontWeight: correct ? 650 : 400,
                     }}
                   >

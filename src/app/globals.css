@@ -1200,6 +1200,99 @@ a,
   }
 }
 
+/* ───────────────── Compete section navigation ─────────────────
+   One row that lists every destination in the Compete section. It is rendered
+   by CompeteNav on every route under /compete, so the section is browsable
+   from inside any of its pages instead of only from the landing tab row.
+
+   Desktop: a single rounded rail. Mid-width: the rail scrolls sideways with a
+   thin scrollbar. Phones: the pills wrap onto two lines with short labels, so
+   all seven sections are visible at once — a hidden horizontal strip meant
+   people never discovered Games, Live Battle or the question bank. */
+.compete-nav {
+  min-width: 0;
+  margin: 0 0 18px;
+}
+.compete-nav-row {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: var(--bg-secondary);
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: thin;
+  scrollbar-color: var(--border-strong) transparent;
+}
+.compete-nav-row::-webkit-scrollbar {
+  height: 4px;
+}
+.compete-nav-row::-webkit-scrollbar-thumb {
+  background: var(--border-strong);
+  border-radius: 4px;
+}
+.compete-nav-item {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  flex: 0 0 auto;
+  padding: 8px 13px;
+  border: 1px solid transparent;
+  border-radius: 10px;
+  font-size: 12.5px;
+  font-weight: 650;
+  line-height: 1.2;
+  white-space: nowrap;
+  text-decoration: none;
+  color: var(--text-secondary);
+  transition:
+    background 0.16s ease,
+    border-color 0.16s ease,
+    color 0.16s ease,
+    box-shadow 0.16s ease;
+}
+.compete-nav-item:hover {
+  background: var(--bg);
+  color: var(--text-primary);
+}
+.compete-nav-item:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+.compete-nav-item[aria-current='page'] {
+  background: var(--bg);
+  border-color: var(--accent-border);
+  color: var(--accent-text);
+  box-shadow: var(--shadow-sm);
+}
+.compete-nav-item[aria-current='page'] svg {
+  color: var(--accent);
+}
+.compete-nav-label-short {
+  display: none;
+}
+@media (max-width: 640px) {
+  .compete-nav-row {
+    flex-wrap: wrap;
+    overflow-x: visible;
+  }
+  .compete-nav-item {
+    flex: 1 1 auto;
+    padding: 8px 10px;
+  }
+  .compete-nav-label {
+    display: none;
+  }
+  .compete-nav-label-short {
+    display: inline;
+  }
+}
+
 /* ───────────────── Candidate discovery (recruiter shortlisting view) ─────────────────
    Cards + filter bar for /talent. Real fields only: role, skills, campus, year,
    connected GitHub, and a computed assessment score when submissions exist. */

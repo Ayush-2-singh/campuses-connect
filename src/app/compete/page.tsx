@@ -1,7 +1,6 @@
 'use client'
 
 import { useEffect, useState, useCallback } from 'react'
-import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
 import Layout from '@/components/Layout'
 import ErrorBoundary from '@/components/ErrorBoundary'
@@ -12,33 +11,8 @@ import RankingsTab from './RankingsTab'
 import ContributorsTab from './ContributorsTab'
 import ChallengeTab from './ChallengeTab'
 import GamesTab from './GamesTab'
+import CompeteNav from '@/components/compete/CompeteNav'
 import type { Tab, Problem, RunResult, Submission, SeasonInfo } from './types'
-
-const TABS: { key: Tab | 'quizzes'; label: string; icon: string; d: string; href?: string }[] = [
-  { key: 'rankings', label: 'Rankings', icon: 'trophy', d: 'M4 19h16M4 19 2.5 8l5.5 4L12 4l4 8 5.5-4L20 19' },
-  {
-    key: 'contributors',
-    label: 'Contributors',
-    icon: 'pencil',
-    d: 'M12 20h9M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z',
-  },
-  { key: 'challenge', label: 'Daily Challenge', icon: 'code', d: 'm16 18 6-6-6-6M8 6l-6 6 6 6' },
-  // Quizzes takes the slot Campus Clash used to occupy: the quiz library is
-  // where the section's question content lives, so it belongs in the tab row
-  // rather than in its own top-level destination. The tab opens the library's
-  // own route under this section (/compete/quizzes) — one implementation of
-  // the library, not a second copy inside this page.
-  {
-    key: 'quizzes',
-    label: 'Quizzes',
-    icon: 'notebook',
-    d: 'M4 19.5V6a2 2 0 0 1 2-2h13v16H6a2 2 0 0 0-2 2Z',
-    href: '/compete/quizzes',
-  },
-  // Typing Battle and Quick Math, played here rather than on the retired
-  // /games routes. Same components the voice rooms use for in-call games.
-  { key: 'games', label: 'Games', icon: 'gamepad', d: 'M6 12h4M8 10v4M15 11h.01M18 13h.01' },
-]
 
 const TAB_FROM_URL: Record<string, Tab> = {
   rankings: 'rankings',
@@ -420,14 +394,14 @@ function CompetePageInner() {
               <h1 className="ss-title">
                 Rank. Play. Win. <em className="hc-em">Earn aura.</em>
               </h1>
-              <p className="ss-sub">Timed DSA practice, quizzes and leaderboards — scored on the server.</p>
+              <p className="ss-sub">
+                A daily DSA challenge, the quiz library, live battles, typing and maths games, a creator board and the
+                season rankings — every score graded on the server, so it means the same thing for everyone.
+              </p>
             </div>
             <div className="ss-actions">
               <button className="hc-btn hc-btn--primary" type="button" onClick={() => router.push('/compete/live')}>
                 <Icon name="gamepad" size={14} /> Live Battle
-              </button>
-              <button className="hc-btn" type="button" onClick={() => router.push('/compete/live/questions')}>
-                <Icon name="notebook" size={14} /> Question bank
               </button>
             </div>
             <span className="ss-spacer" />
@@ -441,94 +415,16 @@ function CompetePageInner() {
             )}
           </div>
 
-          {/* Crawlable intro + real <a> links. This is the content a search
-              result can quote, and the links are how the crawler reaches the
-              quiz library, games and Live Battle surfaces from /compete. */}
-          <p
-            style={{
-              fontSize: 14,
-              lineHeight: 1.65,
-              color: 'var(--text-secondary)',
-              margin: '0 0 10px',
-              textAlign: 'left',
-            }}
-          >
-            Compete is the practice side of ConnectToCampus: a daily DSA challenge scored on the server, a quiz library
-            you can practise solo or run live with your campus, a contributor board for interview write-ups, and typing
-            and quick-maths battles for a break. Every submission is timed and graded server-side, so a score means the
-            same thing for everyone.
-          </p>
-          <div
-            style={{
-              display: 'flex',
-              gap: 14,
-              flexWrap: 'wrap',
-              fontSize: 13,
-              fontWeight: 600,
-              margin: '0 0 18px',
-            }}
-          >
-            {[
-              { href: '/compete?tab=daily', label: 'Daily DSA challenge' },
-              { href: '/compete/quizzes', label: 'Quiz library' },
-              { href: '/compete?tab=games', label: 'Typing & maths battles' },
-              { href: '/compete/live', label: 'Host a live quiz' },
-              { href: '/leaderboard', label: 'Leaderboard' },
-            ].map((l) => (
-              <Link key={l.href} href={l.href} style={{ color: 'var(--accent-text)', textDecoration: 'underline' }}>
-                {l.label}
-              </Link>
-            ))}
-          </div>
+          {/* One nav for the whole section: the four panels below plus the
+              Quiz library, Live Battle and question bank routes. Real anchors,
+              so every destination is reachable (and crawlable) from here; the
+              four panels switch in place through `onSelect`. */}
+          <CompeteNav active={tab} onSelect={changeTab} />
 
           {/* The four metrics, kept separate: Rating / Aura / XP / Karma.
               Replaces the old header tiles, which labelled a lifetime
               accumulator "Aura" — contradicting the daily definition. */}
           <ScoreHeader userId={user?.id} />
-
-          {/* Tabs — SVG icons, accent underline follows the section green */}
-          <div
-            style={{
-              display: 'flex',
-              gap: 4,
-              marginBottom: 20,
-              borderBottom: '1px solid var(--border)',
-              overflowX: 'auto',
-            }}
-            className="compete-tabs chip-scroll"
-            role="tablist"
-            aria-label="Compete sections"
-          >
-            {TABS.map((t) => (
-              <button
-                key={t.key}
-                onClick={() => (t.href ? router.push(t.href) : changeTab(t.key as Tab))}
-                role="tab"
-                aria-selected={tab === t.key}
-                style={{
-                  padding: '9px 16px',
-                  fontSize: 13.5,
-                  fontWeight: 600,
-                  border: 'none',
-                  background: 'none',
-                  cursor: 'pointer',
-                  color: tab === t.key ? 'var(--accent-text)' : 'var(--text-secondary)',
-                  fontFamily: 'inherit',
-                  whiteSpace: 'nowrap',
-                  borderBottom: tab === t.key ? '2px solid var(--accent)' : '2px solid transparent',
-                  marginBottom: -1,
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  gap: 7,
-                }}
-              >
-                <span style={{ display: 'inline-flex' }} aria-hidden="true">
-                  <Icon name={t.icon} size={15} strokeWidth={2} />
-                </span>
-                {t.label}
-              </button>
-            ))}
-          </div>
 
           {/* Loading skeleton */}
           {loading ? (

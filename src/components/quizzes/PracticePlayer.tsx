@@ -15,30 +15,32 @@ import { answerPracticeQuestion, finishPracticeAttempt, startPracticeAttempt } f
 import type { PracticeAnswerResult, PracticeAttempt, PracticeSummary } from '@/lib/quizzes/types'
 
 const card: React.CSSProperties = {
-  border: '1px solid var(--border, #e5e7eb)',
+  border: '1px solid var(--border)',
   borderRadius: 14,
   padding: 16,
-  background: 'var(--surface, #fff)',
+  background: 'var(--bg)',
   display: 'grid',
   gap: 12,
+  boxShadow: 'var(--shadow-sm)',
 }
 
 const primary: React.CSSProperties = {
   padding: '9px 16px',
   borderRadius: 10,
   border: 'none',
-  background: 'var(--brand, #2563eb)',
-  color: '#fff',
+  background: 'var(--accent)',
+  color: 'var(--on-accent)',
   fontWeight: 650,
   fontSize: 14,
   cursor: 'pointer',
+  fontFamily: 'inherit',
 }
 
 const ghost: React.CSSProperties = {
   ...primary,
-  background: 'transparent',
-  color: 'inherit',
-  border: '1px solid var(--border, #e5e7eb)',
+  background: 'var(--bg)',
+  color: 'var(--text-secondary)',
+  border: '1px solid var(--border)',
 }
 
 export default function PracticePlayer({
@@ -137,8 +139,8 @@ export default function PracticePlayer({
 
   if (error && !attempt) {
     return (
-      <div style={{ padding: '24px 16px', maxWidth: 700, margin: '0 auto' }}>
-        <p role="alert" style={{ color: '#b91c1c' }}>
+      <div style={{ maxWidth: 720, margin: '0 auto' }}>
+        <p role="alert" style={{ color: 'var(--danger-text)' }}>
           {error}
         </p>
         <button style={ghost} onClick={onExit}>
@@ -150,7 +152,7 @@ export default function PracticePlayer({
 
   if (summary) {
     return (
-      <div style={{ padding: '24px 16px', maxWidth: 620, margin: '0 auto', display: 'grid', gap: 14 }}>
+      <div style={{ maxWidth: 720, margin: '0 auto', display: 'grid', gap: 14 }}>
         <section style={card}>
           <h1 style={{ margin: 0, fontSize: 22 }}>Practice complete</h1>
           <p style={{ margin: 0, fontSize: 15 }}>
@@ -170,11 +172,11 @@ export default function PracticePlayer({
   }
 
   if (!attempt || !question) {
-    return <p style={{ padding: '24px 16px', color: 'var(--text-muted)' }}>Preparing practice…</p>
+    return <p style={{ color: 'var(--text-muted)' }}>Preparing practice…</p>
   }
 
   return (
-    <div style={{ padding: '0 16px 40px', maxWidth: 700, margin: '0 auto', display: 'grid', gap: 14 }}>
+    <div style={{ maxWidth: 720, margin: '0 auto', display: 'grid', gap: 14 }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <button style={ghost} onClick={onExit}>
           ← Exit practice
@@ -193,7 +195,13 @@ export default function PracticePlayer({
           {question.options.map((option) => {
             const picked = selected.includes(option.position)
             const correct = result?.correct_positions.includes(option.position)
-            const tone = result ? (correct ? '#065f46' : picked ? '#991b1b' : 'inherit') : 'inherit'
+            const tone = result
+              ? correct
+                ? 'var(--success-text)'
+                : picked
+                  ? 'var(--danger-text)'
+                  : 'inherit'
+              : 'inherit'
             return (
               <button
                 key={option.position}
@@ -205,8 +213,8 @@ export default function PracticePlayer({
                   borderRadius: 10,
                   fontSize: 14,
                   cursor: result ? 'default' : 'pointer',
-                  border: `1px solid ${picked || correct ? 'var(--brand, #2563eb)' : 'var(--border, #e5e7eb)'}`,
-                  background: picked ? 'rgba(37, 99, 235, 0.08)' : 'transparent',
+                  border: `1px solid ${picked || correct ? 'var(--accent)' : 'var(--border)'}`,
+                  background: picked ? 'var(--accent-light)' : 'transparent',
                   color: tone,
                   fontWeight: correct ? 650 : 400,
                 }}
@@ -226,7 +234,7 @@ export default function PracticePlayer({
 
         {result && (
           <div style={{ display: 'grid', gap: 6 }}>
-            <strong style={{ fontSize: 14, color: result.correct ? '#047857' : '#b91c1c' }}>
+            <strong style={{ fontSize: 14, color: result.correct ? 'var(--success-text)' : 'var(--danger-text)' }}>
               {result.correct ? 'Correct' : 'Not quite'}
               {result.already_answered ? ' (already answered earlier)' : ''}
             </strong>

@@ -19,13 +19,14 @@ import AiQuizWizard from './AiQuizWizard'
 type BankRow = { id: string; question_text: string; difficulty: string; subject: string }
 
 const card: React.CSSProperties = {
-  border: '1px solid var(--border, #e5e7eb)',
+  border: '1px solid var(--border)',
   borderRadius: 14,
   padding: 16,
-  background: 'var(--surface, #fff)',
+  background: 'var(--bg)',
   display: 'flex',
   flexDirection: 'column',
   gap: 8,
+  boxShadow: 'var(--shadow-sm)',
 }
 
 const label: React.CSSProperties = {
@@ -42,28 +43,30 @@ const input: React.CSSProperties = {
   width: '100%',
   padding: '9px 11px',
   borderRadius: 10,
-  border: '1px solid var(--border, #e5e7eb)',
-  background: 'transparent',
-  color: 'inherit',
+  border: '1px solid var(--border)',
+  background: 'var(--bg)',
+  color: 'var(--text-primary)',
   fontSize: 14,
+  fontFamily: 'inherit',
 }
 
 const primary: React.CSSProperties = {
   padding: '9px 16px',
   borderRadius: 10,
   border: 'none',
-  background: 'var(--brand, #2563eb)',
-  color: '#fff',
+  background: 'var(--accent)',
+  color: 'var(--on-accent)',
   fontWeight: 650,
   fontSize: 14,
   cursor: 'pointer',
+  fontFamily: 'inherit',
 }
 
 const ghost: React.CSSProperties = {
   ...primary,
-  background: 'transparent',
-  color: 'inherit',
-  border: '1px solid var(--border, #e5e7eb)',
+  background: 'var(--bg)',
+  color: 'var(--text-secondary)',
+  border: '1px solid var(--border)',
 }
 
 const VISIBILITY_LABEL: Record<QuizVisibility, string> = {
@@ -159,14 +162,7 @@ export default function QuizLibrary({ user }: { user: { id: string; email?: stri
   const shown = tab === 'mine' ? mine : discover
 
   return (
-    <div style={{ display: 'grid', gap: 18, padding: '0 16px 40px', maxWidth: 980, margin: '0 auto' }}>
-      <header style={{ display: 'grid', gap: 6 }}>
-        <h1 style={{ margin: 0, fontSize: 26, letterSpacing: '-0.02em' }}>Quizzes</h1>
-        <p style={{ margin: 0, color: 'var(--text-muted)', fontSize: 14 }}>
-          Build a quiz once, then run it live or practise it solo. Every playing method uses the same question bank.
-        </p>
-      </header>
-
+    <div style={{ display: 'grid', gap: 18 }}>
       <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
         <button style={tab === 'mine' ? primary : ghost} onClick={() => setTab('mine')}>
           My quizzes ({mine.length})
@@ -188,7 +184,7 @@ export default function QuizLibrary({ user }: { user: { id: string; email?: stri
       </div>
 
       {error && (
-        <p role="alert" style={{ color: '#b91c1c', fontSize: 13, margin: 0 }}>
+        <p role="alert" style={{ color: 'var(--danger-text)', fontSize: 13, margin: 0 }}>
           {error}
         </p>
       )}
@@ -217,7 +213,7 @@ export default function QuizLibrary({ user }: { user: { id: string; email?: stri
               placeholder="Graphs and shortest paths"
             />
           </div>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: 12 }}>
             <div>
               <label style={label} htmlFor="quiz-subject">
                 Subject
@@ -267,7 +263,7 @@ export default function QuizLibrary({ user }: { user: { id: string; email?: stri
                     fontSize: 13,
                     padding: '6px 8px',
                     borderRadius: 8,
-                    border: '1px solid var(--border, #e5e7eb)',
+                    border: '1px solid var(--border)',
                   }}
                 >
                   <input

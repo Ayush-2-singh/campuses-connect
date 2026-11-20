@@ -19,9 +19,9 @@ import AddToQuizButton from '@/components/quizzes/AddToQuizButton'
  */
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { Icon } from '@/components/icons'
+import CompeteNav from '@/components/compete/CompeteNav'
 import {
   CSV_TEMPLATE,
   DIFFICULTIES,
@@ -126,7 +126,6 @@ function download(fileName: string, content: string, type: string) {
 
 export default function QuestionBank({ user }: { user: any; profile?: any }) {
   const supabase = createClient()
-  const router = useRouter()
 
   const [questions, setQuestions] = useState<BankQuestion[]>([])
   const [loading, setLoading] = useState(true)
@@ -374,10 +373,9 @@ export default function QuestionBank({ user }: { user: any; profile?: any }) {
 
   return (
     <div className="hc-page">
+      <CompeteNav active="bank" />
+
       <div className="hc-page-head hc-reveal">
-        <button className="hc-back" onClick={() => router.push('/compete')} aria-label="Back to Compete">
-          <Icon name="chevron" size={16} strokeWidth={2.2} style={{ transform: 'rotate(180deg)' }} />
-        </button>
         <span className="hc-eyebrow">Compete · Live Battle</span>
         <h1 className="hc-h1">
           Your question bank, <em className="hc-em">ready to fire.</em>

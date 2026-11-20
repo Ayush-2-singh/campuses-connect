@@ -1,7 +1,7 @@
 import type { Metadata } from 'next'
-import Link from 'next/link'
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
+import Layout from '@/components/Layout'
 import LiveHub from '@/components/live-battle/LiveHub'
 
 export const metadata: Metadata = {
@@ -18,12 +18,13 @@ export default async function LiveBattlePage({ searchParams }: { searchParams: P
 
   if (!user) redirect('/auth/login?redirect=/compete/live')
 
+  // The hub is a Compete section page, so it keeps the same shell as the
+  // rest of the app (top nav, avatar menu, section nav inside the hub).
+  const profile = (await supabase.from('profiles').select('*').eq('id', user.id).single()).data
+
   return (
-    <>
+    <Layout user={user} profile={profile}>
       <LiveHub user={{ id: user.id, email: user.email }} initialQuizId={quiz} />
-      <p style={{ textAlign: 'center', fontSize: 12, color: 'var(--text-muted)', padding: '0 16px 24px' }}>
-        Need more questions first? <Link href="/compete/live/questions">Open the question bank →</Link>
-      </p>
-    </>
+    </Layout>
   )
 }

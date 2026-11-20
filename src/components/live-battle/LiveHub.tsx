@@ -14,6 +14,7 @@ import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { Icon } from '@/components/icons'
+import CompeteNav from '@/components/compete/CompeteNav'
 import { listQuizDetail, startCompetitionFromQuiz } from '@/lib/quizzes/client'
 import {
   CSV_TEMPLATE,
@@ -330,10 +331,9 @@ export default function LiveHub({ user, initialQuizId }: { user: any; initialQui
 
   return (
     <div className="hc-page">
+      <CompeteNav active="live" />
+
       <div className="hc-page-head hc-reveal">
-        <button className="hc-back" onClick={() => router.push('/compete')} aria-label="Back to Compete">
-          <Icon name="chevron" size={16} strokeWidth={2.2} style={{ transform: 'rotate(180deg)' }} />
-        </button>
         <span className="hc-eyebrow">Compete · Live Battle</span>
         <h1 className="hc-h1">
           Run a live quiz, <em className="hc-em">right now.</em>
