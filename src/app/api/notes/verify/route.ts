@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient, type SupabaseClient } from '@supabase/supabase-js'
-import { requireAuthLite } from '@/lib/api/middleware'
+import { requireAuth } from '@/lib/api/middleware'
 
 let _supabaseAdmin: SupabaseClient | null = null
 
@@ -13,14 +13,15 @@ function getSupabaseAdmin(): SupabaseClient {
 
 export async function POST(request: NextRequest) {
   try {
-    const auth = await requireAuthLite(request)
+    const auth = await requireAuth(request)
     if (!auth.ok) return auth.response
-    const user = auth.auth
 
-    const { data: grants } = await getSupabaseAdmin().rpc('my_admin_grants')
-    const grantsArr = (grants as any[]) || []
-    if (grantsArr.length === 0) {
-      return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+    // Publishing a community upload is an admin decision. `requireAuth` reads
+    // the caller's real admin_grants; the old `my_admin_grants()` RPC was called
+    // with the service-role client, where auth.uid() is NULL, so it returned no
+    // rows and blocked every admin too.
+    if (auth.auth.adminTypes.length === 0) {
+      return NextResponse.json({ error: 'Forbidden. Admin access required.' }, { status: 403 })
     }
 
     const { note_id, is_verified } = await request.json()
