@@ -6,26 +6,22 @@ import { isPlaced, placementRemaining, rankTier } from '@/lib/rating'
 import { Icon } from '@/components/icons'
 
 /**
- * ScoreHeader — the four metrics, each in its own tile, never merged.
+ * ScoreHeader — the two competitive metrics of the Compete section.
  *
- *   🏆 Karma  → contribution            (lifetime)
- *   📈 XP     → progress                (persistent)
- *   ✨ Aura   → competitive momentum    (TODAY only)
- *   ⭐ Rating → competitive skill       (per season, per skill)
+ *   ⭐ Rating → competitive skill   (per season, per skill)
+ *   📈 XP     → progress            (persistent)
  *
- * Aura is read from `my_score_summary`, which already returns 0 when the stored
- * `aura_date` is not today — the lazy reset happens server-side, so this
- * component never needs to know about days.
+ * Aura (daily momentum) and Karma (contribution) are deliberately not shown
+ * here: neither is part of the match-based Compete score, so surfacing them
+ * next to the rating read as if they moved the leaderboard. They remain on a
+ * profile and on the global leaderboard.
  *
  * Everything degrades quietly: if the summary RPC is unavailable (migration not
  * applied yet) the header simply renders nothing rather than throwing.
  */
 
 type Summary = {
-  karma: number
   xp: number
-  aura_today: number
-  aura_date: string
   dsa_rating: number
   games: number
 }
@@ -72,7 +68,7 @@ export default function ScoreHeader({ userId }: { userId?: string | null }) {
         marginBottom: 16,
       }}
       role="group"
-      aria-label="Your scores"
+      aria-label="Your rating and XP"
     >
       <div style={tile}>
         <p style={{ ...value, display: 'flex', alignItems: 'center', gap: 6 }}>
@@ -93,32 +89,12 @@ export default function ScoreHeader({ userId }: { userId?: string | null }) {
 
       <div style={tile}>
         <p style={{ ...value, display: 'flex', alignItems: 'center', gap: 6 }}>
-          <span style={{ display: 'inline-flex', color: 'var(--accent)' }} aria-hidden="true">
-            <Icon name="sparkles" size={15} strokeWidth={2.2} />
-          </span>
-          {summary.aura_today ?? 0}
-        </p>
-        <p style={label}>Aura · today</p>
-      </div>
-
-      <div style={tile}>
-        <p style={{ ...value, display: 'flex', alignItems: 'center', gap: 6 }}>
           <span style={{ display: 'inline-flex', color: 'var(--success-text)' }} aria-hidden="true">
             <Icon name="trending-up" size={15} strokeWidth={2.2} />
           </span>
           {(summary.xp ?? 0).toLocaleString()}
         </p>
         <p style={label}>XP · progress</p>
-      </div>
-
-      <div style={tile}>
-        <p style={{ ...value, display: 'flex', alignItems: 'center', gap: 6 }}>
-          <span style={{ display: 'inline-flex', color: 'var(--purple-text)' }} aria-hidden="true">
-            <Icon name="trophy" size={15} strokeWidth={2.2} />
-          </span>
-          {(summary.karma ?? 0).toLocaleString()}
-        </p>
-        <p style={label}>Karma · contribution</p>
       </div>
     </div>
   )

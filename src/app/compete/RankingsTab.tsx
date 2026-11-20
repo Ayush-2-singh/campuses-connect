@@ -126,16 +126,7 @@ function seasonWeek(season: SeasonInfo | null): string | null {
   return `Week ${Math.ceil(elapsed / 7)} of ${totalWeeks}`
 }
 
-export default function RankingsTab({
-  user,
-  profile,
-  season,
-}: {
-  user: any
-  profile: any
-  season: SeasonInfo | null
-  karma: { lifetime: number; aura: number; daily: number; season: string } | null
-}) {
+export default function RankingsTab({ user, profile, season }: { user: any; profile: any; season: SeasonInfo | null }) {
   const supabase = createClient()
   const router = useRouter()
   const [rows, setRows] = useState<LeaderEntry[]>([])
@@ -649,8 +640,8 @@ export default function RankingsTab({
       <p className="hc-note" style={{ marginTop: 14 }}>
         Points come from finished matches only: <strong>100 × mode × (0.6 × accuracy + 0.4 × 1/place)</strong>. Live
         battle and typing are ×1.0, quick maths ×0.9 — so a perfect live win is 100, a second place is 70 and a maths
-        win is 90. A Daily Quick Math set counts in the maths zone, placed against everyone who played that day. Profile
-        karma, aura, GitHub and LeetCode stats are never read here.
+        win is 90. A Daily Quick Math set counts in the maths zone, placed against everyone who played that day. Nothing
+        else on your profile affects this board.
       </p>
 
       {!user && (

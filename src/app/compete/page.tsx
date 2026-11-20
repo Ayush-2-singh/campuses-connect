@@ -108,7 +108,6 @@ function CompetePageInner() {
   const [lastAction, setLastAction] = useState<'run' | 'submit' | null>(null)
   // Bumped after every recorded submission so the Submissions tab refetches.
   const [submissionNonce, setSubmissionNonce] = useState(0)
-  const [karma, setKarma] = useState<{ lifetime: number; aura: number; daily: number; season: string } | null>(null)
   const [season, setSeason] = useState<SeasonInfo | null>(null)
 
   const changeTab = useCallback(
@@ -188,10 +187,9 @@ function CompetePageInner() {
         }
 
         // Now load user-specific data in parallel
-        const [profRes, subsRes2, ...rest] = await Promise.all([
+        const [profRes, subsRes2] = await Promise.all([
           supabase.from('profiles').select('*').eq('id', user.id).single(),
           supabase.from('dsa_submissions').select('problem_id').eq('user_id', user.id).eq('verdict', 'accepted'),
-          supabase.rpc('my_karma_summary'),
         ])
 
         if (cancelled) return
@@ -202,9 +200,6 @@ function CompetePageInner() {
           solvedMap[s.problem_id] = true
         })
         setSolved(solvedMap)
-
-        const sum = rest[0]?.data
-        if (sum && sum[0]) setKarma(sum[0])
       } catch {
         /* empty state */
       }
@@ -257,8 +252,6 @@ function CompetePageInner() {
         setSubmissionNonce((n) => n + 1)
         if (data.verdict === 'accepted') {
           setSolved((s) => ({ ...s, [daily.id]: true }))
-          const { data: sum } = await supabase.rpc('my_karma_summary')
-          if (sum && sum[0]) setKarma(sum[0])
         }
       }
     } catch {
@@ -392,7 +385,7 @@ function CompetePageInner() {
               {/* The page's only H1 (the mobile top bar used to carry a brand
                   H1, which is what Google saw instead of this). */}
               <h1 className="ss-title">
-                Rank. Play. Win. <em className="hc-em">Earn aura.</em>
+                Rank. Play. Win. <em className="hc-em">Climb the board.</em>
               </h1>
               <p className="ss-sub">
                 A daily DSA challenge, the quiz library, live battles, typing and maths games, a creator board and the
@@ -421,9 +414,9 @@ function CompetePageInner() {
               four panels switch in place through `onSelect`. */}
           <CompeteNav active={tab} onSelect={changeTab} />
 
-          {/* The four metrics, kept separate: Rating / Aura / XP / Karma.
-              Replaces the old header tiles, which labelled a lifetime
-              accumulator "Aura" — contradicting the daily definition. */}
+          {/* Only the two metrics that belong to Compete: season rating and XP.
+              Aura and contribution (karma) live on the profile and the global
+              leaderboard, not on this section's scoreboard. */}
           <ScoreHeader userId={user?.id} />
 
           {/* Loading skeleton */}
@@ -435,7 +428,7 @@ function CompetePageInner() {
             </div>
           ) : (
             <>
-              {tab === 'rankings' && <RankingsTab user={user} profile={profile} season={season} karma={karma} />}
+              {tab === 'rankings' && <RankingsTab user={user} profile={profile} season={season} />}
               {tab === 'contributors' && <ContributorsTab user={user} profile={profile} />}
               {tab === 'challenge' && (
                 <ChallengeTab
